@@ -112,7 +112,42 @@ if (licenses && employees) {
 
   return (
     <div style={{ padding: 40 }}>
-      <h1>管理者画面</h1>
+  <div style={{ marginBottom: 20 }}>
+    <h1 style={{ marginBottom: 12 }}>管理者画面</h1>
+
+    <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+      <a
+        href="/admin/users"
+        style={{
+          display: "inline-block",
+          textDecoration: "none",
+          backgroundColor: "#fff",
+          color: "#111",
+          padding: "12px 16px",
+          borderRadius: 8,
+          border: "1px solid #ccc",
+          fontWeight: 600,
+        }}
+      >
+        社員一覧
+      </a>
+
+      <a
+        href="/admin/users/new"
+        style={{
+          display: "inline-block",
+          textDecoration: "none",
+          backgroundColor: "#111",
+          color: "#fff",
+          padding: "12px 16px",
+          borderRadius: 8,
+          fontWeight: 600,
+        }}
+      >
+        ＋ 社員追加
+      </a>
+    </div>
+  </div>
 
       <h2 style={{ marginTop: 20 }}>免許期限アラート</h2>
       {licenseAlerts.length === 0 ? (

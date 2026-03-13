@@ -97,6 +97,23 @@ if (licenseData) {
         <p style={{ margin: "0 0 8px 0" }}>名前: {name}</p>
         <p style={{ margin: "0 0 8px 0" }}>メールアドレス: {email}</p>
         <p style={{ margin: 0 }}>権限: {role}</p>
+        <div style={{ marginTop: 16 }}>
+  <a
+    href="/profile/password"
+    style={{
+      display: "inline-block",
+      textDecoration: "none",
+      backgroundColor: "#111",
+      color: "#fff",
+      padding: "10px 14px",
+      borderRadius: 8,
+      fontSize: 14,
+      fontWeight: 600,
+    }}
+  >
+    パスワード変更
+  </a>
+</div>
       </div>
 
       <h2 style={{ marginTop: 20 }}>免許</h2>

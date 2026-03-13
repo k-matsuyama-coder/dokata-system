@@ -5,8 +5,12 @@ import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
 export default function AdminUserDetailPage() {
-    const params = useParams();
-    const id = params.id as string;
+  const params = useParams();
+  const id = params.id as string;
+
+  if (!id || id === "new") {
+    return null;
+  }
 
   const [employee, setEmployee] = useState<any | null>(null);
   const [license, setLicense] = useState<any | null>(null);
@@ -41,10 +45,10 @@ export default function AdminUserDetailPage() {
         .eq("id", id)
         .single();
 
-        if (employeeError || !employeeData) {
-            alert("社員情報が見つかりません: " + (employeeError?.message ?? "データなし"));
-            return;
-          }
+      if (employeeError || !employeeData) {
+        alert("社員情報が見つかりません: " + (employeeError?.message ?? "データなし"));
+        return;
+      }
 
       setEmployee(employeeData);
 
@@ -72,10 +76,9 @@ export default function AdminUserDetailPage() {
     };
 
     fetchEmployeeDetail();
-}, [id]);
+  }, [id]);
 
   return (
-    
     <div style={{ maxWidth: 800, margin: "0 auto", padding: 16 }}>
       <h1>社員詳細</h1>
 
