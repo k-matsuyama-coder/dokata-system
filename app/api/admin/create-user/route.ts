@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
 export async function POST(req: Request) {
@@ -6,73 +5,44 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { lastName, firstName, email } = body;
 
-    if (!lastName || !firstName || !email) {
-      return NextResponse.json(
-        { error: "必須項目が不足しています" },
-        { status: 400 }
-      );
-    }
+    const password = Math.random().toString(36).slice(-8);
+    const fullName = `${lastName} ${firstName}`;
 
-    const supabaseAdmin = createClient(
+    const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    const fullName = `${lastName} ${firstName}`;
-    const tempPassword = Math.random().toString(36).slice(-8);
+    const { data, error } = await supabase.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+    });
 
-    const { data: existingEmployee } = await supabaseAdmin
-      .from("employees")
-      .select("id")
-      .eq("name", fullName)
-      .maybeSingle();
-
-    if (existingEmployee) {
-      return NextResponse.json(
-        { error: "同じ名前の社員がすでに登録されています" },
-        { status: 400 }
-      );
+    if (error) {
+      return Response.json({ error: error.message }, { status: 500 });
     }
 
-    const { data: createdUser, error: authError } =
-      await supabaseAdmin.auth.admin.createUser({
-        email,
-        password: tempPassword,
-        email_confirm: true,
+    const user = data.user;
+
+    const { error: employeeError } = await supabase
+      .from("employees")
+      .insert({
+        auth_user_id: user.id,
+        name: fullName,
+        role: "worker",
       });
 
-    if (authError || !createdUser.user) {
-      return NextResponse.json(
-        { error: authError?.message ?? "Auth作成失敗" },
-        { status: 400 }
-      );
-    }
-
-    const { error: employeeError } = await supabaseAdmin
-      .from("employees")
-      .insert([
-        {
-          auth_user_id: createdUser.user.id,
-          name: fullName,
-          role: "worker",
-        },
-      ]);
-
     if (employeeError) {
-      return NextResponse.json(
-        { error: employeeError.message },
-        { status: 400 }
-      );
+      return Response.json({ error: employeeError.message }, { status: 500 });
     }
 
-    return NextResponse.json({
+    return Response.json({
       success: true,
-      password: tempPassword,
+      password: password,
     });
-  } catch {
-    return NextResponse.json(
-      { error: "サーバーエラー" },
-      { status: 500 }
-    );
+
+  } catch (e) {
+    return Response.json({ error: "server error" }, { status: 500 });
   }
 }
