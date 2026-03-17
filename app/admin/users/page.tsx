@@ -103,25 +103,17 @@ export default function AdminUsersPage() {
 
   return (
     <div style={{ maxWidth: 800, margin: "0 auto", padding: 16 }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: 12,
-          flexWrap: "wrap",
-          marginBottom: 20,
-        }}
-      >
-        <h1 style={{ margin: 0 }}>社員一覧</h1>
+      <div style={{ marginBottom: 20 }}>
+        <h1 style={{ margin: 0, marginBottom: 12 }}>社員一覧</h1>
 
         <a
           href="/admin/users/new"
           style={{
+            display: "inline-block",
             textDecoration: "none",
             backgroundColor: "#111",
             color: "#fff",
-            padding: "10px 14px",
+            padding: "12px 16px",
             borderRadius: 8,
             fontSize: 14,
             fontWeight: 600,
@@ -163,55 +155,57 @@ export default function AdminUsersPage() {
                 padding: 16,
                 backgroundColor: "#fff",
                 display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
+                flexDirection: "column",
                 gap: 12,
-                flexWrap: "wrap",
               }}
             >
-              <div style={{ flex: 1, minWidth: 200 }}>
-                <a
-                  href={`/admin/users/${employee.id}`}
+              <a
+                href={`/admin/users/${employee.id}`}
+                style={{
+                  textDecoration: "none",
+                  color: "#111",
+                }}
+              >
+                <p style={{ margin: 0, fontWeight: "bold", fontSize: 16 }}>
+                  {employee.name}
+                </p>
+              </a>
+
+              <div>
+                <label style={{ color: "#666", marginRight: 8 }}>権限:</label>
+                <select
+                  value={employee.role}
+                  onChange={(e) =>
+                    handleRoleChange(employee.id, e.target.value)
+                  }
                   style={{
-                    textDecoration: "none",
-                    color: "#111",
+                    width: "100%",
+                    padding: "10px 12px",
+                    borderRadius: 8,
+                    border: "1px solid #ccc",
+                    marginTop: 8,
+                    fontSize: 16,
+                    boxSizing: "border-box",
                   }}
                 >
-                  <p style={{ margin: 0, fontWeight: "bold", fontSize: 16 }}>
-                    {employee.name}
-                  </p>
-                </a>
-
-                <div style={{ marginTop: 8 }}>
-                  <label style={{ color: "#666", marginRight: 8 }}>権限:</label>
-                  <select
-                    value={employee.role}
-                    onChange={(e) =>
-                      handleRoleChange(employee.id, e.target.value)
-                    }
-                    style={{
-                      padding: "6px 8px",
-                      borderRadius: 6,
-                      border: "1px solid #ccc",
-                    }}
-                  >
-                    <option value="worker">worker</option>
-                    <option value="admin">admin</option>
-                  </select>
-                </div>
+                  <option value="worker">worker</option>
+                  <option value="admin">admin</option>
+                </select>
               </div>
 
               <button
                 type="button"
                 onClick={() => handleDelete(employee.id, employee.name)}
                 style={{
-                  padding: "10px 14px",
+                  width: "100%",
+                  padding: "12px 14px",
                   border: "none",
                   borderRadius: 8,
                   backgroundColor: "#d11a2a",
                   color: "#fff",
                   fontWeight: 600,
                   cursor: "pointer",
+                  fontSize: 16,
                 }}
               >
                 削除

@@ -68,22 +68,22 @@ export default function NavBar() {
 
   {menuOpen && (
     <div
-      style={{
-        position: "absolute",
-        top: 60,
-        right: 20,
-        backgroundColor: "#fff",
-        border: "1px solid #ddd",
-        borderRadius: 10,
-        padding: 12,
-        minWidth: 180,
-        boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
-        display: "flex",
-        flexDirection: "column",
-        gap: 12,
-        zIndex: 1000,
-      }}
-    >
+    style={{
+      position: "absolute",
+      top: 60,
+      right: 12,
+      left: 12,
+      backgroundColor: "#fff",
+      border: "1px solid #ddd",
+      borderRadius: 12,
+      padding: 16,
+      boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
+      display: "flex",
+      flexDirection: "column",
+      gap: 16,
+      zIndex: 1000,
+    }}
+  >
       <a
         href="/home"
         className="nav-link"
