@@ -11,6 +11,7 @@ type Employee = {
 export default function NewReportPage() {
   const [reportDate, setReportDate] = useState("");
   const [site, setSite] = useState("");
+  const [contractorName, setContractorName] = useState("");
   const [work, setWork] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
@@ -32,7 +33,9 @@ export default function NewReportPage() {
 
   const [memberInput, setMemberInput] = useState("");
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+  const [selectedMembers, setSelectedMembers] = useState<
+  { name: string; labor: string; overtime: string }[]
+>([]);
   const [siteSuggestions, setSiteSuggestions] = useState<string[]>([]);
   const [driverInput, setDriverInput] = useState("");
   const [selectedDrivers, setSelectedDrivers] = useState<string[]>([]);
@@ -95,38 +98,63 @@ export default function NewReportPage() {
       return;
     }
 
-    const { error } = await supabase.from("daily_reports").insert([
-      {
-        worker_name: employeeName,
-        site_name: site,
-        work_description: work,
-        report_date: reportDate,
-        shift_type: shiftType,
-        start_time: startTime,
-        end_time: endTime,
-        overtime_minutes: Number(overtimeMinutes || 0),
-        worker_count: selectedMembers.length,
-        vehicle_count: selectedDrivers.length,
-        driver_name: selectedDrivers.join(", "),
-        expressway_main: Number(expresswayMain || 0),
-        expressway_secondary: Number(expresswaySecondary || 0),
-        expressway_subcontract: Number(expresswaySubcontract || 0),
-        parking_main: Number(parkingMain || 0),
-        parking_secondary: Number(parkingSecondary || 0),
-        parking_subcontract: Number(parkingSubcontract || 0),
-        fuel_gasoline: Number(fuelGasoline || 0),
-        fuel_diesel: Number(fuelDiesel || 0),
-        members: selectedMembers.join(", "),
-        note,
-        user_id: user.id,
-      },
-    ]);
+    const { data: reportData, error: reportError } = await supabase
+  .from("daily_reports")
+  .insert([
+    {
+      worker_name: employeeName,
+      site_name: site,
+      contractor_name: contractorName,
+      work_description: work,
+      report_date: reportDate,
+      shift_type: shiftType,
+      start_time: startTime,
+      end_time: endTime,
+      overtime_minutes: Number(overtimeMinutes || 0),
+      worker_count: selectedMembers.reduce(
+        (sum, member) => sum + Number(member.labor || 0),
+        0
+      ),
+      vehicle_count: selectedDrivers.length,
+      driver_name: selectedDrivers.join(", "),
+      expressway_main: Number(expresswayMain || 0),
+      expressway_secondary: Number(expresswaySecondary || 0),
+      expressway_subcontract: Number(expresswaySubcontract || 0),
+      parking_main: Number(parkingMain || 0),
+      parking_secondary: Number(parkingSecondary || 0),
+      parking_subcontract: Number(parkingSubcontract || 0),
+      fuel_gasoline: Number(fuelGasoline || 0),
+      fuel_diesel: Number(fuelDiesel || 0),
+      members: selectedMembers.map((member) => member.name).join(", "),
+      member_details: selectedMembers,
+      note,
+      user_id: user.id,
+    },
+  ])
+  .select("id")
+  .single();
 
-    if (error) {
-      alert("保存失敗: " + error.message);
-      console.error(error);
-      return;
-    }
+if (reportError || !reportData) {
+  alert("保存失敗: " + (reportError?.message || "日報作成失敗"));
+  return;
+}
+
+const reportMembersPayload = selectedMembers.map((member) => ({
+  report_id: reportData.id,
+  employee_name: member.name,
+  labor: Number(member.labor || 0),
+  overtime: Number(member.overtime || 0),
+  is_driver: selectedDrivers.includes(member.name),
+}));
+
+const { error: membersError } = await supabase
+  .from("report_members")
+  .insert(reportMembersPayload);
+
+if (membersError) {
+  alert("メンバー保存失敗: " + membersError.message);
+  return;
+}
 
     alert("保存成功");
 
@@ -156,6 +184,8 @@ export default function NewReportPage() {
     <ReportForm
       reportDate={reportDate}
       setReportDate={setReportDate}
+      contractorName={contractorName}
+      setContractorName={setContractorName}
       site={site}
       setSite={setSite}
       work={work}

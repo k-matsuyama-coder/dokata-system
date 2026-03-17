@@ -14,6 +14,7 @@ export default function EditReportPage() {
   const id = params.id as string;
 
   const [reportDate, setReportDate] = useState("");
+  const [contractorName, setContractorName] = useState("");
   const [site, setSite] = useState("");
   const [work, setWork] = useState("");
   const [startTime, setStartTime] = useState("");
@@ -36,7 +37,9 @@ export default function EditReportPage() {
 
   const [memberInput, setMemberInput] = useState("");
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+  const [selectedMembers, setSelectedMembers] = useState<
+  { name: string; labor: string; overtime: string }[]
+>([]);
   const [siteSuggestions, setSiteSuggestions] = useState<string[]>([]);
   const [driverInput, setDriverInput] = useState("");
   const [selectedDrivers, setSelectedDrivers] = useState<string[]>([]);
@@ -66,7 +69,9 @@ export default function EditReportPage() {
       }
 
       setReportDate(report.report_date ?? "");
+      setContractorName(report.contractor_name ?? "");
       setSite(report.site_name ?? "");
+      
       setWork(report.work_description ?? "");
       setStartTime(report.start_time ?? "");
       setEndTime(report.end_time ?? "");
@@ -86,12 +91,17 @@ export default function EditReportPage() {
       setFuelDiesel(String(report.fuel_diesel ?? ""));
 
       setSelectedMembers(
-        report.members
-          ? String(report.members)
-              .split(",")
-              .map((v) => v.trim())
-              .filter(Boolean)
-          : []
+        Array.isArray(report.member_details)
+          ? report.member_details
+          : report.members
+            ? String(report.members)
+                .split(",")
+                .map((name) => ({
+                  name: name.trim(),
+                  labor: "1",
+                  overtime: String(Number(report.overtime_minutes || 0) / 60),
+                }))
+            : []
       );
 
       setSelectedDrivers(
@@ -153,14 +163,19 @@ export default function EditReportPage() {
       .from("daily_reports")
       .update({
         worker_name: employeeName,
+        contractor_name: contractorName,
         site_name: site,
+        contractor_name: contractorName,
         work_description: work,
         report_date: reportDate,
         shift_type: shiftType,
         start_time: startTime,
         end_time: endTime,
         overtime_minutes: Number(overtimeMinutes || 0),
-        worker_count: selectedMembers.length,
+        worker_count: selectedMembers.reduce(
+          (sum, member) => sum + Number(member.labor || 0),
+          0
+        ),
         vehicle_count: selectedDrivers.length,
         driver_name: selectedDrivers.join(", "),
         expressway_main: Number(expresswayMain || 0),
@@ -171,25 +186,54 @@ export default function EditReportPage() {
         parking_subcontract: Number(parkingSubcontract || 0),
         fuel_gasoline: Number(fuelGasoline || 0),
         fuel_diesel: Number(fuelDiesel || 0),
-        members: selectedMembers.join(", "),
+        members: selectedMembers.map((member) => member.name).join(", "),
+        member_details: selectedMembers,
         note,
       })
       .eq("id", id)
       .eq("user_id", user.id);
 
-    if (error) {
-      alert("更新失敗: " + error.message);
-      return;
-    }
-
-    alert("更新成功");
-    window.location.href = "/reports";
-  };
+      if (error) {
+        alert("更新失敗: " + error.message);
+        return;
+      }
+      
+      const { error: deleteMembersError } = await supabase
+        .from("report_members")
+        .delete()
+        .eq("report_id", id);
+      
+      if (deleteMembersError) {
+        alert("メンバー更新失敗: " + deleteMembersError.message);
+        return;
+      }
+      
+      const reportMembersPayload = selectedMembers.map((member) => ({
+        report_id: id,
+        employee_name: member.name,
+        labor: Number(member.labor || 0),
+        overtime: Number(member.overtime || 0),
+        is_driver: selectedDrivers.includes(member.name),
+      }));
+      
+      const { error: insertMembersError } = await supabase
+        .from("report_members")
+        .insert(reportMembersPayload);
+      
+      if (insertMembersError) {
+        alert("メンバー更新失敗: " + insertMembersError.message);
+        return;
+      }
+      
+      alert("更新成功");
+      window.location.href = "/reports";
 
   return (
     <ReportForm
       reportDate={reportDate}
       setReportDate={setReportDate}
+      contractorName={contractorName}
+      setContractorName={setContractorName}
       site={site}
       setSite={setSite}
       work={work}

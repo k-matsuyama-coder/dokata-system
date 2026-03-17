@@ -1,7 +1,15 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 type Employee = {
   name: string;
+};
+
+type MemberEntry = {
+  name: string;
+  labor: string;
+  overtime: string;
 };
 
 type ReportFormProps = {
@@ -9,6 +17,8 @@ type ReportFormProps = {
   setReportDate: (value: string) => void;
   site: string;
   setSite: (value: string) => void;
+  contractorName: string;
+  setcontractorName: (value: string) => void;
   work: string;
   setWork: (value: string) => void;
   startTime: string;
@@ -26,8 +36,8 @@ type ReportFormProps = {
   driverInput: string;
   setDriverInput: (value: string) => void;
 
-  selectedMembers: string[];
-  setSelectedMembers: (value: string[]) => void;
+  selectedMembers: MemberEntry[];
+  setSelectedMembers: (value: MemberEntry[]) => void;
   memberInput: string;
   setMemberInput: (value: string) => void;
 
@@ -66,6 +76,8 @@ export default function ReportForm(props: ReportFormProps) {
     setReportDate,
     site,
     setSite,
+    contractorName,
+    setcontractorName,
     work,
     setWork,
     startTime,
@@ -173,14 +185,35 @@ export default function ReportForm(props: ReportFormProps) {
   );
 
   const addMember = (name: string) => {
-    if (selectedMembers.includes(name)) return;
-    setSelectedMembers([...selectedMembers, name]);
+    if (selectedMembers.some((member) => member.name === name)) return;
+  
+    const overtimeHour = String(Number(overtimeMinutes || 0) / 60);
+  
+    setSelectedMembers([
+      ...selectedMembers,
+      {
+        name,
+        labor: "1",
+        overtime: overtimeHour,
+      },
+    ]);
+  
     setMemberInput("");
   };
-
+  
   const removeMember = (name: string) => {
-    setSelectedMembers(selectedMembers.filter((member) => member !== name));
+    setSelectedMembers(selectedMembers.filter((member) => member.name !== name));
   };
+
+  const totalLabor = selectedMembers.reduce(
+    (sum, member) => sum + Number(member.labor || 0),
+    0
+  );
+
+  const totalOvertime = selectedMembers.reduce(
+    (sum, member) => sum + Number(member.overtime || 0),
+    0
+  );
 
   const expresswayTotal =
   Number(expresswayMain || 0) +
@@ -191,6 +224,26 @@ const parkingTotal =
   Number(parkingMain || 0) +
   Number(parkingSecondary || 0) +
   Number(parkingSubcontract || 0);
+
+  useEffect(() => {
+    const overtimeHour = String(Number(overtimeMinutes || 0) / 60);
+  
+    setSelectedMembers(
+      selectedMembers.map((member) => ({
+        ...member,
+        overtime: overtimeHour,
+      }))
+    );
+  }, [overtimeMinutes]);
+
+  const [editingLaborName, setEditingLaborName] = useState<string | null>(null);
+
+  const {
+    ...
+    contractorName,
+    setContractorName,
+    ...
+  } = props;
 
   return (
     <div
@@ -214,6 +267,16 @@ const parkingTotal =
         <p>名前</p>
         <input value={employeeName} readOnly style={inputStyle} />
       </div>
+
+      <div style={sectionStyle}>
+  <p>元請</p>
+  <input
+    value={contractorName}
+    onChange={(e) => setContractorName(e.target.value)}
+    style={inputStyle}
+    placeholder="元請会社名を入力"
+  />
+</div>
 
       <div style={sectionStyle}>
         <p>現場名</p>
@@ -538,93 +601,161 @@ const parkingTotal =
 
       <div style={sectionStyle}>
         <p>稼働人数</p>
-        <input type="number" value={selectedMembers.length} readOnly style={inputStyle} />
+        <input type="number" value={totalLabor} readOnly style={inputStyle} />
       </div>
 
       <div style={sectionStyle}>
-        <p>メンバー</p>
-        <input
-          placeholder="メンバー名を入力"
-          value={memberInput}
-          onChange={(e) => setMemberInput(e.target.value)}
-          style={inputStyle}
-        />
+  <p>メンバー</p>
+  <input
+    placeholder="メンバー名を入力"
+    value={memberInput}
+    onChange={(e) => setMemberInput(e.target.value)}
+    style={inputStyle}
+  />
 
-        {memberInput && filteredEmployees.length > 0 && (
-          <div
-            style={{
-              border: "1px solid #ccc",
-              borderRadius: 8,
-              padding: 8,
-              marginTop: 8,
-              backgroundColor: "#fff",
-            }}
-          >
-            {filteredEmployees.slice(0, 5).map((employee) => (
-              <div
-                key={employee.name}
-                onClick={() => addMember(employee.name)}
-                style={{ padding: 8, cursor: "pointer" }}
-              >
-                {employee.name}
-              </div>
-            ))}
-          </div>
-        )}
+  {memberInput && filteredEmployees.length > 0 && (
+    <div
+      style={{
+        border: "1px solid #ccc",
+        borderRadius: 8,
+        padding: 8,
+        marginTop: 8,
+        backgroundColor: "#fff",
+      }}
+    >
+      {filteredEmployees.slice(0, 5).map((employee) => (
+        <div
+          key={employee.name}
+          onClick={() => addMember(employee.name)}
+          style={{ padding: 8, cursor: "pointer" }}
+        >
+          {employee.name}
+        </div>
+      ))}
+    </div>
+  )}
 
-        {selectedMembers.length > 0 && (
-          <div style={{ marginTop: 8 }}>
-            {selectedMembers.map((member) => (
-              <span
-                key={member}
-                style={{
-                  display: "inline-block",
-                  border: "1px solid #999",
-                  borderRadius: 12,
-                  padding: "6px 10px",
-                  marginRight: 8,
-                  marginBottom: 8,
-                  backgroundColor: "#fff",
-                }}
-              >
-                {member}
-                <button
-                  type="button"
-                  onClick={() => removeMember(member)}
-                  style={{ marginLeft: 8, cursor: "pointer" }}
-                >
-                  ×
-                </button>
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div style={sectionStyle}>
-        <p>備考</p>
-        <textarea
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          style={{ ...inputStyle, minHeight: 100 }}
-        />
-      </div>
-
-      <button
-        onClick={onSubmit}
+  {selectedMembers.length > 0 && (
+    <div style={{ marginTop: 12 }}>
+      <div
         style={{
-          width: "100%",
-          padding: 14,
-          fontSize: 16,
-          marginTop: 12,
-          border: "none",
-          borderRadius: 8,
-          backgroundColor: "#111",
-          color: "#fff",
+          display: "grid",
+          gridTemplateColumns: "1.5fr 1fr 1fr 48px",
+          gap: 8,
+          marginBottom: 8,
+          fontWeight: "bold",
+          fontSize: 14,
+          alignItems: "center",
         }}
       >
-        {submitLabel}
-      </button>
+        <div>メンバー名</div>
+        <div>人工</div>
+        <div>残業</div>
+        <div></div>
+      </div>
+
+      {selectedMembers.map((member) => (
+        <div
+          key={member.name}
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1.5fr 1fr 1fr 48px",
+            gap: 8,
+            marginBottom: 8,
+            alignItems: "center",
+          }}
+        >
+          <div>{member.name}</div>
+
+          <div>
+            {editingLaborName === member.name ? (
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {["0", "0.5", "1", "1.5"].map((val) => (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => {
+                      setSelectedMembers(
+                        selectedMembers.map((m) =>
+                          m.name === member.name ? { ...m, labor: val } : m
+                        )
+                      );
+                      setEditingLaborName(null);
+                    }}
+                    style={{
+                      padding: "8px 10px",
+                      borderRadius: 8,
+                      border:
+                        member.labor === val ? "2px solid #111" : "1px solid #ccc",
+                      backgroundColor: member.labor === val ? "#f3f3f3" : "#fff",
+                      cursor: "pointer",
+                      minWidth: 48,
+                      fontWeight: member.labor === val ? 700 : 500,
+                    }}
+                  >
+                    {val}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setEditingLaborName(member.name)}
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  borderRadius: 8,
+                  border: "1px solid #ccc",
+                  backgroundColor: "#fff",
+                  textAlign: "left",
+                  cursor: "pointer",
+                  fontSize: 16,
+                }}
+              >
+                {member.labor}
+              </button>
+            )}
+          </div>
+
+          <input
+            value={member.overtime}
+            readOnly
+            style={inputStyle}
+          />
+
+          <button
+            type="button"
+            onClick={() => removeMember(member.name)}
+            style={{
+              border: "none",
+              borderRadius: 8,
+              backgroundColor: "#d11a2a",
+              color: "#fff",
+              cursor: "pointer",
+              padding: "10px 0",
+            }}
+          >
+            ×
+          </button>
+        </div>
+      ))}
+
+      <div
+        style={{
+          marginTop: 12,
+          padding: 12,
+          border: "1px solid #ddd",
+          borderRadius: 8,
+          backgroundColor: "#fafafa",
+        }}
+      >
+        <div style={{ fontWeight: "bold", marginBottom: 6 }}>
+          人工合計：{totalLabor}
+        </div>
+        <div style={{ fontWeight: "bold" }}>
+          残業合計：{totalOvertime}
+        </div>
+      </div>
     </div>
-  );
-}
+  )}
+</div>

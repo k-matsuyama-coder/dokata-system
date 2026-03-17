@@ -148,6 +148,23 @@ export default function AdminPage() {
       <div style={{ marginBottom: 20 }}>
         <h1 style={{ margin: "0 0 12px 0" }}>管理者画面</h1>
 
+        <a
+  href="/admin/analytics/personal"
+  style={{
+    display: "inline-block",
+    textDecoration: "none",
+    backgroundColor: "#fff",
+    color: "#111",
+    padding: "12px 16px",
+    borderRadius: 8,
+    border: "1px solid #ccc",
+    fontWeight: 600,
+    fontSize: 14,
+  }}
+>
+  個人別月次集計
+</a>
+
         <div
           style={{
             display: "flex",
