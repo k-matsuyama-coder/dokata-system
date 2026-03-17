@@ -165,6 +165,22 @@ export default function AdminPage() {
   個人別月次集計
 </a>
 
+<a
+  href="/reports/summary"
+  style={{
+    textDecoration: "none",
+    backgroundColor: "#fff",
+    color: "#111",
+    padding: "10px 14px",
+    borderRadius: 8,
+    fontSize: 14,
+    fontWeight: 600,
+    border: "1px solid #ccc",
+  }}
+>
+  個人別集計
+</a>
+
         <div
           style={{
             display: "flex",
