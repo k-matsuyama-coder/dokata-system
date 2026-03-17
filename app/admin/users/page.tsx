@@ -12,6 +12,7 @@ type Employee = {
 export default function AdminUsersPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchKeyword, setSearchKeyword] = useState("");
 
   useEffect(() => {
     const fetchEmployees = async () => {
@@ -77,6 +78,10 @@ export default function AdminUsersPage() {
     const ok = window.confirm(`${name} を削除しますか？`);
     if (!ok) return;
 
+    const filteredEmployees = employees.filter((employee) =>
+  employee.name.toLowerCase().includes(searchKeyword.toLowerCase())
+);
+
     const res = await fetch("/api/admin/delete-user", {
       method: "POST",
       headers: {
@@ -110,6 +115,23 @@ export default function AdminUsersPage() {
       >
         <h1 style={{ margin: 0 }}>社員一覧</h1>
 
+        <div style={{ marginTop: 16, marginBottom: 16 }}>
+  <input
+    type="text"
+    placeholder="名前で検索"
+    value={searchKeyword}
+    onChange={(e) => setSearchKeyword(e.target.value)}
+    style={{
+      width: "100%",
+      padding: 12,
+      fontSize: 16,
+      border: "1px solid #ccc",
+      borderRadius: 8,
+      boxSizing: "border-box",
+    }}
+  />
+</div>
+
         <a
           href="/admin/users/new"
           style={{
@@ -128,11 +150,11 @@ export default function AdminUsersPage() {
 
       {loading ? (
         <p>読み込み中...</p>
-      ) : employees.length === 0 ? (
-        <p>社員がいません</p>
-      ) : (
-        <div style={{ display: "grid", gap: 12 }}>
-          {employees.map((employee) => (
+        ) : filteredEmployees.length === 0 ? (
+          <p>該当する社員がいません</p>
+        ) : (
+          <div style={{ display: "grid", gap: 12 }}>
+            {filteredEmployees.map((employee) => (
             <div
               key={employee.id}
               style={{
