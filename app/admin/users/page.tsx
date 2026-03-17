@@ -155,7 +155,8 @@ export default function AdminUsersPage() {
                 padding: 16,
                 backgroundColor: "#fff",
                 display: "flex",
-                flexDirection: "column",
+                justifyContent: "space-between",
+                alignItems: "center",
                 gap: 12,
               }}
             >
@@ -193,23 +194,22 @@ export default function AdminUsersPage() {
                 </select>
               </div>
 
-              <button
-                type="button"
-                onClick={() => handleDelete(employee.id, employee.name)}
-                style={{
-                  width: "100%",
-                  padding: "12px 14px",
-                  border: "none",
-                  borderRadius: 8,
-                  backgroundColor: "#d11a2a",
-                  color: "#fff",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  fontSize: 16,
-                }}
+              <<button
+              type="button"
+              onClick={() => handleDelete(employee.id, employee.name)}
+              style={{
+                padding: "6px 10px",
+                border: "none",
+                borderRadius: 6,
+                backgroundColor: "#d11a2a",
+                color: "#fff",
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
               >
-                削除
-              </button>
+                🗑
+                </button>
             </div>
           ))}
         </div>
