@@ -27,9 +27,16 @@ type Report = {
   members: string | null;
 };
 
+type LicenseAlert = {
+  employeeName: string;
+  licenseName: string;
+  expiryDate: string;
+  diffDays: number;
+};
+
 export default function AdminPage() {
   const [reports, setReports] = useState<Report[]>([]);
-  const [licenseAlerts, setLicenseAlerts] = useState<any[]>([]);
+  const [licenseAlerts, setLicenseAlerts] = useState<LicenseAlert[]>([]);
 
   useEffect(() => {
     const fetchReports = async () => {
@@ -67,158 +74,263 @@ export default function AdminPage() {
       }
 
       setReports(data ?? []);
+
       const { data: licenses } = await supabase
-  .from("licenses")
-  .select("employee_id, license_name, expiry_date");
+        .from("licenses")
+        .select("employee_id, license_name, expiry_date");
 
-const { data: employees } = await supabase
-  .from("employees")
-  .select("id, name");
+      const { data: employees } = await supabase
+        .from("employees")
+        .select("id, name");
 
-if (licenses && employees) {
-  const employeeMap = new Map(
-    employees.map((employee) => [employee.id, employee.name])
-  );
+      if (licenses && employees) {
+        const employeeMap = new Map(
+          employees.map((employee) => [employee.id, employee.name])
+        );
 
-  const today = new Date();
+        const today = new Date();
 
-  const alerts = licenses
-    .map((license) => {
-      if (!license.expiry_date) return null;
+        const alerts = licenses
+          .map((license) => {
+            if (!license.expiry_date) return null;
 
-      const expiry = new Date(license.expiry_date);
-      const diffTime = expiry.getTime() - today.getTime();
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            const expiry = new Date(license.expiry_date);
+            const diffTime = expiry.getTime() - today.getTime();
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-      if (diffDays <= 30) {
-        return {
-          employeeName: employeeMap.get(license.employee_id) ?? "不明",
-          licenseName: license.license_name,
-          expiryDate: license.expiry_date,
-          diffDays,
-        };
+            if (diffDays <= 30) {
+              return {
+                employeeName: employeeMap.get(license.employee_id) ?? "不明",
+                licenseName: license.license_name,
+                expiryDate: license.expiry_date,
+                diffDays,
+              };
+            }
+
+            return null;
+          })
+          .filter(Boolean) as LicenseAlert[];
+
+        setLicenseAlerts(alerts);
       }
-
-      return null;
-    })
-    .filter(Boolean);
-
-  setLicenseAlerts(alerts);
-}
     };
 
     fetchReports();
   }, []);
 
+  const cardStyle = {
+    border: "1px solid #ddd",
+    borderRadius: 12,
+    padding: 16,
+    backgroundColor: "#fff",
+  } as const;
+
+  const labelStyle = {
+    margin: "0 0 6px 0",
+    fontSize: 14,
+    color: "#666",
+  } as const;
+
+  const valueStyle = {
+    margin: 0,
+    fontSize: 15,
+    color: "#111",
+  } as const;
+
   return (
-    <div style={{ padding: 40 }}>
-  <div style={{ marginBottom: 20 }}>
-    <h1 style={{ marginBottom: 12 }}>管理者画面</h1>
+    <div
+      style={{
+        maxWidth: 820,
+        margin: "0 auto",
+        padding: 16,
+      }}
+    >
+      <div style={{ marginBottom: 20 }}>
+        <h1 style={{ margin: "0 0 12px 0" }}>管理者画面</h1>
 
-    <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-      <a
-        href="/admin/users"
-        style={{
-          display: "inline-block",
-          textDecoration: "none",
-          backgroundColor: "#fff",
-          color: "#111",
-          padding: "12px 16px",
-          borderRadius: 8,
-          border: "1px solid #ccc",
-          fontWeight: 600,
-        }}
-      >
-        社員一覧
-      </a>
+        <div
+          style={{
+            display: "flex",
+            gap: 10,
+            flexWrap: "wrap",
+          }}
+        >
+          <a
+            href="/admin/users"
+            style={{
+              display: "inline-block",
+              textDecoration: "none",
+              backgroundColor: "#fff",
+              color: "#111",
+              padding: "12px 16px",
+              borderRadius: 8,
+              border: "1px solid #ccc",
+              fontWeight: 600,
+              fontSize: 14,
+            }}
+          >
+            社員一覧
+          </a>
 
-      <a
-        href="/admin/users/new"
-        style={{
-          display: "inline-block",
-          textDecoration: "none",
-          backgroundColor: "#111",
-          color: "#fff",
-          padding: "12px 16px",
-          borderRadius: 8,
-          fontWeight: 600,
-        }}
-      >
-        ＋ 社員追加
-      </a>
-    </div>
-  </div>
+          <a
+            href="/admin/users/new"
+            style={{
+              display: "inline-block",
+              textDecoration: "none",
+              backgroundColor: "#111",
+              color: "#fff",
+              padding: "12px 16px",
+              borderRadius: 8,
+              fontWeight: 600,
+              fontSize: 14,
+            }}
+          >
+            ＋ 社員追加
+          </a>
+        </div>
+      </div>
 
-      <h2 style={{ marginTop: 20 }}>免許期限アラート</h2>
-      {licenseAlerts.length === 0 ? (
-  <p>期限が近い免許はありません</p>
-) : (
-  <div style={{ display: "grid", gap: 12, marginTop: 12, marginBottom: 24 }}>
-    {licenseAlerts.map((alert, index) => (
-      <div
-        key={index}
-        style={{
-          border: "1px solid #ddd",
-          borderRadius: 10,
-          padding: 14,
-          backgroundColor: alert.diffDays < 0 ? "#ffe5e5" : "#fff3cd",
-        }}
-      >
-        <p style={{ margin: 0, fontWeight: "bold" }}>{alert.employeeName}</p>
-        <p style={{ margin: "6px 0 0 0" }}>免許: {alert.licenseName}</p>
-        <p style={{ margin: "6px 0 0 0" }}>期限: {alert.expiryDate}</p>
+      <div style={{ marginBottom: 24 }}>
+        <h2 style={{ margin: "0 0 12px 0" }}>免許期限アラート</h2>
 
-        {alert.diffDays < 0 ? (
-          <p style={{ margin: "6px 0 0 0", color: "red", fontWeight: "bold" }}>
-            ⚠️ 期限切れ
-          </p>
+        {licenseAlerts.length === 0 ? (
+          <div style={cardStyle}>
+            <p style={{ margin: 0 }}>期限が近い免許はありません</p>
+          </div>
         ) : (
-          <p style={{ margin: "6px 0 0 0", color: "#b26a00", fontWeight: "bold" }}>
-            ⚠️ あと{alert.diffDays}日
-          </p>
+          <div style={{ display: "grid", gap: 12 }}>
+            {licenseAlerts.map((alert, index) => (
+              <div
+                key={index}
+                style={{
+                  ...cardStyle,
+                  backgroundColor: alert.diffDays < 0 ? "#ffe5e5" : "#fff3cd",
+                }}
+              >
+                <p style={{ margin: 0, fontWeight: "bold", fontSize: 16 }}>
+                  {alert.employeeName}
+                </p>
+                <p style={{ margin: "8px 0 0 0" }}>免許: {alert.licenseName}</p>
+                <p style={{ margin: "6px 0 0 0" }}>期限: {alert.expiryDate}</p>
+
+                {alert.diffDays < 0 ? (
+                  <p
+                    style={{
+                      margin: "8px 0 0 0",
+                      color: "red",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    ⚠️ 期限切れ
+                  </p>
+                ) : (
+                  <p
+                    style={{
+                      margin: "8px 0 0 0",
+                      color: "#b26a00",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    ⚠️ あと{alert.diffDays}日
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
         )}
       </div>
-    ))}
-  </div>
-)}
 
-      {reports.length === 0 ? (
-        <p>データがありません</p>
-      ) : (
-        <div>
-          {reports.map((report) => (
-            <div
-              key={report.id}
-              style={{
-                border: "1px solid #ccc",
-                padding: 16,
-                marginBottom: 12,
-              }}
-            >
-              <p>日付: {report.report_date}</p>
-              <p>名前: {report.worker_name}</p>
-              <p>現場名: {report.site_name}</p>
-              <p>区分: {report.shift_type === "day" ? "昼" : "夜"}</p>
-              <p>開始時間: {report.start_time}</p>
-              <p>終了時間: {report.end_time}</p>
-              <p>稼働人数: {report.worker_count}</p>
-              <p>車両台数: {report.vehicle_count}</p>
-              <p>車両運転手: {report.driver_name}</p>
-              <p>高速料金（本体）: {report.expressway_main}</p>
-              <p>高速料金（二次受け）: {report.expressway_secondary}</p>
-              <p>高速料金（下請け）: {report.expressway_subcontract}</p>
-              <p>駐車場料金（本体）: {report.parking_main}</p>
-              <p>駐車場料金（二次受け）: {report.parking_secondary}</p>
-              <p>駐車場料金（下請け）: {report.parking_subcontract}</p>
-              <p>燃料代（ガソリン）: {report.fuel_gasoline}</p>
-              <p>燃料代（軽油）: {report.fuel_diesel}</p>
-              <p>メンバー: {report.members}</p>
-              <p>作業内容: {report.work_description}</p>
-              <p>備考: {report.note}</p>
-            </div>
-          ))}
-        </div>
-      )}
+      <div>
+        <h2 style={{ margin: "0 0 12px 0" }}>日報一覧</h2>
+
+        {reports.length === 0 ? (
+          <div style={cardStyle}>
+            <p style={{ margin: 0 }}>データがありません</p>
+          </div>
+        ) : (
+          <div style={{ display: "grid", gap: 12 }}>
+            {reports.map((report) => (
+              <div key={report.id} style={cardStyle}>
+                <div style={{ marginBottom: 12 }}>
+                  <p style={labelStyle}>日付</p>
+                  <p style={valueStyle}>{report.report_date}</p>
+                </div>
+
+                <div style={{ marginBottom: 12 }}>
+                  <p style={labelStyle}>名前</p>
+                  <p style={valueStyle}>{report.worker_name}</p>
+                </div>
+
+                <div style={{ marginBottom: 12 }}>
+                  <p style={labelStyle}>現場名</p>
+                  <p style={valueStyle}>{report.site_name}</p>
+                </div>
+
+                <div style={{ marginBottom: 12 }}>
+                  <p style={labelStyle}>区分</p>
+                  <p style={valueStyle}>{report.shift_type === "day" ? "昼" : "夜"}</p>
+                </div>
+
+                <div style={{ marginBottom: 12 }}>
+                  <p style={labelStyle}>開始時間 / 終了時間</p>
+                  <p style={valueStyle}>
+                    {report.start_time} 〜 {report.end_time}
+                  </p>
+                </div>
+
+                <div style={{ marginBottom: 12 }}>
+                  <p style={labelStyle}>稼働人数 / 車両台数</p>
+                  <p style={valueStyle}>
+                    {report.worker_count}人 / {report.vehicle_count}台
+                  </p>
+                </div>
+
+                <div style={{ marginBottom: 12 }}>
+                  <p style={labelStyle}>車両運転手</p>
+                  <p style={valueStyle}>{report.driver_name || "-"}</p>
+                </div>
+
+                <div style={{ marginBottom: 12 }}>
+                  <p style={labelStyle}>高速料金</p>
+                  <p style={valueStyle}>
+                    本体: {report.expressway_main} / 二次受け: {report.expressway_secondary} / 下請け: {report.expressway_subcontract}
+                  </p>
+                </div>
+
+                <div style={{ marginBottom: 12 }}>
+                  <p style={labelStyle}>駐車場料金</p>
+                  <p style={valueStyle}>
+                    本体: {report.parking_main} / 二次受け: {report.parking_secondary} / 下請け: {report.parking_subcontract}
+                  </p>
+                </div>
+
+                <div style={{ marginBottom: 12 }}>
+                  <p style={labelStyle}>燃料代</p>
+                  <p style={valueStyle}>
+                    ガソリン: {report.fuel_gasoline} / 軽油: {report.fuel_diesel}
+                  </p>
+                </div>
+
+                <div style={{ marginBottom: 12 }}>
+                  <p style={labelStyle}>メンバー</p>
+                  <p style={valueStyle}>{report.members || "-"}</p>
+                </div>
+
+                <div style={{ marginBottom: 12 }}>
+                  <p style={labelStyle}>作業内容</p>
+                  <p style={valueStyle}>{report.work_description || "-"}</p>
+                </div>
+
+                <div>
+                  <p style={labelStyle}>備考</p>
+                  <p style={valueStyle}>{report.note || "-"}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
+}
 }

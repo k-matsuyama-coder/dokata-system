@@ -194,23 +194,23 @@ export default function AdminUsersPage() {
                 </select>
               </div>
 
-              <<button
-              type="button"
-              onClick={() => handleDelete(employee.id, employee.name)}
-              style={{
-                padding: "6px 10px",
-                border: "none",
-                borderRadius: 6,
-                backgroundColor: "#d11a2a",
-                color: "#fff",
-                fontSize: 12,
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
+              <button
+                type="button"
+                onClick={() => handleDelete(employee.id, employee.name)}
+                style={{
+                  padding: "6px 10px",
+                  border: "none",
+                  borderRadius: 6,
+                  backgroundColor: "#d11a2a",
+                  color: "#fff",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
               >
                 🗑
-                </button>
-            </div>
+              </button>
+             </div>
           ))}
         </div>
       )}
