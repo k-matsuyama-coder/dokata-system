@@ -751,6 +751,7 @@ const parkingTotal =
       </div>
     </div>
   )}
+  </div>
 
   <div style={sectionStyle}>
     <p>備考</p>
