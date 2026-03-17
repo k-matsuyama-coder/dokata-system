@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import ReportSummaryCard from "@/components/ReportSummaryCard";
 
 type Report = {
   id: string;
@@ -124,18 +125,6 @@ export default function AdminPage() {
     borderRadius: 12,
     padding: 16,
     backgroundColor: "#fff",
-  } as const;
-
-  const labelStyle = {
-    margin: "0 0 6px 0",
-    fontSize: 14,
-    color: "#666",
-  } as const;
-
-  const valueStyle = {
-    margin: 0,
-    fontSize: 15,
-    color: "#111",
   } as const;
 
   const filteredReports = reports.filter((report) => {
@@ -272,93 +261,16 @@ export default function AdminPage() {
 </div>
 
 {filteredReports.length === 0 ? (
-          <div style={cardStyle}>
-            <p style={{ margin: 0 }}>データがありません</p>
-          </div>
-        ) : (
-          <div style={{ display: "grid", gap: 12 }}>
-            {filteredReports.map((report) => (
-              <div key={report.id} style={cardStyle}>
-                <div style={{ marginBottom: 12 }}>
-                  <p style={labelStyle}>日付</p>
-                  <p style={valueStyle}>{report.report_date}</p>
-                </div>
-
-                <div style={{ marginBottom: 12 }}>
-                  <p style={labelStyle}>名前</p>
-                  <p style={valueStyle}>{report.worker_name}</p>
-                </div>
-
-                <div style={{ marginBottom: 12 }}>
-                  <p style={labelStyle}>現場名</p>
-                  <p style={valueStyle}>{report.site_name}</p>
-                </div>
-
-                <div style={{ marginBottom: 12 }}>
-                  <p style={labelStyle}>区分</p>
-                  <p style={valueStyle}>
-                    {report.shift_type === "day" ? "昼" : "夜"}
-                  </p>
-                </div>
-
-                <div style={{ marginBottom: 12 }}>
-                  <p style={labelStyle}>開始時間 / 終了時間</p>
-                  <p style={valueStyle}>
-                    {report.start_time} 〜 {report.end_time}
-                  </p>
-                </div>
-
-                <div style={{ marginBottom: 12 }}>
-                  <p style={labelStyle}>稼働人数 / 車両台数</p>
-                  <p style={valueStyle}>
-                    {report.worker_count}人 / {report.vehicle_count}台
-                  </p>
-                </div>
-
-                <div style={{ marginBottom: 12 }}>
-                  <p style={labelStyle}>車両運転手</p>
-                  <p style={valueStyle}>{report.driver_name || "-"}</p>
-                </div>
-
-                <div style={{ marginBottom: 12 }}>
-                  <p style={labelStyle}>高速料金</p>
-                  <p style={valueStyle}>
-                    本体: {report.expressway_main} / 二次受け: {report.expressway_secondary} / 下請け: {report.expressway_subcontract}
-                  </p>
-                </div>
-
-                <div style={{ marginBottom: 12 }}>
-                  <p style={labelStyle}>駐車場料金</p>
-                  <p style={valueStyle}>
-                    本体: {report.parking_main} / 二次受け: {report.parking_secondary} / 下請け: {report.parking_subcontract}
-                  </p>
-                </div>
-
-                <div style={{ marginBottom: 12 }}>
-                  <p style={labelStyle}>燃料代</p>
-                  <p style={valueStyle}>
-                    ガソリン: {report.fuel_gasoline} / 軽油: {report.fuel_diesel}
-                  </p>
-                </div>
-
-                <div style={{ marginBottom: 12 }}>
-                  <p style={labelStyle}>メンバー</p>
-                  <p style={valueStyle}>{report.members || "-"}</p>
-                </div>
-
-                <div style={{ marginBottom: 12 }}>
-                  <p style={labelStyle}>作業内容</p>
-                  <p style={valueStyle}>{report.work_description || "-"}</p>
-                </div>
-
-                <div>
-                  <p style={labelStyle}>備考</p>
-                  <p style={valueStyle}>{report.note || "-"}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+  <div style={cardStyle}>
+    <p style={{ margin: 0 }}>データがありません</p>
+  </div>
+) : (
+  <div style={{ display: "grid", gap: 12 }}>
+    {filteredReports.map((report) => (
+      <ReportSummaryCard key={report.id} report={report} />
+    ))}
+  </div>
+)}
       </div>
     </div>
   );
