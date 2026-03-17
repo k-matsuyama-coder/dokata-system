@@ -11,13 +11,21 @@ type Certification = {
   card_back_url: string | null;
 };
 
+type License = {
+  license_name: string | null;
+  issue_date: string | null;
+  expiry_date: string | null;
+  card_front_url: string | null;
+  card_back_url: string | null;
+};
+
 export default function ProfilePage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("");
   const [certifications, setCertifications] = useState<Certification[]>([]);
   const [searchKeyword, setSearchKeyword] = useState("");
-  const [license, setLicense] = useState<any | null>(null);
+  const [license, setLicense] = useState<License | null>(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -49,18 +57,18 @@ export default function ProfilePage() {
 
         if (certs) {
           setCertifications(certs);
+        }
 
-          const { data: licenseData } = await supabase
-  .from("licenses")
-  .select("license_name, issue_date, expiry_date, card_front_url, card_back_url")
-  .eq("employee_id", employee.id)
-  .order("created_at", { ascending: false })
-  .limit(1)
-  .maybeSingle();
+        const { data: licenseData } = await supabase
+          .from("licenses")
+          .select("license_name, issue_date, expiry_date, card_front_url, card_back_url")
+          .eq("employee_id", employee.id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
-if (licenseData) {
-  setLicense(licenseData);
-}
+        if (licenseData) {
+          setLicense(licenseData);
         }
       }
     };
@@ -97,57 +105,106 @@ if (licenseData) {
         <p style={{ margin: "0 0 8px 0" }}>名前: {name}</p>
         <p style={{ margin: "0 0 8px 0" }}>メールアドレス: {email}</p>
         <p style={{ margin: 0 }}>権限: {role}</p>
-        
+
         <div style={{ marginTop: 16 }}>
-  <a
-    href="/profile/password"
-    style={{
-      display: "inline-block",
-      textDecoration: "none",
-      backgroundColor: "#111",
-      color: "#fff",
-      padding: "10px 14px",
-      borderRadius: 8,
-      fontSize: 14,
-      fontWeight: 600,
-    }}
-  >
-    パスワード変更
-  </a>
-</div>
+          <a
+            href="/profile/password"
+            style={{
+              display: "inline-block",
+              textDecoration: "none",
+              backgroundColor: "#111",
+              color: "#fff",
+              padding: "10px 14px",
+              borderRadius: 8,
+              fontSize: 14,
+              fontWeight: 600,
+            }}
+          >
+            パスワード変更
+          </a>
+        </div>
       </div>
 
-      <h2 style={{ marginTop: 20 }}>免許</h2>
-      {license ? (
-  <div
-    style={{
-      border: "1px solid #ccc",
-      borderRadius: 8,
-      padding: 12,
-      marginTop: 8,
-      marginBottom: 20,
-    }}
-  >
-    <p>免許名: {license.license_name}</p>
-    <p>取得日: {license.issue_date}</p>
-    <p>期限: {license.expiry_date}</p>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: 12,
+          flexWrap: "wrap",
+          marginTop: 20,
+          marginBottom: 8,
+        }}
+      >
+        <h2 style={{ margin: 0 }}>免許</h2>
 
-    <div style={{ display: "flex", gap: 10, marginTop: 10, flexWrap: "wrap" }}>
-      <img
-        src={license.card_front_url}
-        alt="免許証表"
-        style={{ width: 120, borderRadius: 8, border: "1px solid #ccc" }}
-      />
-      <img
-        src={license.card_back_url}
-        alt="免許証裏"
-        style={{ width: 120, borderRadius: 8, border: "1px solid #ccc" }}
-      />
-    </div>
-  </div>
-) : (
-  <p>免許は登録されていません</p>
-)}
+        <a
+          href="/profile/license"
+          style={{
+            textDecoration: "none",
+            backgroundColor: "#111",
+            color: "#fff",
+            padding: "10px 14px",
+            borderRadius: 8,
+            fontSize: 14,
+          }}
+        >
+          免許を追加
+        </a>
+      </div>
+
+      {license ? (
+        <div
+          style={{
+            border: "1px solid #ccc",
+            borderRadius: 8,
+            padding: 12,
+            marginTop: 8,
+            marginBottom: 20,
+            backgroundColor: "#fff",
+          }}
+        >
+          <p>免許名: {license.license_name}</p>
+          <p>取得日: {license.issue_date}</p>
+          <p>期限: {license.expiry_date}</p>
+
+          <div style={{ display: "flex", gap: 10, marginTop: 10, flexWrap: "wrap" }}>
+            {license.card_front_url ? (
+              <img
+                src={license.card_front_url}
+                alt="免許証表"
+                style={{ width: 120, borderRadius: 8, border: "1px solid #ccc" }}
+              />
+            ) : null}
+
+            {license.card_back_url ? (
+              <img
+                src={license.card_back_url}
+                alt="免許証裏"
+                style={{ width: 120, borderRadius: 8, border: "1px solid #ccc" }}
+              />
+            ) : null}
+          </div>
+        </div>
+      ) : (
+        <div style={{ marginBottom: 20 }}>
+          <p>免許は登録されていません</p>
+          <a
+            href="/profile/license"
+            style={{
+              display: "inline-block",
+              textDecoration: "none",
+              backgroundColor: "#111",
+              color: "#fff",
+              padding: "10px 14px",
+              borderRadius: 8,
+              fontSize: 14,
+            }}
+          >
+            免許を登録する
+          </a>
+        </div>
+      )}
 
       <div
         style={{

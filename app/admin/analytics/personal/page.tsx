@@ -133,7 +133,7 @@ export default function PersonalAnalyticsPage() {
 
   return (
     <div style={{ maxWidth: 1000, margin: "0 auto", padding: 16 }}>
-      <h1 style={{ marginBottom: 16 }}>個人別月次集計</h1>
+      <h1 style={{ margin: 0 }}>社員別集計一覧</h1>
 
       <div style={{ marginBottom: 16 }}>
         <p style={{ marginBottom: 8 }}>対象月</p>
