@@ -271,13 +271,13 @@ export default function AdminPage() {
   />
 </div>
 
-        {reports.length === 0 ? (
+{filteredReports.length === 0 ? (
           <div style={cardStyle}>
             <p style={{ margin: 0 }}>データがありません</p>
           </div>
         ) : (
           <div style={{ display: "grid", gap: 12 }}>
-            filteredReports.map((report) => (
+            {filteredReports.map((report) => (
               <div key={report.id} style={cardStyle}>
                 <div style={{ marginBottom: 12 }}>
                   <p style={labelStyle}>日付</p>
@@ -296,7 +296,9 @@ export default function AdminPage() {
 
                 <div style={{ marginBottom: 12 }}>
                   <p style={labelStyle}>区分</p>
-                  <p style={valueStyle}>{report.shift_type === "day" ? "昼" : "夜"}</p>
+                  <p style={valueStyle}>
+                    {report.shift_type === "day" ? "昼" : "夜"}
+                  </p>
                 </div>
 
                 <div style={{ marginBottom: 12 }}>
