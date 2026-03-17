@@ -182,6 +182,16 @@ export default function ReportForm(props: ReportFormProps) {
     setSelectedMembers(selectedMembers.filter((member) => member !== name));
   };
 
+  const expresswayTotal =
+  Number(expresswayMain || 0) +
+  Number(expresswaySecondary || 0) +
+  Number(expresswaySubcontract || 0);
+
+const parkingTotal =
+  Number(parkingMain || 0) +
+  Number(parkingSecondary || 0) +
+  Number(parkingSubcontract || 0);
+
   return (
     <div
       style={{
@@ -389,64 +399,112 @@ export default function ReportForm(props: ReportFormProps) {
       </div>
 
       <div style={sectionStyle}>
-        <p>高速料金（本体）</p>
-        <input
-          type="number"
-          value={expresswayMain}
-          onChange={(e) => setExpresswayMain(e.target.value)}
-          style={inputStyle}
-        />
-      </div>
+  <div
+    style={{
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 8,
+      flexWrap: "wrap",
+      gap: 8,
+    }}
+  >
+    <p style={{ margin: 0, fontWeight: "bold" }}>高速料金</p>
+    <p style={{ margin: 0, fontWeight: "bold" }}>合計 ¥{expresswayTotal}</p>
+  </div>
 
-      <div style={sectionStyle}>
-        <p>高速料金（二次受け）</p>
-        <input
-          type="number"
-          value={expresswaySecondary}
-          onChange={(e) => setExpresswaySecondary(e.target.value)}
-          style={inputStyle}
-        />
-      </div>
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns: "1fr",
+      gap: 12,
+    }}
+  >
+    <div>
+      <p style={{ marginBottom: 6 }}>本体</p>
+      <input
+        type="number"
+        value={expresswayMain}
+        onChange={(e) => setExpresswayMain(e.target.value)}
+        style={inputStyle}
+      />
+    </div>
 
-      <div style={sectionStyle}>
-        <p>高速料金（下請け）</p>
-        <input
-          type="number"
-          value={expresswaySubcontract}
-          onChange={(e) => setExpresswaySubcontract(e.target.value)}
-          style={inputStyle}
-        />
-      </div>
+    <div>
+      <p style={{ marginBottom: 6 }}>2次請け</p>
+      <input
+        type="number"
+        value={expresswaySecondary}
+        onChange={(e) => setExpresswaySecondary(e.target.value)}
+        style={inputStyle}
+      />
+    </div>
 
-      <div style={sectionStyle}>
-        <p>駐車場料金（本体）</p>
-        <input
-          type="number"
-          value={parkingMain}
-          onChange={(e) => setParkingMain(e.target.value)}
-          style={inputStyle}
-        />
-      </div>
+    <div>
+      <p style={{ marginBottom: 6 }}>下請け</p>
+      <input
+        type="number"
+        value={expresswaySubcontract}
+        onChange={(e) => setExpresswaySubcontract(e.target.value)}
+        style={inputStyle}
+      />
+    </div>
+  </div>
+</div>
 
-      <div style={sectionStyle}>
-        <p>駐車場料金（二次受け）</p>
-        <input
-          type="number"
-          value={parkingSecondary}
-          onChange={(e) => setParkingSecondary(e.target.value)}
-          style={inputStyle}
-        />
-      </div>
+<div style={sectionStyle}>
+  <div
+    style={{
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 8,
+      flexWrap: "wrap",
+      gap: 8,
+    }}
+  >
+    <p style={{ margin: 0, fontWeight: "bold" }}>駐車場料金</p>
+    <p style={{ margin: 0, fontWeight: "bold" }}>合計 ¥{parkingTotal}</p>
+  </div>
 
-      <div style={sectionStyle}>
-        <p>駐車場料金（下請け）</p>
-        <input
-          type="number"
-          value={parkingSubcontract}
-          onChange={(e) => setParkingSubcontract(e.target.value)}
-          style={inputStyle}
-        />
-      </div>
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns: "1fr",
+      gap: 12,
+    }}
+  >
+    <div>
+      <p style={{ marginBottom: 6 }}>本体</p>
+      <input
+        type="number"
+        value={parkingMain}
+        onChange={(e) => setParkingMain(e.target.value)}
+        style={inputStyle}
+      />
+    </div>
+
+    <div>
+      <p style={{ marginBottom: 6 }}>2次請け</p>
+      <input
+        type="number"
+        value={parkingSecondary}
+        onChange={(e) => setParkingSecondary(e.target.value)}
+        style={inputStyle}
+      />
+    </div>
+
+    <div>
+      <p style={{ marginBottom: 6 }}>下請け</p>
+      <input
+        type="number"
+        value={parkingSubcontract}
+        onChange={(e) => setParkingSubcontract(e.target.value)}
+        style={inputStyle}
+      />
+    </div>
+  </div>
+</div>
 
       <div style={sectionStyle}>
         <p>燃料代（ガソリン）</p>
