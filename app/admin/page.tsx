@@ -37,6 +37,7 @@ type LicenseAlert = {
 export default function AdminPage() {
   const [reports, setReports] = useState<Report[]>([]);
   const [licenseAlerts, setLicenseAlerts] = useState<LicenseAlert[]>([]);
+  const [searchKeyword, setSearchKeyword] = useState("");
 
   useEffect(() => {
     const fetchReports = async () => {
@@ -136,6 +137,16 @@ export default function AdminPage() {
     fontSize: 15,
     color: "#111",
   } as const;
+
+  const filteredReports = reports.filter((report) => {
+    const keyword = searchKeyword.toLowerCase();
+  
+    return (
+      report.worker_name?.toLowerCase().includes(keyword) ||
+      report.site_name?.toLowerCase().includes(keyword) ||
+      report.report_date?.includes(keyword)
+    );
+  });
 
   return (
     <div
@@ -243,13 +254,30 @@ export default function AdminPage() {
       <div>
         <h2 style={{ margin: "0 0 12px 0" }}>日報一覧</h2>
 
+        <div style={{ marginBottom: 16 }}>
+  <input
+    type="text"
+    placeholder="名前・現場・日付で検索"
+    value={searchKeyword}
+    onChange={(e) => setSearchKeyword(e.target.value)}
+    style={{
+      width: "100%",
+      padding: 12,
+      fontSize: 16,
+      border: "1px solid #ccc",
+      borderRadius: 8,
+      boxSizing: "border-box",
+    }}
+  />
+</div>
+
         {reports.length === 0 ? (
           <div style={cardStyle}>
             <p style={{ margin: 0 }}>データがありません</p>
           </div>
         ) : (
           <div style={{ display: "grid", gap: 12 }}>
-            {reports.map((report) => (
+            filteredReports.map((report) => (
               <div key={report.id} style={cardStyle}>
                 <div style={{ marginBottom: 12 }}>
                   <p style={labelStyle}>日付</p>
