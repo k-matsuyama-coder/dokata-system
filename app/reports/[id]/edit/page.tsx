@@ -165,7 +165,6 @@ export default function EditReportPage() {
         worker_name: employeeName,
         contractor_name: contractorName,
         site_name: site,
-        contractor_name: contractorName,
         work_description: work,
         report_date: reportDate,
         shift_type: shiftType,
@@ -227,6 +226,7 @@ export default function EditReportPage() {
       
       alert("更新成功");
       window.location.href = "/reports";
+    };
 
   return (
     <ReportForm
