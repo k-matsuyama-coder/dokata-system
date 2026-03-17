@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import ReportForm from "@/components/ReportForm";
+import ReportForm from "@/app/components/ReportForm";
 
 type Employee = {
   name: string;
