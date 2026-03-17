@@ -26,10 +26,10 @@ export default function LoginPage() {
     }
 
     const { data: employee } = await supabase
-      .from("employees")
-      .select("id, role")
-      .eq("auth_user_id", user.id)
-      .maybeSingle();
+  .from("employees")
+  .select("id, role, must_change_password")
+  .eq("auth_user_id", user.id)
+  .maybeSingle();
 
     if (!employee) {
       const defaultName =
@@ -47,6 +47,11 @@ export default function LoginPage() {
 
       if (insertError) {
         alert("社員自動登録失敗: " + insertError.message);
+        return;
+      }
+
+      if (employee?.must_change_password) {
+        window.location.href = "/profile/password";
         return;
       }
 

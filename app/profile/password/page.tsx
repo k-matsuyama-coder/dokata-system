@@ -39,6 +39,16 @@ export default function PasswordPage() {
 
     alert("パスワードを変更しました");
     window.location.href = "/profile";
+
+    const { data: userData } = await supabase.auth.getUser();
+const user = userData.user;
+
+if (user) {
+  await supabase
+    .from("employees")
+    .update({ must_change_password: false })
+    .eq("auth_user_id", user.id);
+}
   };
 
   const inputStyle = {

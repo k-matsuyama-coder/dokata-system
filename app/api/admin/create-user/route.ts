@@ -26,12 +26,13 @@ export async function POST(req: Request) {
     const user = data.user;
 
     const { error: employeeError } = await supabase
-      .from("employees")
-      .insert({
-        auth_user_id: user.id,
-        name: fullName,
-        role: "worker",
-      });
+  .from("employees")
+  .insert({
+    auth_user_id: user.id,
+    name: fullName,
+    role: "worker",
+    must_change_password: true,
+  });
 
     if (employeeError) {
       return Response.json({ error: employeeError.message }, { status: 500 });
