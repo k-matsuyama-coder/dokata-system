@@ -57,6 +57,26 @@ export default function AdminUsersPage() {
     const ok = window.confirm(`${name} を削除しますか？`);
     if (!ok) return;
 
+    const handleRoleChange = async (id: string, newRole: string) => {
+      const { error } = await supabase
+        .from("employees")
+        .update({ role: newRole })
+        .eq("id", id);
+    
+      if (error) {
+        alert("権限変更失敗: " + error.message);
+        return;
+      }
+    
+      setEmployees((prev) =>
+        prev.map((employee) =>
+          employee.id === id ? { ...employee, role: newRole } : employee
+        )
+      );
+    
+      alert("権限を更新しました");
+    };
+
     const res = await fetch("/api/admin/delete-user", {
       method: "POST",
       headers: {
@@ -138,9 +158,21 @@ export default function AdminUsersPage() {
                   <p style={{ margin: 0, fontWeight: "bold", fontSize: 16 }}>
                     {employee.name}
                   </p>
-                  <p style={{ margin: "8px 0 0 0", color: "#666" }}>
-                    権限: {employee.role}
-                  </p>
+                  <div style={{ marginTop: 8 }}>
+  <label style={{ color: "#666", marginRight: 8 }}>権限:</label>
+  <select
+    value={employee.role}
+    onChange={(e) => handleRoleChange(employee.id, e.target.value)}
+    style={{
+      padding: "6px 8px",
+      borderRadius: 6,
+      border: "1px solid #ccc",
+    }}
+  >
+    <option value="worker">worker</option>
+    <option value="admin">admin</option>
+  </select>
+</div>
                 </a>
               </div>
 
