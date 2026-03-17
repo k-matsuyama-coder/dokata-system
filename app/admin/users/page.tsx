@@ -14,29 +14,6 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const handleDelete = async (id: string, name: string) => {
-      const ok = window.confirm(`${name} を削除しますか？`);
-      if (!ok) return;
-    
-      const res = await fetch("/api/admin/delete-user", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ employeeId: id }),
-      });
-    
-      const result = await res.json();
-    
-      if (!res.ok) {
-        alert("削除失敗: " + (result.error || "不明なエラー"));
-        return;
-      }
-    
-      alert("削除しました");
-      setEmployees((prev) => prev.filter((employee) => employee.id !== id));
-    };
-
     const fetchEmployees = async () => {
       const { data: userData } = await supabase.auth.getUser();
       const user = userData.user;
@@ -76,6 +53,29 @@ export default function AdminUsersPage() {
     fetchEmployees();
   }, []);
 
+  const handleDelete = async (id: string, name: string) => {
+    const ok = window.confirm(`${name} を削除しますか？`);
+    if (!ok) return;
+
+    const res = await fetch("/api/admin/delete-user", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ employeeId: id }),
+    });
+
+    const result = await res.json();
+
+    if (!res.ok) {
+      alert("削除失敗: " + (result.error || "不明なエラー"));
+      return;
+    }
+
+    alert("削除しました");
+    setEmployees((prev) => prev.filter((employee) => employee.id !== id));
+  };
+
   return (
     <div style={{ maxWidth: 800, margin: "0 auto", padding: 16 }}>
       <div
@@ -113,53 +113,54 @@ export default function AdminUsersPage() {
       ) : (
         <div style={{ display: "grid", gap: 12 }}>
           {employees.map((employee) => (
-  <div
-    key={employee.id}
-    style={{
-      border: "1px solid #ddd",
-      borderRadius: 10,
-      padding: 16,
-      backgroundColor: "#fff",
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      gap: 12,
-      flexWrap: "wrap",
-    }}
-  >
-    <a
-      href={`/admin/users/${employee.id}`}
-      style={{
-        textDecoration: "none",
-        color: "#111",
-        flex: 1,
-        minWidth: 200,
-      }}
-    >
-      <p style={{ margin: 0, fontWeight: "bold", fontSize: 16 }}>
-        {employee.name}
-      </p>
-      <p style={{ margin: "8px 0 0 0", color: "#666" }}>
-        権限: {employee.role}
-      </p>
-    </a>
+            <div
+              key={employee.id}
+              style={{
+                border: "1px solid #ddd",
+                borderRadius: 10,
+                padding: 16,
+                backgroundColor: "#fff",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: 12,
+                flexWrap: "wrap",
+              }}
+            >
+              <div style={{ flex: 1, minWidth: 200 }}>
+                <a
+                  href={`/admin/users/${employee.id}`}
+                  style={{
+                    textDecoration: "none",
+                    color: "#111",
+                  }}
+                >
+                  <p style={{ margin: 0, fontWeight: "bold", fontSize: 16 }}>
+                    {employee.name}
+                  </p>
+                  <p style={{ margin: "8px 0 0 0", color: "#666" }}>
+                    権限: {employee.role}
+                  </p>
+                </a>
+              </div>
 
-    <button
-      onClick={() => handleDelete(employee.id, employee.name)}
-      style={{
-        padding: "10px 14px",
-        border: "none",
-        borderRadius: 8,
-        backgroundColor: "#d11a2a",
-        color: "#fff",
-        fontWeight: 600,
-        cursor: "pointer",
-      }}
-    >
-      削除
-    </button>
-  </div>
-))}
+              <button
+                type="button"
+                onClick={() => handleDelete(employee.id, employee.name)}
+                style={{
+                  padding: "10px 14px",
+                  border: "none",
+                  borderRadius: 8,
+                  backgroundColor: "#d11a2a",
+                  color: "#fff",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                削除
+              </button>
+            </div>
+          ))}
         </div>
       )}
     </div>
