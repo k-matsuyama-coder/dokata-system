@@ -15,23 +15,27 @@ export default function AdminUsersPage() {
 
   useEffect(() => {
     const handleDelete = async (id: string, name: string) => {
-        const ok = window.confirm(`${name} を削除しますか？`);
-        if (!ok) return;
-      
-        const { error } = await supabase
-          .from("employees")
-          .delete()
-          .eq("id", id);
-      
-        if (error) {
-          alert("削除失敗: " + error.message);
-          return;
-        }
-      
-        alert("削除しました");
-      
-        setEmployees((prev) => prev.filter((employee) => employee.id !== id));
-      };
+      const ok = window.confirm(`${name} を削除しますか？`);
+      if (!ok) return;
+    
+      const res = await fetch("/api/admin/delete-user", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ employeeId: id }),
+      });
+    
+      const result = await res.json();
+    
+      if (!res.ok) {
+        alert("削除失敗: " + (result.error || "不明なエラー"));
+        return;
+      }
+    
+      alert("削除しました");
+      setEmployees((prev) => prev.filter((employee) => employee.id !== id));
+    };
 
     const fetchEmployees = async () => {
       const { data: userData } = await supabase.auth.getUser();
