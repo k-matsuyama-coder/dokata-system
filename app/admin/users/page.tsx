@@ -14,6 +14,25 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const handleDelete = async (id: string, name: string) => {
+        const ok = window.confirm(`${name} を削除しますか？`);
+        if (!ok) return;
+      
+        const { error } = await supabase
+          .from("employees")
+          .delete()
+          .eq("id", id);
+      
+        if (error) {
+          alert("削除失敗: " + error.message);
+          return;
+        }
+      
+        alert("削除しました");
+      
+        setEmployees((prev) => prev.filter((employee) => employee.id !== id));
+      };
+
     const fetchEmployees = async () => {
       const { data: userData } = await supabase.auth.getUser();
       const user = userData.user;
@@ -90,27 +109,53 @@ export default function AdminUsersPage() {
       ) : (
         <div style={{ display: "grid", gap: 12 }}>
           {employees.map((employee) => (
-            <a
-              key={employee.id}
-              href={`/admin/users/${employee.id}`}
-              style={{
-                display: "block",
-                textDecoration: "none",
-                color: "#111",
-                border: "1px solid #ddd",
-                borderRadius: 10,
-                padding: 16,
-                backgroundColor: "#fff",
-              }}
-            >
-              <p style={{ margin: 0, fontWeight: "bold", fontSize: 16 }}>
-                {employee.name}
-              </p>
-              <p style={{ margin: "8px 0 0 0", color: "#666" }}>
-                権限: {employee.role}
-              </p>
-            </a>
-          ))}
+  <div
+    key={employee.id}
+    style={{
+      border: "1px solid #ddd",
+      borderRadius: 10,
+      padding: 16,
+      backgroundColor: "#fff",
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: 12,
+      flexWrap: "wrap",
+    }}
+  >
+    <a
+      href={`/admin/users/${employee.id}`}
+      style={{
+        textDecoration: "none",
+        color: "#111",
+        flex: 1,
+        minWidth: 200,
+      }}
+    >
+      <p style={{ margin: 0, fontWeight: "bold", fontSize: 16 }}>
+        {employee.name}
+      </p>
+      <p style={{ margin: "8px 0 0 0", color: "#666" }}>
+        権限: {employee.role}
+      </p>
+    </a>
+
+    <button
+      onClick={() => handleDelete(employee.id, employee.name)}
+      style={{
+        padding: "10px 14px",
+        border: "none",
+        borderRadius: 8,
+        backgroundColor: "#d11a2a",
+        color: "#fff",
+        fontWeight: 600,
+        cursor: "pointer",
+      }}
+    >
+      削除
+    </button>
+  </div>
+))}
         </div>
       )}
     </div>
