@@ -18,7 +18,7 @@ type ReportFormProps = {
   site: string;
   setSite: (value: string) => void;
   contractorName: string;
-  setcontractorName: (value: string) => void;
+  setContractorName: (value: string) => void;
   work: string;
   setWork: (value: string) => void;
   startTime: string;
@@ -77,7 +77,7 @@ export default function ReportForm(props: ReportFormProps) {
     site,
     setSite,
     contractorName,
-    setcontractorName,
+    setContractorName,
     work,
     setWork,
     startTime,
@@ -237,13 +237,6 @@ const parkingTotal =
   }, [overtimeMinutes]);
 
   const [editingLaborName, setEditingLaborName] = useState<string | null>(null);
-
-  const {
-    ...
-    contractorName,
-    setContractorName,
-    ...
-  } = props;
 
   return (
     <div
@@ -635,7 +628,7 @@ const parkingTotal =
     </div>
   )}
 
-  {selectedMembers.length > 0 && (
+{selectedMembers.length > 0 && (
     <div style={{ marginTop: 12 }}>
       <div
         style={{
@@ -758,4 +751,31 @@ const parkingTotal =
       </div>
     </div>
   )}
+
+  <div style={sectionStyle}>
+    <p>備考</p>
+    <textarea
+      value={note}
+      onChange={(e) => setNote(e.target.value)}
+      style={{ ...inputStyle, minHeight: 100 }}
+    />
+  </div>
+
+  <button
+    onClick={onSubmit}
+    style={{
+      width: "100%",
+      padding: 14,
+      fontSize: 16,
+      marginTop: 12,
+      border: "none",
+      borderRadius: 8,
+      backgroundColor: "#111",
+      color: "#fff",
+    }}
+  >
+    {submitLabel}
+  </button>
 </div>
+);
+}
