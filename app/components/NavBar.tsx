@@ -140,6 +140,17 @@ export default function NavBar() {
               マイページ
             </a>
 
+            <a
+  href="/analytics"
+  className="nav-link"
+  style={{
+    color: pathname.startsWith("/analytics") ? "#0070f3" : "#333",
+    fontWeight: pathname.startsWith("/analytics") ? 700 : 500,
+  }}
+>
+  分析
+</a>
+
             {role === "admin" && (
               <a
                 href="/admin"

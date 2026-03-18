@@ -193,6 +193,22 @@ export default function EmployeesPage() {
           <p style={{ fontWeight: "bold", fontSize: 18 }}>
             {selectedName}
           </p>
+          <a
+  href={`/admin/analytics/personal?name=${encodeURIComponent(selectedName)}`}
+  style={{
+    display: "inline-block",
+    textDecoration: "none",
+    backgroundColor: "#111",
+    color: "#fff",
+    padding: "10px 14px",
+    borderRadius: 8,
+    fontSize: 14,
+    fontWeight: 600,
+    width: "fit-content",
+  }}
+>
+  個人分析を見る
+</a>
 
           <p>昼人工: {summary.dayLabor}</p>
           <p>夜人工: {summary.nightLabor}</p>

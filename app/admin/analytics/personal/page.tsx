@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
 
@@ -9,22 +10,17 @@ type ReportMemberRow = {
   labor: number;
   overtime: number;
   is_driver: boolean;
+  report_id: string;
   daily_reports: {
     report_date: string;
     shift_type: string;
   } | null;
 };
 
-type SummaryRow = {
-  name: string;
-  dayLabor: number;
-  nightLabor: number;
-  dayOvertime: number;
-  nightOvertime: number;
-  driveCount: number;
-};
-
 export default function PersonalAnalyticsPage() {
+  const searchParams = useSearchParams();
+  const employeeName = searchParams.get("name") ?? "";
+
   const [month, setMonth] = useState(() => {
     const now = new Date();
     const y = now.getFullYear();
@@ -60,6 +56,12 @@ export default function PersonalAnalyticsPage() {
         return;
       }
 
+      if (!employeeName) {
+        setRows([]);
+        setLoading(false);
+        return;
+      }
+
       const startDate = `${month}-01`;
       const endDate = new Date(`${month}-01`);
       endDate.setMonth(endDate.getMonth() + 1);
@@ -72,11 +74,13 @@ export default function PersonalAnalyticsPage() {
           labor,
           overtime,
           is_driver,
+          report_id,
           daily_reports!inner (
             report_date,
             shift_type
           )
         `)
+        .eq("employee_name", employeeName)
         .gte("daily_reports.report_date", startDate)
         .lt("daily_reports.report_date", endDateStr);
 
@@ -91,119 +95,104 @@ export default function PersonalAnalyticsPage() {
     };
 
     fetchData();
-  }, [month]);
+  }, [month, employeeName]);
 
+  // 🔥 個人集計
   const summary = useMemo(() => {
-    const map = new Map<string, SummaryRow>();
+    let dayLabor = 0;
+    let nightLabor = 0;
+    let dayOvertime = 0;
+    let nightOvertime = 0;
+    let driveCount = 0;
+
+    const workDays = new Set<string>();
 
     for (const row of rows) {
-      const name = row.employee_name ?? "不明";
       const shiftType = row.daily_reports?.shift_type ?? "day";
       const labor = Number(row.labor || 0);
       const overtime = Number(row.overtime || 0);
-      const isDriver = !!row.is_driver;
-
-      if (!map.has(name)) {
-        map.set(name, {
-          name,
-          dayLabor: 0,
-          nightLabor: 0,
-          dayOvertime: 0,
-          nightOvertime: 0,
-          driveCount: 0,
-        });
-      }
-
-      const current = map.get(name)!;
 
       if (shiftType === "night") {
-        current.nightLabor += labor;
-        current.nightOvertime += overtime;
+        nightLabor += labor;
+        nightOvertime += overtime;
       } else {
-        current.dayLabor += labor;
-        current.dayOvertime += overtime;
+        dayLabor += labor;
+        dayOvertime += overtime;
       }
 
-      if (isDriver) {
-        current.driveCount += 1;
+      if (row.is_driver) {
+        driveCount += 1;
+      }
+
+      if (row.report_id) {
+        workDays.add(row.report_id);
       }
     }
 
-    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name, "ja"));
+    return {
+      dayLabor,
+      nightLabor,
+      dayOvertime,
+      nightOvertime,
+      driveCount,
+      workDays: workDays.size,
+    };
   }, [rows]);
 
   return (
-    <div style={{ maxWidth: 1000, margin: "0 auto", padding: 16 }}>
-        <BackButton />
-      <h1 style={{ margin: 0 }}>社員別集計一覧</h1>
+    <div style={{ maxWidth: 720, margin: "0 auto", padding: 16 }}>
+      <BackButton />
 
-      <div style={{ marginBottom: 16 }}>
+      <h1 style={{ marginBottom: 16 }}>個人別集計</h1>
+
+      {/* 月選択 */}
+      <div style={{ marginBottom: 20 }}>
         <p style={{ marginBottom: 8 }}>対象月</p>
         <input
           type="month"
           value={month}
           onChange={(e) => setMonth(e.target.value)}
           style={{
-            padding: 10,
+            width: "100%",
+            padding: 12,
             fontSize: 16,
-            border: "1px solid #ccc",
             borderRadius: 8,
+            border: "1px solid #ccc",
           }}
         />
       </div>
 
       {loading ? (
         <p>読み込み中...</p>
-      ) : summary.length === 0 ? (
+      ) : !employeeName ? (
+        <p>社員が選択されていません</p>
+      ) : rows.length === 0 ? (
         <p>データがありません</p>
       ) : (
-        <div style={{ overflowX: "auto" }}>
-          <table
-            style={{
-              width: "100%",
-              borderCollapse: "collapse",
-              minWidth: 760,
-              backgroundColor: "#fff",
-            }}
-          >
-            <thead>
-              <tr>
-                <th style={thStyle}>名前</th>
-                <th style={thStyle}>昼人工</th>
-                <th style={thStyle}>夜人工</th>
-                <th style={thStyle}>昼残業</th>
-                <th style={thStyle}>夜残業</th>
-                <th style={thStyle}>運転回数</th>
-              </tr>
-            </thead>
-            <tbody>
-              {summary.map((item) => (
-                <tr key={item.name}>
-                  <td style={tdStyle}>{item.name}</td>
-                  <td style={tdStyle}>{item.dayLabor}</td>
-                  <td style={tdStyle}>{item.nightLabor}</td>
-                  <td style={tdStyle}>{item.dayOvertime}</td>
-                  <td style={tdStyle}>{item.nightOvertime}</td>
-                  <td style={tdStyle}>{item.driveCount}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div
+          style={{
+            border: "1px solid #ddd",
+            borderRadius: 12,
+            padding: 16,
+            backgroundColor: "#fff",
+            display: "grid",
+            gap: 12,
+          }}
+        >
+          <p style={{ fontSize: 20, fontWeight: "bold", margin: 0 }}>
+            {employeeName}
+          </p>
+
+          <p>昼人工: {summary.dayLabor}</p>
+          <p>夜人工: {summary.nightLabor}</p>
+
+          <p>昼残業: {summary.dayOvertime}</p>
+          <p>夜残業: {summary.nightOvertime}</p>
+
+          <p>運転回数: {summary.driveCount}</p>
+          <p>稼働日数: {summary.workDays}</p>
         </div>
       )}
     </div>
   );
 }
-
-const thStyle: React.CSSProperties = {
-  border: "1px solid #ddd",
-  padding: 10,
-  backgroundColor: "#f5f5f5",
-  textAlign: "center",
-};
-
-const tdStyle: React.CSSProperties = {
-  border: "1px solid #ddd",
-  padding: 10,
-  textAlign: "center",
-};

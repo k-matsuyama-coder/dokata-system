@@ -63,6 +63,11 @@ export default function ProfilePage() {
   const [certifications, setCertifications] = useState<Certification[]>([]);
   const [searchKeyword, setSearchKeyword] = useState("");
   const [license, setLicense] = useState<License | null>(null);
+  const [licenseFrontSignedUrl, setLicenseFrontSignedUrl] = useState("");
+  const [licenseBackSignedUrl, setLicenseBackSignedUrl] = useState("");
+  const [certSignedUrls, setCertSignedUrls] = useState<
+  Record<string, { front: string; back: string }>
+  >({});
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -92,9 +97,40 @@ export default function ProfilePage() {
           .eq("employee_id", employee.id)
           .order("issue_date", { ascending: false });
 
-        if (certs) {
-          setCertifications(certs);
-        }
+          if (certs) {
+            setCertifications(certs);
+          
+            const signedUrlMap: Record<string, { front: string; back: string }> = {};
+          
+            for (const cert of certs) {
+              let front = "";
+              let back = "";
+          
+              if (cert.card_front_url) {
+                const { data: frontSigned } = await supabase.storage
+                  .from("certifications")
+                  .createSignedUrl(cert.card_front_url, 60 * 60);
+          
+                if (frontSigned?.signedUrl) {
+                  front = frontSigned.signedUrl;
+                }
+              }
+          
+              if (cert.card_back_url) {
+                const { data: backSigned } = await supabase.storage
+                  .from("certifications")
+                  .createSignedUrl(cert.card_back_url, 60 * 60);
+          
+                if (backSigned?.signedUrl) {
+                  back = backSigned.signedUrl;
+                }
+              }
+          
+              signedUrlMap[cert.id] = { front, back };
+            }
+          
+            setCertSignedUrls(signedUrlMap);
+          }
 
         const { data: licenseData } = await supabase
           .from("licenses")
@@ -104,9 +140,29 @@ export default function ProfilePage() {
           .limit(1)
           .maybeSingle();
 
-        if (licenseData) {
-          setLicense(licenseData);
-        }
+          if (licenseData) {
+            setLicense(licenseData);
+          
+            if (licenseData.card_front_url) {
+              const { data: frontSigned } = await supabase.storage
+                .from("licenses")
+                .createSignedUrl(licenseData.card_front_url, 60 * 60);
+          
+              if (frontSigned?.signedUrl) {
+                setLicenseFrontSignedUrl(frontSigned.signedUrl);
+              }
+            }
+          
+            if (licenseData.card_back_url) {
+              const { data: backSigned } = await supabase.storage
+                .from("licenses")
+                .createSignedUrl(licenseData.card_back_url, 60 * 60);
+          
+              if (backSigned?.signedUrl) {
+                setLicenseBackSignedUrl(backSigned.signedUrl);
+              }
+            }
+          }
       }
     };
 
@@ -215,21 +271,21 @@ const showQualificationSuggestions =
           <p>期限: {license.expiry_date}</p>
 
           <div style={{ display: "flex", gap: 10, marginTop: 10, flexWrap: "wrap" }}>
-            {license.card_front_url ? (
-              <img
-                src={license.card_front_url}
-                alt="免許証表"
-                style={{ width: 120, borderRadius: 8, border: "1px solid #ccc" }}
-              />
-            ) : null}
+          {licenseFrontSignedUrl ? (
+  <img
+    src={licenseFrontSignedUrl}
+    alt="免許証表"
+    style={{ width: 120, borderRadius: 8, border: "1px solid #ccc" }}
+  />
+) : null}
 
-            {license.card_back_url ? (
-              <img
-                src={license.card_back_url}
-                alt="免許証裏"
-                style={{ width: 120, borderRadius: 8, border: "1px solid #ccc" }}
-              />
-            ) : null}
+{licenseBackSignedUrl ? (
+  <img
+    src={licenseBackSignedUrl}
+    alt="免許証裏"
+    style={{ width: 120, borderRadius: 8, border: "1px solid #ccc" }}
+  />
+) : null}
           </div>
         </div>
       ) : (
@@ -415,40 +471,40 @@ const showQualificationSuggestions =
                   >
                     <div>
                       <p style={{ marginTop: 0, marginBottom: 8 }}>資格証 表</p>
-                      {cert.card_front_url ? (
-                        <a href={cert.card_front_url} target="_blank" rel="noreferrer">
-                          <img
-                            src={cert.card_front_url}
-                            alt="資格証表"
-                            style={{
-                              width: "100%",
-                              borderRadius: 8,
-                              border: "1px solid #ccc",
-                            }}
-                          />
-                        </a>
-                      ) : (
-                        <p>画像なし</p>
-                      )}
+                      {certSignedUrls[cert.id]?.front ? (
+  <a href={certSignedUrls[cert.id].front} target="_blank" rel="noreferrer">
+    <img
+      src={certSignedUrls[cert.id].front}
+      alt="資格証表"
+      style={{
+        width: "100%",
+        borderRadius: 8,
+        border: "1px solid #ccc",
+      }}
+    />
+  </a>
+) : (
+  <p>画像なし</p>
+)}
                     </div>
 
                     <div>
                       <p style={{ marginTop: 0, marginBottom: 8 }}>資格証 裏</p>
-                      {cert.card_back_url ? (
-                        <a href={cert.card_back_url} target="_blank" rel="noreferrer">
-                          <img
-                            src={cert.card_back_url}
-                            alt="資格証裏"
-                            style={{
-                              width: "100%",
-                              borderRadius: 8,
-                              border: "1px solid #ccc",
-                            }}
-                          />
-                        </a>
-                      ) : (
-                        <p>画像なし</p>
-                      )}
+                      {certSignedUrls[cert.id]?.back ? (
+  <a href={certSignedUrls[cert.id].back} target="_blank" rel="noreferrer">
+    <img
+      src={certSignedUrls[cert.id].back}
+      alt="資格証裏"
+      style={{
+        width: "100%",
+        borderRadius: 8,
+        border: "1px solid #ccc",
+      }}
+    />
+  </a>
+) : (
+  <p>画像なし</p>
+)}
                     </div>
                   </div>
                 </div>

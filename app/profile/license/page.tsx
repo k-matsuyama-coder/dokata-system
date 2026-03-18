@@ -11,23 +11,26 @@ export default function LicensePage() {
   const [frontFile, setFrontFile] = useState<File | null>(null);
   const [backFile, setBackFile] = useState<File | null>(null);
 
-  const uploadFile = async (file: File, label: string) => {
-    const filePath = `${Date.now()}_${label}_${file.name}`;
+  const uploadFile = async (
+    file: File,
+    label: "front" | "back",
+    userId: string
+  ) => {
+    const ext = file.name.split(".").pop();
+    const safeExt = ext ? `.${ext}` : "";
+    const filePath = `${userId}/${Date.now()}_${label}${safeExt}`;
 
     const { error } = await supabase.storage
       .from("licenses")
       .upload(filePath, file);
 
     if (error) {
-      alert("アップロード失敗");
+      alert("アップロード失敗: " + error.message);
       throw error;
     }
 
-    const { data } = supabase.storage
-      .from("licenses")
-      .getPublicUrl(filePath);
-
-    return data.publicUrl;
+    // 公開URLではなく、storage path を返す
+    return filePath;
   };
 
   const handleSubmit = async () => {
@@ -50,15 +53,15 @@ export default function LicensePage() {
       return;
     }
 
-    let frontUrl = null;
-    let backUrl = null;
+    let frontPath: string | null = null;
+    let backPath: string | null = null;
 
     if (frontFile) {
-      frontUrl = await uploadFile(frontFile, "front");
+      frontPath = await uploadFile(frontFile, "front", user.id);
     }
 
     if (backFile) {
-      backUrl = await uploadFile(backFile, "back");
+      backPath = await uploadFile(backFile, "back", user.id);
     }
 
     const { error } = await supabase.from("licenses").insert([
@@ -67,13 +70,13 @@ export default function LicensePage() {
         license_name: licenseName,
         issue_date: issueDate,
         expiry_date: expiryDate,
-        card_front_url: frontUrl,
-        card_back_url: backUrl,
+        card_front_url: frontPath,
+        card_back_url: backPath,
       },
     ]);
 
     if (error) {
-      alert("保存失敗");
+      alert("保存失敗: " + error.message);
       return;
     }
 
@@ -86,21 +89,41 @@ export default function LicensePage() {
       <h1>免許登録</h1>
 
       <p>免許名</p>
-      <input value={licenseName} onChange={(e)=>setLicenseName(e.target.value)} />
+      <input
+        value={licenseName}
+        onChange={(e) => setLicenseName(e.target.value)}
+      />
 
       <p>取得日</p>
-      <input type="date" value={issueDate} onChange={(e)=>setIssueDate(e.target.value)} />
+      <input
+        type="date"
+        value={issueDate}
+        onChange={(e) => setIssueDate(e.target.value)}
+      />
 
       <p>有効期限</p>
-      <input type="date" value={expiryDate} onChange={(e)=>setExpiryDate(e.target.value)} />
+      <input
+        type="date"
+        value={expiryDate}
+        onChange={(e) => setExpiryDate(e.target.value)}
+      />
 
       <p>表写真</p>
-      <input type="file" onChange={(e)=>setFrontFile(e.target.files?.[0] ?? null)} />
+      <input
+        type="file"
+        accept="image/*"
+        onChange={(e) => setFrontFile(e.target.files?.[0] ?? null)}
+      />
 
       <p>裏写真</p>
-      <input type="file" onChange={(e)=>setBackFile(e.target.files?.[0] ?? null)} />
+      <input
+        type="file"
+        accept="image/*"
+        onChange={(e) => setBackFile(e.target.files?.[0] ?? null)}
+      />
 
-      <br /><br />
+      <br />
+      <br />
 
       <button onClick={handleSubmit}>保存</button>
     </div>
