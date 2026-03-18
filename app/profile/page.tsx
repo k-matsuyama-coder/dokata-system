@@ -306,6 +306,23 @@ const showQualificationSuggestions =
     }}
   />
 
+{searchKeyword && (
+    <button
+      onClick={() => setSearchKeyword("")}
+      style={{
+        position: "absolute",
+        right: 8,
+        top: 8,
+        border: "none",
+        background: "none",
+        fontSize: 18,
+        cursor: "pointer",
+      }}
+    >
+      ×
+    </button>
+  )}
+
 {showQualificationSuggestions && (
     <div
       style={{
@@ -341,14 +358,15 @@ const showQualificationSuggestions =
           <div style={{ display: "grid", gap: 12 }}>
             {filteredCertifications.map((cert) => (
               <details
-                key={cert.id}
-                style={{
-                  border: "1px solid #ddd",
-                  borderRadius: 10,
-                  padding: 12,
-                  backgroundColor: "#fafafa",
-                }}
-              >
+              key={cert.id}
+              style={{
+                border: "1px solid #ddd",
+                borderRadius: 10,
+                padding: 12,
+                backgroundColor: "#fff",
+                boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
+              }}
+            >
                 <summary
                   style={{
                     cursor: "pointer",
