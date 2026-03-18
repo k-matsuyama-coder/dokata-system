@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
@@ -17,7 +17,7 @@ type ReportMemberRow = {
   } | null;
 };
 
-export default function PersonalAnalyticsPage() {
+function PersonalAnalyticsContent() {
   const searchParams = useSearchParams();
   const employeeName = searchParams.get("name") ?? "";
 
@@ -97,7 +97,6 @@ export default function PersonalAnalyticsPage() {
     fetchData();
   }, [month, employeeName]);
 
-  // 🔥 個人集計
   const summary = useMemo(() => {
     let dayLabor = 0;
     let nightLabor = 0;
@@ -139,13 +138,21 @@ export default function PersonalAnalyticsPage() {
     };
   }, [rows]);
 
+  const daysInMonth = useMemo(() => {
+    const [year, monthNumber] = month.split("-").map(Number);
+    return new Date(year, monthNumber, 0).getDate();
+  }, [month]);
+
+  const attendanceRate = useMemo(() => {
+    if (!daysInMonth) return 0;
+    return Math.round((summary.workDays / daysInMonth) * 1000) / 10;
+  }, [summary.workDays, daysInMonth]);
+
   return (
     <div style={{ maxWidth: 720, margin: "0 auto", padding: 16 }}>
       <BackButton />
-
       <h1 style={{ marginBottom: 16 }}>個人別集計</h1>
 
-      {/* 月選択 */}
       <div style={{ marginBottom: 20 }}>
         <p style={{ marginBottom: 8 }}>対象月</p>
         <input
@@ -185,14 +192,24 @@ export default function PersonalAnalyticsPage() {
 
           <p>昼人工: {summary.dayLabor}</p>
           <p>夜人工: {summary.nightLabor}</p>
-
           <p>昼残業: {summary.dayOvertime}</p>
           <p>夜残業: {summary.nightOvertime}</p>
-
           <p>運転回数: {summary.driveCount}</p>
           <p>稼働日数: {summary.workDays}</p>
+          <p>月の日数: {daysInMonth}</p>
+          <p style={{ fontWeight: "bold", fontSize: 18 }}>
+            稼働率: {attendanceRate}%
+          </p>
         </div>
       )}
     </div>
+  );
+}
+
+export default function PersonalAnalyticsPage() {
+  return (
+    <Suspense fallback={<div style={{ padding: 16 }}>読み込み中...</div>}>
+      <PersonalAnalyticsContent />
+    </Suspense>
   );
 }
