@@ -94,6 +94,7 @@ export default function ReportsSummaryPage() {
 
   return (
     <div style={{ maxWidth: 900, margin: "0 auto", padding: 16 }}>
+        <BackButton />
       <div
         style={{
           display: "flex",

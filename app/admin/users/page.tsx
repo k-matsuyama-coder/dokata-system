@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import BackButton from "@/app/components/BackButton";
 
 type Employee = {
   id: string;
@@ -104,6 +105,7 @@ export default function AdminUsersPage() {
   return (
     <div style={{ maxWidth: 800, margin: "0 auto", padding: 16 }}>
       <div style={{ marginBottom: 20 }}>
+      <BackButton />
         <h1 style={{ margin: 0, marginBottom: 12 }}>社員一覧</h1>
 
         <a

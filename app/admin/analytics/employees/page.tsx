@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import BackButton from "@/app/components/BackButton";
 
 type Employee = {
   name: string;
@@ -129,7 +130,9 @@ export default function EmployeesPage() {
 
   return (
     <div style={{ maxWidth: 720, margin: "0 auto", padding: 16 }}>
+        <BackButton />
       <h1 style={{ marginBottom: 20 }}>社員別集計一覧</h1>
+      
 
       {/* 社員選択 */}
       <div style={{ marginBottom: 20 }}>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
+import BackButton from "@/app/components/BackButton";
 
 export default function CertificationsPage() {
   const [qualificationName, setQualificationName] = useState("");
@@ -186,6 +187,7 @@ setIssueDate("");
         padding: 16,
       }}
     >
+      <BackButton />
       <h1>資格登録</h1>
 
       <p>資格名</p>

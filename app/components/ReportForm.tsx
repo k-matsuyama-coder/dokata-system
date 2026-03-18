@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import BackButton from "@/app/components/BackButton";
 
 type Employee = {
   name: string;
@@ -300,6 +301,7 @@ const parkingTotal =
       }}
     >
       <div style={sectionStyle}>
+      <BackButton />
         <p>日付</p>
         <input
           type="date"

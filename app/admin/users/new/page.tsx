@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import BackButton from "@/app/components/BackButton";
 
 export default function NewUserPage() {
   const [lastName, setLastName] = useState("");
@@ -43,6 +44,7 @@ export default function NewUserPage() {
 
   return (
     <div style={{ maxWidth: 500, margin: "0 auto", padding: 16 }}>
+      <BackButton />
       <h1>社員追加</h1>
 
       <p>苗字</p>

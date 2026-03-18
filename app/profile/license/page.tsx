@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
+import BackButton from "@/app/components/BackButton";
 
 export default function LicensePage() {
   const [licenseName, setLicenseName] = useState("");
@@ -81,6 +82,7 @@ export default function LicensePage() {
 
   return (
     <div style={{ padding: 20, maxWidth: 500, margin: "0 auto" }}>
+      <BackButton />
       <h1>免許登録</h1>
 
       <p>免許名</p>

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import BackButton from "@/app/components/BackButton";
 
 type ReportMemberRow = {
   employee_name: string;
@@ -133,6 +134,7 @@ export default function PersonalAnalyticsPage() {
 
   return (
     <div style={{ maxWidth: 1000, margin: "0 auto", padding: 16 }}>
+        <BackButton />
       <h1 style={{ margin: 0 }}>社員別集計一覧</h1>
 
       <div style={{ marginBottom: 16 }}>

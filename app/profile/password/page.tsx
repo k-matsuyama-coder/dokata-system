@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
+import BackButton from "@/app/components/BackButton";
 
 export default function PasswordPage() {
   const [newPassword, setNewPassword] = useState("");
@@ -64,6 +65,7 @@ if (user) {
 
   return (
     <div style={{ maxWidth: 500, margin: "0 auto", padding: 16 }}>
+      <BackButton />
       <h1>パスワード変更</h1>
 
       <p>新しいパスワード</p>

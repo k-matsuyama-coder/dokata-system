@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import BackButton from "@/app/components/BackButton";
 
 export default function UserDetailPage() {
   const params = useParams();
@@ -51,6 +52,7 @@ export default function UserDetailPage() {
 
   return (
     <div style={{ padding: 20, maxWidth: 600, margin: "0 auto" }}>
+      <BackButton />
       <h1>社員詳細</h1>
 
       <div style={{ marginBottom: 16 }}>
