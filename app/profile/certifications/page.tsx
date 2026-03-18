@@ -5,10 +5,10 @@ import { supabase } from "@/lib/supabase";
 
 export default function CertificationsPage() {
   const [qualificationName, setQualificationName] = useState("");
-  const [customQualificationName, setCustomQualificationName] = useState("");
   const [issueDate, setIssueDate] = useState("");
   const [frontFile, setFrontFile] = useState<File | null>(null);
   const [backFile, setBackFile] = useState<File | null>(null);
+  const [qualificationInput, setQualificationInput] = useState("");
 
   const [errors, setErrors] = useState<{
     qualificationName?: string;
@@ -64,6 +64,10 @@ export default function CertificationsPage() {
     backgroundColor: "#fff",
   };
 
+  const filteredQualifications = qualificationOptions.filter((q) =>
+  q.includes(qualificationInput)
+);
+
   const validate = () => {
     const newErrors: {
       qualificationName?: string;
@@ -72,10 +76,8 @@ export default function CertificationsPage() {
       backFile?: string;
     } = {};
 
-    const finalName = customQualificationName.trim() || qualificationName;
-
-    if (!finalName) {
-      newErrors.qualificationName = "資格名を入力してください";
+    if (!qualificationName) {
+      newErrors.qualificationName = "候補から資格名を選択してください";
     }
 
     if (!issueDate) {
@@ -106,8 +108,7 @@ export default function CertificationsPage() {
 
     if (!validate()) return;
 
-    const finalQualificationName =
-      customQualificationName.trim() || qualificationName;
+    const finalQualificationName = qualificationName;
 
     const frontExt = frontFile?.name.split(".").pop();
     const backExt = backFile?.name.split(".").pop();
@@ -170,8 +171,8 @@ export default function CertificationsPage() {
     alert("保存成功");
 
     setQualificationName("");
-    setCustomQualificationName("");
-    setIssueDate("");
+setQualificationInput("");
+setIssueDate("");
     setFrontFile(null);
     setBackFile(null);
     setErrors({});
@@ -188,25 +189,43 @@ export default function CertificationsPage() {
       <h1>資格登録</h1>
 
       <p>資格名</p>
-      <select
-        value={qualificationName}
-        onChange={(e) => setQualificationName(e.target.value)}
-        style={inputStyle}
-      >
-        <option value="">選択してください</option>
-        {qualificationOptions.map((q) => (
-          <option key={q} value={q}>
-            {q}
-          </option>
-        ))}
-      </select>
+<input
+  placeholder="資格名を入力して検索"
+  value={qualificationInput}
+  onChange={(e) => {
+    setQualificationInput(e.target.value);
+setQualificationName("");
+  }}
+  style={inputStyle}
+/>
 
-      <input
-        placeholder="その他（自由入力）"
-        value={customQualificationName}
-        onChange={(e) => setCustomQualificationName(e.target.value)}
-        style={{ ...inputStyle, marginTop: 8 }}
-      />
+{qualificationInput && filteredQualifications.length > 0 && (
+  <div
+    style={{
+      border: "1px solid #ccc",
+      borderRadius: 8,
+      padding: 8,
+      marginTop: 8,
+      backgroundColor: "#fff",
+      maxHeight: 220,
+      overflowY: "auto",
+    }}
+  >
+    {filteredQualifications.slice(0, 10).map((q) => (
+      <div
+        key={q}
+        onClick={() => {
+          setQualificationName(q);
+setQualificationInput(q);
+        }}
+        style={{ padding: 8, cursor: "pointer" }}
+      >
+        {q}
+      </div>
+    ))}
+  </div>
+)}
+      
 
       {errors.qualificationName && (
         <p style={{ color: "red", marginTop: 6, marginBottom: 0 }}>
