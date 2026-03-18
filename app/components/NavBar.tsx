@@ -30,6 +30,20 @@ export default function NavBar() {
     fetchRole();
   }, []);
 
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setMenuOpen(false);
+    };
+  
+    if (menuOpen) {
+      window.addEventListener("click", handleClickOutside);
+    }
+  
+    return () => {
+      window.removeEventListener("click", handleClickOutside);
+    };
+  }, [menuOpen]);
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     window.location.href = "/login";
@@ -59,7 +73,10 @@ export default function NavBar() {
 
       <div>
         <button
-          onClick={() => setMenuOpen(!menuOpen)}
+          onClick={(e) => {
+            e.stopPropagation();
+            setMenuOpen(!menuOpen);
+          }}
           style={{
             border: "1px solid #ddd",
             backgroundColor: "#fff",
