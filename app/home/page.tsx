@@ -13,6 +13,8 @@ export default function HomePage() {
 const [licenseExpiryDate, setLicenseExpiryDate] = useState("");
 const [licenseStatus, setLicenseStatus] = useState("");
 const [licenseRemainingDays, setLicenseRemainingDays] = useState<number | null>(null);
+const [debugEmployeeName, setDebugEmployeeName] = useState("");
+const [debugReportCount, setDebugReportCount] = useState(0);
 
   useEffect(() => {
     const fetchHomeData = async () => {
@@ -32,6 +34,7 @@ const [licenseRemainingDays, setLicenseRemainingDays] = useState<number | null>(
 
   if (employee) {
     setEmployeeName(employee.name);
+    setDebugEmployeeName(employee.name);
   
     const { data: licenses } = await supabase
       .from("licenses")
@@ -95,6 +98,7 @@ console.log("reports", reports);
       }
       
       if (reports) {
+        setDebugReportCount(reports.length);
         const uniqueDays = Array.from(
           new Set(
             reports.map((report: any) => report.daily_reports?.report_date).filter(Boolean)
@@ -177,6 +181,8 @@ console.log("reports", reports);
         <p>今月の稼働日数: {workingDays}日</p>
         <p>今月の残業数: {totalOvertime}分</p>
         <p>今月の車両数: {totalVehicleCount}</p>
+        <p style={{ color: "red" }}>確認用 名前: {debugEmployeeName}</p>
+<p style={{ color: "red" }}>確認用 report件数: {debugReportCount}</p>
 
         <h2 style={{ marginTop: 20 }}>免許</h2>
 
