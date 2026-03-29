@@ -67,9 +67,18 @@ export default function NavBar() {
         boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
       }}
     >
-      <div style={{ fontWeight: "bold", fontSize: 18 }}>
-        DOKATA-System
-      </div>
+      <a
+  href="/home"
+  style={{
+    fontWeight: "bold",
+    fontSize: 18,
+    textDecoration: "none",
+    color: "#111",
+    cursor: "pointer",
+  }}
+>
+  DOKATA-System
+</a>
 
       <div>
         <button
