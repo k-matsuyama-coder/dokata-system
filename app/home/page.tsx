@@ -73,40 +73,61 @@ const [licenseRemainingDays, setLicenseRemainingDays] = useState<number | null>(
         .toISOString()
         .slice(0, 10);
 
-      const { data: reports } = await supabase
-        .from("daily_reports")
-        .select("report_date, overtime_minutes, vehicle_count")
-        .eq("user_id", user.id)
-        .gte("report_date", firstDay)
-        .lte("report_date", lastDay);
-
+        const { data: reports, error: reportsError } = await supabase
+        .from("report_members")
+        .select(`
+          overtime,
+          is_driver,
+          report_id,
+          daily_reports!inner(
+            report_date,
+            site_name
+          )
+        `)
+        .eq("employee_name", employee?.name ?? "")
+        .gte("daily_reports.report_date", firstDay)
+        .lte("daily_reports.report_date", lastDay);
+      
+      if (reportsError) {
+        console.error("集計取得失敗:", reportsError.message);
+      }
+      
       if (reports) {
         const uniqueDays = Array.from(
-          new Set(reports.map((report) => report.report_date))
+          new Set(
+            reports.map((report: any) => report.daily_reports?.report_date).filter(Boolean)
+          )
         );
         setWorkingDays(uniqueDays.length);
-
+      
         const overtimeSum = reports.reduce(
-          (sum, report) => sum + (report.overtime_minutes ?? 0),
+          (sum: number, report: any) => sum + Number(report.overtime ?? 0),
           0
         );
         setTotalOvertime(overtimeSum);
-
-        const vehicleSum = reports.reduce(
-          (sum, report) => sum + (report.vehicle_count ?? 0),
-          0
-        );
+      
+        const vehicleSum = reports.filter((report: any) => report.is_driver).length;
         setTotalVehicleCount(vehicleSum);
-        const { data: recent } = await supabase
-  .from("daily_reports")
-  .select("report_date, site_name")
-  .eq("user_id", user.id)
-  .order("report_date", { ascending: false })
-  .limit(5);
-
-if (recent) {
-  setRecentReports(recent);
-}
+      
+        const recentMap = new Map<string, { report_date: string; site_name: string }>();
+      
+        reports.forEach((report: any) => {
+          const reportDate = report.daily_reports?.report_date;
+          const siteName = report.daily_reports?.site_name;
+      
+          if (report.report_id && reportDate && siteName) {
+            recentMap.set(report.report_id, {
+              report_date: reportDate,
+              site_name: siteName,
+            });
+          }
+        });
+      
+        const recent = Array.from(recentMap.values())
+          .sort((a, b) => b.report_date.localeCompare(a.report_date))
+          .slice(0, 5);
+      
+        setRecentReports(recent);
       }
     };
     
