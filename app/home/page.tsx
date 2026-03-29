@@ -76,64 +76,78 @@ const [debugReportCount, setDebugReportCount] = useState(0);
         .toISOString()
         .slice(0, 10);
 
-        const { data: reports, error: reportsError } = await supabase
-        .from("report_members")
-        .select(`
-          overtime,
-          is_driver,
-          report_id,
-          daily_reports!inner(
-            report_date,
-            site_name
-          )
-        `)
-        .eq("employee_name", employee?.name ?? "")
-        .gte("daily_reports.report_date", firstDay)
-        .lte("daily_reports.report_date", lastDay);
-      
-      if (reportsError) {
-        console.error("集計取得失敗:", reportsError.message);
-        console.log("employee.name", employee?.name);
-console.log("reports", reports);
-      }
-      
-      if (reports) {
-        setDebugReportCount(reports.length);
-        const uniqueDays = Array.from(
-          new Set(
-            reports.map((report: any) => report.daily_reports?.report_date).filter(Boolean)
-          )
-        );
-        setWorkingDays(uniqueDays.length);
-      
-        const overtimeSum = reports.reduce(
-          (sum: number, report: any) => sum + Number(report.overtime ?? 0),
-          0
-        );
-        setTotalOvertime(overtimeSum);
-      
-        const vehicleSum = reports.filter((report: any) => report.is_driver).length;
-        setTotalVehicleCount(vehicleSum);
-      
-        const recentMap = new Map<string, { report_date: string; site_name: string }>();
-      
-        reports.forEach((report: any) => {
-          const reportDate = report.daily_reports?.report_date;
-          const siteName = report.daily_reports?.site_name;
-      
-          if (report.report_id && reportDate && siteName) {
-            recentMap.set(report.report_id, {
-              report_date: reportDate,
-              site_name: siteName,
-            });
-          }
-        });
-      
-        const recent = Array.from(recentMap.values())
-          .sort((a, b) => b.report_date.localeCompare(a.report_date))
-          .slice(0, 5);
-      
-        setRecentReports(recent);
+        const { data: memberRows, error: memberError } = await supabase
+  .from("report_members")
+  .select(`
+    overtime,
+    is_driver,
+    report_id
+  `)
+  .eq("employee_name", employee?.name ?? "");
+
+if (memberError) {
+  console.error("report_members取得失敗:", memberError.message);
+  return;
+}
+
+if (!memberRows || memberRows.length === 0) {
+  setWorkingDays(0);
+  setTotalOvertime(0);
+  setTotalVehicleCount(0);
+  setRecentReports([]);
+  return;
+}
+
+const reportIds = memberRows.map((row: any) => row.report_id).filter(Boolean);
+
+const { data: reportRows, error: reportError } = await supabase
+  .from("daily_reports")
+  .select("id, report_date, site_name")
+  .in("id", reportIds)
+  .gte("report_date", firstDay)
+  .lte("report_date", lastDay)
+  .order("report_date", { ascending: false });
+
+if (reportError) {
+  console.error("daily_reports取得失敗:", reportError.message);
+  return;
+}
+
+const reportMap = new Map<string, any>();
+(reportRows ?? []).forEach((report: any) => {
+  reportMap.set(report.id, report);
+});
+
+const currentMonthMembers = memberRows.filter((row: any) =>
+  reportMap.has(row.report_id)
+);
+
+const uniqueDays = Array.from(
+  new Set(
+    currentMonthMembers
+      .map((row: any) => reportMap.get(row.report_id)?.report_date)
+      .filter(Boolean)
+  )
+);
+setWorkingDays(uniqueDays.length);
+
+const overtimeSum = currentMonthMembers.reduce(
+  (sum: number, row: any) => sum + Number(row.overtime ?? 0),
+  0
+);
+setTotalOvertime(overtimeSum);
+
+const vehicleSum = currentMonthMembers.filter((row: any) => row.is_driver).length;
+setTotalVehicleCount(vehicleSum);
+
+const recent = (reportRows ?? [])
+  .slice(0, 5)
+  .map((report: any) => ({
+    report_date: report.report_date,
+    site_name: report.site_name,
+  }));
+
+setRecentReports(recent);
       }
     };
     
