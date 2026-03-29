@@ -90,6 +90,8 @@ const [licenseRemainingDays, setLicenseRemainingDays] = useState<number | null>(
       
       if (reportsError) {
         console.error("集計取得失敗:", reportsError.message);
+        console.log("employee.name", employee?.name);
+console.log("reports", reports);
       }
       
       if (reports) {
