@@ -3,18 +3,29 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
+type ReportRow = {
+  id: string;
+  report_date: string;
+  site_name: string | null;
+};
+
+type MemberRow = {
+  overtime: number | null;
+  is_driver: boolean | null;
+  report_id: string;
+};
+
 export default function HomePage() {
   const [employeeName, setEmployeeName] = useState("");
   const [workingDays, setWorkingDays] = useState(0);
   const [totalOvertime, setTotalOvertime] = useState(0);
   const [totalVehicleCount, setTotalVehicleCount] = useState(0);
-  const [recentReports, setRecentReports] = useState<any[]>([]);
+  const [recentReports, setRecentReports] = useState<ReportRow[]>([]);
+
   const [licenseName, setLicenseName] = useState("");
   const [licenseExpiryDate, setLicenseExpiryDate] = useState("");
-  const [licenseStatus, setLicenseStatus] = useState("");
+  const [licenseStatus, setLicenseStatus] = useState<"expired" | "warning" | "ok" | "">("");
   const [licenseRemainingDays, setLicenseRemainingDays] = useState<number | null>(null);
-  const [debugEmployeeName, setDebugEmployeeName] = useState("");
-  const [debugReportCount, setDebugReportCount] = useState(0);
 
   useEffect(() => {
     const fetchHomeData = async () => {
@@ -26,23 +37,29 @@ export default function HomePage() {
         return;
       }
 
-      const { data: employee } = await supabase
+      const { data: employee, error: employeeError } = await supabase
         .from("employees")
         .select("id, name")
         .eq("auth_user_id", user.id)
         .single();
 
-      if (!employee) return;
+      if (employeeError || !employee) {
+        console.error("社員情報取得失敗:", employeeError?.message);
+        return;
+      }
 
       setEmployeeName(employee.name);
-      setDebugEmployeeName(employee.name);
 
-      const { data: licenses } = await supabase
+      const { data: licenses, error: licenseError } = await supabase
         .from("licenses")
         .select("license_name, expiry_date")
         .eq("employee_id", employee.id)
         .order("created_at", { ascending: false })
         .limit(1);
+
+      if (licenseError) {
+        console.error("免許情報取得失敗:", licenseError.message);
+      }
 
       if (licenses && licenses.length > 0) {
         const license = licenses[0];
@@ -69,20 +86,10 @@ export default function HomePage() {
       }
 
       const today = new Date();
-      const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
-        .toISOString()
-        .slice(0, 10);
-      const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0)
-        .toISOString()
-        .slice(0, 10);
 
       const { data: memberRows, error: memberError } = await supabase
         .from("report_members")
-        .select(`
-          overtime,
-          is_driver,
-          report_id
-        `)
+        .select("overtime, is_driver, report_id")
         .eq("employee_name", employee.name);
 
       if (memberError) {
@@ -95,20 +102,17 @@ export default function HomePage() {
         setTotalOvertime(0);
         setTotalVehicleCount(0);
         setRecentReports([]);
-        setDebugReportCount(0);
         return;
       }
 
-      setDebugReportCount(memberRows.length);
-
-      const reportIds = memberRows.map((row: any) => row.report_id).filter(Boolean);
+      const reportIds = memberRows
+        .map((row: MemberRow) => row.report_id)
+        .filter(Boolean);
 
       const { data: reportRows, error: reportError } = await supabase
         .from("daily_reports")
         .select("id, report_date, site_name")
         .in("id", reportIds)
-        .gte("report_date", firstDay)
-        .lte("report_date", lastDay)
         .order("report_date", { ascending: false });
 
       if (reportError) {
@@ -116,40 +120,43 @@ export default function HomePage() {
         return;
       }
 
-      const reportMap = new Map<string, any>();
-      (reportRows ?? []).forEach((report: any) => {
+      const reportMap = new Map<string, ReportRow>();
+      (reportRows ?? []).forEach((report: ReportRow) => {
         reportMap.set(report.id, report);
       });
 
-      const currentMonthMembers = memberRows.filter((row: any) =>
-        reportMap.has(row.report_id)
-      );
+      const currentMonthMembers = (memberRows as MemberRow[]).filter((row) => {
+        const report = reportMap.get(row.report_id);
+        if (!report?.report_date) return false;
+
+        const reportDate = new Date(report.report_date);
+
+        return (
+          reportDate.getFullYear() === today.getFullYear() &&
+          reportDate.getMonth() === today.getMonth()
+        );
+      });
 
       const uniqueDays = Array.from(
         new Set(
           currentMonthMembers
-            .map((row: any) => reportMap.get(row.report_id)?.report_date)
+            .map((row) => reportMap.get(row.report_id)?.report_date)
             .filter(Boolean)
         )
       );
+
       setWorkingDays(uniqueDays.length);
 
       const overtimeSum = currentMonthMembers.reduce(
-        (sum: number, row: any) => sum + Number(row.overtime ?? 0),
+        (sum, row) => sum + Number(row.overtime ?? 0),
         0
       );
       setTotalOvertime(overtimeSum);
 
-      const vehicleSum = currentMonthMembers.filter((row: any) => row.is_driver).length;
+      const vehicleSum = currentMonthMembers.filter((row) => row.is_driver).length;
       setTotalVehicleCount(vehicleSum);
 
-      const recent = (reportRows ?? [])
-        .slice(0, 5)
-        .map((report: any) => ({
-          report_date: report.report_date,
-          site_name: report.site_name,
-        }));
-
+      const recent = (reportRows ?? []).slice(0, 5) as ReportRow[];
       setRecentReports(recent);
     };
 
@@ -196,8 +203,6 @@ export default function HomePage() {
         <p>今月の稼働日数: {workingDays}日</p>
         <p>今月の残業数: {totalOvertime}分</p>
         <p>今月の車両数: {totalVehicleCount}</p>
-        <p style={{ color: "red" }}>確認用 名前: {debugEmployeeName}</p>
-        <p style={{ color: "red" }}>確認用 report件数: {debugReportCount}</p>
 
         <h2 style={{ marginTop: 20 }}>免許</h2>
 
@@ -245,9 +250,9 @@ export default function HomePage() {
         {recentReports.length === 0 ? (
           <p>日報がありません</p>
         ) : (
-          recentReports.map((report, index) => (
+          recentReports.map((report) => (
             <div
-              key={index}
+              key={report.id}
               style={{
                 border: "1px solid #ccc",
                 borderRadius: 6,
@@ -256,7 +261,7 @@ export default function HomePage() {
               }}
             >
               <p>日付: {report.report_date}</p>
-              <p>現場: {report.site_name}</p>
+              <p>現場: {report.site_name || "-"}</p>
             </div>
           ))
         )}
