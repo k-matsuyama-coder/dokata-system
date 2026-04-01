@@ -263,17 +263,11 @@ export default function HomePage() {
       <p>日付: {report.report_date}</p>
       <p>現場: {report.site_name || "-"}</p>
 
-      <div
-        style={{
-          display: "flex",
-          gap: 8,
-          marginTop: 10,
-          flexWrap: "wrap",
-        }}
-      >
+      <div style={{ marginTop: 10 }}>
         <a
           href={`/reports/${report.id}`}
           style={{
+            display: "inline-block",
             textDecoration: "none",
             backgroundColor: "#111",
             color: "#fff",
@@ -283,21 +277,6 @@ export default function HomePage() {
           }}
         >
           詳細を見る
-        </a>
-
-        <a
-          href={`/reports/${report.id}/edit`}
-          style={{
-            textDecoration: "none",
-            backgroundColor: "#fff",
-            color: "#111",
-            padding: "8px 12px",
-            borderRadius: 8,
-            fontSize: 14,
-            border: "1px solid #ccc",
-          }}
-        >
-          編集する
         </a>
       </div>
     </div>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import ReportForm from "@/app/components/ReportForm";
+import { useRouter } from "next/navigation";
 
 type Employee = {
   name: string;
@@ -43,6 +44,7 @@ export default function NewReportPage() {
   const [siteSuggestions, setSiteSuggestions] = useState<string[]>([]);
   const [driverInput, setDriverInput] = useState("");
   const [selectedDrivers, setSelectedDrivers] = useState<string[]>([]);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchSiteSuggestions = async () => {
@@ -161,28 +163,8 @@ export default function NewReportPage() {
     }
 
     alert("保存成功");
-
-    setReportDate("");
-    setSite("");
-    setContractorName("");
-    setWork("");
-    setShiftType("day");
-    setStartTime("08:00");
-    setEndTime("17:00");
-    setOvertimeMinutes("");
-    setExpresswayMain("");
-    setExpresswaySecondary("");
-    setExpresswaySubcontract("");
-    setParkingMain("");
-    setParkingSecondary("");
-    setParkingSubcontract("");
-    setFuelGasoline("");
-    setFuelDiesel("");
-    setMemberInput("");
-    setSelectedMembers([]);
-    setDriverInput("");
-    setSelectedDrivers([]);
-    setNote("");
+router.push("/home");
+return;
   };
 
   return (
