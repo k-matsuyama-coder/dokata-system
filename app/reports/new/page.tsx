@@ -167,30 +167,12 @@ if (membersError) {
   alert("メンバー保存失敗: " + membersError.message);
   return;
 }
+*/
 
+alert("daily_reports 保存成功");
+return;
 
-    alert("保存成功");
-
-    setReportDate("");
-    setSite("");
-    setWork("");
-    setShiftType("day");
-setStartTime("08:00");
-setEndTime("17:00");
-    setOvertimeMinutes("");
-    setExpresswayMain("");
-    setExpresswaySecondary("");
-    setExpresswaySubcontract("");
-    setParkingMain("");
-    setParkingSecondary("");
-    setParkingSubcontract("");
-    setFuelGasoline("");
-    setFuelDiesel("");
-    setMemberInput("");
-    setSelectedMembers([]);
-    setDriverInput("");
-    setSelectedDrivers([]);
-    setNote("");
+    
   };
 
   return (
