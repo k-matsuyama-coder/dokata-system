@@ -363,13 +363,26 @@ const parkingTotal =
       <div style={sectionStyle}>
         <p>昼 / 夜</p>
         <select
-          value={shiftType}
-          onChange={(e) => setShiftType(e.target.value)}
-          style={inputStyle}
-        >
-          <option value="day">昼</option>
-          <option value="night">夜</option>
-        </select>
+  value={shiftType}
+  onChange={(e) => {
+    const value = e.target.value;
+    setShiftType(value);
+
+    if (value === "day") {
+      setStartTime("08:00");
+      setEndTime("17:00");
+    }
+
+    if (value === "night") {
+      setStartTime("20:00");
+      setEndTime("05:00");
+    }
+  }}
+  style={inputStyle}
+>
+  <option value="day">昼</option>
+  <option value="night">夜</option>
+</select>
       </div>
 
       <div style={sectionStyle}>
