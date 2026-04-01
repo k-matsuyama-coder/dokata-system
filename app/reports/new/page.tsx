@@ -8,6 +8,12 @@ type Employee = {
   name: string;
 };
 
+type MemberEntry = {
+  name: string;
+  labor: string;
+  overtime: string;
+};
+
 export default function NewReportPage() {
   const [reportDate, setReportDate] = useState("");
   const [site, setSite] = useState("");
@@ -33,9 +39,7 @@ export default function NewReportPage() {
 
   const [memberInput, setMemberInput] = useState("");
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [selectedMembers, setSelectedMembers] = useState<
-  { name: string; labor: string; overtime: string }[]
->([]);
+  const [selectedMembers, setSelectedMembers] = useState<MemberEntry[]>([]);
   const [siteSuggestions, setSiteSuggestions] = useState<string[]>([]);
   const [driverInput, setDriverInput] = useState("");
   const [selectedDrivers, setSelectedDrivers] = useState<string[]>([]);
@@ -97,7 +101,6 @@ export default function NewReportPage() {
       alert("ログインしてください");
       return;
     }
-    alert(`ログイン中ユーザーID: ${user.id}`);
 
     const payload = {
       worker_name: employeeName,
@@ -128,51 +131,58 @@ export default function NewReportPage() {
       note,
       user_id: user.id,
     };
-    
-    alert(
-      `user_id: ${payload.user_id}\n` +
-      `report_date: ${payload.report_date}\n` +
-      `shift_type: ${payload.shift_type}\n` +
-      `start_time: ${payload.start_time}\n` +
-      `end_time: ${payload.end_time}`
-    );
-    
-    const { error: reportError } = await supabase
-  .from("daily_reports")
-  .insert([payload]);
 
-if (reportError) {
-  alert("保存失敗: " + reportError.message);
-  return;
-}
-/*
-if (reportError || !reportData) {
-  alert("保存失敗: " + (reportError?.message || "日報作成失敗"));
-  return;
-}
+    const { data: reportData, error: reportError } = await supabase
+      .from("daily_reports")
+      .insert([payload])
+      .select("id")
+      .single();
 
-const reportMembersPayload = selectedMembers.map((member) => ({
-  report_id: reportData.id,
-  employee_name: member.name,
-  labor: Number(member.labor || 0),
-  overtime: Number(member.overtime || 0),
-  is_driver: selectedDrivers.includes(member.name),
-}));
+    if (reportError || !reportData) {
+      alert("日報保存失敗: " + (reportError?.message || "id取得失敗"));
+      return;
+    }
 
-const { error: membersError } = await supabase
-  .from("report_members")
-  .insert(reportMembersPayload);
+    const reportMembersPayload = selectedMembers.map((member) => ({
+      report_id: reportData.id,
+      employee_name: member.name,
+      labor: Number(member.labor || 0),
+      overtime: Number(member.overtime || 0),
+      is_driver: selectedDrivers.includes(member.name),
+    }));
 
-if (membersError) {
-  alert("メンバー保存失敗: " + membersError.message);
-  return;
-}
-*/
+    const { error: membersError } = await supabase
+      .from("report_members")
+      .insert(reportMembersPayload);
 
-alert("daily_reports 保存成功");
-return;
+    if (membersError) {
+      alert("メンバー保存失敗: " + membersError.message);
+      return;
+    }
 
-    
+    alert("保存成功");
+
+    setReportDate("");
+    setSite("");
+    setContractorName("");
+    setWork("");
+    setShiftType("day");
+    setStartTime("08:00");
+    setEndTime("17:00");
+    setOvertimeMinutes("");
+    setExpresswayMain("");
+    setExpresswaySecondary("");
+    setExpresswaySubcontract("");
+    setParkingMain("");
+    setParkingSecondary("");
+    setParkingSubcontract("");
+    setFuelGasoline("");
+    setFuelDiesel("");
+    setMemberInput("");
+    setSelectedMembers([]);
+    setDriverInput("");
+    setSelectedDrivers([]);
+    setNote("");
   };
 
   return (
