@@ -246,25 +246,63 @@ export default function HomePage() {
           <p>免許は登録されていません</p>
         )}
 
-        <h2 style={{ marginTop: 20 }}>最近の日報</h2>
-        {recentReports.length === 0 ? (
-          <p>日報がありません</p>
-        ) : (
-          recentReports.map((report) => (
-            <div
-              key={report.id}
-              style={{
-                border: "1px solid #ccc",
-                borderRadius: 6,
-                padding: 10,
-                marginTop: 8,
-              }}
-            >
-              <p>日付: {report.report_date}</p>
-              <p>現場: {report.site_name || "-"}</p>
-            </div>
-          ))
-        )}
+{recentReports.length === 0 ? (
+  <p>日報がありません</p>
+) : (
+  recentReports.map((report) => (
+    <div
+      key={report.id}
+      style={{
+        border: "1px solid #ccc",
+        borderRadius: 6,
+        padding: 10,
+        marginTop: 8,
+        backgroundColor: "#fff",
+      }}
+    >
+      <p>日付: {report.report_date}</p>
+      <p>現場: {report.site_name || "-"}</p>
+
+      <div
+        style={{
+          display: "flex",
+          gap: 8,
+          marginTop: 10,
+          flexWrap: "wrap",
+        }}
+      >
+        <a
+          href={`/reports/${report.id}`}
+          style={{
+            textDecoration: "none",
+            backgroundColor: "#111",
+            color: "#fff",
+            padding: "8px 12px",
+            borderRadius: 8,
+            fontSize: 14,
+          }}
+        >
+          詳細を見る
+        </a>
+
+        <a
+          href={`/reports/${report.id}/edit`}
+          style={{
+            textDecoration: "none",
+            backgroundColor: "#fff",
+            color: "#111",
+            padding: "8px 12px",
+            borderRadius: 8,
+            fontSize: 14,
+            border: "1px solid #ccc",
+          }}
+        >
+          編集する
+        </a>
+      </div>
+    </div>
+  ))
+)}
       </div>
     </div>
   );
