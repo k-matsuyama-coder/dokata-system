@@ -161,9 +161,9 @@ if (membersError) {
     setReportDate("");
     setSite("");
     setWork("");
-    setStartTime("");
-    setEndTime("");
     setShiftType("day");
+setStartTime("08:00");
+setEndTime("17:00");
     setOvertimeMinutes("");
     setExpresswayMain("");
     setExpresswaySecondary("");
