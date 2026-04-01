@@ -239,6 +239,10 @@ const parkingTotal =
 
   const [editingLaborName, setEditingLaborName] = useState<string | null>(null);
 
+  const [shiftType, setShiftType] = useState("day");
+const [startTime, setStartTime] = useState("08:00");
+const [endTime, setEndTime] = useState("17:00");
+
   const validate = () => {
     if (!reportDate) return "日付を入力してください";
     if (!contractorName) return "元請を入力してください";
@@ -378,7 +382,6 @@ const parkingTotal =
       setEndTime("05:00");
     }
   }}
-  style={inputStyle}
 >
   <option value="day">昼</option>
   <option value="night">夜</option>
