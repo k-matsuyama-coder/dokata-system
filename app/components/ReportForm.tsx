@@ -239,10 +239,6 @@ const parkingTotal =
 
   const [editingLaborName, setEditingLaborName] = useState<string | null>(null);
 
-  const [shiftType, setShiftType] = useState("day");
-const [startTime, setStartTime] = useState("08:00");
-const [endTime, setEndTime] = useState("17:00");
-
   const validate = () => {
     if (!reportDate) return "日付を入力してください";
     if (!contractorName) return "元請を入力してください";
@@ -365,28 +361,51 @@ const [endTime, setEndTime] = useState("17:00");
       </div>
 
       <div style={sectionStyle}>
-        <p>昼 / 夜</p>
-        <select
-  value={shiftType}
-  onChange={(e) => {
-    const value = e.target.value;
-    setShiftType(value);
+  <p>昼 / 夜</p>
+  <div style={{ display: "flex", gap: 8 }}>
+    <button
+      type="button"
+      onClick={() => {
+        setShiftType("day");
+        setStartTime("08:00");
+        setEndTime("17:00");
+      }}
+      style={{
+        flex: 1,
+        padding: 12,
+        borderRadius: 8,
+        border: shiftType === "day" ? "2px solid #111" : "1px solid #ccc",
+        backgroundColor: shiftType === "day" ? "#f3f3f3" : "#fff",
+        cursor: "pointer",
+        fontSize: 16,
+        fontWeight: 600,
+      }}
+    >
+      昼
+    </button>
 
-    if (value === "day") {
-      setStartTime("08:00");
-      setEndTime("17:00");
-    }
-
-    if (value === "night") {
-      setStartTime("20:00");
-      setEndTime("05:00");
-    }
-  }}
->
-  <option value="day">昼</option>
-  <option value="night">夜</option>
-</select>
-      </div>
+    <button
+      type="button"
+      onClick={() => {
+        setShiftType("night");
+        setStartTime("20:00");
+        setEndTime("05:00");
+      }}
+      style={{
+        flex: 1,
+        padding: 12,
+        borderRadius: 8,
+        border: shiftType === "night" ? "2px solid #111" : "1px solid #ccc",
+        backgroundColor: shiftType === "night" ? "#f3f3f3" : "#fff",
+        cursor: "pointer",
+        fontSize: 16,
+        fontWeight: 600,
+      }}
+    >
+      夜
+    </button>
+  </div>
+</div>
 
       <div style={sectionStyle}>
         <p>作業内容</p>

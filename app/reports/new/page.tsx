@@ -39,6 +39,9 @@ export default function NewReportPage() {
   const [siteSuggestions, setSiteSuggestions] = useState<string[]>([]);
   const [driverInput, setDriverInput] = useState("");
   const [selectedDrivers, setSelectedDrivers] = useState<string[]>([]);
+  const [shiftType, setShiftType] = useState("day");
+const [startTime, setStartTime] = useState("08:00");
+const [endTime, setEndTime] = useState("17:00");
 
   useEffect(() => {
     const fetchSiteSuggestions = async () => {
