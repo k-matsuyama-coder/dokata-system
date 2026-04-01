@@ -97,11 +97,9 @@ export default function NewReportPage() {
       alert("ログインしてください");
       return;
     }
+    alert(`ログイン中ユーザーID: ${user.id}`);
 
-    const { data: reportData, error: reportError } = await supabase
-  .from("daily_reports")
-  .insert([
-    {
+    const payload = {
       worker_name: employeeName,
       site_name: site,
       contractor_name: contractorName,
@@ -129,10 +127,21 @@ export default function NewReportPage() {
       member_details: selectedMembers,
       note,
       user_id: user.id,
-    },
-  ])
-  .select("id")
-  .single();
+    };
+    
+    alert(
+      `user_id: ${payload.user_id}\n` +
+      `report_date: ${payload.report_date}\n` +
+      `shift_type: ${payload.shift_type}\n` +
+      `start_time: ${payload.start_time}\n` +
+      `end_time: ${payload.end_time}`
+    );
+    
+    const { data: reportData, error: reportError } = await supabase
+      .from("daily_reports")
+      .insert([payload])
+      .select("id")
+      .single();
 
 if (reportError || !reportData) {
   alert("保存失敗: " + (reportError?.message || "日報作成失敗"));
