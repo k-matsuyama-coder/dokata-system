@@ -13,9 +13,9 @@ export default function NewReportPage() {
   const [site, setSite] = useState("");
   const [contractorName, setContractorName] = useState("");
   const [work, setWork] = useState("");
-  const [startTime, setStartTime] = useState("");
-  const [endTime, setEndTime] = useState("");
   const [shiftType, setShiftType] = useState("day");
+  const [startTime, setStartTime] = useState("08:00");
+  const [endTime, setEndTime] = useState("17:00");
   const [overtimeMinutes, setOvertimeMinutes] = useState("");
   const [note, setNote] = useState("");
   const [employeeName, setEmployeeName] = useState("");
@@ -39,9 +39,6 @@ export default function NewReportPage() {
   const [siteSuggestions, setSiteSuggestions] = useState<string[]>([]);
   const [driverInput, setDriverInput] = useState("");
   const [selectedDrivers, setSelectedDrivers] = useState<string[]>([]);
-  const [shiftType, setShiftType] = useState("day");
-const [startTime, setStartTime] = useState("08:00");
-const [endTime, setEndTime] = useState("17:00");
 
   useEffect(() => {
     const fetchSiteSuggestions = async () => {
