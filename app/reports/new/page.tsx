@@ -137,17 +137,20 @@ export default function NewReportPage() {
       `end_time: ${payload.end_time}`
     );
     
-    const { data: reportData, error: reportError } = await supabase
-      .from("daily_reports")
-      .insert([payload])
-      .select("id")
-      .single();
+    const { error: reportError } = await supabase
+  .from("daily_reports")
+  .insert([payload]);
+
+if (reportError) {
+  alert("保存失敗: " + reportError.message);
+  return;
+}
 
 if (reportError || !reportData) {
   alert("保存失敗: " + (reportError?.message || "日報作成失敗"));
   return;
 }
-
+/*
 const reportMembersPayload = selectedMembers.map((member) => ({
   report_id: reportData.id,
   employee_name: member.name,
@@ -164,6 +167,7 @@ if (membersError) {
   alert("メンバー保存失敗: " + membersError.message);
   return;
 }
+*/
 
     alert("保存成功");
 
