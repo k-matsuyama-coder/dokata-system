@@ -9,6 +9,12 @@ type Employee = {
   name: string;
 };
 
+type MemberEntry = {
+  name: string;
+  labor: string;
+  overtime: string;
+};
+
 export default function EditReportPage() {
   const params = useParams();
   const id = params.id as string;
@@ -23,6 +29,7 @@ export default function EditReportPage() {
   const [overtimeMinutes, setOvertimeMinutes] = useState("");
   const [note, setNote] = useState("");
   const [employeeName, setEmployeeName] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const [expresswayMain, setExpresswayMain] = useState("");
   const [expresswaySecondary, setExpresswaySecondary] = useState("");
@@ -37,9 +44,7 @@ export default function EditReportPage() {
 
   const [memberInput, setMemberInput] = useState("");
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [selectedMembers, setSelectedMembers] = useState<
-  { name: string; labor: string; overtime: string }[]
->([]);
+  const [selectedMembers, setSelectedMembers] = useState<MemberEntry[]>([]);
   const [siteSuggestions, setSiteSuggestions] = useState<string[]>([]);
   const [driverInput, setDriverInput] = useState("");
   const [selectedDrivers, setSelectedDrivers] = useState<string[]>([]);
@@ -55,12 +60,29 @@ export default function EditReportPage() {
         return;
       }
 
-      const { data: report, error: reportError } = await supabase
+      const { data: employee } = await supabase
+        .from("employees")
+        .select("name, role")
+        .eq("auth_user_id", user.id)
+        .single();
+
+      const admin = employee?.role === "admin";
+      setIsAdmin(admin);
+
+      if (employee) {
+        setEmployeeName(employee.name);
+      }
+
+      let reportQuery = supabase
         .from("daily_reports")
         .select("*")
-        .eq("id", id)
-        .eq("user_id", user.id)
-        .single();
+        .eq("id", id);
+
+      if (!admin) {
+        reportQuery = reportQuery.eq("user_id", user.id);
+      }
+
+      const { data: report, error: reportError } = await reportQuery.single();
 
       if (reportError || !report) {
         alert("日報が見つかりません");
@@ -71,7 +93,6 @@ export default function EditReportPage() {
       setReportDate(report.report_date ?? "");
       setContractorName(report.contractor_name ?? "");
       setSite(report.site_name ?? "");
-      
       setWork(report.work_description ?? "");
       setStartTime(report.start_time ?? "");
       setEndTime(report.end_time ?? "");
@@ -113,16 +134,6 @@ export default function EditReportPage() {
           : []
       );
 
-      const { data: employee } = await supabase
-        .from("employees")
-        .select("name")
-        .eq("auth_user_id", user.id)
-        .single();
-
-      if (employee) {
-        setEmployeeName(employee.name);
-      }
-
       const { data: employeeList } = await supabase
         .from("employees")
         .select("name")
@@ -159,7 +170,7 @@ export default function EditReportPage() {
       return;
     }
 
-    const { error } = await supabase
+    let updateQuery = supabase
       .from("daily_reports")
       .update({
         worker_name: employeeName,
@@ -189,44 +200,49 @@ export default function EditReportPage() {
         member_details: selectedMembers,
         note,
       })
-      .eq("id", id)
-      .eq("user_id", user.id);
+      .eq("id", id);
 
-      if (error) {
-        alert("更新失敗: " + error.message);
-        return;
-      }
-      
-      const { error: deleteMembersError } = await supabase
-        .from("report_members")
-        .delete()
-        .eq("report_id", id);
-      
-      if (deleteMembersError) {
-        alert("メンバー更新失敗: " + deleteMembersError.message);
-        return;
-      }
-      
-      const reportMembersPayload = selectedMembers.map((member) => ({
-        report_id: id,
-        employee_name: member.name,
-        labor: Number(member.labor || 0),
-        overtime: Number(member.overtime || 0),
-        is_driver: selectedDrivers.includes(member.name),
-      }));
-      
-      const { error: insertMembersError } = await supabase
-        .from("report_members")
-        .insert(reportMembersPayload);
-      
-      if (insertMembersError) {
-        alert("メンバー更新失敗: " + insertMembersError.message);
-        return;
-      }
-      
-      alert("更新成功");
-      window.location.href = "/reports";
-    };
+    if (!isAdmin) {
+      updateQuery = updateQuery.eq("user_id", user.id);
+    }
+
+    const { error } = await updateQuery;
+
+    if (error) {
+      alert("更新失敗: " + error.message);
+      return;
+    }
+
+    const { error: deleteMembersError } = await supabase
+      .from("report_members")
+      .delete()
+      .eq("report_id", id);
+
+    if (deleteMembersError) {
+      alert("メンバー更新失敗: " + deleteMembersError.message);
+      return;
+    }
+
+    const reportMembersPayload = selectedMembers.map((member) => ({
+      report_id: id,
+      employee_name: member.name,
+      labor: Number(member.labor || 0),
+      overtime: Number(member.overtime || 0),
+      is_driver: selectedDrivers.includes(member.name),
+    }));
+
+    const { error: insertMembersError } = await supabase
+      .from("report_members")
+      .insert(reportMembersPayload);
+
+    if (insertMembersError) {
+      alert("メンバー更新失敗: " + insertMembersError.message);
+      return;
+    }
+
+    alert("更新成功");
+    window.location.href = `/reports/${id}`;
+  };
 
   return (
     <ReportForm
