@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import ReportSummaryCard from "@/app/components/ReportSummaryCard";
 
 type Report = {
   id: string;
@@ -300,8 +299,102 @@ export default function AdminPage() {
 ) : (
   <div style={{ display: "grid", gap: 12 }}>
     {filteredReports.map((report) => (
-      <ReportSummaryCard key={report.id} report={report} />
-    ))}
+  <div
+    key={report.id}
+    style={{
+      border: "1px solid #ddd",
+      borderRadius: 12,
+      padding: 16,
+      backgroundColor: "#fff",
+    }}
+  >
+    <p style={{ margin: 0 }}>日付: {report.report_date}</p>
+    <p style={{ margin: "6px 0 0 0" }}>名前: {report.worker_name}</p>
+    <p style={{ margin: "6px 0 0 0" }}>現場: {report.site_name}</p>
+
+    <div
+      style={{
+        display: "flex",
+        gap: 8,
+        flexWrap: "wrap",
+        marginTop: 12,
+      }}
+    >
+      <a
+        href={`/reports/${report.id}`}
+        style={{
+          display: "inline-block",
+          textDecoration: "none",
+          backgroundColor: "#111",
+          color: "#fff",
+          padding: "8px 12px",
+          borderRadius: 8,
+          fontSize: 14,
+        }}
+      >
+        閲覧
+      </a>
+
+      <a
+        href={`/reports/${report.id}/edit`}
+        style={{
+          display: "inline-block",
+          textDecoration: "none",
+          backgroundColor: "#fff",
+          color: "#111",
+          padding: "8px 12px",
+          borderRadius: 8,
+          fontSize: 14,
+          border: "1px solid #ccc",
+        }}
+      >
+        編集
+      </a>
+
+      <button
+        type="button"
+        onClick={async () => {
+          const ok = window.confirm("この日報を削除しますか？");
+          if (!ok) return;
+
+          const { error: deleteMembersError } = await supabase
+            .from("report_members")
+            .delete()
+            .eq("report_id", report.id);
+
+          if (deleteMembersError) {
+            alert("メンバー削除失敗: " + deleteMembersError.message);
+            return;
+          }
+
+          const { error: deleteReportError } = await supabase
+            .from("daily_reports")
+            .delete()
+            .eq("id", report.id);
+
+          if (deleteReportError) {
+            alert("日報削除失敗: " + deleteReportError.message);
+            return;
+          }
+
+          alert("削除しました");
+          setReports((prev) => prev.filter((r) => r.id !== report.id));
+        }}
+        style={{
+          border: "none",
+          backgroundColor: "#d11a2a",
+          color: "#fff",
+          padding: "8px 12px",
+          borderRadius: 8,
+          fontSize: 14,
+          cursor: "pointer",
+        }}
+      >
+        削除
+      </button>
+    </div>
+  </div>
+))}
   </div>
 )}
       </div>
