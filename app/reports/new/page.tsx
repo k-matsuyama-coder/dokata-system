@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import ReportForm from "@/app/components/ReportForm";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 
 type Employee = {
   name: string;
@@ -162,8 +163,8 @@ export default function NewReportPage() {
       return;
     }
 
-    alert("保存成功");
-router.push("/home");
+    toast.success("保存しました");
+router.replace("/home");
 return;
   };
 
