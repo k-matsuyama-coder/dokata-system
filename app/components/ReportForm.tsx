@@ -568,30 +568,33 @@ const [showParking, setShowParking] = useState(false);
       border: "1px solid #ddd",
       borderRadius: 8,
       backgroundColor: "#fafafa",
+      boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
     }}
   >
-    <p style={{ margin: 0, fontWeight: "bold" }}>
-      {showExpressway ? "▼" : "▶"} 高速料金
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-  <span
-    style={{
-      display: "inline-block",
-      transition: "transform 0.25s ease",
-      transform: showExpressway ? "rotate(90deg)" : "rotate(0deg)",
-      fontSize: 14,
-    }}
-  >
-    ▶
-  </span>
-  <p style={{ margin: 0, fontWeight: "bold" }}>高速料金</p>
-</div>
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <span
+        style={{
+          display: "inline-block",
+          transition: "transform 0.25s ease",
+          transform: showExpressway ? "rotate(90deg)" : "rotate(0deg)",
+          fontSize: 14,
+        }}
+      >
+        ▶
+      </span>
+      <p style={{ margin: 0, fontWeight: "bold" }}>高速料金</p>
+    </div>
+
+    <p style={{ margin: 0, fontWeight: "bold" }}>¥{expresswayTotal}</p>
+  </div>
 
   <div
     style={{
       maxHeight: showExpressway ? "500px" : "0",
       opacity: showExpressway ? 1 : 0,
       overflow: "hidden",
-      transition: "max-height 0.35s ease, opacity 0.25s ease, margin-top 0.25s ease",
+      transition:
+        "max-height 0.35s ease, opacity 0.25s ease, margin-top 0.25s ease",
       marginTop: showExpressway ? 12 : 0,
     }}
   >
@@ -641,21 +644,23 @@ const [showParking, setShowParking] = useState(false);
       border: "1px solid #ddd",
       borderRadius: 8,
       backgroundColor: "#fafafa",
+      boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
     }}
   >
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-  <span
-    style={{
-      display: "inline-block",
-      transition: "transform 0.25s ease",
-      transform: showParking ? "rotate(90deg)" : "rotate(0deg)",
-      fontSize: 14,
-    }}
-  >
-    ▶
-  </span>
-  <p style={{ margin: 0, fontWeight: "bold" }}>駐車場料金</p>
-</div>
+      <span
+        style={{
+          display: "inline-block",
+          transition: "transform 0.25s ease",
+          transform: showParking ? "rotate(90deg)" : "rotate(0deg)",
+          fontSize: 14,
+        }}
+      >
+        ▶
+      </span>
+      <p style={{ margin: 0, fontWeight: "bold" }}>駐車場料金</p>
+    </div>
+
     <p style={{ margin: 0, fontWeight: "bold" }}>¥{parkingTotal}</p>
   </div>
 
@@ -664,7 +669,8 @@ const [showParking, setShowParking] = useState(false);
       maxHeight: showParking ? "500px" : "0",
       opacity: showParking ? 1 : 0,
       overflow: "hidden",
-      transition: "max-height 0.35s ease, opacity 0.25s ease, margin-top 0.25s ease",
+      transition:
+        "max-height 0.35s ease, opacity 0.25s ease, margin-top 0.25s ease",
       marginTop: showParking ? 12 : 0,
     }}
   >
