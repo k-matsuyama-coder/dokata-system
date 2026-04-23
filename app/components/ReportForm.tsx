@@ -241,11 +241,6 @@ const parkingTotal =
   Number(parkingSecondary || 0) +
   Number(parkingSubcontract || 0);
 
-const parkingTotal =
-  Number(parkingMain || 0) +
-  Number(parkingSecondary || 0) +
-  Number(parkingSubcontract || 0);
-
   const [editingLaborName, setEditingLaborName] = useState<string | null>(null);
 
   const validate = () => {
