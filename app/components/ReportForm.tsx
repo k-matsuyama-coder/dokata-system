@@ -213,33 +213,33 @@ const [showParking, setShowParking] = useState(false);
     (sum, member) => sum + Number(member.labor || 0),
     0
   );
-
+  
   const totalOvertime = selectedMembers.reduce(
     (sum, member) => sum + Number(member.overtime || 0),
     0
   );
-
+  
   const expresswayTotal =
-  Number(expresswayMain || 0) +
-  Number(expresswaySecondary || 0) +
-  Number(expresswaySubcontract || 0);
-
-useEffect(() => {
-  if (expresswayTotal > 0) {
-    setShowExpressway(true);
-  }
-}, [expresswayTotal]);
-
-useEffect(() => {
-  if (parkingTotal > 0) {
-    setShowParking(true);
-  }
-}, [parkingTotal]);
-
-const parkingTotal =
-  Number(parkingMain || 0) +
-  Number(parkingSecondary || 0) +
-  Number(parkingSubcontract || 0);
+    Number(expresswayMain || 0) +
+    Number(expresswaySecondary || 0) +
+    Number(expresswaySubcontract || 0);
+  
+  const parkingTotal =
+    Number(parkingMain || 0) +
+    Number(parkingSecondary || 0) +
+    Number(parkingSubcontract || 0);
+  
+  useEffect(() => {
+    if (expresswayTotal > 0) {
+      setShowExpressway(true);
+    }
+  }, [expresswayTotal]);
+  
+  useEffect(() => {
+    if (parkingTotal > 0) {
+      setShowParking(true);
+    }
+  }, [parkingTotal]);
 
   const [editingLaborName, setEditingLaborName] = useState<string | null>(null);
 
