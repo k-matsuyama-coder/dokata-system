@@ -163,6 +163,9 @@ export default function ReportForm(props: ReportFormProps) {
     "200",
   ];
 
+  const [showExpressway, setShowExpressway] = useState(false);
+const [showParking, setShowParking] = useState(false);
+
   const inputStyle = {
     width: "100%",
     padding: 12,
@@ -543,110 +546,116 @@ const parkingTotal =
 
       <div style={sectionStyle}>
   <div
+    onClick={() => setShowExpressway(!showExpressway)}
     style={{
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
-      marginBottom: 8,
-      flexWrap: "wrap",
-      gap: 8,
+      cursor: "pointer",
+      padding: "12px",
+      border: "1px solid #ddd",
+      borderRadius: 8,
+      backgroundColor: "#fafafa",
     }}
   >
-    <p style={{ margin: 0, fontWeight: "bold" }}>高速料金</p>
-    <p style={{ margin: 0, fontWeight: "bold" }}>合計 ¥{expresswayTotal}</p>
+    <p style={{ margin: 0, fontWeight: "bold" }}>
+      {showExpressway ? "▼" : "▶"} 高速料金
+    </p>
+    <p style={{ margin: 0, fontWeight: "bold" }}>
+      ¥{expresswayTotal}
+    </p>
   </div>
 
-  <div
-    style={{
-      display: "grid",
-      gridTemplateColumns: "1fr",
-      gap: 12,
-    }}
-  >
-    <div>
-      <p style={{ marginBottom: 6 }}>本体</p>
-      <input
-        type="number"
-        value={expresswayMain}
-        onChange={(e) => setExpresswayMain(e.target.value)}
-        style={inputStyle}
-      />
-    </div>
+  {showExpressway && (
+    <div style={{ marginTop: 12, display: "grid", gap: 12 }}>
+      <div>
+        <p>本体</p>
+        <input
+          type="number"
+          value={expresswayMain}
+          onChange={(e) => setExpresswayMain(e.target.value)}
+          style={inputStyle}
+        />
+      </div>
 
-    <div>
-      <p style={{ marginBottom: 6 }}>2次請け</p>
-      <input
-        type="number"
-        value={expresswaySecondary}
-        onChange={(e) => setExpresswaySecondary(e.target.value)}
-        style={inputStyle}
-      />
-    </div>
+      <div>
+        <p>2次請け</p>
+        <input
+          type="number"
+          value={expresswaySecondary}
+          onChange={(e) => setExpresswaySecondary(e.target.value)}
+          style={inputStyle}
+        />
+      </div>
 
-    <div>
-      <p style={{ marginBottom: 6 }}>下請け</p>
-      <input
-        type="number"
-        value={expresswaySubcontract}
-        onChange={(e) => setExpresswaySubcontract(e.target.value)}
-        style={inputStyle}
-      />
+      <div>
+        <p>下請け</p>
+        <input
+          type="number"
+          value={expresswaySubcontract}
+          onChange={(e) => setExpresswaySubcontract(e.target.value)}
+          style={inputStyle}
+        />
+      </div>
     </div>
-  </div>
+  )}
 </div>
 
 <div style={sectionStyle}>
   <div
+    onClick={() => setShowParking(!showParking)}
     style={{
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
-      marginBottom: 8,
-      flexWrap: "wrap",
-      gap: 8,
+      cursor: "pointer",
+      padding: "12px",
+      border: "1px solid #ddd",
+      borderRadius: 8,
+      backgroundColor: "#fafafa",
     }}
   >
-    <p style={{ margin: 0, fontWeight: "bold" }}>駐車場料金</p>
-    <p style={{ margin: 0, fontWeight: "bold" }}>合計 ¥{parkingTotal}</p>
+    <p style={{ margin: 0, fontWeight: "bold" }}>
+      {showParking ? "▼" : "▶"} 駐車場料金
+    </p>
+    <p style={{ margin: 0, fontWeight: "bold" }}>
+      ¥{parkingTotal}
+    </p>
   </div>
 
-  <div
-    style={{
-      display: "grid",
-      gridTemplateColumns: "1fr",
-      gap: 12,
-    }}
-  >
-    <div>
-      <p style={{ marginBottom: 6 }}>本体</p>
-      <input
-        type="number"
-        value={parkingMain}
-        onChange={(e) => setParkingMain(e.target.value)}
-        style={inputStyle}
-      />
-    </div>
+  {showParking && (
+    <div style={{ marginTop: 12, display: "grid", gap: 12 }}>
+      <div>
+        <p>本体</p>
+        <input
+          type="number"
+          value={parkingMain}
+          onChange={(e) => setParkingMain(e.target.value)}
+          style={inputStyle}
+        />
+      </div>
 
-    <div>
-      <p style={{ marginBottom: 6 }}>2次請け</p>
-      <input
-        type="number"
-        value={parkingSecondary}
-        onChange={(e) => setParkingSecondary(e.target.value)}
-        style={inputStyle}
-      />
-    </div>
+      <div>
+        <p>2次請け</p>
+        <input
+          type="number"
+          value={parkingSecondary}
+          onChange={(e) => setParkingSecondary(e.target.value)}
+          style={inputStyle}
+        />
+      </div>
 
-    <div>
-      <p style={{ marginBottom: 6 }}>下請け</p>
-      <input
-        type="number"
-        value={parkingSubcontract}
-        onChange={(e) => setParkingSubcontract(e.target.value)}
-        style={inputStyle}
-      />
+      <div>
+        <p>下請け</p>
+        <input
+          type="number"
+          value={parkingSubcontract}
+          onChange={(e) => setParkingSubcontract(e.target.value)}
+          style={inputStyle}
+        />
+      </div>
     </div>
-  </div>
+  )}
 </div>
 
       <div style={sectionStyle}>
