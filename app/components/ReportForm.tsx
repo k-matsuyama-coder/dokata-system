@@ -224,6 +224,18 @@ const [showParking, setShowParking] = useState(false);
   Number(expresswaySecondary || 0) +
   Number(expresswaySubcontract || 0);
 
+  useEffect(() => {
+    if (expresswayTotal > 0) {
+      setShowExpressway(true);
+    }
+  }, [expresswayTotal]);
+  
+  useEffect(() => {
+    if (parkingTotal > 0) {
+      setShowParking(true);
+    }
+  }, [parkingTotal]);
+
 const parkingTotal =
   Number(parkingMain || 0) +
   Number(parkingSecondary || 0) +
@@ -561,13 +573,19 @@ const parkingTotal =
     <p style={{ margin: 0, fontWeight: "bold" }}>
       {showExpressway ? "▼" : "▶"} 高速料金
     </p>
-    <p style={{ margin: 0, fontWeight: "bold" }}>
-      ¥{expresswayTotal}
-    </p>
+    <p style={{ margin: 0, fontWeight: "bold" }}>¥{expresswayTotal}</p>
   </div>
 
-  {showExpressway && (
-    <div style={{ marginTop: 12, display: "grid", gap: 12 }}>
+  <div
+    style={{
+      maxHeight: showExpressway ? "500px" : "0",
+      opacity: showExpressway ? 1 : 0,
+      overflow: "hidden",
+      transition: "max-height 0.35s ease, opacity 0.25s ease, margin-top 0.25s ease",
+      marginTop: showExpressway ? 12 : 0,
+    }}
+  >
+    <div style={{ display: "grid", gap: 12 }}>
       <div>
         <p>本体</p>
         <input
@@ -598,7 +616,7 @@ const parkingTotal =
         />
       </div>
     </div>
-  )}
+  </div>
 </div>
 
 <div style={sectionStyle}>
@@ -618,13 +636,19 @@ const parkingTotal =
     <p style={{ margin: 0, fontWeight: "bold" }}>
       {showParking ? "▼" : "▶"} 駐車場料金
     </p>
-    <p style={{ margin: 0, fontWeight: "bold" }}>
-      ¥{parkingTotal}
-    </p>
+    <p style={{ margin: 0, fontWeight: "bold" }}>¥{parkingTotal}</p>
   </div>
 
-  {showParking && (
-    <div style={{ marginTop: 12, display: "grid", gap: 12 }}>
+  <div
+    style={{
+      maxHeight: showParking ? "500px" : "0",
+      opacity: showParking ? 1 : 0,
+      overflow: "hidden",
+      transition: "max-height 0.35s ease, opacity 0.25s ease, margin-top 0.25s ease",
+      marginTop: showParking ? 12 : 0,
+    }}
+  >
+    <div style={{ display: "grid", gap: 12 }}>
       <div>
         <p>本体</p>
         <input
@@ -655,7 +679,7 @@ const parkingTotal =
         />
       </div>
     </div>
-  )}
+  </div>
 </div>
 
       <div style={sectionStyle}>
