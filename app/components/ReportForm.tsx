@@ -572,9 +572,19 @@ const [showParking, setShowParking] = useState(false);
   >
     <p style={{ margin: 0, fontWeight: "bold" }}>
       {showExpressway ? "▼" : "▶"} 高速料金
-    </p>
-    <p style={{ margin: 0, fontWeight: "bold" }}>¥{expresswayTotal}</p>
-  </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+  <span
+    style={{
+      display: "inline-block",
+      transition: "transform 0.25s ease",
+      transform: showExpressway ? "rotate(90deg)" : "rotate(0deg)",
+      fontSize: 14,
+    }}
+  >
+    ▶
+  </span>
+  <p style={{ margin: 0, fontWeight: "bold" }}>高速料金</p>
+</div>
 
   <div
     style={{
@@ -633,9 +643,19 @@ const [showParking, setShowParking] = useState(false);
       backgroundColor: "#fafafa",
     }}
   >
-    <p style={{ margin: 0, fontWeight: "bold" }}>
-      {showParking ? "▼" : "▶"} 駐車場料金
-    </p>
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+  <span
+    style={{
+      display: "inline-block",
+      transition: "transform 0.25s ease",
+      transform: showParking ? "rotate(90deg)" : "rotate(0deg)",
+      fontSize: 14,
+    }}
+  >
+    ▶
+  </span>
+  <p style={{ margin: 0, fontWeight: "bold" }}>駐車場料金</p>
+</div>
     <p style={{ margin: 0, fontWeight: "bold" }}>¥{parkingTotal}</p>
   </div>
 
