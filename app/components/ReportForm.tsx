@@ -226,17 +226,6 @@ const parkingTotal =
   Number(parkingSecondary || 0) +
   Number(parkingSubcontract || 0);
 
-  useEffect(() => {
-    const overtimeHour = String(Number(overtimeMinutes || 0) / 60);
-  
-    setSelectedMembers(
-      selectedMembers.map((member) => ({
-        ...member,
-        overtime: overtimeHour,
-      }))
-    );
-  }, [overtimeMinutes]);
-
   const [editingLaborName, setEditingLaborName] = useState<string | null>(null);
 
   const validate = () => {
@@ -800,11 +789,31 @@ const parkingTotal =
             )}
           </div>
 
-          <input
-            value={member.overtime}
-            readOnly
-            style={inputStyle}
-          />
+          <select
+  value={member.overtime}
+  onChange={(e) => {
+    setSelectedMembers(
+      selectedMembers.map((m) =>
+        m.name === member.name ? { ...m, overtime: e.target.value } : m
+      )
+    );
+  }}
+  style={inputStyle}
+>
+  <option value="0">0</option>
+  <option value="0.5">0.5</option>
+  <option value="1">1</option>
+  <option value="1.5">1.5</option>
+  <option value="2">2</option>
+  <option value="2.5">2.5</option>
+  <option value="3">3</option>
+  <option value="3.5">3.5</option>
+  <option value="4">4</option>
+  <option value="4.5">4.5</option>
+  <option value="5">5</option>
+  <option value="5.5">5.5</option>
+  <option value="6">6</option>
+</select>
 
           <button
             type="button"
