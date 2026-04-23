@@ -224,17 +224,22 @@ const [showParking, setShowParking] = useState(false);
   Number(expresswaySecondary || 0) +
   Number(expresswaySubcontract || 0);
 
-  useEffect(() => {
-    if (expresswayTotal > 0) {
-      setShowExpressway(true);
-    }
-  }, [expresswayTotal]);
-  
-  useEffect(() => {
-    if (parkingTotal > 0) {
-      setShowParking(true);
-    }
-  }, [parkingTotal]);
+useEffect(() => {
+  if (expresswayTotal > 0) {
+    setShowExpressway(true);
+  }
+}, [expresswayTotal]);
+
+useEffect(() => {
+  if (parkingTotal > 0) {
+    setShowParking(true);
+  }
+}, [parkingTotal]);
+
+const parkingTotal =
+  Number(parkingMain || 0) +
+  Number(parkingSecondary || 0) +
+  Number(parkingSubcontract || 0);
 
 const parkingTotal =
   Number(parkingMain || 0) +
