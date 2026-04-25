@@ -1,7 +1,10 @@
 "use client";
 
+import type { CSSProperties } from "react";
+import BackButton from "@/app/components/BackButton";
+
 export default function AdminAnalyticsPage() {
-  const linkStyle = {
+  const linkStyle: CSSProperties = {
     display: "block",
     textDecoration: "none",
     backgroundColor: "#fff",
@@ -10,10 +13,12 @@ export default function AdminAnalyticsPage() {
     borderRadius: 10,
     border: "1px solid #ddd",
     fontWeight: 600,
-  } as const;
+  };
 
   return (
     <div style={{ maxWidth: 720, margin: "0 auto", padding: 16 }}>
+      <BackButton />
+
       <h1 style={{ marginBottom: 20 }}>分析</h1>
 
       <div style={{ display: "grid", gap: 12 }}>
