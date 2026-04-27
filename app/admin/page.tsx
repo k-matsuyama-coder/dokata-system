@@ -1,8 +1,35 @@
 "use client";
 
+import { useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
 
 export default function AdminPage() {
+  useEffect(() => {
+    const checkAdmin = async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      const user = userData.user;
+
+      if (!user) {
+        window.location.href = "/login";
+        return;
+      }
+
+      const { data: employee } = await supabase
+        .from("employees")
+        .select("role")
+        .eq("auth_user_id", user.id)
+        .single();
+
+      if (!employee || employee.role !== "admin") {
+        alert("管理者のみ閲覧できます");
+        window.location.href = "/home";
+      }
+    };
+
+    checkAdmin();
+  }, []);
+
   const linkStyle = {
     display: "inline-block",
     textDecoration: "none",
@@ -14,31 +41,6 @@ export default function AdminPage() {
     fontWeight: 600,
     fontSize: 14,
   } as const;
-
-  useEffect(() => {
-    const checkAdmin = async () => {
-      const { data: userData } = await supabase.auth.getUser();
-      const user = userData.user;
-  
-      if (!user) {
-        window.location.href = "/login";
-        return;
-      }
-  
-      const { data: employee } = await supabase
-        .from("employees")
-        .select("role")
-        .eq("auth_user_id", user.id)
-        .single();
-  
-      if (employee?.role !== "admin") {
-        alert("管理者のみ");
-        window.location.href = "/home";
-      }
-    };
-  
-    checkAdmin();
-  }, []);
 
   return (
     <div style={{ maxWidth: 820, margin: "0 auto", padding: 16 }}>
