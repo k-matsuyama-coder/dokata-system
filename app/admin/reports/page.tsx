@@ -40,30 +40,52 @@ export default function ReportsAdminPage() {
         <button
   onClick={() => {
     const header = [
-      "日付",
-      "名前",
-      "現場",
-      "勤務",
-      "開始",
-      "終了",
-      "人工",
-      "車両",
-      "備考",
-    ];
+        "日付",
+        "名前",
+        "現場",
+        "勤務",
+        "開始",
+        "終了",
+        "人工",
+        "車両",
+        "運転者",
+        "備考",
+        "高速(元請)",
+        "高速(下請)",
+        "高速(協力)",
+        "駐車(元請)",
+        "駐車(下請)",
+        "駐車(協力)",
+        "ガソリン",
+        "軽油",
+        "作業内容",
+        "メンバー",
+      ];
 
-    const sample = [
-      [
-        "2026-04-01",
-        "山田太郎",
-        "東京現場",
-        "day",
-        "08:00",
-        "17:00",
-        "3",
-        "2",
-        "通常作業",
-      ],
-    ];
+      const sample = [
+        [
+          "2026-04-01",
+          "山田太郎",
+          "東京現場",
+          "day",
+          "08:00",
+          "17:00",
+          "3",
+          "2",
+          "佐藤",
+          "通常",
+          "1000",
+          "500",
+          "0",
+          "300",
+          "200",
+          "0",
+          "4000",
+          "0",
+          "舗装作業",
+          "田中,鈴木",
+        ],
+      ];
 
     const csv =
       [header, ...sample]
@@ -115,7 +137,18 @@ export default function ReportsAdminPage() {
                 end_time: r[5],
                 worker_count: Number(r[6] || 0),
                 vehicle_count: Number(r[7] || 0),
-                note: r[8] || "",
+                driver_name: r[8] || null,
+                note: r[9] || null,
+                expressway_main: Number(r[10] || 0),
+                expressway_secondary: Number(r[11] || 0),
+                expressway_subcontract: Number(r[12] || 0),
+                parking_main: Number(r[13] || 0),
+                parking_secondary: Number(r[14] || 0),
+                parking_subcontract: Number(r[15] || 0),
+                fuel_gasoline: Number(r[16] || 0),
+                fuel_diesel: Number(r[17] || 0),
+                work_description: r[18] || null,
+                members: r[19] || null,
               }));
 
             const { error } = await supabase
