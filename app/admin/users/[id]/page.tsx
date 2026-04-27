@@ -12,6 +12,7 @@ export default function UserDetailPage() {
   const [name, setName] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [role, setRole] = useState("");
+  const [companies, setCompanies] = useState<{ id: string; name: string }[]>([]);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -30,6 +31,19 @@ export default function UserDetailPage() {
       setRole(data.role ?? "");
       setCompanyName(data.company_name ?? "");
     };
+
+    useEffect(() => {
+      const fetchCompanies = async () => {
+        const { data } = await supabase
+          .from("companies")
+          .select("id, name")
+          .order("name");
+    
+        setCompanies(data ?? []);
+      };
+    
+      fetchCompanies();
+    }, []);
 
     if (id) fetchUser();
   }, [id]);
@@ -75,12 +89,19 @@ export default function UserDetailPage() {
 
       <div style={{ marginBottom: 16 }}>
         <p>所属会社</p>
-        <input
-          value={companyName}
-          onChange={(e) => setCompanyName(e.target.value)}
-          style={{ width: "100%", padding: 10 }}
-          placeholder="会社名を入力"
-        />
+        <select
+  value={companyName}
+  onChange={(e) => setCompanyName(e.target.value)}
+  style={{ width: "100%", padding: 10 }}
+>
+  <option value="">選択してください</option>
+
+  {companies.map((c) => (
+    <option key={c.id} value={c.name}>
+      {c.name}
+    </option>
+  ))}
+</select>
       </div>
 
       <button
