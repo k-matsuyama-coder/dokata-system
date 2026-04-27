@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
 
 export default function NewUserPage() {
@@ -9,7 +10,27 @@ export default function NewUserPage() {
   const [email, setEmail] = useState("");
   const [createdPassword, setCreatedPassword] = useState("");
   const [role, setRole] = useState("worker");
-const [companyName, setCompanyName] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const [companies, setCompanies] = useState<{ id: string; name: string }[]>([]);
+
+  // ✅ ここに置く（重要）
+  useEffect(() => {
+    const fetchCompanies = async () => {
+      const { data, error } = await supabase
+        .from("companies")
+        .select("id, name")
+        .order("name");
+
+      if (error) {
+        alert("会社取得失敗: " + error.message);
+        return;
+      }
+
+      setCompanies(data ?? []);
+    };
+
+    fetchCompanies();
+  }, []);
 
   const handleCreate = async () => {
     if (!lastName || !firstName || !email) {
@@ -56,43 +77,29 @@ const [companyName, setCompanyName] = useState("");
       <h1>社員追加</h1>
 
       <p>苗字</p>
-      <input
-        value={lastName}
-        onChange={(e) => setLastName(e.target.value)}
-        style={inputStyle}
-      />
+      <input value={lastName} onChange={(e) => setLastName(e.target.value)} style={inputStyle} />
 
       <p>名前</p>
-      <input
-        value={firstName}
-        onChange={(e) => setFirstName(e.target.value)}
-        style={inputStyle}
-      />
+      <input value={firstName} onChange={(e) => setFirstName(e.target.value)} style={inputStyle} />
 
       <p>メールアドレス</p>
-      <input
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        style={inputStyle}
-      />
+      <input value={email} onChange={(e) => setEmail(e.target.value)} style={inputStyle} />
 
-<p>権限</p>
-<select
-  value={role}
-  onChange={(e) => setRole(e.target.value)}
-  style={inputStyle}
->
-  <option value="worker">worker</option>
-  <option value="admin">admin</option>
-</select>
+      <p>権限</p>
+      <select value={role} onChange={(e) => setRole(e.target.value)} style={inputStyle}>
+        <option value="worker">worker</option>
+        <option value="admin">admin</option>
+      </select>
 
-<p>所属会社</p>
-<input
-  value={companyName}
-  onChange={(e) => setCompanyName(e.target.value)}
-  style={inputStyle}
-  placeholder="所属会社を入力"
-/>
+      <p>所属会社</p>
+      <select value={companyName} onChange={(e) => setCompanyName(e.target.value)} style={inputStyle}>
+        <option value="">選択してください</option>
+        {companies.map((c) => (
+          <option key={c.id} value={c.name}>
+            {c.name}
+          </option>
+        ))}
+      </select>
 
       <button
         onClick={handleCreate}
@@ -110,14 +117,7 @@ const [companyName, setCompanyName] = useState("");
       </button>
 
       {createdPassword && (
-        <div
-          style={{
-            marginTop: 20,
-            padding: 12,
-            border: "1px solid #ccc",
-            borderRadius: 6,
-          }}
-        >
+        <div style={{ marginTop: 20, padding: 12, border: "1px solid #ccc", borderRadius: 6 }}>
           <p>仮パスワード</p>
           <p style={{ fontWeight: "bold" }}>{createdPassword}</p>
           <p>このパスワードを社員に渡してください</p>
