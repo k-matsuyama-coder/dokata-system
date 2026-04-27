@@ -151,9 +151,22 @@ const [sortType, setSortType] = useState("created_desc");
       </a>
 
       <input
-        type="text"
-        placeholder="名前で検索"
-        <select
+  type="text"
+  placeholder="名前で検索"
+  value={keyword}
+  onChange={(e) => setKeyword(e.target.value)}
+  style={{
+    width: "100%",
+    padding: 12,
+    marginBottom: 12,
+    borderRadius: 8,
+    border: "1px solid #ccc",
+    boxSizing: "border-box",
+    fontSize: 16,
+  }}
+/>
+
+<select
   value={companyFilter}
   onChange={(e) => setCompanyFilter(e.target.value)}
   style={{
@@ -189,18 +202,6 @@ const [sortType, setSortType] = useState("created_desc");
   <option value="company_asc">会社順</option>
   <option value="role_asc">権限順</option>
 </select>
-        value={keyword}
-        onChange={(e) => setKeyword(e.target.value)}
-        style={{
-          width: "100%",
-          padding: 12,
-          marginBottom: 16,
-          borderRadius: 8,
-          border: "1px solid #ccc",
-          boxSizing: "border-box",
-          fontSize: 16,
-        }}
-      />
 
       {filteredEmployees.length === 0 ? (
         <p>社員がいません</p>
