@@ -1,215 +1,224 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
 
-type ReportMemberRow = {
-  employee_name: string;
-  labor: number;
-  overtime: number;
-  is_driver: boolean;
-  report_id: string;
-  daily_reports: {
-    report_date: string;
-    shift_type: string;
-  } | null;
+type Report = {
+  report_date: string;
+  contractor_name: string | null;
+  shift_type: string | null;
+  worker_count: number | null;
+  vehicle_count: number | null;
+  overtime_minutes: number | null;
 };
 
-function PersonalAnalyticsContent() {
-  const searchParams = useSearchParams();
-  const employeeName = searchParams.get("name") ?? "";
+type ContractorRow = {
+  name: string;
+  day: number;
+  night: number;
+  total: number;
+  vehicles: number;
+  overtime: number;
+  dayRate: number;
+  nightRate: number;
+};
 
+export default function ContractorAnalyticsPage() {
+  const [reports, setReports] = useState<Report[]>([]);
   const [month, setMonth] = useState(() => {
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = String(now.getMonth() + 1).padStart(2, "0");
-    return `${y}-${m}`;
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
   });
 
-  const [rows, setRows] = useState<ReportMemberRow[]>([]);
-  const [loading, setLoading] = useState(true);
-
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-
-      const { data: userData } = await supabase.auth.getUser();
-      const user = userData.user;
-
-      if (!user) {
-        alert("ログインしてください");
-        window.location.href = "/login";
-        return;
-      }
-
-      const { data: me } = await supabase
-        .from("employees")
-        .select("role")
-        .eq("auth_user_id", user.id)
-        .single();
-
-      if (!me || me.role !== "admin") {
-        alert("管理者のみ閲覧できます");
-        window.location.href = "/reports";
-        return;
-      }
-
-      if (!employeeName) {
-        setRows([]);
-        setLoading(false);
-        return;
-      }
-
-      const startDate = `${month}-01`;
-      const endDate = new Date(`${month}-01`);
-      endDate.setMonth(endDate.getMonth() + 1);
-      const endDateStr = endDate.toISOString().slice(0, 10);
+    const fetchReports = async () => {
+      const start = `${month}-01`;
+      const end = new Date(
+        Number(month.slice(0, 4)),
+        Number(month.slice(5, 7)),
+        0
+      )
+        .toISOString()
+        .slice(0, 10);
 
       const { data, error } = await supabase
-        .from("report_members")
-        .select(`
-          employee_name,
-          labor,
-          overtime,
-          is_driver,
-          report_id,
-          daily_reports!inner (
-            report_date,
-            shift_type
-          )
-        `)
-        .eq("employee_name", employeeName)
-        .gte("daily_reports.report_date", startDate)
-        .lt("daily_reports.report_date", endDateStr);
+        .from("daily_reports")
+        .select(
+          "report_date, contractor_name, shift_type, worker_count, vehicle_count, overtime_minutes"
+        )
+        .gte("report_date", start)
+        .lte("report_date", end);
 
       if (error) {
-        alert("集計取得失敗: " + error.message);
-        setLoading(false);
+        alert("取得失敗: " + error.message);
         return;
       }
 
-      setRows((data as ReportMemberRow[]) ?? []);
-      setLoading(false);
+      setReports(data ?? []);
     };
 
-    fetchData();
-  }, [month, employeeName]);
-
-  const summary = useMemo(() => {
-    let dayLabor = 0;
-    let nightLabor = 0;
-    let dayOvertime = 0;
-    let nightOvertime = 0;
-    let driveCount = 0;
-
-    const workDays = new Set<string>();
-
-    for (const row of rows) {
-      const shiftType = row.daily_reports?.shift_type ?? "day";
-      const labor = Number(row.labor || 0);
-      const overtime = Number(row.overtime || 0);
-
-      if (shiftType === "night") {
-        nightLabor += labor;
-        nightOvertime += overtime;
-      } else {
-        dayLabor += labor;
-        dayOvertime += overtime;
-      }
-
-      if (row.is_driver) {
-        driveCount += 1;
-      }
-
-      if (row.report_id) {
-        workDays.add(row.report_id);
-      }
-    }
-
-    return {
-      dayLabor,
-      nightLabor,
-      dayOvertime,
-      nightOvertime,
-      driveCount,
-      workDays: workDays.size,
-    };
-  }, [rows]);
-
-  const daysInMonth = useMemo(() => {
-    const [year, monthNumber] = month.split("-").map(Number);
-    return new Date(year, monthNumber, 0).getDate();
+    fetchReports();
   }, [month]);
 
-  const attendanceRate = useMemo(() => {
-    if (!daysInMonth) return 0;
-    return Math.round((summary.workDays / daysInMonth) * 1000) / 10;
-  }, [summary.workDays, daysInMonth]);
+  const rows = useMemo(() => {
+    const map = new Map<string, ContractorRow>();
+
+    reports.forEach((report) => {
+      const name = report.contractor_name || "未設定";
+      const workerCount = Number(report.worker_count ?? 0);
+
+      const current = map.get(name) || {
+        name,
+        day: 0,
+        night: 0,
+        total: 0,
+        vehicles: 0,
+        overtime: 0,
+        dayRate: 0,
+        nightRate: 0,
+      };
+
+      if (report.shift_type === "night") {
+        current.night += workerCount;
+      } else {
+        current.day += workerCount;
+      }
+
+      current.total += workerCount;
+      current.vehicles += Number(report.vehicle_count ?? 0);
+      current.overtime += Number(report.overtime_minutes ?? 0);
+
+      map.set(name, current);
+    });
+
+    return Array.from(map.values())
+      .map((row) => ({
+        ...row,
+        dayRate: row.total ? Math.round((row.day / row.total) * 100) : 0,
+        nightRate: row.total ? Math.round((row.night / row.total) * 100) : 0,
+      }))
+      .sort((a, b) => b.total - a.total);
+  }, [reports]);
+
+  const totalLabor = rows.reduce((sum, row) => sum + row.total, 0);
+  const totalVehicles = rows.reduce((sum, row) => sum + row.vehicles, 0);
+  const totalOvertime = rows.reduce((sum, row) => sum + row.overtime, 0);
+
+  const cardStyle = {
+    border: "1px solid #ddd",
+    borderRadius: 12,
+    padding: 16,
+    backgroundColor: "#fff",
+  } as const;
+
+  const th = {
+    border: "1px solid #ccc",
+    padding: 8,
+    backgroundColor: "#f6d878",
+    textAlign: "center" as const,
+    whiteSpace: "nowrap" as const,
+  };
+
+  const td = {
+    border: "1px solid #ccc",
+    padding: 8,
+    textAlign: "center" as const,
+    whiteSpace: "nowrap" as const,
+  };
 
   return (
-    <div style={{ maxWidth: 720, margin: "0 auto", padding: 16 }}>
+    <div style={{ maxWidth: 1100, margin: "0 auto", padding: 16 }}>
       <BackButton />
-      <h1 style={{ marginBottom: 16 }}>個人別集計</h1>
 
-      <div style={{ marginBottom: 20 }}>
-        <p style={{ marginBottom: 8 }}>対象月</p>
+      <h1 style={{ marginBottom: 16 }}>元請別集計</h1>
+
+      <div style={{ ...cardStyle, marginBottom: 16 }}>
+        <p style={{ margin: "0 0 8px 0", fontWeight: 700 }}>対象月</p>
         <input
           type="month"
           value={month}
           onChange={(e) => setMonth(e.target.value)}
           style={{
             width: "100%",
-            padding: 12,
-            fontSize: 16,
+            maxWidth: 240,
+            padding: 10,
             borderRadius: 8,
             border: "1px solid #ccc",
+            fontSize: 16,
           }}
         />
       </div>
 
-      {loading ? (
-        <p>読み込み中...</p>
-      ) : !employeeName ? (
-        <p>社員が選択されていません</p>
-      ) : rows.length === 0 ? (
-        <p>データがありません</p>
-      ) : (
-        <div
-          style={{
-            border: "1px solid #ddd",
-            borderRadius: 12,
-            padding: 16,
-            backgroundColor: "#fff",
-            display: "grid",
-            gap: 12,
-          }}
-        >
-          <p style={{ fontSize: 20, fontWeight: "bold", margin: 0 }}>
-            {employeeName}
-          </p>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+          gap: 12,
+          marginBottom: 20,
+        }}
+      >
+        <div style={cardStyle}>合計人工：{totalLabor}</div>
+        <div style={cardStyle}>車両合計：{totalVehicles}</div>
+        <div style={cardStyle}>残業合計：{totalOvertime}分</div>
+        <div style={cardStyle}>元請数：{rows.length}</div>
+      </div>
 
-          <p>昼人工: {summary.dayLabor}</p>
-          <p>夜人工: {summary.nightLabor}</p>
-          <p>昼残業: {summary.dayOvertime}</p>
-          <p>夜残業: {summary.nightOvertime}</p>
-          <p>運転回数: {summary.driveCount}</p>
-          <p>稼働日数: {summary.workDays}</p>
-          <p>月の日数: {daysInMonth}</p>
-          <p style={{ fontWeight: "bold", fontSize: 18 }}>
-            稼働率: {attendanceRate}%
-          </p>
+      <div style={cardStyle}>
+        <h2 style={{ marginTop: 0 }}>元請ごとの内訳</h2>
+
+        <div style={{ overflowX: "auto" }}>
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "collapse",
+              fontSize: 14,
+            }}
+          >
+            <thead>
+              <tr>
+                <th style={th}>元請名</th>
+                <th style={th}>昼</th>
+                <th style={th}>夜</th>
+                <th style={th}>合計</th>
+                <th style={th}>昼%</th>
+                <th style={th}>夜%</th>
+                <th style={th}>車両</th>
+                <th style={th}>残業</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {rows.length === 0 ? (
+                <tr>
+                  <td style={td} colSpan={8}>
+                    データがありません
+                  </td>
+                </tr>
+              ) : (
+                rows.map((row) => (
+                  <tr key={row.name}>
+                    <td style={{ ...td, textAlign: "left", fontWeight: 700 }}>
+                      {row.name}
+                    </td>
+                    <td style={{ ...td, backgroundColor: "#fff7d6" }}>
+                      {row.day}
+                    </td>
+                    <td style={{ ...td, backgroundColor: "#e8f1ff" }}>
+                      {row.night}
+                    </td>
+                    <td style={{ ...td, fontWeight: 800 }}>{row.total}</td>
+                    <td style={td}>{row.dayRate}%</td>
+                    <td style={td}>{row.nightRate}%</td>
+                    <td style={td}>{row.vehicles}</td>
+                    <td style={td}>{row.overtime}分</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
-      )}
+      </div>
     </div>
-  );
-}
-
-export default function PersonalAnalyticsPage() {
-  return (
-    <Suspense fallback={<div style={{ padding: 16 }}>読み込み中...</div>}>
-      <PersonalAnalyticsContent />
-    </Suspense>
   );
 }

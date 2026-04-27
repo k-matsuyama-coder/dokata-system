@@ -8,6 +8,8 @@ export default function NewUserPage() {
   const [firstName, setFirstName] = useState("");
   const [email, setEmail] = useState("");
   const [createdPassword, setCreatedPassword] = useState("");
+  const [role, setRole] = useState("worker");
+const [companyName, setCompanyName] = useState("");
 
   const handleCreate = async () => {
     if (!lastName || !firstName || !email) {
@@ -20,7 +22,13 @@ export default function NewUserPage() {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ lastName, firstName, email }),
+      body: JSON.stringify({
+        lastName,
+        firstName,
+        email,
+        role,
+        companyName,
+      }),
     });
 
     const result = await res.json();
@@ -67,6 +75,24 @@ export default function NewUserPage() {
         onChange={(e) => setEmail(e.target.value)}
         style={inputStyle}
       />
+
+<p>権限</p>
+<select
+  value={role}
+  onChange={(e) => setRole(e.target.value)}
+  style={inputStyle}
+>
+  <option value="worker">worker</option>
+  <option value="admin">admin</option>
+</select>
+
+<p>所属会社</p>
+<input
+  value={companyName}
+  onChange={(e) => setCompanyName(e.target.value)}
+  style={inputStyle}
+  placeholder="所属会社を入力"
+/>
 
       <button
         onClick={handleCreate}
