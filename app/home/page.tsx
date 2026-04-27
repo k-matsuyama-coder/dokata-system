@@ -37,6 +37,17 @@ export default function HomePage() {
         return;
       }
 
+      const { data: loginEmployee } = await supabase
+  .from("employees")
+  .select("must_change_password")
+  .eq("auth_user_id", user.id)
+  .single();
+
+if (loginEmployee?.must_change_password) {
+  window.location.href = "/change-password";
+  return;
+}
+
       const { data: employee, error: employeeError } = await supabase
         .from("employees")
         .select("id, name")

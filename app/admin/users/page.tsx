@@ -15,6 +15,8 @@ type Employee = {
 export default function UsersPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [keyword, setKeyword] = useState("");
+const [companyFilter, setCompanyFilter] = useState("");
+const [sortType, setSortType] = useState("created_desc");
 
   useEffect(() => {
     const fetchEmployees = async () => {
@@ -54,9 +56,37 @@ export default function UsersPage() {
     fetchEmployees();
   }, []);
 
-  const filteredEmployees = employees.filter((employee) =>
-    employee.name.toLowerCase().includes(keyword.toLowerCase())
+  const companyOptions = Array.from(
+    new Set(employees.map((e) => e.company_name).filter(Boolean))
   );
+  
+  const filteredEmployees = employees
+    .filter((employee) => {
+      const keywordText = `${employee.name} ${employee.company_name ?? ""} ${employee.role ?? ""}`.toLowerCase();
+  
+      const matchKeyword = keywordText.includes(keyword.toLowerCase());
+  
+      const matchCompany = companyFilter
+        ? employee.company_name === companyFilter
+        : true;
+  
+      return matchKeyword && matchCompany;
+    })
+    .sort((a, b) => {
+      if (sortType === "name_asc") {
+        return a.name.localeCompare(b.name, "ja");
+      }
+  
+      if (sortType === "company_asc") {
+        return (a.company_name ?? "").localeCompare(b.company_name ?? "", "ja");
+      }
+  
+      if (sortType === "role_asc") {
+        return (a.role ?? "").localeCompare(b.role ?? "", "ja");
+      }
+  
+      return 0;
+    });
 
   const handleDelete = async (employee: Employee) => {
     const ok = window.confirm(
@@ -123,6 +153,42 @@ export default function UsersPage() {
       <input
         type="text"
         placeholder="名前で検索"
+        <select
+  value={companyFilter}
+  onChange={(e) => setCompanyFilter(e.target.value)}
+  style={{
+    width: "100%",
+    padding: 12,
+    marginBottom: 12,
+    borderRadius: 8,
+    border: "1px solid #ccc",
+  }}
+>
+  <option value="">すべての会社</option>
+
+  {companyOptions.map((company) => (
+    <option key={company} value={company}>
+      {company}
+    </option>
+  ))}
+</select>
+
+<select
+  value={sortType}
+  onChange={(e) => setSortType(e.target.value)}
+  style={{
+    width: "100%",
+    padding: 12,
+    marginBottom: 16,
+    borderRadius: 8,
+    border: "1px solid #ccc",
+  }}
+>
+  <option value="created_desc">新しい順</option>
+  <option value="name_asc">名前順</option>
+  <option value="company_asc">会社順</option>
+  <option value="role_asc">権限順</option>
+</select>
         value={keyword}
         onChange={(e) => setKeyword(e.target.value)}
         style={{
