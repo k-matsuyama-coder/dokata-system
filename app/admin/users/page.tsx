@@ -134,6 +134,43 @@ const [sortType, setSortType] = useState("created_desc");
 
       <h1 style={{ marginBottom: 16 }}>社員一覧</h1>
 
+      <button
+  onClick={() => {
+    const header = ["名前", "会社", "権限"];
+
+    const rows = filteredEmployees.map((e) => [
+      e.name,
+      e.company_name ?? "",
+      e.role ?? "",
+    ]);
+
+    const csvContent =
+      [header, ...rows]
+        .map((row) => row.join(","))
+        .join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "employees.csv";
+    a.click();
+
+    URL.revokeObjectURL(url);
+  }}
+  style={{
+    marginBottom: 16,
+    padding: "10px 14px",
+    borderRadius: 8,
+    border: "1px solid #ccc",
+    backgroundColor: "#fff",
+    cursor: "pointer",
+  }}
+>
+  CSVダウンロード
+</button>
+
       <a
         href="/admin/users/new"
         style={{
