@@ -39,6 +39,7 @@ export default function UserDetailPage() {
       .from("employees")
       .update({
         company_name: companyName,
+        role,
       })
       .eq("id", id);
 
@@ -61,9 +62,16 @@ export default function UserDetailPage() {
       </div>
 
       <div style={{ marginBottom: 16 }}>
-        <p>権限</p>
-        <input value={role} readOnly style={{ width: "100%", padding: 10 }} />
-      </div>
+  <p>権限</p>
+  <select
+    value={role}
+    onChange={(e) => setRole(e.target.value)}
+    style={{ width: "100%", padding: 10 }}
+  >
+    <option value="worker">worker</option>
+    <option value="admin">admin</option>
+  </select>
+</div>
 
       <div style={{ marginBottom: 16 }}>
         <p>所属会社</p>

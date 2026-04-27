@@ -53,16 +53,9 @@ export default function AdminPage() {
           社員一覧
         </a>
 
-        <a
-          href="/admin/users/new"
-          style={{
-            ...linkStyle,
-            backgroundColor: "#111",
-            color: "#fff",
-          }}
-        >
-          ＋ 社員追加
-        </a>
+        <a href="/admin/companies" style={linkStyle}>
+  会社管理
+</a>
 
         <a href="/admin/analytics" style={linkStyle}>
           分析
