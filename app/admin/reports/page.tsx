@@ -37,6 +37,61 @@ export default function ReportsAdminPage() {
       <div style={{ marginBottom: 20 }}>
         <p style={{ fontWeight: "bold" }}>CSV一括登録</p>
 
+        <button
+  onClick={() => {
+    const header = [
+      "日付",
+      "名前",
+      "現場",
+      "勤務",
+      "開始",
+      "終了",
+      "人工",
+      "車両",
+      "備考",
+    ];
+
+    const sample = [
+      [
+        "2026-04-01",
+        "山田太郎",
+        "東京現場",
+        "day",
+        "08:00",
+        "17:00",
+        "3",
+        "2",
+        "通常作業",
+      ],
+    ];
+
+    const csv =
+      [header, ...sample]
+        .map((row) => row.join(","))
+        .join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "daily_reports_template.csv";
+    a.click();
+
+    URL.revokeObjectURL(url);
+  }}
+  style={{
+    marginBottom: 12,
+    padding: "10px 14px",
+    borderRadius: 8,
+    border: "1px solid #ccc",
+    backgroundColor: "#fff",
+    cursor: "pointer",
+  }}
+>
+  テンプレートダウンロード
+</button>
+
         <input
           type="file"
           accept=".csv"
