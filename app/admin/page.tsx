@@ -57,6 +57,14 @@ export default function AdminPage() {
   日報管理
 </a>
 
+<a href="/admin/sites" style={linkStyle}>
+  現場管理
+</a>
+
+<a href="/admin/contractors" style={linkStyle}>
+  元請管理
+</a>
+
         <a href="/admin/companies" style={linkStyle}>
   会社管理
 </a>

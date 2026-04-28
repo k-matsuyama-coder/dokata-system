@@ -1,0 +1,211 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import BackButton from "@/app/components/BackButton";
+
+type Contractor = {
+  id: string;
+  name: string;
+};
+
+type Site = {
+  id: string;
+  contractor_name: string;
+  manager_name: string | null;
+  site_name: string;
+};
+
+export default function SitesPage() {
+  const [contractors, setContractors] = useState<Contractor[]>([]);
+  const [sites, setSites] = useState<Site[]>([]);
+
+  const [contractorName, setContractorName] = useState("");
+  const [managerName, setManagerName] = useState("");
+  const [siteName, setSiteName] = useState("");
+
+  // データ取得
+  const fetchData = async () => {
+    const { data: contractorData } = await supabase
+      .from("contractors")
+      .select("id, name")
+      .order("name");
+
+    setContractors(contractorData ?? []);
+
+    const { data: siteData, error } = await supabase
+      .from("sites")
+      .select("id, contractor_name, manager_name, site_name")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      alert("現場取得失敗: " + error.message);
+      return;
+    }
+
+    setSites(siteData ?? []);
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  // 追加
+  const handleAdd = async () => {
+    if (!contractorName || !siteName) {
+      alert("元請と現場名は必須です");
+      return;
+    }
+
+    const { error } = await supabase.from("sites").insert({
+      contractor_name: contractorName,
+      manager_name: managerName || null,
+      site_name: siteName,
+    });
+
+    if (error) {
+      alert("追加失敗: " + error.message);
+      return;
+    }
+
+    setContractorName("");
+    setManagerName("");
+    setSiteName("");
+
+    fetchData();
+  };
+
+  // 削除
+  const handleDelete = async (id: string) => {
+    const ok = window.confirm("この現場を削除しますか？");
+    if (!ok) return;
+
+    const { error } = await supabase.from("sites").delete().eq("id", id);
+
+    if (error) {
+      alert("削除失敗: " + error.message);
+      return;
+    }
+
+    fetchData();
+  };
+
+  const inputStyle = {
+    width: "100%",
+    padding: 12,
+    border: "1px solid #ccc",
+    borderRadius: 8,
+    fontSize: 16,
+    marginBottom: 12,
+  };
+
+  return (
+    <div style={{ maxWidth: 700, margin: "0 auto", padding: 16 }}>
+      <BackButton />
+
+      <h1>現場管理</h1>
+
+      {/* 入力フォーム */}
+      <div
+        style={{
+          border: "1px solid #ddd",
+          borderRadius: 12,
+          padding: 16,
+          marginBottom: 20,
+          backgroundColor: "#fff",
+        }}
+      >
+        <p>元請</p>
+        <select
+          value={contractorName}
+          onChange={(e) => setContractorName(e.target.value)}
+          style={inputStyle}
+        >
+          <option value="">選択してください</option>
+          {contractors.map((c) => (
+            <option key={c.id} value={c.name}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+
+        <p>担当者</p>
+        <input
+          value={managerName}
+          onChange={(e) => setManagerName(e.target.value)}
+          placeholder="担当者名"
+          style={inputStyle}
+        />
+
+        <p>現場名</p>
+        <input
+          value={siteName}
+          onChange={(e) => setSiteName(e.target.value)}
+          placeholder="現場名"
+          style={inputStyle}
+        />
+
+        <button
+          onClick={handleAdd}
+          style={{
+            width: "100%",
+            padding: 14,
+            backgroundColor: "#111",
+            color: "#fff",
+            border: "none",
+            borderRadius: 8,
+            fontWeight: 600,
+          }}
+        >
+          現場を追加
+        </button>
+      </div>
+
+      {/* 一覧 */}
+      <h2>現場一覧</h2>
+
+      {sites.length === 0 ? (
+        <p>現場がありません</p>
+      ) : (
+        <div style={{ display: "grid", gap: 10 }}>
+          {sites.map((site) => (
+            <div
+              key={site.id}
+              style={{
+                border: "1px solid #ddd",
+                borderRadius: 10,
+                padding: 12,
+                backgroundColor: "#fff",
+              }}
+            >
+              <p style={{ margin: 0, fontWeight: "bold" }}>
+                {site.site_name}
+              </p>
+              <p style={{ margin: "6px 0 0 0" }}>
+                元請: {site.contractor_name}
+              </p>
+              <p style={{ margin: "6px 0 0 0" }}>
+                担当者: {site.manager_name || "-"}
+              </p>
+
+              <button
+                onClick={() => handleDelete(site.id)}
+                style={{
+                  marginTop: 10,
+                  backgroundColor: "#d11a2a",
+                  color: "#fff",
+                  border: "none",
+                  padding: "8px 12px",
+                  borderRadius: 8,
+                  cursor: "pointer",
+                }}
+              >
+                削除
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

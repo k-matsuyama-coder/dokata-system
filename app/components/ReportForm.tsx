@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
 
 type Employee = {
@@ -11,6 +12,16 @@ type MemberEntry = {
   name: string;
   labor: string;
   overtime: string;
+};
+
+type Contractor = {
+  name: string;
+};
+
+type Site = {
+  site_name: string;
+  contractor_name: string;
+  manager_name: string | null;
 };
 
 type ReportFormProps = {
@@ -165,6 +176,30 @@ export default function ReportForm(props: ReportFormProps) {
 
   const [showExpressway, setShowExpressway] = useState(false);
 const [showParking, setShowParking] = useState(false);
+
+const [contractors, setContractors] = useState<Contractor[]>([]);
+const [sites, setSites] = useState<Site[]>([]);
+const [showContractorSuggestions, setShowContractorSuggestions] = useState(false);
+const [showSiteSuggestions, setShowSiteSuggestions] = useState(false);
+
+useEffect(() => {
+  const fetchMasterData = async () => {
+    const { data: contractorData } = await supabase
+      .from("contractors")
+      .select("name")
+      .order("name", { ascending: true });
+
+    const { data: siteData } = await supabase
+      .from("sites")
+      .select("site_name, contractor_name, manager_name")
+      .order("site_name", { ascending: true });
+
+    setContractors(contractorData ?? []);
+    setSites(siteData ?? []);
+  };
+
+  fetchMasterData();
+}, []);
 
   const inputStyle = {
     width: "100%",
@@ -324,45 +359,90 @@ const [showParking, setShowParking] = useState(false);
   <p>元請</p>
   <input
     value={contractorName}
-    onChange={(e) => setContractorName(e.target.value)}
+    onChange={(e) => {
+      setContractorName(e.target.value);
+      setShowContractorSuggestions(true);
+    }}
+    onFocus={() => setShowContractorSuggestions(true)}
     style={inputStyle}
     placeholder="元請会社名を入力"
   />
+
+  {showContractorSuggestions && contractorName && (
+    <div
+      style={{
+        border: "1px solid #ccc",
+        borderRadius: 8,
+        padding: 8,
+        marginTop: 8,
+        backgroundColor: "#fff",
+      }}
+    >
+      {contractors
+        .filter((c) => c.name.includes(contractorName))
+        .slice(0, 5)
+        .map((c) => (
+          <div
+            key={c.name}
+            onClick={() => {
+              setContractorName(c.name);
+              setShowContractorSuggestions(false);
+            }}
+            style={{ padding: 8, cursor: "pointer" }}
+          >
+            {c.name}
+          </div>
+        ))}
+    </div>
+  )}
 </div>
 
-      <div style={sectionStyle}>
-        <p>現場名</p>
-        <input
-          value={site}
-          onChange={(e) => setSite(e.target.value)}
-          style={inputStyle}
-        />
+<div style={sectionStyle}>
+  <p>現場名</p>
+  <input
+    value={site}
+    onChange={(e) => {
+      setSite(e.target.value);
+      setShowSiteSuggestions(true);
+    }}
+    onFocus={() => setShowSiteSuggestions(true)}
+    style={inputStyle}
+    placeholder="現場名を入力"
+  />
 
-        {site && (
+  {showSiteSuggestions && site && (
+    <div
+      style={{
+        border: "1px solid #ccc",
+        borderRadius: 8,
+        padding: 8,
+        marginTop: 8,
+        backgroundColor: "#fff",
+      }}
+    >
+      {sites
+        .filter((s) => s.site_name.includes(site))
+        .slice(0, 5)
+        .map((s) => (
           <div
-            style={{
-              border: "1px solid #ccc",
-              borderRadius: 8,
-              padding: 8,
-              marginTop: 8,
-              backgroundColor: "#fff",
+            key={`${s.contractor_name}-${s.site_name}`}
+            onClick={() => {
+              setSite(s.site_name);
+              setContractorName(s.contractor_name);
+              setShowSiteSuggestions(false);
             }}
+            style={{ padding: 8, cursor: "pointer" }}
           >
-            {siteSuggestions
-              .filter((siteName) => siteName.includes(site))
-              .slice(0, 5)
-              .map((siteName) => (
-                <div
-                  key={siteName}
-                  onClick={() => setSite(siteName)}
-                  style={{ padding: 8, cursor: "pointer" }}
-                >
-                  {siteName}
-                </div>
-              ))}
+            <div style={{ fontWeight: 600 }}>{s.site_name}</div>
+            <div style={{ fontSize: 13, color: "#666" }}>
+              元請: {s.contractor_name}
+              {s.manager_name ? ` / 担当: ${s.manager_name}` : ""}
+            </div>
           </div>
-        )}
-      </div>
+        ))}
+    </div>
+  )}
+</div>
 
       <div style={sectionStyle}>
   <p>昼 / 夜</p>
