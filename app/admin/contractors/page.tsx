@@ -70,6 +70,75 @@ export default function ContractorsPage() {
 
       <h1>元請管理</h1>
 
+      <button
+  onClick={() => {
+    const csv = "元請名\n〇〇建設\n△△土木\n□□工業";
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "contractors_template.csv";
+    a.click();
+
+    URL.revokeObjectURL(url);
+  }}
+  style={{
+    marginBottom: 12,
+    padding: "10px 14px",
+    borderRadius: 8,
+    border: "1px solid #ccc",
+    backgroundColor: "#fff",
+    cursor: "pointer",
+  }}
+>
+  テンプレートダウンロード
+</button>
+<div style={{ marginBottom: 20 }}>
+  <p style={{ margin: "0 0 8px 0", fontWeight: "bold" }}>
+    CSV一括登録
+  </p>
+
+  <input
+    type="file"
+    accept=".csv"
+    onChange={async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      const text = await file.text();
+
+      const names = text
+        .split("\n")
+        .slice(1)
+        .map((line) => line.trim().replace("\r", ""))
+        .filter(Boolean);
+
+      if (names.length === 0) {
+        alert("登録できる元請がありません");
+        return;
+      }
+
+      const insertData = names.map((name) => ({
+        name,
+      }));
+
+      const { error } = await supabase
+        .from("contractors")
+        .insert(insertData);
+
+      if (error) {
+        alert("アップロード失敗: " + error.message);
+        return;
+      }
+
+      alert("元請CSV登録完了");
+      fetchContractors();
+    }}
+  />
+</div>
+
       <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
         <input
           value={name}

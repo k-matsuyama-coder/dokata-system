@@ -105,6 +105,62 @@ export default function SitesPage() {
 
       <h1>現場管理</h1>
 
+      <input
+  type="file"
+  accept=".csv"
+  onChange={async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const text = await file.text();
+    const rows = text
+      .split("\n")
+      .map((line) => line.split(","))
+      .slice(1);
+
+    const res = await fetch("/api/admin/upload-sites", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ rows }),
+    });
+
+    const result = await res.json();
+
+    if (!res.ok) {
+      alert(result.error || "アップロード失敗");
+      return;
+    }
+
+    alert("アップロード完了");
+    location.reload();
+  }}
+/>
+<button
+  onClick={() => {
+    const csv = "元請,担当者,現場名\n〇〇建設,田中,東京現場A";
+
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "sites_template.csv";
+    a.click();
+  }}
+  style={{
+    marginTop: 12,
+    padding: "10px 14px",
+    borderRadius: 8,
+    border: "1px solid #ccc",
+    background: "#fff",
+    cursor: "pointer",
+  }}
+>
+  テンプレートダウンロード
+</button>
+
       {/* 入力フォーム */}
       <div
         style={{
