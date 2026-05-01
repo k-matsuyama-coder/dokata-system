@@ -178,121 +178,204 @@ if (loginEmployee?.must_change_password) {
     <div
       style={{
         padding: 16,
-        maxWidth: 600,
+        maxWidth: 760,
         margin: "0 auto",
+        backgroundColor: "#f7f7f7",
+        minHeight: "100vh",
       }}
     >
-      <h1>ホーム</h1>
-
-      <div style={{ marginTop: 16, marginBottom: 20 }}>
+      <div style={{ marginBottom: 20 }}>
+        <p style={{ margin: 0, color: "#666", fontSize: 14 }}>DOKATA-System</p>
+        <h1 style={{ margin: "4px 0 0 0", fontSize: 28 }}>ホーム</h1>
+        <p style={{ margin: "6px 0 0 0", color: "#555" }}>
+          {employeeName} さん、お疲れさまです
+        </p>
+      </div>
+  
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(2, 1fr)",
+          gap: 12,
+          marginBottom: 20,
+        }}
+      >
         <a
           href="/reports/new"
           style={{
-            display: "inline-block",
             textDecoration: "none",
             backgroundColor: "#111",
             color: "#fff",
-            padding: "12px 16px",
-            borderRadius: 8,
-            fontSize: 16,
-            fontWeight: 600,
+            padding: 16,
+            borderRadius: 14,
+            fontWeight: 700,
+            textAlign: "center",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
           }}
         >
           ＋ 日報を登録
         </a>
+  
+        <a
+          href="/reports/new?copy=1"
+          style={{
+            textDecoration: "none",
+            backgroundColor: "#fff",
+            color: "#111",
+            padding: 16,
+            borderRadius: 14,
+            fontWeight: 700,
+            textAlign: "center",
+            border: "1px solid #ddd",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+          }}
+        >
+          前回コピー
+        </a>
       </div>
-
+  
       <div
         style={{
-          border: "1px solid #ccc",
-          borderRadius: 8,
-          padding: 16,
-          marginTop: 16,
+          display: "grid",
+          gridTemplateColumns: "repeat(3, 1fr)",
+          gap: 12,
+          marginBottom: 20,
         }}
       >
-        <p>名前: {employeeName}</p>
-        <p>今月の稼働日数: {workingDays}日</p>
-        <p>今月の残業数: {totalOvertime}分</p>
-        <p>今月の車両数: {totalVehicleCount}</p>
-
-        <h2 style={{ marginTop: 20 }}>免許</h2>
-
-        {licenseName ? (
-          <div
+        <div
+          style={{
+            backgroundColor: "#fff",
+            borderRadius: 16,
+            padding: 16,
+            border: "1px solid #e5e5e5",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.04)",
+          }}
+        >
+          <p style={{ margin: 0, color: "#666", fontSize: 13 }}>今月の稼働</p>
+          <p style={{ margin: "8px 0 0 0", fontSize: 30, fontWeight: 800 }}>
+            {workingDays}
+            <span style={{ fontSize: 14, marginLeft: 4 }}>日</span>
+          </p>
+        </div>
+  
+        <div
+          style={{
+            backgroundColor: "#fff",
+            borderRadius: 16,
+            padding: 16,
+            border: "1px solid #e5e5e5",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.04)",
+          }}
+        >
+          <p style={{ margin: 0, color: "#666", fontSize: 13 }}>今月の残業</p>
+          <p style={{ margin: "8px 0 0 0", fontSize: 30, fontWeight: 800 }}>
+            {totalOvertime}
+            <span style={{ fontSize: 14, marginLeft: 4 }}>h</span>
+          </p>
+        </div>
+  
+        <div
+          style={{
+            backgroundColor: "#fff",
+            borderRadius: 16,
+            padding: 16,
+            border: "1px solid #e5e5e5",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.04)",
+          }}
+        >
+          <p style={{ margin: 0, color: "#666", fontSize: 13 }}>車両回数</p>
+          <p style={{ margin: "8px 0 0 0", fontSize: 30, fontWeight: 800 }}>
+            {totalVehicleCount}
+            <span style={{ fontSize: 14, marginLeft: 4 }}>回</span>
+          </p>
+        </div>
+      </div>
+  
+      <div
+        style={{
+          backgroundColor: "#fff",
+          borderRadius: 18,
+          padding: 18,
+          border: "1px solid #e5e5e5",
+          boxShadow: "0 6px 18px rgba(0,0,0,0.05)",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 12,
+          }}
+        >
+          <h2 style={{ margin: 0, fontSize: 20 }}>免許情報</h2>
+  
+          <span
             style={{
-              border: "1px solid #ccc",
-              borderRadius: 8,
-              padding: 12,
-              marginTop: 8,
+              fontSize: 13,
+              fontWeight: 700,
+              padding: "6px 10px",
+              borderRadius: 999,
               backgroundColor:
                 licenseStatus === "expired"
                   ? "#ffe5e5"
                   : licenseStatus === "warning"
                   ? "#fff3cd"
                   : "#e8f5e9",
+              color:
+                licenseStatus === "expired"
+                  ? "red"
+                  : licenseStatus === "warning"
+                  ? "#b26a00"
+                  : "green",
             }}
           >
-            <p style={{ margin: 0, fontWeight: "bold" }}>{licenseName}</p>
-            <p style={{ margin: "8px 0 0 0" }}>期限: {licenseExpiryDate || "-"}</p>
-
+            {licenseStatus === "expired"
+              ? "期限切れ"
+              : licenseStatus === "warning"
+              ? "期限注意"
+              : licenseStatus === "ok"
+              ? "有効"
+              : "未登録"}
+          </span>
+        </div>
+  
+        {licenseName ? (
+          <>
+            <p style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>
+              {licenseName}
+            </p>
+            <p style={{ margin: "8px 0 0 0", color: "#555" }}>
+              期限: {licenseExpiryDate || "-"}
+            </p>
+  
             {licenseStatus === "expired" && (
-              <p style={{ margin: "8px 0 0 0", color: "red", fontWeight: "bold" }}>
+              <p style={{ margin: "10px 0 0 0", color: "red", fontWeight: 700 }}>
                 ⚠️ 免許期限が切れています
               </p>
             )}
-
+  
             {licenseStatus === "warning" && (
-              <p style={{ margin: "8px 0 0 0", color: "#b26a00", fontWeight: "bold" }}>
+              <p
+                style={{
+                  margin: "10px 0 0 0",
+                  color: "#b26a00",
+                  fontWeight: 700,
+                }}
+              >
                 ⚠️ 免許期限が近づいています（あと{licenseRemainingDays}日）
               </p>
             )}
-
+  
             {licenseStatus === "ok" && (
-              <p style={{ margin: "8px 0 0 0", color: "green", fontWeight: "bold" }}>
+              <p style={{ margin: "10px 0 0 0", color: "green", fontWeight: 700 }}>
                 ✅ 免許は有効です
               </p>
             )}
-          </div>
+          </>
         ) : (
-          <p>免許は登録されていません</p>
+          <p style={{ margin: 0, color: "#666" }}>免許は登録されていません</p>
         )}
-
-{recentReports.length === 0 ? (
-  <p>日報がありません</p>
-) : (
-  recentReports.map((report) => (
-    <div
-      key={report.id}
-      style={{
-        border: "1px solid #ccc",
-        borderRadius: 6,
-        padding: 10,
-        marginTop: 8,
-        backgroundColor: "#fff",
-      }}
-    >
-      <p>日付: {report.report_date}</p>
-      <p>現場: {report.site_name || "-"}</p>
-
-      <div style={{ marginTop: 10 }}>
-        <a
-          href={`/reports/${report.id}`}
-          style={{
-            display: "inline-block",
-            textDecoration: "none",
-            backgroundColor: "#111",
-            color: "#fff",
-            padding: "8px 12px",
-            borderRadius: 8,
-            fontSize: 14,
-          }}
-        >
-          詳細を見る
-        </a>
-      </div>
-    </div>
-  ))
-)}
       </div>
     </div>
   );
