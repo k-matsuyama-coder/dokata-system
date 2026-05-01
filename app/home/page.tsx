@@ -7,6 +7,7 @@ type ReportRow = {
   id: string;
   report_date: string;
   site_name: string | null;
+  shift_type: string | null;
 };
 
 type MemberRow = {
@@ -17,8 +18,11 @@ type MemberRow = {
 
 export default function HomePage() {
   const [employeeName, setEmployeeName] = useState("");
-  const [workingDays, setWorkingDays] = useState(0);
-  const [totalOvertime, setTotalOvertime] = useState(0);
+  const [dayCount, setDayCount] = useState(0);
+const [nightCount, setNightCount] = useState(0);
+
+const [dayOvertime, setDayOvertime] = useState(0);
+const [nightOvertime, setNightOvertime] = useState(0);
   const [totalVehicleCount, setTotalVehicleCount] = useState(0);
   const [recentReports, setRecentReports] = useState<ReportRow[]>([]);
 
@@ -109,11 +113,13 @@ if (loginEmployee?.must_change_password) {
       }
 
       if (!memberRows || memberRows.length === 0) {
-        setWorkingDays(0);
-        setTotalOvertime(0);
-        setTotalVehicleCount(0);
-        setRecentReports([]);
-        return;
+        setDayCount(0);
+setNightCount(0);
+setDayOvertime(0);
+setNightOvertime(0);
+setTotalVehicleCount(0);
+setRecentReports([]);
+return;
       }
 
       const reportIds = memberRows
@@ -122,7 +128,7 @@ if (loginEmployee?.must_change_password) {
 
       const { data: reportRows, error: reportError } = await supabase
         .from("daily_reports")
-        .select("id, report_date, site_name")
+        .select("id, report_date, site_name, shift_type")
         .in("id", reportIds)
         .order("report_date", { ascending: false });
 
@@ -156,13 +162,32 @@ if (loginEmployee?.must_change_password) {
         )
       );
 
-      setWorkingDays(uniqueDays.length);
+      const daySet = new Set<string>();
+const nightSet = new Set<string>();
 
-      const overtimeSum = currentMonthMembers.reduce(
-        (sum, row) => sum + Number(row.overtime ?? 0),
-        0
-      );
-      setTotalOvertime(overtimeSum);
+let dayOver = 0;
+let nightOver = 0;
+
+currentMonthMembers.forEach((row) => {
+  const report = reportMap.get(row.report_id);
+  if (!report) return;
+
+  const shift = (report as any).shift_type;
+
+  if (shift === "night") {
+    nightSet.add(report.report_date);
+    nightOver += Number(row.overtime ?? 0);
+  } else {
+    daySet.add(report.report_date);
+    dayOver += Number(row.overtime ?? 0);
+  }
+});
+
+setDayCount(daySet.size);
+setNightCount(nightSet.size);
+
+setDayOvertime(dayOver);
+setNightOvertime(nightOver);
 
       const vehicleSum = currentMonthMembers.filter((row) => row.is_driver).length;
       setTotalVehicleCount(vehicleSum);
@@ -185,8 +210,6 @@ if (loginEmployee?.must_change_password) {
       }}
     >
       <div style={{ marginBottom: 20 }}>
-        <p style={{ margin: 0, color: "#666", fontSize: 14 }}>DOKATA-System</p>
-        <h1 style={{ margin: "4px 0 0 0", fontSize: 28 }}>ホーム</h1>
         <p style={{ margin: "6px 0 0 0", color: "#555" }}>
           {employeeName} さん、お疲れさまです
         </p>
@@ -251,9 +274,10 @@ if (loginEmployee?.must_change_password) {
             boxShadow: "0 4px 12px rgba(0,0,0,0.04)",
           }}
         >
-          <p style={{ margin: 0, color: "#666", fontSize: 13 }}>今月の稼働</p>
-          <p style={{ margin: "8px 0 0 0", fontSize: 30, fontWeight: 800 }}>
-            {workingDays}
+          <p style={{ margin: 0, fontSize: 14, color: "#666" }}>稼働</p>
+<p style={{ margin: "8px 0 0 0", fontWeight: 800, fontSize: 18 }}>
+  昼 {dayCount}日 / 夜 {nightCount}日
+</p>
             <span style={{ fontSize: 14, marginLeft: 4 }}>日</span>
           </p>
         </div>
@@ -267,9 +291,10 @@ if (loginEmployee?.must_change_password) {
             boxShadow: "0 4px 12px rgba(0,0,0,0.04)",
           }}
         >
-          <p style={{ margin: 0, color: "#666", fontSize: 13 }}>今月の残業</p>
-          <p style={{ margin: "8px 0 0 0", fontSize: 30, fontWeight: 800 }}>
-            {totalOvertime}
+          <p style={{ margin: 0, fontSize: 14, color: "#666" }}>残業</p>
+<p style={{ margin: "8px 0 0 0", fontWeight: 800, fontSize: 18 }}>
+  昼 {dayOvertime}h / 夜 {nightOvertime}h
+</p>
             <span style={{ fontSize: 14, marginLeft: 4 }}>h</span>
           </p>
         </div>
@@ -283,9 +308,11 @@ if (loginEmployee?.must_change_password) {
             boxShadow: "0 4px 12px rgba(0,0,0,0.04)",
           }}
         >
-          <p style={{ margin: 0, color: "#666", fontSize: 13 }}>車両回数</p>
-          <p style={{ margin: "8px 0 0 0", fontSize: 30, fontWeight: 800 }}>
-            {totalVehicleCount}
+          <p style={{ margin: 0, fontSize: 14, color: "#666" }}>運転回数</p>
+<p style={{ margin: "8px 0 0 0", fontWeight: 800, fontSize: 24 }}>
+  {totalVehicleCount}
+  <span style={{ fontSize: 14, marginLeft: 4 }}>回</span>
+</p>
             <span style={{ fontSize: 14, marginLeft: 4 }}>回</span>
           </p>
         </div>
