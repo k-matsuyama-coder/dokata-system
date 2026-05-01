@@ -199,6 +199,9 @@ setNightOvertime(nightOver);
     fetchHomeData();
   }, []);
 
+  const totalDays = dayCount + nightCount;
+const totalOvertimeSum = dayOvertime + nightOvertime;
+
   return (
     <div
       style={{
@@ -276,8 +279,12 @@ setNightOvertime(nightOver);
   >
     <p style={{ margin: 0, fontSize: 14, color: "#666" }}>稼働</p>
     <p style={{ margin: "8px 0 0 0", fontWeight: 800, fontSize: 18 }}>
-      昼 {dayCount}日 / 夜 {nightCount}日
-    </p>
+  合計 {totalDays}日
+</p>
+
+<p style={{ margin: "4px 0 0 0", fontSize: 13, color: "#666" }}>
+  昼 {dayCount} / 夜 {nightCount}
+</p>
   </div>
 
   <div
@@ -291,8 +298,12 @@ setNightOvertime(nightOver);
   >
     <p style={{ margin: 0, fontSize: 14, color: "#666" }}>残業</p>
     <p style={{ margin: "8px 0 0 0", fontWeight: 800, fontSize: 18 }}>
-      昼 {dayOvertime}h / 夜 {nightOvertime}h
-    </p>
+  合計 {totalOvertimeSum}h
+</p>
+
+<p style={{ margin: "4px 0 0 0", fontSize: 13, color: "#666" }}>
+  昼 {dayOvertime}h / 夜 {nightOvertime}h
+</p>
   </div>
 
   <div
