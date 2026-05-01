@@ -45,7 +45,88 @@ export default function NewReportPage() {
   const [siteSuggestions, setSiteSuggestions] = useState<string[]>([]);
   const [driverInput, setDriverInput] = useState("");
   const [selectedDrivers, setSelectedDrivers] = useState<string[]>([]);
+
   const router = useRouter();
+
+  const copyPreviousReport = async (targetEmployeeName?: string) => {
+    const nameForSearch = targetEmployeeName || employeeName;
+
+    if (!nameForSearch) {
+      alert("社員名の取得後にもう一度押してください");
+      return;
+    }
+
+    const { data: previousReport, error } = await supabase
+      .from("daily_reports")
+      .select("*")
+      .eq("worker_name", nameForSearch)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error || !previousReport) {
+      alert("前回の日報が見つかりません");
+      return;
+    }
+
+    const today = new Date().toISOString().slice(0, 10);
+    setReportDate(today);
+
+    setSite(previousReport.site_name ?? "");
+    setContractorName(previousReport.contractor_name ?? "");
+    setWork(previousReport.work_description ?? "");
+
+    const start = previousReport.start_time ?? "08:00";
+    const startHour = Number(start.split(":")[0]);
+
+    if (startHour >= 18 || startHour <= 5) {
+      setShiftType("night");
+    } else {
+      setShiftType("day");
+    }
+
+    setStartTime(previousReport.start_time ?? "08:00");
+    setEndTime(previousReport.end_time ?? "17:00");
+    setOvertimeMinutes(String(previousReport.overtime_minutes ?? "0"));
+
+    setExpresswayMain(String(previousReport.expressway_main ?? ""));
+    setExpresswaySecondary(String(previousReport.expressway_secondary ?? ""));
+    setExpresswaySubcontract(String(previousReport.expressway_subcontract ?? ""));
+
+    setParkingMain(String(previousReport.parking_main ?? ""));
+    setParkingSecondary(String(previousReport.parking_secondary ?? ""));
+    setParkingSubcontract(String(previousReport.parking_subcontract ?? ""));
+
+    setFuelGasoline(String(previousReport.fuel_gasoline ?? ""));
+    setFuelDiesel(String(previousReport.fuel_diesel ?? ""));
+
+    setNote(previousReport.note ?? "");
+
+    setSelectedDrivers(
+      previousReport.driver_name
+        ? String(previousReport.driver_name)
+            .split(",")
+            .map((name) => name.trim())
+            .filter(Boolean)
+        : []
+    );
+
+    setSelectedMembers(
+      Array.isArray(previousReport.member_details)
+        ? previousReport.member_details
+        : previousReport.members
+        ? String(previousReport.members)
+            .split(",")
+            .map((name) => ({
+              name: name.trim(),
+              labor: "1",
+              overtime: "0",
+            }))
+        : []
+    );
+
+    toast.success("前回の日報をコピーしました");
+  };
 
   useEffect(() => {
     const fetchSiteSuggestions = async () => {
@@ -71,16 +152,22 @@ export default function NewReportPage() {
       const { data: userData } = await supabase.auth.getUser();
       const user = userData.user;
 
-      if (user) {
-        const { data: employee } = await supabase
-          .from("employees")
-          .select("name")
-          .eq("auth_user_id", user.id)
-          .single();
+      if (!user) {
+        window.location.href = "/login";
+        return;
+      }
 
-        if (employee) {
-          setEmployeeName(employee.name);
-        }
+      let fetchedEmployeeName = "";
+
+      const { data: employee } = await supabase
+        .from("employees")
+        .select("name")
+        .eq("auth_user_id", user.id)
+        .single();
+
+      if (employee) {
+        fetchedEmployeeName = employee.name;
+        setEmployeeName(employee.name);
       }
 
       const { data: employeeList } = await supabase
@@ -91,101 +178,21 @@ export default function NewReportPage() {
       if (employeeList) {
         setEmployees(employeeList);
       }
-    };
 
-    useEffect(() => {
       const params = new URLSearchParams(window.location.search);
-    
+
       if (params.get("copy") === "1") {
-        const timer = setTimeout(() => {
-          handleCopyPreviousReport();
-        }, 500);
-    
-        return () => clearTimeout(timer);
+        setTimeout(() => {
+          copyPreviousReport(fetchedEmployeeName);
+        }, 300);
       }
-    }, []);
+    };
 
     fetchInitialData();
   }, []);
 
   const handleCopyPreviousReport = async () => {
-    const { data: userData } = await supabase.auth.getUser();
-    const user = userData.user;
-  
-    if (!user) {
-      alert("ログインしてください");
-      return;
-    }
-  
-    const { data: previousReport, error } = await supabase
-      .from("daily_reports")
-      .select("*")
-      .eq("worker_name", employeeName)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .single();
-  
-    if (error || !previousReport) {
-      alert("前回の日報が見つかりません");
-      return;
-    }
-
-    const today = new Date().toISOString().slice(0, 10);
-setReportDate(today);
-
-const startHour = Number((previousReport.start_time ?? "08:00").split(":")[0]);
-
-if (startHour >= 18 || startHour <= 5) {
-  setShiftType("night");
-} else {
-  setShiftType("day");
-}
-  
-    setSite(previousReport.site_name ?? "");
-    setContractorName(previousReport.contractor_name ?? "");
-    setWork(previousReport.work_description ?? "");
-    setShiftType(previousReport.shift_type ?? "day");
-    setStartTime(previousReport.start_time ?? "08:00");
-    setEndTime(previousReport.end_time ?? "17:00");
-    setOvertimeMinutes(String(previousReport.overtime_minutes ?? "0"));
-  
-    setExpresswayMain(String(previousReport.expressway_main ?? ""));
-    setExpresswaySecondary(String(previousReport.expressway_secondary ?? ""));
-    setExpresswaySubcontract(String(previousReport.expressway_subcontract ?? ""));
-  
-    setParkingMain(String(previousReport.parking_main ?? ""));
-    setParkingSecondary(String(previousReport.parking_secondary ?? ""));
-    setParkingSubcontract(String(previousReport.parking_subcontract ?? ""));
-  
-    setFuelGasoline(String(previousReport.fuel_gasoline ?? ""));
-    setFuelDiesel(String(previousReport.fuel_diesel ?? ""));
-  
-    setNote(previousReport.note ?? "");
-  
-    setSelectedDrivers(
-      previousReport.driver_name
-        ? String(previousReport.driver_name)
-            .split(",")
-            .map((name) => name.trim())
-            .filter(Boolean)
-        : []
-    );
-  
-    setSelectedMembers(
-      Array.isArray(previousReport.member_details)
-        ? previousReport.member_details
-        : previousReport.members
-          ? String(previousReport.members)
-              .split(",")
-              .map((name) => ({
-                name: name.trim(),
-                labor: "1",
-                overtime: "0",
-              }))
-          : []
-    );
-  
-    toast.success("前回の日報をコピーしました");
+    await copyPreviousReport();
   };
 
   const handleSubmit = async () => {
@@ -256,8 +263,7 @@ if (startHour >= 18 || startHour <= 5) {
     }
 
     toast.success("保存しました");
-router.replace("/home");
-return;
+    router.replace("/home");
   };
 
   return (
@@ -280,56 +286,56 @@ return;
           前回の日報をコピー
         </button>
       </div>
-  
+
       <ReportForm
-      reportDate={reportDate}
-      setReportDate={setReportDate}
-      contractorName={contractorName}
-      setContractorName={setContractorName}
-      site={site}
-      setSite={setSite}
-      work={work}
-      setWork={setWork}
-      startTime={startTime}
-      setStartTime={setStartTime}
-      endTime={endTime}
-      setEndTime={setEndTime}
-      shiftType={shiftType}
-      setShiftType={setShiftType}
-      overtimeMinutes={overtimeMinutes}
-      setOvertimeMinutes={setOvertimeMinutes}
-      employeeName={employeeName}
-      selectedDrivers={selectedDrivers}
-      setSelectedDrivers={setSelectedDrivers}
-      driverInput={driverInput}
-      setDriverInput={setDriverInput}
-      selectedMembers={selectedMembers}
-      setSelectedMembers={setSelectedMembers}
-      memberInput={memberInput}
-      setMemberInput={setMemberInput}
-      employees={employees}
-      siteSuggestions={siteSuggestions}
-      expresswayMain={expresswayMain}
-      setExpresswayMain={setExpresswayMain}
-      expresswaySecondary={expresswaySecondary}
-      setExpresswaySecondary={setExpresswaySecondary}
-      expresswaySubcontract={expresswaySubcontract}
-      setExpresswaySubcontract={setExpresswaySubcontract}
-      parkingMain={parkingMain}
-      setParkingMain={setParkingMain}
-      parkingSecondary={parkingSecondary}
-      setParkingSecondary={setParkingSecondary}
-      parkingSubcontract={parkingSubcontract}
-      setParkingSubcontract={setParkingSubcontract}
-      fuelGasoline={fuelGasoline}
-      setFuelGasoline={setFuelGasoline}
-      fuelDiesel={fuelDiesel}
-      setFuelDiesel={setFuelDiesel}
-      note={note}
-      setNote={setNote}
-      submitLabel="日報を保存"
-      onSubmit={handleSubmit}
+        reportDate={reportDate}
+        setReportDate={setReportDate}
+        contractorName={contractorName}
+        setContractorName={setContractorName}
+        site={site}
+        setSite={setSite}
+        work={work}
+        setWork={setWork}
+        startTime={startTime}
+        setStartTime={setStartTime}
+        endTime={endTime}
+        setEndTime={setEndTime}
+        shiftType={shiftType}
+        setShiftType={setShiftType}
+        overtimeMinutes={overtimeMinutes}
+        setOvertimeMinutes={setOvertimeMinutes}
+        employeeName={employeeName}
+        selectedDrivers={selectedDrivers}
+        setSelectedDrivers={setSelectedDrivers}
+        driverInput={driverInput}
+        setDriverInput={setDriverInput}
+        selectedMembers={selectedMembers}
+        setSelectedMembers={setSelectedMembers}
+        memberInput={memberInput}
+        setMemberInput={setMemberInput}
+        employees={employees}
+        siteSuggestions={siteSuggestions}
+        expresswayMain={expresswayMain}
+        setExpresswayMain={setExpresswayMain}
+        expresswaySecondary={expresswaySecondary}
+        setExpresswaySecondary={setExpresswaySecondary}
+        expresswaySubcontract={expresswaySubcontract}
+        setExpresswaySubcontract={setExpresswaySubcontract}
+        parkingMain={parkingMain}
+        setParkingMain={setParkingMain}
+        parkingSecondary={parkingSecondary}
+        setParkingSecondary={setParkingSecondary}
+        parkingSubcontract={parkingSubcontract}
+        setParkingSubcontract={setParkingSubcontract}
+        fuelGasoline={fuelGasoline}
+        setFuelGasoline={setFuelGasoline}
+        fuelDiesel={fuelDiesel}
+        setFuelDiesel={setFuelDiesel}
+        note={note}
+        setNote={setNote}
+        submitLabel="日報を保存"
+        onSubmit={handleSubmit}
       />
-      </div>
-      );
-    }
+    </div>
+  );
+}
