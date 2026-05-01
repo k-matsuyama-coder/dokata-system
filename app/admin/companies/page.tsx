@@ -77,11 +77,18 @@ export default function CompaniesPage() {
           {c.name}
 
           <button
-            onClick={() => handleDelete(c.id)}
-            style={{ marginLeft: 10 }}
-          >
-            削除
-          </button>
+                onClick={() => handleDelete(contractor.id)}
+                style={{
+                  backgroundColor: "#d11a2a",
+                  color: "#fff",
+                  border: "none",
+                  padding: "8px 12px",
+                  borderRadius: 8,
+                  cursor: "pointer",
+                }}
+              >
+                削除
+              </button>
         </div>
       ))}
     </div>

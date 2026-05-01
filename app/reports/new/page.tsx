@@ -96,6 +96,86 @@ export default function NewReportPage() {
     fetchInitialData();
   }, []);
 
+  const handleCopyPreviousReport = async () => {
+    const { data: userData } = await supabase.auth.getUser();
+    const user = userData.user;
+  
+    if (!user) {
+      alert("ログインしてください");
+      return;
+    }
+  
+    const { data: previousReport, error } = await supabase
+      .from("daily_reports")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+  
+    if (error || !previousReport) {
+      alert("前回の日報が見つかりません");
+      return;
+    }
+
+    const today = new Date().toISOString().slice(0, 10);
+setReportDate(today);
+
+const startHour = Number((previousReport.start_time ?? "08:00").split(":")[0]);
+
+if (startHour >= 18 || startHour <= 5) {
+  setShiftType("night");
+} else {
+  setShiftType("day");
+}
+  
+    setSite(previousReport.site_name ?? "");
+    setContractorName(previousReport.contractor_name ?? "");
+    setWork(previousReport.work_description ?? "");
+    setShiftType(previousReport.shift_type ?? "day");
+    setStartTime(previousReport.start_time ?? "08:00");
+    setEndTime(previousReport.end_time ?? "17:00");
+    setOvertimeMinutes(String(previousReport.overtime_minutes ?? "0"));
+  
+    setExpresswayMain(String(previousReport.expressway_main ?? ""));
+    setExpresswaySecondary(String(previousReport.expressway_secondary ?? ""));
+    setExpresswaySubcontract(String(previousReport.expressway_subcontract ?? ""));
+  
+    setParkingMain(String(previousReport.parking_main ?? ""));
+    setParkingSecondary(String(previousReport.parking_secondary ?? ""));
+    setParkingSubcontract(String(previousReport.parking_subcontract ?? ""));
+  
+    setFuelGasoline(String(previousReport.fuel_gasoline ?? ""));
+    setFuelDiesel(String(previousReport.fuel_diesel ?? ""));
+  
+    setNote(previousReport.note ?? "");
+  
+    setSelectedDrivers(
+      previousReport.driver_name
+        ? String(previousReport.driver_name)
+            .split(",")
+            .map((name) => name.trim())
+            .filter(Boolean)
+        : []
+    );
+  
+    setSelectedMembers(
+      Array.isArray(previousReport.member_details)
+        ? previousReport.member_details
+        : previousReport.members
+          ? String(previousReport.members)
+              .split(",")
+              .map((name) => ({
+                name: name.trim(),
+                labor: "1",
+                overtime: "0",
+              }))
+          : []
+    );
+  
+    toast.success("前回の日報をコピーしました");
+  };
+
   const handleSubmit = async () => {
     const { data: userData } = await supabase.auth.getUser();
     const user = userData.user;
@@ -169,7 +249,27 @@ return;
   };
 
   return (
-    <ReportForm
+    <div>
+      <div style={{ maxWidth: 680, margin: "0 auto", padding: "16px 16px 0" }}>
+        <button
+          type="button"
+          onClick={handleCopyPreviousReport}
+          style={{
+            width: "100%",
+            padding: 12,
+            borderRadius: 8,
+            border: "1px solid #ccc",
+            backgroundColor: "#fff",
+            fontSize: 16,
+            fontWeight: 600,
+            cursor: "pointer",
+          }}
+        >
+          前回の日報をコピー
+        </button>
+      </div>
+  
+      <ReportForm
       reportDate={reportDate}
       setReportDate={setReportDate}
       contractorName={contractorName}
@@ -217,6 +317,7 @@ return;
       setNote={setNote}
       submitLabel="日報を保存"
       onSubmit={handleSubmit}
-    />
-  );
-}
+      />
+      </div>
+      );
+    }
