@@ -258,65 +258,59 @@ setNightOvertime(nightOver);
       </div>
   
       <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
-          gap: 12,
-          marginBottom: 20,
-        }}
-      >
-        <div
-          style={{
-            backgroundColor: "#fff",
-            borderRadius: 16,
-            padding: 16,
-            border: "1px solid #e5e5e5",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.04)",
-          }}
-        >
-          <p style={{ margin: 0, fontSize: 14, color: "#666" }}>稼働</p>
-<p style={{ margin: "8px 0 0 0", fontWeight: 800, fontSize: 18 }}>
-  昼 {dayCount}日 / 夜 {nightCount}日
-</p>
-            <span style={{ fontSize: 14, marginLeft: 4 }}>日</span>
-          </p>
-        </div>
-  
-        <div
-          style={{
-            backgroundColor: "#fff",
-            borderRadius: 16,
-            padding: 16,
-            border: "1px solid #e5e5e5",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.04)",
-          }}
-        >
-          <p style={{ margin: 0, fontSize: 14, color: "#666" }}>残業</p>
-<p style={{ margin: "8px 0 0 0", fontWeight: 800, fontSize: 18 }}>
-  昼 {dayOvertime}h / 夜 {nightOvertime}h
-</p>
-            <span style={{ fontSize: 14, marginLeft: 4 }}>h</span>
-          </p>
-        </div>
-  
-        <div
-          style={{
-            backgroundColor: "#fff",
-            borderRadius: 16,
-            padding: 16,
-            border: "1px solid #e5e5e5",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.04)",
-          }}
-        >
-          <p style={{ margin: 0, fontSize: 14, color: "#666" }}>運転回数</p>
-<p style={{ margin: "8px 0 0 0", fontWeight: 800, fontSize: 24 }}>
-  {totalVehicleCount}
-  <span style={{ fontSize: 14, marginLeft: 4 }}>回</span>
-</p>
-            <span style={{ fontSize: 14, marginLeft: 4 }}>回</span>
-          </p>
-        </div>
-      </div>
+  style={{
+    display: "grid",
+    gridTemplateColumns: "repeat(3, 1fr)",
+    gap: 12,
+    marginBottom: 20,
+  }}
+>
+  <div
+    style={{
+      backgroundColor: "#fff",
+      borderRadius: 16,
+      padding: 16,
+      border: "1px solid #e5e5e5",
+      boxShadow: "0 4px 12px rgba(0,0,0,0.04)",
+    }}
+  >
+    <p style={{ margin: 0, fontSize: 14, color: "#666" }}>稼働</p>
+    <p style={{ margin: "8px 0 0 0", fontWeight: 800, fontSize: 18 }}>
+      昼 {dayCount}日 / 夜 {nightCount}日
+    </p>
+  </div>
+
+  <div
+    style={{
+      backgroundColor: "#fff",
+      borderRadius: 16,
+      padding: 16,
+      border: "1px solid #e5e5e5",
+      boxShadow: "0 4px 12px rgba(0,0,0,0.04)",
+    }}
+  >
+    <p style={{ margin: 0, fontSize: 14, color: "#666" }}>残業</p>
+    <p style={{ margin: "8px 0 0 0", fontWeight: 800, fontSize: 18 }}>
+      昼 {dayOvertime}h / 夜 {nightOvertime}h
+    </p>
+  </div>
+
+  <div
+    style={{
+      backgroundColor: "#fff",
+      borderRadius: 16,
+      padding: 16,
+      border: "1px solid #e5e5e5",
+      boxShadow: "0 4px 12px rgba(0,0,0,0.04)",
+    }}
+  >
+    <p style={{ margin: 0, fontSize: 14, color: "#666" }}>運転回数</p>
+    <p style={{ margin: "8px 0 0 0", fontWeight: 800, fontSize: 24 }}>
+      {totalVehicleCount}
+      <span style={{ fontSize: 14, marginLeft: 4 }}>回</span>
+    </p>
+  </div>
+</div>
   
       <div
         style={{
