@@ -93,6 +93,18 @@ export default function NewReportPage() {
       }
     };
 
+    useEffect(() => {
+      const params = new URLSearchParams(window.location.search);
+    
+      if (params.get("copy") === "1") {
+        const timer = setTimeout(() => {
+          handleCopyPreviousReport();
+        }, 500);
+    
+        return () => clearTimeout(timer);
+      }
+    }, []);
+
     fetchInitialData();
   }, []);
 
@@ -108,7 +120,7 @@ export default function NewReportPage() {
     const { data: previousReport, error } = await supabase
       .from("daily_reports")
       .select("*")
-      .eq("user_id", user.id)
+      .eq("worker_name", employeeName)
       .order("created_at", { ascending: false })
       .limit(1)
       .single();
@@ -117,14 +129,6 @@ export default function NewReportPage() {
       alert("前回の日報が見つかりません");
       return;
     }
-
-    useEffect(() => {
-      const params = new URLSearchParams(window.location.search);
-    
-      if (params.get("copy") === "1") {
-        handleCopyPreviousReport();
-      }
-    }, []);
 
     const today = new Date().toISOString().slice(0, 10);
 setReportDate(today);
