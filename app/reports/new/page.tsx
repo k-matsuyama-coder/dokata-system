@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import ReportForm from "@/app/components/ReportForm";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
 
 type Employee = {
@@ -46,6 +46,7 @@ export default function NewReportPage() {
   const [driverInput, setDriverInput] = useState("");
   const [selectedDrivers, setSelectedDrivers] = useState<string[]>([]);
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     const fetchSiteSuggestions = async () => {
@@ -117,6 +118,12 @@ export default function NewReportPage() {
       alert("前回の日報が見つかりません");
       return;
     }
+
+    useEffect(() => {
+      if (searchParams.get("copy") === "1") {
+        handleCopyPreviousReport();
+      }
+    }, [searchParams]);
 
     const today = new Date().toISOString().slice(0, 10);
 setReportDate(today);
