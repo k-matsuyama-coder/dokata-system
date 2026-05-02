@@ -10,6 +10,7 @@ type Employee = {
   name: string;
   role: string | null;
   company_name: string | null;
+  must_change_password: boolean | null;
 };
 
 export default function UsersPage() {
@@ -30,7 +31,7 @@ const [sortType, setSortType] = useState("created_desc");
 
       const { data: me } = await supabase
         .from("employees")
-        .select("role")
+        .select("id, auth_user_id, name, role, company_name, must_change_password")
         .eq("auth_user_id", user.id)
         .single();
 
@@ -87,6 +88,21 @@ const [sortType, setSortType] = useState("created_desc");
   
       return 0;
     });
+
+    const groupedEmployees = filteredEmployees.reduce<Record<string, Employee[]>>(
+      (acc, employee) => {
+        const company = employee.company_name || "未設定";
+    
+        if (!acc[company]) {
+          acc[company] = [];
+        }
+    
+        acc[company].push(employee);
+    
+        return acc;
+      },
+      {}
+    );
 
   const handleDelete = async (employee: Employee) => {
     const ok = window.confirm(
@@ -240,54 +256,79 @@ const [sortType, setSortType] = useState("created_desc");
   <option value="role_asc">権限順</option>
 </select>
 
-      {filteredEmployees.length === 0 ? (
-        <p>社員がいません</p>
-      ) : (
-        <div style={{ display: "grid", gap: 12 }}>
-          {filteredEmployees.map((employee) => (
+{filteredEmployees.length === 0 ? (
+  <p>社員がいません</p>
+) : (
+  <div style={{ display: "grid", gap: 18 }}>
+    {Object.entries(groupedEmployees).map(([companyName, companyEmployees]) => (
+      <div
+        key={companyName}
+        style={{
+          border: "1px solid #ddd",
+          borderRadius: 12,
+          padding: 14,
+          backgroundColor: "#fafafa",
+        }}
+      >
+        <h3 style={{ margin: "0 0 12px 0" }}>
+          {companyName}
+          <span style={{ fontSize: 13, color: "#666", marginLeft: 8 }}>
+            {companyEmployees.length}人
+          </span>
+        </h3>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "2fr 1fr 1fr auto",
+            fontSize: 13,
+            color: "#666",
+            padding: "6px 12px",
+            borderBottom: "1px solid #ddd",
+            marginBottom: 6,
+          }}
+        >
+          <div>名前</div>
+          <div>権限</div>
+          <div>初回PW</div>
+          <div></div>
+        </div>
+
+        <div style={{ display: "grid" }}>
+          {companyEmployees.map((employee) => (
             <div
               key={employee.id}
               style={{
-                border: "1px solid #ddd",
-                borderRadius: 12,
-                padding: 16,
+                display: "grid",
+                gridTemplateColumns: "2fr 1fr 1fr auto",
+                alignItems: "center",
+                padding: "10px 12px",
+                borderBottom: "1px solid #eee",
                 backgroundColor: "#fff",
               }}
             >
-              <p style={{ margin: 0, fontWeight: "bold", fontSize: 16 }}>
-                {employee.name}
-              </p>
+              <div style={{ fontWeight: 600 }}>{employee.name}</div>
 
-              <p style={{ margin: "8px 0 0 0" }}>
-                所属会社: {employee.company_name || "-"}
-              </p>
+              <div>{employee.role || "-"}</div>
 
-              <p style={{ margin: "6px 0 0 0" }}>
-                権限: {employee.role || "-"}
-              </p>
+              <div>
+                {employee.must_change_password ? "未完了" : "完了"}
+              </div>
 
-              <div
-                style={{
-                  display: "flex",
-                  gap: 8,
-                  flexWrap: "wrap",
-                  marginTop: 12,
-                }}
-              >
+              <div style={{ display: "flex", gap: 8 }}>
                 <a
                   href={`/admin/users/${employee.id}`}
                   style={{
-                    display: "inline-block",
                     textDecoration: "none",
                     backgroundColor: "#fff",
                     color: "#111",
-                    padding: "8px 12px",
-                    borderRadius: 8,
+                    padding: "6px 10px",
+                    borderRadius: 6,
                     border: "1px solid #ccc",
-                    fontSize: 14,
+                    fontSize: 13,
                   }}
                 >
-                  詳細・編集
+                  編集
                 </a>
 
                 <button
@@ -297,10 +338,10 @@ const [sortType, setSortType] = useState("created_desc");
                     backgroundColor: "#d11a2a",
                     color: "#fff",
                     border: "none",
-                    padding: "8px 12px",
-                    borderRadius: 8,
+                    padding: "6px 10px",
+                    borderRadius: 6,
                     cursor: "pointer",
-                    fontSize: 14,
+                    fontSize: 13,
                   }}
                 >
                   削除
@@ -309,7 +350,10 @@ const [sortType, setSortType] = useState("created_desc");
             </div>
           ))}
         </div>
-      )}
+      </div>
+    ))}
+  </div>
+)}
     </div>
   );
 }
