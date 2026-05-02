@@ -57,6 +57,18 @@ export default function SitesPage() {
       return;
     }
 
+    const { data: existingSite } = await supabase
+    .from("sites")
+    .select("id")
+    .eq("contractor_name", contractorName)
+    .eq("site_name", siteName)
+    .maybeSingle();
+  
+  if (existingSite) {
+    alert("この元請の現場名はすでに登録されています");
+    return;
+  }
+
     const { error } = await supabase.from("sites").insert({
       contractor_name: contractorName,
       manager_name: managerName || null,
@@ -99,6 +111,18 @@ export default function SitesPage() {
     marginBottom: 12,
   };
 
+  const groupedSites = sites.reduce<Record<string, Site[]>>((acc, site) => {
+    const contractor = site.contractor_name || "未設定";
+  
+    if (!acc[contractor]) {
+      acc[contractor] = [];
+    }
+  
+    acc[contractor].push(site);
+  
+    return acc;
+  }, {});
+
   return (
     <div style={{ maxWidth: 700, margin: "0 auto", padding: 16 }}>
       <BackButton />
@@ -133,8 +157,8 @@ export default function SitesPage() {
       return;
     }
 
-    alert("アップロード完了");
-    location.reload();
+    alert(`アップロード完了: ${result.insertedCount ?? 0}件追加しました`);
+fetchData();
   }}
 />
 <button
@@ -220,11 +244,29 @@ export default function SitesPage() {
       {/* 一覧 */}
       <h2>現場一覧</h2>
 
-      {sites.length === 0 ? (
-        <p>現場がありません</p>
-      ) : (
+{sites.length === 0 ? (
+  <p>現場がありません</p>
+) : (
+  <div style={{ display: "grid", gap: 18 }}>
+    {Object.entries(groupedSites).map(([contractorName, contractorSites]) => (
+      <div
+        key={contractorName}
+        style={{
+          border: "1px solid #ddd",
+          borderRadius: 12,
+          padding: 14,
+          backgroundColor: "#fafafa",
+        }}
+      >
+        <h3 style={{ margin: "0 0 12px 0" }}>
+          {contractorName}
+          <span style={{ fontSize: 13, color: "#666", marginLeft: 8 }}>
+            {contractorSites.length}件
+          </span>
+        </h3>
+
         <div style={{ display: "grid", gap: 10 }}>
-          {sites.map((site) => (
+          {contractorSites.map((site) => (
             <div
               key={site.id}
               style={{
@@ -237,10 +279,8 @@ export default function SitesPage() {
               <p style={{ margin: 0, fontWeight: "bold" }}>
                 {site.site_name}
               </p>
-              <p style={{ margin: "6px 0 0 0" }}>
-                元請: {site.contractor_name}
-              </p>
-              <p style={{ margin: "6px 0 0 0" }}>
+
+              <p style={{ margin: "6px 0 0 0", color: "#555" }}>
                 担当者: {site.manager_name || "-"}
               </p>
 
@@ -261,7 +301,10 @@ export default function SitesPage() {
             </div>
           ))}
         </div>
-      )}
+      </div>
+    ))}
+  </div>
+)}
     </div>
   );
 }
