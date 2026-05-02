@@ -265,17 +265,57 @@ fetchData();
           </span>
         </h3>
 
+        <div
+    style={{
+      display: "grid",
+      gridTemplateColumns: "2fr 1fr auto",
+      fontSize: 13,
+      color: "#666",
+      padding: "6px 12px",
+      borderBottom: "1px solid #ddd",
+      marginBottom: 6,
+    }}
+  >
+    <div>現場名</div>
+    <div>担当者</div>
+    <div></div>
+  </div>
+
         <div style={{ display: "grid", gap: 10 }}>
-          {contractorSites.map((site) => (
-            <div
-              key={site.id}
-              style={{
-                border: "1px solid #ddd",
-                borderRadius: 10,
-                padding: 12,
-                backgroundColor: "#fff",
-              }}
-            >
+        <div
+  key={site.id}
+  style={{
+    display: "grid",
+    gridTemplateColumns: "2fr 1fr auto",
+    alignItems: "center",
+    padding: "10px 12px",
+    borderBottom: "1px solid #eee",
+    backgroundColor: "#fff",
+  }}
+>
+  <div style={{ fontWeight: 600 }}>
+    {site.site_name}
+  </div>
+
+  <div style={{ color: "#555" }}>
+    {site.manager_name || "-"}
+  </div>
+
+  <button
+    onClick={() => handleDelete(site.id)}
+    style={{
+      backgroundColor: "#d11a2a",
+      color: "#fff",
+      border: "none",
+      padding: "6px 10px",
+      borderRadius: 6,
+      cursor: "pointer",
+      fontSize: 13,
+    }}
+  >
+    削除
+  </button>
+</div>
               <p style={{ margin: 0, fontWeight: "bold" }}>
                 {site.site_name}
               </p>
