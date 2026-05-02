@@ -18,6 +18,9 @@ export default function UserDetailPage() {
   const [companyName, setCompanyName] = useState("");
   const [role, setRole] = useState("worker");
   const [companies, setCompanies] = useState<Company[]>([]);
+  const [authUserId, setAuthUserId] = useState("");
+const [email, setEmail] = useState("");
+const [password, setPassword] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -43,7 +46,7 @@ export default function UserDetailPage() {
 
       const { data: employee, error: employeeError } = await supabase
         .from("employees")
-        .select("name, role, company_name")
+        .select("name, role, company_name, auth_user_id")
         .eq("id", id)
         .single();
 
@@ -56,6 +59,25 @@ export default function UserDetailPage() {
       setName(employee.name ?? "");
       setRole(employee.role ?? "worker");
       setCompanyName(employee.company_name ?? "");
+      setAuthUserId(employee.auth_user_id ?? "");
+
+      if (employee.auth_user_id) {
+        const res = await fetch("/api/admin/get-user-auth", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            authUserId: employee.auth_user_id,
+          }),
+        });
+      
+        const result = await res.json();
+      
+        if (res.ok) {
+          setEmail(result.email ?? "");
+        }
+      }
 
       const { data: companyData, error: companyError } = await supabase
         .from("companies")
@@ -83,12 +105,31 @@ export default function UserDetailPage() {
         role,
       })
       .eq("id", id);
-
+  
     if (error) {
       alert("更新失敗: " + error.message);
       return;
     }
-
+  
+    const authRes = await fetch("/api/admin/update-user-auth", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        authUserId,
+        email,
+        password,
+      }),
+    });
+  
+    const authResult = await authRes.json();
+  
+    if (!authRes.ok) {
+      alert(authResult.error || "ログイン情報更新失敗");
+      return;
+    }
+  
     alert("社員情報を更新しました");
     window.location.href = "/admin/users";
   };
@@ -136,6 +177,27 @@ export default function UserDetailPage() {
           ))}
         </select>
       </div>
+
+      <div style={{ marginBottom: 16 }}>
+  <p>メールアドレス</p>
+  <input
+    value={email}
+    onChange={(e) => setEmail(e.target.value)}
+    style={{ width: "100%", padding: 10, boxSizing: "border-box" }}
+    placeholder="メールアドレス"
+  />
+</div>
+
+<div style={{ marginBottom: 16 }}>
+  <p>新しいパスワード</p>
+  <input
+    type="password"
+    value={password}
+    onChange={(e) => setPassword(e.target.value)}
+    style={{ width: "100%", padding: 10, boxSizing: "border-box" }}
+    placeholder="変更する場合のみ入力"
+  />
+</div>
 
       <button
         onClick={handleUpdate}
