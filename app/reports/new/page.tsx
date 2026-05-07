@@ -45,6 +45,8 @@ export default function NewReportPage() {
   const [siteSuggestions, setSiteSuggestions] = useState<string[]>([]);
   const [driverInput, setDriverInput] = useState("");
   const [selectedDrivers, setSelectedDrivers] = useState<string[]>([]);
+  const [heavyEquipment, setHeavyEquipment] = useState("");
+const [operatorName, setOperatorName] = useState("");
 
   const router = useRouter();
 
@@ -232,6 +234,8 @@ export default function NewReportPage() {
       member_details: selectedMembers,
       note,
       user_id: user.id,
+      heavy_equipment: heavyEquipment,
+operator_name: operatorName,
     };
 
     const { data: reportData, error: reportError } = await supabase
@@ -335,6 +339,11 @@ export default function NewReportPage() {
         setNote={setNote}
         submitLabel="日報を保存"
         onSubmit={handleSubmit}
+        heavyEquipment={heavyEquipment}
+setHeavyEquipment={setHeavyEquipment}
+operatorName={operatorName}
+setOperatorName={setOperatorName}
+        
       />
     </div>
   );

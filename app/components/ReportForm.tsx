@@ -80,6 +80,11 @@ type ReportFormProps = {
 
   submitLabel: string;
   onSubmit: () => void;
+  heavyEquipment: string;
+setHeavyEquipment: (value: string) => void;
+
+operatorName: string;
+setOperatorName: (value: string) => void;
 };
 
 export default function ReportForm(props: ReportFormProps) {
@@ -131,6 +136,11 @@ export default function ReportForm(props: ReportFormProps) {
     setNote,
     submitLabel,
     onSubmit,
+    heavyEquipment,
+setHeavyEquipment,
+
+operatorName,
+setOperatorName,
   } = props;
 
   const timeOptions = [
@@ -176,6 +186,7 @@ export default function ReportForm(props: ReportFormProps) {
 
   const [showExpressway, setShowExpressway] = useState(false);
 const [showParking, setShowParking] = useState(false);
+const [showHeavyEquipment, setShowHeavyEquipment] = useState(false);
 
 const [contractors, setContractors] = useState<Contractor[]>([]);
 const [sites, setSites] = useState<Site[]>([]);
@@ -634,6 +645,70 @@ useEffect(() => {
             ))}
           </div>
         )}
+      </div>
+
+      <div style={sectionStyle}>
+        <div
+          onClick={() => setShowHeavyEquipment(!showHeavyEquipment)}
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            cursor: "pointer",
+            padding: "12px",
+            border: "1px solid #ddd",
+            borderRadius: 8,
+            backgroundColor: "#fafafa",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span
+              style={{
+                display: "inline-block",
+                transition: "transform 0.25s ease",
+                transform: showHeavyEquipment ? "rotate(90deg)" : "rotate(0deg)",
+                fontSize: 14,
+              }}
+            >
+              ▶
+            </span>
+            <p style={{ margin: 0, fontWeight: "bold" }}>重機・OP</p>
+          </div>
+        </div>
+
+        <div
+          style={{
+            maxHeight: showHeavyEquipment ? "300px" : "0",
+            opacity: showHeavyEquipment ? 1 : 0,
+            overflow: "hidden",
+            transition:
+              "max-height 0.35s ease, opacity 0.25s ease, margin-top 0.25s ease",
+            marginTop: showHeavyEquipment ? 12 : 0,
+          }}
+        >
+          <div style={{ display: "grid", gap: 12 }}>
+            <div>
+              <p>重機</p>
+              <input
+                value={heavyEquipment}
+                onChange={(e) => setHeavyEquipment(e.target.value)}
+                placeholder="重機名"
+                style={inputStyle}
+              />
+            </div>
+
+            <div>
+              <p>OP</p>
+              <input
+                value={operatorName}
+                onChange={(e) => setOperatorName(e.target.value)}
+                placeholder="OP名"
+                style={inputStyle}
+              />
+            </div>
+          </div>
+        </div>
       </div>
 
       <div style={sectionStyle}>

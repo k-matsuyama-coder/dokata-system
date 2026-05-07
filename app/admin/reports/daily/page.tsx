@@ -21,6 +21,17 @@ type Report = {
   expressway_main: number | null;
   parking_main: number | null;
   is_checked: boolean | null;
+  worker_count: number | null;
+overtime_minutes: number | null;
+
+expressway_secondary: number | null;
+expressway_subcontract: number | null;
+
+parking_secondary: number | null;
+parking_subcontract: number | null;
+
+heavy_equipment: string | null;
+operator_name: string | null;
 };
 
 export default function DailyReportAdminPage() {
@@ -66,8 +77,33 @@ const allChecked =
     const { data, error } = await supabase
       .from("daily_reports")
       .select(
-  "id, report_date, contractor_name, worker_name, site_name, shift_type, start_time, end_time, worker_count, vehicle_count, driver_name, work_description, members, note, expressway_main, expressway_secondary, expressway_subcontract, parking_main, parking_secondary, parking_subcontract, is_checked"
-)
+        `
+        id,
+        report_date,
+        contractor_name,
+        worker_name,
+        site_name,
+        shift_type,
+        start_time,
+        end_time,
+        overtime_minutes,
+        worker_count,
+        vehicle_count,
+        driver_name,
+        work_description,
+        members,
+        note,
+        expressway_main,
+        expressway_secondary,
+        expressway_subcontract,
+        parking_main,
+        parking_secondary,
+        parking_subcontract,
+        heavy_equipment,
+        operator_name,
+        is_checked
+      `
+      )
       .eq("report_date", date)
       .order("created_at", { ascending: true });
 
@@ -173,35 +209,55 @@ const allChecked =
           日報確認表　{date}
         </h2>
 
-        <table
-          style={{
-            width: "100%",
-            borderCollapse: "collapse",
-            backgroundColor: "#fff",
-          }}
-        >
+        <div
+  style={{
+    overflowX: "auto",
+    width: "100%",
+  }}
+>
+  <table
+    style={{
+      width: "100%",
+      borderCollapse: "collapse",
+      backgroundColor: "#fff",
+      minWidth: 2200,
+    }}
+  >
           <thead>
           <tr>
   <th style={thStyle}>確認</th>
   <th style={thStyle}>日付</th>
-              <th style={thStyle}>元請</th>
-              <th style={thStyle}>担当職員</th>
-              <th style={thStyle}>昼/夜</th>
-              <th style={thStyle}>現場名</th>
-              <th style={thStyle}>稼働時間</th>
-              <th style={thStyle}>工事内容</th>
-              <th style={thStyle}>メンバー</th>
-              <th style={thStyle}>車両台数</th>
-              <th style={thStyle}>運転手</th>
-              <th style={thStyle}>その他</th>
-              <th style={thStyle}>本体</th>
-            </tr>
+  <th style={thStyle}>営業所</th>
+  <th style={thStyle}>担当職員</th>
+  <th style={thStyle}>昼/夜</th>
+  <th style={thStyle}>現場名</th>
+  <th style={thStyle}>稼働人員</th>
+  <th style={thStyle}>稼働時間</th>
+  <th style={thStyle}>残業</th>
+  <th style={thStyle}>作業員数</th>
+  <th style={thStyle}>工事内容</th>
+  <th style={thStyle}>メンバー</th>
+  <th style={thStyle}>車両台数</th>
+  <th style={thStyle}>運転手</th>
+  <th style={thStyle}>重機運転</th>
+  <th style={thStyle}>OP</th>
+
+  <th style={thStyle}>高速 本体</th>
+  <th style={thStyle}>高速 出向</th>
+  <th style={thStyle}>高速 下請</th>
+
+  <th style={thStyle}>駐車 本体</th>
+  <th style={thStyle}>駐車 出向</th>
+  <th style={thStyle}>駐車 下請</th>
+
+  <th style={thStyle}>備考</th>
+</tr>
           </thead>
 
           <tbody>
             {reports.length === 0 ? (
               <tr>
-                <td style={tdStyle} colSpan={13}>
+                <td style={tdStyle} colSpan={23}>
                   この日の日報はありません
                 </td>
               </tr>
@@ -229,7 +285,9 @@ const allChecked =
 
         setReports((prev) =>
           prev.map((r) =>
-            r.id === report.id ? { ...r, is_checked: checked } : r
+            r.id === report.id
+              ? { ...r, is_checked: checked }
+              : r
           )
         );
       }}
@@ -237,33 +295,96 @@ const allChecked =
   </td>
 
   <td style={tdStyle}>{report.report_date}</td>
-                  <td style={tdStyle}>{report.contractor_name || "-"}</td>
-                  <td style={tdStyle}>{report.worker_name || "-"}</td>
-                  <td style={tdStyle}>
-                    {report.shift_type === "night" ? "夜" : "昼"}
-                  </td>
-                  <td style={tdStyle}>{report.site_name || "-"}</td>
-                  <td style={tdStyle}>
-                    {report.start_time || "-"}〜{report.end_time || "-"}
-                  </td>
-                  <td style={tdStyle}>{report.work_description || "-"}</td>
-                  <td style={tdStyle}>{report.members || "-"}</td>
-                  <td style={{ ...tdStyle, textAlign: "center" }}>
-                    {report.vehicle_count ?? 0}
-                  </td>
-                  <td style={tdStyle}>{report.driver_name || "-"}</td>
-                  <td style={tdStyle}>{report.note || "-"}</td>
-                  <td style={{ ...tdStyle, textAlign: "right" }}>
-                    ¥
-                    {Number(
-                      (report.expressway_main ?? 0) + (report.parking_main ?? 0)
-                    ).toLocaleString()}
-                  </td>
-                </tr>
+
+  <td style={tdStyle}>
+    {report.contractor_name || "-"}
+  </td>
+
+  <td style={tdStyle}>
+    {report.worker_name || "-"}
+  </td>
+
+  <td style={tdStyle}>
+    {report.shift_type === "night" ? "夜" : "昼"}
+  </td>
+
+  <td style={tdStyle}>
+    {report.site_name || "-"}
+  </td>
+
+  <td style={{ ...tdStyle, textAlign: "center" }}>
+    {report.worker_count ?? 0}
+  </td>
+
+  <td style={tdStyle}>
+    {report.start_time || "-"}〜{report.end_time || "-"}
+  </td>
+
+  <td style={{ ...tdStyle, textAlign: "center" }}>
+    {report.overtime_minutes ?? 0}
+  </td>
+
+  <td style={{ ...tdStyle, textAlign: "center" }}>
+    {report.worker_count ?? 0}
+  </td>
+
+  <td style={tdStyle}>
+    {report.work_description || "-"}
+  </td>
+
+  <td style={tdStyle}>
+    {report.members || "-"}
+  </td>
+
+  <td style={{ ...tdStyle, textAlign: "center" }}>
+    {report.vehicle_count ?? 0}
+  </td>
+
+  <td style={tdStyle}>
+    {report.driver_name || "-"}
+  </td>
+
+  <td style={tdStyle}>
+    {report.heavy_equipment || "-"}
+  </td>
+
+  <td style={tdStyle}>
+    {report.operator_name || "-"}
+  </td>
+
+  <td style={{ ...tdStyle, textAlign: "right" }}>
+    ¥{Number(report.expressway_main ?? 0).toLocaleString()}
+  </td>
+
+  <td style={{ ...tdStyle, textAlign: "right" }}>
+    ¥{Number(report.expressway_secondary ?? 0).toLocaleString()}
+  </td>
+
+  <td style={{ ...tdStyle, textAlign: "right" }}>
+    ¥{Number(report.expressway_subcontract ?? 0).toLocaleString()}
+  </td>
+
+  <td style={{ ...tdStyle, textAlign: "right" }}>
+    ¥{Number(report.parking_main ?? 0).toLocaleString()}
+  </td>
+
+  <td style={{ ...tdStyle, textAlign: "right" }}>
+    ¥{Number(report.parking_secondary ?? 0).toLocaleString()}
+  </td>
+
+  <td style={{ ...tdStyle, textAlign: "right" }}>
+    ¥{Number(report.parking_subcontract ?? 0).toLocaleString()}
+  </td>
+
+  <td style={tdStyle}>
+    {report.note || "-"}
+  </td>
+</tr>
               ))
             )}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );
