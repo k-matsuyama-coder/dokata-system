@@ -29,6 +29,12 @@ export default function DailyReportAdminPage() {
 
   const [reports, setReports] = useState<Report[]>([]);
 
+  const [checkSasaki, setCheckSasaki] = useState(false);
+const [checkHara, setCheckHara] = useState(false);
+const [checkSakai, setCheckSakai] = useState(false);
+
+const allChecked = checkSasaki && checkHara && checkSakai;
+
   useEffect(() => {
     const checkAdminAndFetch = async () => {
       const { data: userData } = await supabase.auth.getUser();
@@ -72,6 +78,9 @@ export default function DailyReportAdminPage() {
     }
 
     setReports(data ?? []);
+    setCheckSasaki(false);
+setCheckHara(false);
+setCheckSakai(false);
   };
 
   const thStyle = {
@@ -138,20 +147,65 @@ export default function DailyReportAdminPage() {
             }}
           />
 
-          <button
-            onClick={() => window.print()}
-            style={{
-              padding: "10px 14px",
-              backgroundColor: "#111",
-              color: "#fff",
-              border: "none",
-              borderRadius: 8,
-              cursor: "pointer",
-              fontWeight: 600,
-            }}
-          >
-            印刷
-          </button>
+<div
+  style={{
+    display: "flex",
+    gap: 12,
+    flexWrap: "wrap",
+    alignItems: "center",
+    marginTop: 12,
+  }}
+>
+  <label>
+    <input
+      type="checkbox"
+      checked={checkSasaki}
+      onChange={(e) => setCheckSasaki(e.target.checked)}
+    />{" "}
+    佐々木 確認
+  </label>
+
+  <label>
+    <input
+      type="checkbox"
+      checked={checkHara}
+      onChange={(e) => setCheckHara(e.target.checked)}
+    />{" "}
+    原 確認
+  </label>
+
+  <label>
+    <input
+      type="checkbox"
+      checked={checkSakai}
+      onChange={(e) => setCheckSakai(e.target.checked)}
+    />{" "}
+    堺 確認
+  </label>
+</div>
+
+<button
+  disabled={!allChecked}
+  onClick={() => {
+    if (!allChecked) {
+      alert("すべての確認チェックを入れてください");
+      return;
+    }
+
+    window.print();
+  }}
+  style={{
+    padding: "10px 14px",
+    backgroundColor: allChecked ? "#111" : "#aaa",
+    color: "#fff",
+    border: "none",
+    borderRadius: 8,
+    cursor: allChecked ? "pointer" : "not-allowed",
+    fontWeight: 600,
+  }}
+>
+  印刷
+</button>
         </div>
       </div>
 
