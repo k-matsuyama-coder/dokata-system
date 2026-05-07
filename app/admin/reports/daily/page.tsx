@@ -20,6 +20,7 @@ type Report = {
   note: string | null;
   expressway_main: number | null;
   parking_main: number | null;
+  is_checked: boolean | null;
 };
 
 export default function DailyReportAdminPage() {
@@ -33,7 +34,9 @@ export default function DailyReportAdminPage() {
 const [checkHara, setCheckHara] = useState(false);
 const [checkSakai, setCheckSakai] = useState(false);
 
-const allChecked = checkSasaki && checkHara && checkSakai;
+const allChecked =
+  reports.length > 0 &&
+  reports.every((report) => report.is_checked);
 
   useEffect(() => {
     const checkAdminAndFetch = async () => {
@@ -67,8 +70,8 @@ const allChecked = checkSasaki && checkHara && checkSakai;
     const { data, error } = await supabase
       .from("daily_reports")
       .select(
-        "id, report_date, contractor_name, worker_name, site_name, shift_type, start_time, end_time, work_description, members, vehicle_count, driver_name, note, expressway_main, parking_main"
-      )
+  "id, report_date, contractor_name, worker_name, site_name, shift_type, start_time, end_time, worker_count, vehicle_count, driver_name, work_description, members, note, expressway_main, expressway_secondary, expressway_subcontract, parking_main, parking_secondary, parking_subcontract, is_checked"
+)
       .eq("report_date", date)
       .order("created_at", { ascending: true });
 
@@ -147,42 +150,35 @@ setCheckSakai(false);
             }}
           />
 
-<div
-  style={{
-    display: "flex",
-    gap: 12,
-    flexWrap: "wrap",
-    alignItems: "center",
-    marginTop: 12,
-  }}
->
-  <label>
-    <input
-      type="checkbox"
-      checked={checkSasaki}
-      onChange={(e) => setCheckSasaki(e.target.checked)}
-    />{" "}
-    佐々木 確認
-  </label>
+<td style={td}>
+  <input
+    type="checkbox"
+    checked={!!report.is_checked}
+    onChange={async (e) => {
+      const checked = e.target.checked;
 
-  <label>
-    <input
-      type="checkbox"
-      checked={checkHara}
-      onChange={(e) => setCheckHara(e.target.checked)}
-    />{" "}
-    原 確認
-  </label>
+      const { error } = await supabase
+        .from("daily_reports")
+        .update({
+          is_checked: checked,
+        })
+        .eq("id", report.id);
 
-  <label>
-    <input
-      type="checkbox"
-      checked={checkSakai}
-      onChange={(e) => setCheckSakai(e.target.checked)}
-    />{" "}
-    堺 確認
-  </label>
-</div>
+      if (error) {
+        alert("更新失敗: " + error.message);
+        return;
+      }
+
+      setReports((prev) =>
+        prev.map((r) =>
+          r.id === report.id
+            ? { ...r, is_checked: checked }
+            : r
+        )
+      );
+    }}
+  />
+</td>
 
 <button
   disabled={!allChecked}
