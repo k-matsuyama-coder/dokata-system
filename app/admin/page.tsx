@@ -53,6 +53,10 @@ export default function AdminPage() {
           社員一覧
         </a>
 
+        <a href="/admin/reports/daily" style={linkStyle}>
+  日別日報確認
+</a>
+
         <a href="/admin/reports" style={linkStyle}>
   日報管理
 </a>
