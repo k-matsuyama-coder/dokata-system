@@ -30,10 +30,6 @@ export default function DailyReportAdminPage() {
 
   const [reports, setReports] = useState<Report[]>([]);
 
-  const [checkSasaki, setCheckSasaki] = useState(false);
-const [checkHara, setCheckHara] = useState(false);
-const [checkSakai, setCheckSakai] = useState(false);
-
 const allChecked =
   reports.length > 0 &&
   reports.every((report) => report.is_checked);
@@ -81,9 +77,6 @@ const allChecked =
     }
 
     setReports(data ?? []);
-    setCheckSasaki(false);
-setCheckHara(false);
-setCheckSakai(false);
   };
 
   const thStyle = {
@@ -150,36 +143,6 @@ setCheckSakai(false);
             }}
           />
 
-<td style={td}>
-  <input
-    type="checkbox"
-    checked={!!report.is_checked}
-    onChange={async (e) => {
-      const checked = e.target.checked;
-
-      const { error } = await supabase
-        .from("daily_reports")
-        .update({
-          is_checked: checked,
-        })
-        .eq("id", report.id);
-
-      if (error) {
-        alert("更新失敗: " + error.message);
-        return;
-      }
-
-      setReports((prev) =>
-        prev.map((r) =>
-          r.id === report.id
-            ? { ...r, is_checked: checked }
-            : r
-        )
-      );
-    }}
-  />
-</td>
-
 <button
   disabled={!allChecked}
   onClick={() => {
@@ -218,8 +181,9 @@ setCheckSakai(false);
           }}
         >
           <thead>
-            <tr>
-              <th style={thStyle}>日付</th>
+          <tr>
+  <th style={thStyle}>確認</th>
+  <th style={thStyle}>日付</th>
               <th style={thStyle}>元請</th>
               <th style={thStyle}>担当職員</th>
               <th style={thStyle}>昼/夜</th>
@@ -237,14 +201,42 @@ setCheckSakai(false);
           <tbody>
             {reports.length === 0 ? (
               <tr>
-                <td style={tdStyle} colSpan={12}>
+                <td style={tdStyle} colSpan={13}>
                   この日の日報はありません
                 </td>
               </tr>
             ) : (
               reports.map((report) => (
                 <tr key={report.id}>
-                  <td style={tdStyle}>{report.report_date}</td>
+  <td style={{ ...tdStyle, textAlign: "center" }}>
+    <input
+      type="checkbox"
+      checked={!!report.is_checked}
+      onChange={async (e) => {
+        const checked = e.target.checked;
+
+        const { error } = await supabase
+          .from("daily_reports")
+          .update({
+            is_checked: checked,
+          })
+          .eq("id", report.id);
+
+        if (error) {
+          alert("更新失敗: " + error.message);
+          return;
+        }
+
+        setReports((prev) =>
+          prev.map((r) =>
+            r.id === report.id ? { ...r, is_checked: checked } : r
+          )
+        );
+      }}
+    />
+  </td>
+
+  <td style={tdStyle}>{report.report_date}</td>
                   <td style={tdStyle}>{report.contractor_name || "-"}</td>
                   <td style={tdStyle}>{report.worker_name || "-"}</td>
                   <td style={tdStyle}>
