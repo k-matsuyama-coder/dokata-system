@@ -189,8 +189,13 @@ setNightCount(nightSet.size);
 setDayOvertime(dayOver);
 setNightOvertime(nightOver);
 
-      const vehicleSum = currentMonthMembers.filter((row) => row.is_driver).length;
-      setTotalVehicleCount(vehicleSum);
+const driverReportIds = new Set(
+  currentMonthMembers
+    .filter((row) => row.is_driver)
+    .map((row) => row.report_id)
+);
+
+setTotalVehicleCount(driverReportIds.size);
 
       const recent = (reportRows ?? []).slice(0, 5) as ReportRow[];
       setRecentReports(recent);
