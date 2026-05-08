@@ -602,10 +602,13 @@ useEffect(() => {
             {filteredDrivers.slice(0, 5).map((employee) => (
               <div
                 key={employee.name}
-                onClick={() => {
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                
                   if (!selectedDrivers.includes(employee.name)) {
                     setSelectedDrivers([...selectedDrivers, employee.name]);
                   }
+                
                   setDriverInput("");
                 }}
                 style={{ padding: 8, cursor: "pointer" }}
@@ -634,7 +637,8 @@ useEffect(() => {
                 {driver}
                 <button
                   type="button"
-                  onClick={() =>
+                  onMouseDown={(e) => {
+                    e.preventDefault();
                     setSelectedDrivers(selectedDrivers.filter((d) => d !== driver))
                   }
                   style={{ marginLeft: 8, cursor: "pointer" }}
@@ -949,7 +953,10 @@ useEffect(() => {
       {filteredEmployees.slice(0, 5).map((employee) => (
         <div
           key={employee.name}
-          onClick={() => addMember(employee.name)}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            addMember(employee.name);
+          }}
           style={{ padding: 8, cursor: "pointer" }}
         >
           {employee.name}
