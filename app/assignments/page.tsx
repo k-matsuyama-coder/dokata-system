@@ -444,14 +444,132 @@ await fetchAssignmentMembers();
             alignItems: "center",
           }}
         >
-          <div>
-            {member.employee_name}
-            {member.is_driver ? " 🚗" : ""}
-            {member.is_operator ? " OP" : ""}
-            {member.heavy_equipment
-              ? ` ${member.heavy_equipment}`
-              : ""}
-          </div>
+          <div
+  style={{
+    display: "flex",
+    flexDirection: "column",
+    gap: 8,
+    width: "100%",
+  }}
+>
+  <div style={{ fontWeight: 700 }}>
+    {member.employee_name}
+  </div>
+
+  <div
+    style={{
+      display: "flex",
+      gap: 8,
+      flexWrap: "wrap",
+    }}
+  >
+    <button
+      type="button"
+      onClick={async () => {
+        await supabase
+          .from("assignment_members")
+          .update({
+            is_driver: !member.is_driver,
+          })
+          .eq("id", member.id);
+
+        fetchAssignmentMembers();
+      }}
+      style={{
+        padding: "6px 10px",
+        borderRadius: 8,
+        border: "none",
+        cursor: "pointer",
+        backgroundColor: member.is_driver
+          ? "#111"
+          : "#ddd",
+        color: member.is_driver
+          ? "#fff"
+          : "#111",
+      }}
+    >
+      🚗 運転
+    </button>
+
+    <button
+      type="button"
+      onClick={async () => {
+        await supabase
+          .from("assignment_members")
+          .update({
+            is_operator: !member.is_operator,
+          })
+          .eq("id", member.id);
+
+        fetchAssignmentMembers();
+      }}
+      style={{
+        padding: "6px 10px",
+        borderRadius: 8,
+        border: "none",
+        cursor: "pointer",
+        backgroundColor: member.is_operator
+          ? "#0a66c2"
+          : "#ddd",
+        color: member.is_operator
+          ? "#fff"
+          : "#111",
+      }}
+    >
+      OP
+    </button>
+
+    <select
+      value={member.heavy_equipment || ""}
+      onChange={async (e) => {
+        await supabase
+          .from("assignment_members")
+          .update({
+            heavy_equipment: e.target.value,
+          })
+          .eq("id", member.id);
+
+        fetchAssignmentMembers();
+      }}
+      style={{
+        padding: 6,
+        borderRadius: 8,
+      }}
+    >
+      <option value="">重機なし</option>
+      <option value="ブル">ブル</option>
+      <option value="グレーダー">グレーダー</option>
+      <option value="AF">AF</option>
+    </select>
+  </div>
+
+  <button
+  type="button"
+  onClick={async () => {
+    const ok = window.confirm("削除しますか？");
+    if (!ok) return;
+
+    await supabase
+      .from("assignment_members")
+      .delete()
+      .eq("id", member.id);
+
+    fetchAssignmentMembers();
+  }}
+  style={{
+    marginTop: 8,
+    backgroundColor: "#d11a2a",
+    color: "#fff",
+    border: "none",
+    borderRadius: 8,
+    padding: "6px 10px",
+    cursor: "pointer",
+  }}
+>
+  削除
+</button>
+
+</div>
         </div>
       ))}
   </div>
