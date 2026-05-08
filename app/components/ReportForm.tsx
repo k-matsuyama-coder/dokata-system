@@ -637,8 +637,7 @@ useEffect(() => {
                 {driver}
                 <button
                   type="button"
-                  onMouseDown={(e) => {
-                    e.preventDefault();
+                  onClick={() =>
                     setSelectedDrivers(selectedDrivers.filter((d) => d !== driver))
                   }
                   style={{ marginLeft: 8, cursor: "pointer" }}
@@ -730,12 +729,19 @@ useEffect(() => {
       .slice(0, 5)
       .map((employee) => (
         <div
-          key={employee.name}
-          onClick={() => setOperatorName(employee.name)}
-          style={{ padding: 8, cursor: "pointer" }}
-        >
-          {employee.name}
-        </div>
+  key={employee.name}
+  onMouseDown={(e) => {
+    e.preventDefault();
+    setOperatorName(employee.name);
+  }}
+  onTouchStart={(e) => {
+    e.preventDefault();
+    setOperatorName(employee.name);
+  }}
+  style={{ padding: 8, cursor: "pointer" }}
+>
+  {employee.name}
+</div>
       ))}
   </div>
 )}
