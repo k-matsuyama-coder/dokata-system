@@ -303,6 +303,7 @@ const [memberInput, setMemberInput] = useState("");
   }}
   onDrop={() => {
     if (!draggingMemberId || !assignment) return;
+
     moveMemberToAssignment(draggingMemberId, assignment.id);
   }}
   style={{
@@ -327,6 +328,7 @@ const [memberInput, setMemberInput] = useState("");
               border: "1px solid #ddd",
               cursor: "grab",
               fontSize: 12,
+              whiteSpace: "nowrap",
             }}
           >
             {member.employee_name}
