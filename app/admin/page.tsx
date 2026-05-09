@@ -53,6 +53,10 @@ export default function AdminPage() {
           社員一覧
         </a>
 
+        <a href="/assignments/month" style={linkStyle}>
+  月間番割
+</a>
+
         <a href="/assignments" style={linkStyle}>
   番割
 </a>
