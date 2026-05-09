@@ -33,6 +33,7 @@ export default function AssignmentsPage() {
   const [startTime, setStartTime] = useState("08:00");
   const [endTime, setEndTime] = useState("17:00");
   const [employees, setEmployees] = useState<{ name: string }[]>([]);
+  const [unassignedEmployees, setUnassignedEmployees] = useState<string[]>([]);
 
 const [assignmentMembers, setAssignmentMembers] = useState<
   AssignmentMember[]
@@ -47,7 +48,7 @@ const [memberInput, setMemberInput] = useState<{
       .from("assignments")
       .select("id, assignment_date, site_name, contractor_name, shift_type, start_time, end_time")
       .eq("assignment_date", date)
-      .order("created_at", { ascending: true });
+      .order("sort_order", { ascending: true });
 
     if (error) {
       alert("番割取得失敗: " + error.message);
@@ -74,6 +75,24 @@ const [memberInput, setMemberInput] = useState<{
     setAssignmentMembers(data ?? []);
   };
 
+  const fetchUnassignedEmployees = async () => {
+  const { data: employeeData } = await supabase
+    .from("employees")
+    .select("name")
+    .order("name", { ascending: true });
+
+  const assignedNames = assignmentMembers.map(
+    (m) => m.employee_name
+  );
+
+  const filtered =
+    employeeData
+      ?.map((e) => e.name)
+      .filter((name) => !assignedNames.includes(name)) ?? [];
+
+  setUnassignedEmployees(filtered);
+};
+
   useEffect(() => {
     const checkAdmin = async () => {
       const { data: userData } = await supabase.auth.getUser();
@@ -95,6 +114,10 @@ const [memberInput, setMemberInput] = useState<{
         window.location.href = "/home";
         return;
       }
+
+      useEffect(() => {
+        fetchUnassignedEmployees();
+      }, [assignmentMembers]);
 
       await fetchAssignments();
 await fetchEmployees();
@@ -144,6 +167,43 @@ await fetchAssignmentMembers();
       return;
     }
 
+    fetchAssignments();
+  };
+
+  const handleMove = async (
+    currentIndex: number,
+    direction: "up" | "down"
+  ) => {
+    const newAssignments = [...assignments];
+  
+    const targetIndex =
+      direction === "up"
+        ? currentIndex - 1
+        : currentIndex + 1;
+  
+    if (
+      targetIndex < 0 ||
+      targetIndex >= newAssignments.length
+    ) {
+      return;
+    }
+  
+    const temp = newAssignments[currentIndex];
+    newAssignments[currentIndex] =
+      newAssignments[targetIndex];
+    newAssignments[targetIndex] = temp;
+  
+    setAssignments(newAssignments);
+  
+    for (let i = 0; i < newAssignments.length; i++) {
+      await supabase
+        .from("assignments")
+        .update({
+          sort_order: i,
+        })
+        .eq("id", newAssignments[i].id);
+    }
+  
     fetchAssignments();
   };
 
@@ -324,11 +384,58 @@ await fetchAssignmentMembers();
 
       <h2>{date} の番割</h2>
 
+      <div
+  style={{
+    marginBottom: 20,
+    padding: 16,
+    backgroundColor: "#fff8e1",
+    border: "1px solid #f0d98a",
+    borderRadius: 12,
+  }}
+>
+  <p
+    style={{
+      margin: 0,
+      fontWeight: 800,
+      marginBottom: 10,
+    }}
+  >
+    未配置メンバー
+  </p>
+
+  {unassignedEmployees.length === 0 ? (
+    <p style={{ margin: 0 }}>全員配置済み</p>
+  ) : (
+    <div
+      style={{
+        display: "flex",
+        flexWrap: "wrap",
+        gap: 8,
+      }}
+    >
+      {unassignedEmployees.map((name) => (
+        <div
+          key={name}
+          style={{
+            padding: "6px 10px",
+            borderRadius: 999,
+            backgroundColor: "#fff",
+            border: "1px solid #ddd",
+            fontSize: 14,
+          }}
+        >
+          {name}
+        </div>
+      ))}
+    </div>
+  )}
+</div>
+
       {assignments.length === 0 ? (
         <p>番割がありません</p>
       ) : (
         <div style={{ display: "grid", gap: 12 }}>
-          {assignments.map((assignment) => (
+          assignments.map((assignment, index) => (
             <div
               key={assignment.id}
               style={{
@@ -351,6 +458,39 @@ await fetchAssignmentMembers();
                     {assignment.start_time}〜{assignment.end_time}
                   </p>
                 </div>
+
+                <div
+  style={{
+    display: "flex",
+    gap: 6,
+  }}
+>
+  <button
+    type="button"
+    onClick={() => handleMove(index, "up")}
+    style={{
+      border: "none",
+      borderRadius: 8,
+      padding: "6px 10px",
+      cursor: "pointer",
+    }}
+  >
+    ↑
+  </button>
+
+  <button
+    type="button"
+    onClick={() => handleMove(index, "down")}
+    style={{
+      border: "none",
+      borderRadius: 8,
+      padding: "6px 10px",
+      cursor: "pointer",
+    }}
+  >
+    ↓
+  </button>
+</div>
 
                 <button
                   type="button"
