@@ -32,9 +32,8 @@ export default function MonthlyAssignmentsPage() {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [members, setMembers] = useState<AssignmentMember[]>([]);
   const [draggingMemberId, setDraggingMemberId] = useState<string | null>(null);
+  const [draggingEmployeeName, setDraggingEmployeeName] = useState<string | null>(null);
   const [employees, setEmployees] = useState<Employee[]>([]);
-const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
-const [memberInput, setMemberInput] = useState("");
 
   const days = useMemo(() => {
     const [year, monthNum] = month.split("-").map(Number);
@@ -49,6 +48,12 @@ const [memberInput, setMemberInput] = useState("");
   const fetchData = async () => {
     const startDate = `${month}-01`;
     const endDate = days[days.length - 1];
+    const { data: employeeData } = await supabase
+  .from("employees")
+  .select("name")
+  .order("name", { ascending: true });
+
+setEmployees(employeeData ?? []);
 
     const { data: assignmentData, error } = await supabase
       .from("assignments")
@@ -83,6 +88,8 @@ const [memberInput, setMemberInput] = useState("");
 
     setMembers(memberData ?? []);
   };
+
+
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -183,6 +190,34 @@ const [memberInput, setMemberInput] = useState("");
     }
   
     setDraggingMemberId(null);
+    fetchData();
+  };
+
+  const addEmployeeToAssignment = async (
+    employeeName: string,
+    targetAssignmentId: string
+  ) => {
+    const alreadyExists = members.some(
+      (member) =>
+        member.assignment_id === targetAssignmentId &&
+        member.employee_name === employeeName
+    );
+  
+    if (alreadyExists) return;
+  
+    const { error } = await supabase.from("assignment_members").insert({
+      assignment_id: targetAssignmentId,
+      employee_name: employeeName,
+      is_driver: false,
+      is_operator: false,
+      heavy_equipment: "",
+    });
+  
+    if (error) {
+      alert("メンバー追加失敗: " + error.message);
+      return;
+    }
+  
     fetchData();
   };
 
@@ -302,9 +337,17 @@ const [memberInput, setMemberInput] = useState("");
     e.preventDefault();
   }}
   onDrop={() => {
-    if (!draggingMemberId || !assignment) return;
-
-    moveMemberToAssignment(draggingMemberId, assignment.id);
+    if (!assignment) return;
+  
+    if (draggingMemberId) {
+      moveMemberToAssignment(draggingMemberId, assignment.id);
+      return;
+    }
+  
+    if (draggingEmployeeName) {
+      addEmployeeToAssignment(draggingEmployeeName, assignment.id);
+      setDraggingEmployeeName(null);
+    }
   }}
   style={{
     ...cellTd,
@@ -349,6 +392,44 @@ const [memberInput, setMemberInput] = useState("");
               )}
             </tbody>
           </table>
+          <div
+  style={{
+    marginTop: 20,
+    padding: 16,
+    border: "1px solid #ddd",
+    borderRadius: 12,
+    backgroundColor: "#fff",
+  }}
+>
+  <h2 style={{ marginTop: 0 }}>社員一覧</h2>
+
+  <div
+    style={{
+      display: "flex",
+      flexWrap: "wrap",
+      gap: 8,
+    }}
+  >
+    {employees.map((employee) => (
+      <div
+        key={employee.name}
+        draggable
+        onDragStart={() => setDraggingEmployeeName(employee.name)}
+        onDragEnd={() => setDraggingEmployeeName(null)}
+        style={{
+          padding: "8px 12px",
+          borderRadius: 999,
+          backgroundColor: "#f1f1f1",
+          border: "1px solid #ccc",
+          cursor: "grab",
+          fontWeight: 600,
+        }}
+      >
+        {employee.name}
+      </div>
+    ))}
+  </div>
+</div>
         </div>
       </div>
     </div>
