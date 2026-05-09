@@ -34,9 +34,6 @@ export default function MonthlyAssignmentsPage() {
   const [draggingMemberId, setDraggingMemberId] = useState<string | null>(null);
   const [draggingEmployeeName, setDraggingEmployeeName] = useState<string | null>(null);
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [selectedDate, setSelectedDate] = useState(() =>
-  new Date().toISOString().slice(0, 10)
-);
 
   const days = useMemo(() => {
     const [year, monthNum] = month.split("-").map(Number);
@@ -122,10 +119,6 @@ setEmployees(employeeData ?? []);
     checkAdmin();
   }, [month, days.length]);
 
-  useEffect(() => {
-    setSelectedDate(`${month}-01`);
-  }, [month]);
-
   const rows = useMemo(() => {
     const map = new Map<string, Assignment[]>();
 
@@ -160,20 +153,6 @@ setEmployees(employeeData ?? []);
     });
   }, [assignments]);
 
-  const assignedNamesForSelectedDate = members
-  .filter((member) => {
-    const assignment = assignments.find(
-      (a) => a.id === member.assignment_id
-    );
-
-    return assignment?.assignment_date === selectedDate;
-  })
-  .map((member) => member.employee_name);
-
-const availableEmployees = employees.filter(
-  (employee) => !assignedNamesForSelectedDate.includes(employee.name)
-);
-
   const getMembersText = (assignmentId: string) => {
     const targetMembers = members.filter((m) => m.assignment_id === assignmentId);
 
@@ -192,6 +171,22 @@ const availableEmployees = employees.filter(
         return marks ? `${m.employee_name} ${marks}` : m.employee_name;
       })
       .join("\n");
+  };
+
+  const getUnassignedEmployeesByDate = (targetDate: string) => {
+    const targetAssignments = assignments.filter(
+      (assignment) => assignment.assignment_date === targetDate
+    );
+  
+    const targetAssignmentIds = targetAssignments.map((a) => a.id);
+  
+    const assignedNames = members
+      .filter((member) => targetAssignmentIds.includes(member.assignment_id))
+      .map((member) => member.employee_name);
+  
+    return employees
+      .filter((employee) => !assignedNames.includes(employee.name))
+      .map((employee) => employee.name);
   };
 
   const moveMemberToAssignment = async (
@@ -354,14 +349,10 @@ const availableEmployees = employees.filter(
                       return (
                         <td
   key={date}
-  onClick={() => {
-    setSelectedDate(date);
-  }}
   onDragOver={(e) => {
     e.preventDefault();
   }}
   onDrop={() => {
-    setSelectedDate(date);
   
     if (!assignment) return;
   
@@ -416,20 +407,23 @@ const availableEmployees = employees.filter(
                   </tr>
                 ))
               )}
+              <tr>
+  <td style={{ ...td, fontWeight: 800 }} colSpan={4}>
+    未配置メンバー
+  </td>
+
+  {days.map((date) => {
+    const unassigned = getUnassignedEmployeesByDate(date);
+
+    return (
+      <td key={date} style={cellTd}>
+        {unassigned.length === 0 ? "-" : unassigned.join("\n")}
+      </td>
+    );
+  })}
+</tr>
             </tbody>
           </table>
-          <div
-  style={{
-    marginTop: 20,
-    padding: 16,
-    border: "1px solid #ddd",
-    borderRadius: 12,
-    backgroundColor: "#fff",
-  }}
->
-<h2 style={{ marginTop: 0 }}>
-  未配置メンバー（{selectedDate}）
-</h2>
 
   <div
     style={{
