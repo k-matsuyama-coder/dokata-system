@@ -119,12 +119,12 @@ setEmployees(employeeData ?? []);
       fetchData();
     };
 
-    useEffect(() => {
-        setSelectedDate(`${month}-01`);
-      }, [month]);
-
     checkAdmin();
   }, [month, days.length]);
+
+  useEffect(() => {
+    setSelectedDate(`${month}-01`);
+  }, [month]);
 
   const rows = useMemo(() => {
     const map = new Map<string, Assignment[]>();
