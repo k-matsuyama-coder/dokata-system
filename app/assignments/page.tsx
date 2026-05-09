@@ -115,10 +115,6 @@ const [memberInput, setMemberInput] = useState<{
         return;
       }
 
-      useEffect(() => {
-        fetchUnassignedEmployees();
-      }, [assignmentMembers]);
-
       await fetchAssignments();
 await fetchEmployees();
 await fetchAssignmentMembers();
@@ -126,6 +122,10 @@ await fetchAssignmentMembers();
 
     checkAdmin();
   }, [date]);
+
+  useEffect(() => {
+    fetchUnassignedEmployees();
+  }, [assignmentMembers]);
 
   const handleAdd = async () => {
     if (!siteName || !contractorName) {
@@ -435,7 +435,7 @@ await fetchAssignmentMembers();
         <p>番割がありません</p>
       ) : (
         <div style={{ display: "grid", gap: 12 }}>
-          assignments.map((assignment, index) => (
+          {assignments.map((assignment, index) => (
             <div
               key={assignment.id}
               style={{
