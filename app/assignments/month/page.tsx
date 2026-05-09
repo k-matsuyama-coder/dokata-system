@@ -424,34 +424,6 @@ setEmployees(employeeData ?? []);
 </tr>
             </tbody>
           </table>
-
-  <div
-    style={{
-      display: "flex",
-      flexWrap: "wrap",
-      gap: 8,
-    }}
-  >
-    {availableEmployees.map((employee) => (
-      <div
-        key={employee.name}
-        draggable
-        onDragStart={() => setDraggingEmployeeName(employee.name)}
-        onDragEnd={() => setDraggingEmployeeName(null)}
-        style={{
-          padding: "8px 12px",
-          borderRadius: 999,
-          backgroundColor: "#f1f1f1",
-          border: "1px solid #ccc",
-          cursor: "grab",
-          fontWeight: 600,
-        }}
-      >
-        {employee.name}
-      </div>
-    ))}
-  </div>
-</div>
         </div>
       </div>
     </div>
