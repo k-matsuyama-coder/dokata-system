@@ -416,8 +416,33 @@ setEmployees(employeeData ?? []);
     const unassigned = getUnassignedEmployeesByDate(date);
 
     return (
-      <td key={date} style={cellTd}>
-        {unassigned.length === 0 ? "-" : unassigned.join("\n")}
+        <td key={date} style={cellTd}>
+        {unassigned.length === 0 ? (
+          "-"
+        ) : (
+          <div style={{ display: "grid", gap: 4 }}>
+            {unassigned.map((name) => (
+              <div
+                key={name}
+                draggable
+                onDragStart={() => setDraggingEmployeeName(name)}
+                onDragEnd={() => setDraggingEmployeeName(null)}
+                style={{
+                  padding: "4px 6px",
+                  borderRadius: 6,
+                  backgroundColor: "#fff8e1",
+                  border: "1px solid #e0c96a",
+                  cursor: "grab",
+                  fontSize: 12,
+                  whiteSpace: "nowrap",
+                  fontWeight: 700,
+                }}
+              >
+                {name}
+              </div>
+            ))}
+          </div>
+        )}
       </td>
     );
   })}
