@@ -24,7 +24,16 @@ type AssignmentMember = {
   };
 
 export default function AssignmentsPage() {
-  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+    const [date, setDate] = useState(() => {
+        if (typeof window !== "undefined") {
+          const params = new URLSearchParams(window.location.search);
+          const dateParam = params.get("date");
+      
+          if (dateParam) return dateParam;
+        }
+      
+        return new Date().toISOString().slice(0, 10);
+      });
   const [assignments, setAssignments] = useState<Assignment[]>([]);
 
   const [siteName, setSiteName] = useState("");

@@ -23,10 +23,17 @@ type AssignmentMember = {
   heavy_equipment: string | null;
 };
 
+type Employee = {
+    name: string;
+  };
+
 export default function MonthlyAssignmentsPage() {
   const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [members, setMembers] = useState<AssignmentMember[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
+const [memberInput, setMemberInput] = useState("");
 
   const days = useMemo(() => {
     const [year, monthNum] = month.split("-").map(Number);
@@ -241,9 +248,19 @@ export default function MonthlyAssignmentsPage() {
                       );
 
                       return (
-                        <td key={date} style={cellTd}>
-                          {assignment ? getMembersText(assignment.id) : ""}
-                        </td>
+                        <td
+  key={date}
+  onClick={() => {
+    window.location.href = `/assignments?date=${date}`;
+  }}
+  style={{
+    ...cellTd,
+    cursor: "pointer",
+    backgroundColor: assignment ? "#fff" : "#fafafa",
+  }}
+>
+  {assignment ? getMembersText(assignment.id) : "＋"}
+</td>
                       );
                     })}
                   </tr>
