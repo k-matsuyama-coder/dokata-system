@@ -31,6 +31,7 @@ export default function MonthlyAssignmentsPage() {
   const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [members, setMembers] = useState<AssignmentMember[]>([]);
+  const [draggingMemberId, setDraggingMemberId] = useState<string | null>(null);
   const [employees, setEmployees] = useState<Employee[]>([]);
 const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
 const [memberInput, setMemberInput] = useState("");
@@ -165,6 +166,53 @@ const [memberInput, setMemberInput] = useState("");
       .join("\n");
   };
 
+  const moveMemberToAssignment = async (
+    memberId: string,
+    targetAssignmentId: string
+  ) => {
+    const { error } = await supabase
+      .from("assignment_members")
+      .update({
+        assignment_id: targetAssignmentId,
+      })
+      .eq("id", memberId);
+  
+    if (error) {
+      alert("移動失敗: " + error.message);
+      return;
+    }
+  
+    setDraggingMemberId(null);
+    fetchData();
+  };
+
+  const handleCreateSameSite = async (
+    row: {
+      contractorName: string;
+      siteName: string;
+      shiftType: string;
+      startTime: string;
+      endTime: string;
+    },
+    targetDate: string
+  ) => {
+    const { error } = await supabase.from("assignments").insert({
+      assignment_date: targetDate,
+      contractor_name: row.contractorName === "-" ? "" : row.contractorName,
+      site_name: row.siteName === "-" ? "" : row.siteName,
+      shift_type: row.shiftType,
+      start_time: row.startTime === "-" ? "" : row.startTime,
+      end_time: row.endTime === "-" ? "" : row.endTime,
+    });
+  
+    if (error) {
+      alert("番割作成失敗: " + error.message);
+      return;
+    }
+  
+    fetchData();
+  };
+
   return (
     <div style={{ padding: 16 }}>
       <BackButton />
@@ -250,16 +298,47 @@ const [memberInput, setMemberInput] = useState("");
                       return (
                         <td
   key={date}
-  onClick={() => {
-    window.location.href = `/assignments?date=${date}`;
+  onDragOver={(e) => {
+    e.preventDefault();
+  }}
+  onDrop={() => {
+    if (!draggingMemberId || !assignment) return;
+    moveMemberToAssignment(draggingMemberId, assignment.id);
   }}
   style={{
     ...cellTd,
-    cursor: "pointer",
     backgroundColor: assignment ? "#fff" : "#fafafa",
   }}
 >
-  {assignment ? getMembersText(assignment.id) : "＋"}
+  {assignment ? (
+    <div style={{ display: "grid", gap: 4 }}>
+      {members
+        .filter((member) => member.assignment_id === assignment.id)
+        .map((member) => (
+          <div
+            key={member.id}
+            draggable
+            onDragStart={() => setDraggingMemberId(member.id)}
+            onDragEnd={() => setDraggingMemberId(null)}
+            style={{
+              padding: "4px 6px",
+              borderRadius: 6,
+              backgroundColor: "#f1f1f1",
+              border: "1px solid #ddd",
+              cursor: "grab",
+              fontSize: 12,
+            }}
+          >
+            {member.employee_name}
+            {member.is_driver ? " 🚗" : ""}
+            {member.is_operator ? " OP" : ""}
+            {member.heavy_equipment ? ` ${member.heavy_equipment}` : ""}
+          </div>
+        ))}
+    </div>
+  ) : (
+    ""
+  )}
 </td>
                       );
                     })}
