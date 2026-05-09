@@ -34,6 +34,9 @@ export default function MonthlyAssignmentsPage() {
   const [draggingMemberId, setDraggingMemberId] = useState<string | null>(null);
   const [draggingEmployeeName, setDraggingEmployeeName] = useState<string | null>(null);
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [selectedDate, setSelectedDate] = useState(() =>
+  new Date().toISOString().slice(0, 10)
+);
 
   const days = useMemo(() => {
     const [year, monthNum] = month.split("-").map(Number);
@@ -116,6 +119,10 @@ setEmployees(employeeData ?? []);
       fetchData();
     };
 
+    useEffect(() => {
+        setSelectedDate(`${month}-01`);
+      }, [month]);
+
     checkAdmin();
   }, [month, days.length]);
 
@@ -152,6 +159,20 @@ setEmployees(employeeData ?? []);
       };
     });
   }, [assignments]);
+
+  const assignedNamesForSelectedDate = members
+  .filter((member) => {
+    const assignment = assignments.find(
+      (a) => a.id === member.assignment_id
+    );
+
+    return assignment?.assignment_date === selectedDate;
+  })
+  .map((member) => member.employee_name);
+
+const availableEmployees = employees.filter(
+  (employee) => !assignedNamesForSelectedDate.includes(employee.name)
+);
 
   const getMembersText = (assignmentId: string) => {
     const targetMembers = members.filter((m) => m.assignment_id === assignmentId);
@@ -333,10 +354,15 @@ setEmployees(employeeData ?? []);
                       return (
                         <td
   key={date}
+  onClick={() => {
+    setSelectedDate(date);
+  }}
   onDragOver={(e) => {
     e.preventDefault();
   }}
   onDrop={() => {
+    setSelectedDate(date);
+  
     if (!assignment) return;
   
     if (draggingMemberId) {
@@ -401,7 +427,9 @@ setEmployees(employeeData ?? []);
     backgroundColor: "#fff",
   }}
 >
-  <h2 style={{ marginTop: 0 }}>社員一覧</h2>
+<h2 style={{ marginTop: 0 }}>
+  未配置メンバー（{selectedDate}）
+</h2>
 
   <div
     style={{
@@ -410,7 +438,7 @@ setEmployees(employeeData ?? []);
       gap: 8,
     }}
   >
-    {employees.map((employee) => (
+    {availableEmployees.map((employee) => (
       <div
         key={employee.name}
         draggable
