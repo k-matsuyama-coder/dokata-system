@@ -14,9 +14,10 @@ type Assignment = {
   end_time: string | null;
 };
 
-type AssignmentMember = {
+type SiteMember = {
   id: string;
   assignment_id: string;
+  work_date: string;
   employee_name: string;
   is_driver: boolean | null;
   is_operator: boolean | null;
@@ -24,16 +25,23 @@ type AssignmentMember = {
 };
 
 type Employee = {
-    name: string;
-  };
+  name: string;
+};
 
 export default function MonthlyAssignmentsPage() {
   const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [assignments, setAssignments] = useState<Assignment[]>([]);
-  const [members, setMembers] = useState<AssignmentMember[]>([]);
-  const [draggingMemberId, setDraggingMemberId] = useState<string | null>(null);
-  const [draggingEmployeeName, setDraggingEmployeeName] = useState<string | null>(null);
+  const [siteMembers, setSiteMembers] = useState<SiteMember[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
+
+  const [siteName, setSiteName] = useState("");
+  const [contractorName, setContractorName] = useState("");
+  const [shiftType, setShiftType] = useState("day");
+  const [startTime, setStartTime] = useState("08:00");
+  const [endTime, setEndTime] = useState("17:00");
+
+  const [draggingEmployeeName, setDraggingEmployeeName] = useState<string | null>(null);
+  const [draggingSiteMemberId, setDraggingSiteMemberId] = useState<string | null>(null);
 
   const days = useMemo(() => {
     const [year, monthNum] = month.split("-").map(Number);
@@ -48,48 +56,49 @@ export default function MonthlyAssignmentsPage() {
   const fetchData = async () => {
     const startDate = `${month}-01`;
     const endDate = days[days.length - 1];
-    const { data: employeeData } = await supabase
-  .from("employees")
-  .select("name")
-  .order("name", { ascending: true });
 
-setEmployees(employeeData ?? []);
+    const { data: employeeData } = await supabase
+      .from("employees")
+      .select("name")
+      .order("name", { ascending: true });
+
+    setEmployees(employeeData ?? []);
 
     const { data: assignmentData, error } = await supabase
       .from("assignments")
       .select("id, assignment_date, site_name, contractor_name, shift_type, start_time, end_time")
       .gte("assignment_date", startDate)
       .lte("assignment_date", endDate)
-      .order("assignment_date", { ascending: true });
+      .order("created_at", { ascending: true });
 
     if (error) {
-      alert("番割取得失敗: " + error.message);
+      alert("現場取得失敗: " + error.message);
       return;
     }
 
     setAssignments(assignmentData ?? []);
 
-    const ids = (assignmentData ?? []).map((a) => a.id);
+    const assignmentIds = (assignmentData ?? []).map((a) => a.id);
 
-    if (ids.length === 0) {
-      setMembers([]);
+    if (assignmentIds.length === 0) {
+      setSiteMembers([]);
       return;
     }
 
     const { data: memberData, error: memberError } = await supabase
-      .from("assignment_members")
-      .select("id, assignment_id, employee_name, is_driver, is_operator, heavy_equipment")
-      .in("assignment_id", ids);
+      .from("assignment_site_members")
+      .select("id, assignment_id, work_date, employee_name, is_driver, is_operator, heavy_equipment")
+      .in("assignment_id", assignmentIds)
+      .gte("work_date", startDate)
+      .lte("work_date", endDate);
 
     if (memberError) {
       alert("メンバー取得失敗: " + memberError.message);
       return;
     }
 
-    setMembers(memberData ?? []);
+    setSiteMembers(memberData ?? []);
   };
-
-
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -119,159 +128,147 @@ setEmployees(employeeData ?? []);
     checkAdmin();
   }, [month, days.length]);
 
-  const rows = useMemo(() => {
-    const map = new Map<string, Assignment[]>();
+  const handleAddSite = async () => {
+    if (!siteName || !contractorName) {
+      alert("元請と現場名を入力してください");
+      return;
+    }
 
-    assignments.forEach((a) => {
-      const key = [
-        a.contractor_name || "",
-        a.site_name || "",
-        a.shift_type || "",
-        a.start_time || "",
-        a.end_time || "",
-      ].join("__");
-
-      if (!map.has(key)) {
-        map.set(key, []);
-      }
-
-      map.get(key)?.push(a);
+    const { error } = await supabase.from("assignments").insert({
+      assignment_date: `${month}-01`,
+      contractor_name: contractorName,
+      site_name: siteName,
+      shift_type: shiftType,
+      start_time: startTime,
+      end_time: endTime,
     });
 
-    return Array.from(map.entries()).map(([key, items]) => {
-      const first = items[0];
+    if (error) {
+      alert("現場追加失敗: " + error.message);
+      return;
+    }
 
-      return {
-        key,
-        contractorName: first.contractor_name || "-",
-        siteName: first.site_name || "-",
-        shiftType: first.shift_type || "day",
-        startTime: first.start_time || "-",
-        endTime: first.end_time || "-",
-        items,
-      };
-    });
-  }, [assignments]);
+    setSiteName("");
+    setContractorName("");
+    setShiftType("day");
+    setStartTime("08:00");
+    setEndTime("17:00");
 
-  const getMembersText = (assignmentId: string) => {
-    const targetMembers = members.filter((m) => m.assignment_id === assignmentId);
-
-    if (targetMembers.length === 0) return "";
-
-    return targetMembers
-      .map((m) => {
-        const marks = [
-          m.is_driver ? "🚗" : "",
-          m.is_operator ? "OP" : "",
-          m.heavy_equipment || "",
-        ]
-          .filter(Boolean)
-          .join(" ");
-
-        return marks ? `${m.employee_name} ${marks}` : m.employee_name;
-      })
-      .join("\n");
+    fetchData();
   };
 
-  const getUnassignedEmployeesByDate = (targetDate: string) => {
-    const targetAssignments = assignments.filter(
-      (assignment) => assignment.assignment_date === targetDate
+  const addEmployeeToCell = async (
+    employeeName: string,
+    assignmentId: string,
+    workDate: string
+  ) => {
+    const exists = siteMembers.some(
+      (m) =>
+        m.assignment_id === assignmentId &&
+        m.work_date === workDate &&
+        m.employee_name === employeeName
     );
-  
-    const targetAssignmentIds = targetAssignments.map((a) => a.id);
-  
-    const assignedNames = members
-      .filter((member) => targetAssignmentIds.includes(member.assignment_id))
-      .map((member) => member.employee_name);
-  
+
+    if (exists) return;
+
+    const { data, error } = await supabase
+      .from("assignment_site_members")
+      .insert({
+        assignment_id: assignmentId,
+        work_date: workDate,
+        employee_name: employeeName,
+        is_driver: false,
+        is_operator: false,
+        heavy_equipment: "",
+      })
+      .select("id, assignment_id, work_date, employee_name, is_driver, is_operator, heavy_equipment")
+      .single();
+
+    if (error || !data) {
+      alert("メンバー追加失敗: " + (error?.message || "取得失敗"));
+      return;
+    }
+
+    setSiteMembers((prev) => [...prev, data]);
+    setDraggingEmployeeName(null);
+  };
+
+  const moveSiteMember = async (
+    siteMemberId: string,
+    assignmentId: string,
+    workDate: string
+  ) => {
+    const { data, error } = await supabase
+      .from("assignment_site_members")
+      .update({
+        assignment_id: assignmentId,
+        work_date: workDate,
+      })
+      .eq("id", siteMemberId)
+      .select("id, assignment_id, work_date, employee_name, is_driver, is_operator, heavy_equipment")
+      .single();
+
+    if (error || !data) {
+      alert("移動失敗: " + (error?.message || "取得失敗"));
+      return;
+    }
+
+    setSiteMembers((prev) =>
+      prev.map((m) => (m.id === siteMemberId ? data : m))
+    );
+    setDraggingSiteMemberId(null);
+  };
+
+  const deleteSiteMember = async (id: string) => {
+    const ok = window.confirm("このメンバーを外しますか？");
+    if (!ok) return;
+
+    const { error } = await supabase
+      .from("assignment_site_members")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      alert("削除失敗: " + error.message);
+      return;
+    }
+
+    setSiteMembers((prev) => prev.filter((m) => m.id !== id));
+  };
+
+  const getCellMembers = (assignmentId: string, workDate: string) => {
+    return siteMembers.filter(
+      (m) => m.assignment_id === assignmentId && m.work_date === workDate
+    );
+  };
+
+  const getUnassignedEmployeesByDate = (workDate: string) => {
+    const assignedNames = siteMembers
+      .filter((m) => m.work_date === workDate)
+      .map((m) => m.employee_name);
+
     return employees
       .filter((employee) => !assignedNames.includes(employee.name))
       .map((employee) => employee.name);
   };
 
-  const moveMemberToAssignment = async (
-    memberId: string,
-    targetAssignmentId: string
-  ) => {
-    const { error } = await supabase
-      .from("assignment_members")
-      .update({
-        assignment_id: targetAssignmentId,
-      })
-      .eq("id", memberId);
-  
-    if (error) {
-      alert("移動失敗: " + error.message);
-      return;
-    }
-  
-    setDraggingMemberId(null);
-    fetchData();
-  };
-
-  const addEmployeeToAssignment = async (
-    employeeName: string,
-    targetAssignmentId: string
-  ) => {
-    const alreadyExists = members.some(
-      (member) =>
-        member.assignment_id === targetAssignmentId &&
-        member.employee_name === employeeName
-    );
-  
-    if (alreadyExists) return;
-  
-    const { error } = await supabase.from("assignment_members").insert({
-      assignment_id: targetAssignmentId,
-      employee_name: employeeName,
-      is_driver: false,
-      is_operator: false,
-      heavy_equipment: "",
-    });
-  
-    if (error) {
-      alert("メンバー追加失敗: " + error.message);
-      return;
-    }
-  
-    fetchData();
-  };
-
-  const handleCreateSameSite = async (
-    row: {
-      contractorName: string;
-      siteName: string;
-      shiftType: string;
-      startTime: string;
-      endTime: string;
-    },
-    targetDate: string
-  ) => {
-    const { error } = await supabase.from("assignments").insert({
-      assignment_date: targetDate,
-      contractor_name: row.contractorName === "-" ? "" : row.contractorName,
-      site_name: row.siteName === "-" ? "" : row.siteName,
-      shift_type: row.shiftType,
-      start_time: row.startTime === "-" ? "" : row.startTime,
-      end_time: row.endTime === "-" ? "" : row.endTime,
-    });
-  
-    if (error) {
-      alert("番割作成失敗: " + error.message);
-      return;
-    }
-  
-    fetchData();
+  const inputStyle = {
+    width: "100%",
+    padding: 10,
+    border: "1px solid #ccc",
+    borderRadius: 8,
+    fontSize: 15,
+    boxSizing: "border-box" as const,
   };
 
   return (
     <div style={{ padding: 16 }}>
       <BackButton />
 
-      <div style={{ maxWidth: 1400, margin: "0 auto" }}>
+      <div style={{ maxWidth: 1500, margin: "0 auto" }}>
         <h1>月間番割表</h1>
 
-        <div style={{ marginBottom: 16, display: "flex", gap: 10 }}>
+        <div style={{ marginBottom: 16 }}>
           <input
             type="month"
             value={month}
@@ -283,27 +280,112 @@ setEmployees(employeeData ?? []);
               fontSize: 16,
             }}
           />
+        </div>
 
-          <a
-            href="/assignments"
+        <div
+          style={{
+            border: "1px solid #ddd",
+            borderRadius: 12,
+            padding: 14,
+            marginBottom: 16,
+            backgroundColor: "#fff",
+            display: "grid",
+            gap: 10,
+          }}
+        >
+          <h2 style={{ margin: 0 }}>現場追加</h2>
+
+          <input
+            value={contractorName}
+            onChange={(e) => setContractorName(e.target.value)}
+            placeholder="元請"
+            style={inputStyle}
+          />
+
+          <input
+            value={siteName}
+            onChange={(e) => setSiteName(e.target.value)}
+            placeholder="現場名"
+            style={inputStyle}
+          />
+
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              type="button"
+              onClick={() => {
+                setShiftType("day");
+                setStartTime("08:00");
+                setEndTime("17:00");
+              }}
+              style={{
+                flex: 1,
+                padding: 10,
+                borderRadius: 8,
+                border: shiftType === "day" ? "2px solid #111" : "1px solid #ccc",
+                backgroundColor: shiftType === "day" ? "#f3f3f3" : "#fff",
+                fontWeight: 700,
+              }}
+            >
+              昼
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setShiftType("night");
+                setStartTime("20:00");
+                setEndTime("05:00");
+              }}
+              style={{
+                flex: 1,
+                padding: 10,
+                borderRadius: 8,
+                border: shiftType === "night" ? "2px solid #111" : "1px solid #ccc",
+                backgroundColor: shiftType === "night" ? "#f3f3f3" : "#fff",
+                fontWeight: 700,
+              }}
+            >
+              夜
+            </button>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <input
+              type="time"
+              value={startTime}
+              onChange={(e) => setStartTime(e.target.value)}
+              style={inputStyle}
+            />
+            <input
+              type="time"
+              value={endTime}
+              onChange={(e) => setEndTime(e.target.value)}
+              style={inputStyle}
+            />
+          </div>
+
+          <button
+            type="button"
+            onClick={handleAddSite}
             style={{
-              textDecoration: "none",
+              padding: 12,
+              border: "none",
+              borderRadius: 8,
               backgroundColor: "#111",
               color: "#fff",
-              padding: "10px 14px",
-              borderRadius: 8,
               fontWeight: 700,
+              cursor: "pointer",
             }}
           >
-            日別入力へ
-          </a>
+            ＋ 現場を追加
+          </button>
         </div>
 
         <div style={{ overflowX: "auto", border: "1px solid #ddd" }}>
           <table
             style={{
               borderCollapse: "collapse",
-              minWidth: 1600,
+              minWidth: 1700,
               width: "100%",
               backgroundColor: "#fff",
               fontSize: 12,
@@ -325,131 +407,111 @@ setEmployees(employeeData ?? []);
             </thead>
 
             <tbody>
-              {rows.length === 0 ? (
-                <tr>
-                  <td style={td} colSpan={days.length + 4}>
-                    この月の番割はありません
+              {assignments.map((assignment) => (
+                <tr key={assignment.id}>
+                  <td style={td}>{assignment.contractor_name || "-"}</td>
+                  <td style={{ ...td, fontWeight: 800 }}>{assignment.site_name || "-"}</td>
+                  <td style={td}>{assignment.shift_type === "night" ? "夜" : "昼"}</td>
+                  <td style={td}>
+                    {assignment.start_time || "-"}〜{assignment.end_time || "-"}
                   </td>
+
+                  {days.map((date) => {
+                    const cellMembers = getCellMembers(assignment.id, date);
+
+                    return (
+                      <td
+                        key={date}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={() => {
+                          if (draggingSiteMemberId) {
+                            moveSiteMember(draggingSiteMemberId, assignment.id, date);
+                            return;
+                          }
+
+                          if (draggingEmployeeName) {
+                            addEmployeeToCell(draggingEmployeeName, assignment.id, date);
+                          }
+                        }}
+                        style={cellTd}
+                      >
+                        <div style={{ display: "grid", gap: 4 }}>
+                          {cellMembers.map((member) => (
+                            <div
+                              key={member.id}
+                              draggable
+                              onDragStart={() => setDraggingSiteMemberId(member.id)}
+                              onDragEnd={() => setDraggingSiteMemberId(null)}
+                              onDoubleClick={() => deleteSiteMember(member.id)}
+                              style={{
+                                padding: "4px 6px",
+                                borderRadius: 6,
+                                backgroundColor: "#f1f1f1",
+                                border: "1px solid #ddd",
+                                cursor: "grab",
+                                whiteSpace: "nowrap",
+                                fontWeight: 700,
+                              }}
+                            >
+                              {member.employee_name}
+                              {member.is_driver ? " 🚗" : ""}
+                              {member.is_operator ? " OP" : ""}
+                              {member.heavy_equipment ? ` ${member.heavy_equipment}` : ""}
+                            </div>
+                          ))}
+                        </div>
+                      </td>
+                    );
+                  })}
                 </tr>
-              ) : (
-                rows.map((row) => (
-                  <tr key={row.key}>
-                    <td style={td}>{row.contractorName}</td>
-                    <td style={{ ...td, fontWeight: 700 }}>{row.siteName}</td>
-                    <td style={td}>{row.shiftType === "night" ? "夜" : "昼"}</td>
-                    <td style={td}>
-                      {row.startTime}〜{row.endTime}
-                    </td>
+              ))}
 
-                    {days.map((date) => {
-                      const assignment = row.items.find(
-                        (item) => item.assignment_date === date
-                      );
-
-                      return (
-                        <td
-  key={date}
-  onDragOver={(e) => {
-    e.preventDefault();
-  }}
-  onDrop={() => {
-  
-    if (!assignment) return;
-  
-    if (draggingMemberId) {
-      moveMemberToAssignment(draggingMemberId, assignment.id);
-      return;
-    }
-  
-    if (draggingEmployeeName) {
-      addEmployeeToAssignment(draggingEmployeeName, assignment.id);
-      setDraggingEmployeeName(null);
-    }
-  }}
-  style={{
-    ...cellTd,
-    backgroundColor: assignment ? "#fff" : "#fafafa",
-  }}
->
-  {assignment ? (
-    <div style={{ display: "grid", gap: 4 }}>
-      {members
-        .filter((member) => member.assignment_id === assignment.id)
-        .map((member) => (
-          <div
-            key={member.id}
-            draggable
-            onDragStart={() => setDraggingMemberId(member.id)}
-            onDragEnd={() => setDraggingMemberId(null)}
-            style={{
-              padding: "4px 6px",
-              borderRadius: 6,
-              backgroundColor: "#f1f1f1",
-              border: "1px solid #ddd",
-              cursor: "grab",
-              fontSize: 12,
-              whiteSpace: "nowrap",
-            }}
-          >
-            {member.employee_name}
-            {member.is_driver ? " 🚗" : ""}
-            {member.is_operator ? " OP" : ""}
-            {member.heavy_equipment ? ` ${member.heavy_equipment}` : ""}
-          </div>
-        ))}
-    </div>
-  ) : (
-    ""
-  )}
-</td>
-                      );
-                    })}
-                  </tr>
-                ))
-              )}
               <tr>
-  <td style={{ ...td, fontWeight: 800 }} colSpan={4}>
-    未配置メンバー
-  </td>
+                <td style={{ ...td, fontWeight: 800 }} colSpan={4}>
+                  未配置メンバー
+                </td>
 
-  {days.map((date) => {
-    const unassigned = getUnassignedEmployeesByDate(date);
+                {days.map((date) => {
+                  const unassigned = getUnassignedEmployeesByDate(date);
 
-    return (
-        <td key={date} style={cellTd}>
-        {unassigned.length === 0 ? (
-          "-"
-        ) : (
-          <div style={{ display: "grid", gap: 4 }}>
-            {unassigned.map((name) => (
-              <div
-                key={name}
-                draggable
-                onDragStart={() => setDraggingEmployeeName(name)}
-                onDragEnd={() => setDraggingEmployeeName(null)}
-                style={{
-                  padding: "4px 6px",
-                  borderRadius: 6,
-                  backgroundColor: "#fff8e1",
-                  border: "1px solid #e0c96a",
-                  cursor: "grab",
-                  fontSize: 12,
-                  whiteSpace: "nowrap",
-                  fontWeight: 700,
-                }}
-              >
-                {name}
-              </div>
-            ))}
-          </div>
-        )}
-      </td>
-    );
-  })}
-</tr>
+                  return (
+                    <td key={date} style={cellTd}>
+                      {unassigned.length === 0 ? (
+                        "-"
+                      ) : (
+                        <div style={{ display: "grid", gap: 4 }}>
+                          {unassigned.map((name) => (
+                            <div
+                              key={name}
+                              draggable
+                              onDragStart={() => setDraggingEmployeeName(name)}
+                              onDragEnd={() => setDraggingEmployeeName(null)}
+                              style={{
+                                padding: "4px 6px",
+                                borderRadius: 6,
+                                backgroundColor: "#fff8e1",
+                                border: "1px solid #e0c96a",
+                                cursor: "grab",
+                                whiteSpace: "nowrap",
+                                fontWeight: 700,
+                              }}
+                            >
+                              {name}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
             </tbody>
           </table>
         </div>
+
+        <p style={{ color: "#666", fontSize: 13 }}>
+          ※ メンバーを外す場合は、配置済みの名前をダブルクリックしてください。
+        </p>
       </div>
     </div>
   );
@@ -473,8 +535,8 @@ const td = {
 const cellTd = {
   border: "1px solid #ccc",
   padding: 6,
-  minWidth: 90,
-  height: 60,
+  minWidth: 95,
+  height: 62,
   whiteSpace: "pre-wrap" as const,
   verticalAlign: "top" as const,
 };
