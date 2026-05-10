@@ -16,6 +16,8 @@ type Assignment = {
 contact_phone: string | null;
 address: string | null;
 meeting_time: string | null;
+planned_count: number | null;
+detail: string | null;
 };
 
 type SiteMember = {
@@ -62,6 +64,8 @@ const [meetingTime, setMeetingTime] = useState("08:00");
 const [contractors, setContractors] = useState<Contractor[]>([]);
 const [contractorContacts, setContractorContacts] = useState<ContractorContact[]>([]);
 const [showAddModal, setShowAddModal] = useState(false);
+const [plannedCount, setPlannedCount] = useState("");
+const [detail, setDetail] = useState("");
 
   const [draggingEmployeeName, setDraggingEmployeeName] = useState<string | null>(null);
   const [draggingSiteMemberId, setDraggingSiteMemberId] = useState<string | null>(null);
@@ -102,7 +106,7 @@ setContractorContacts(contactData ?? []);
 
     const { data: assignmentData, error } = await supabase
       .from("assignments")
-      .select("id, assignment_date, site_name, contractor_name, shift_type, start_time, end_time,manager_name, contact_phone, address, meeting_time")
+      .select("id, assignment_date, site_name, contractor_name, shift_type, start_time, end_time, manager_name, contact_phone, address, meeting_time, planned_count, detail")
       .gte("assignment_date", startDate)
       .lte("assignment_date", endDate)
       .order("created_at", { ascending: true });
@@ -181,6 +185,8 @@ setContractorContacts(contactData ?? []);
 contact_phone: contactPhone,
 address,
 meeting_time: meetingTime,
+planned_count: Number(plannedCount || 0),
+detail,
     });
 
     if (error) {
@@ -195,6 +201,8 @@ setContactPhone("");
 setAddress("");
 setShiftType("day");
 setMeetingTime("08:00");
+setPlannedCount("");
+setDetail("");
 
     fetchData();
   };
@@ -294,6 +302,35 @@ setMeetingTime("08:00");
   
     setAssignments((prev) => prev.filter((a) => a.id !== id));
     setSiteMembers((prev) => prev.filter((m) => m.assignment_id !== id));
+  };
+
+  const updateAssignmentField = async (
+    assignmentId: string,
+    field: string,
+    value: string | number
+  ) => {
+    const { error } = await supabase
+      .from("assignments")
+      .update({
+        [field]: value,
+      })
+      .eq("id", assignmentId);
+  
+    if (error) {
+      alert("更新失敗: " + error.message);
+      return;
+    }
+  
+    setAssignments((prev) =>
+      prev.map((a) =>
+        a.id === assignmentId
+          ? {
+              ...a,
+              [field]: value,
+            }
+          : a
+      )
+    );
   };
 
   const getCellMembers = (assignmentId: string, workDate: string) => {
@@ -585,6 +622,8 @@ setMeetingTime("08:00");
 <th style={th}>住所</th>
 <th style={th}>昼/夜</th>
 <th style={th}>集合時間</th>
+<th style={th}>予定人数</th>
+<th style={th}>詳細</th>
 
                 {days.map((date) => (
                   <th key={date} style={th}>
@@ -645,6 +684,47 @@ setMeetingTime("08:00");
     <td style={td}>{assignment.shift_type === "night" ? "夜" : "昼"}</td>
 
     <td style={td}>{assignment.meeting_time || "-"}</td>
+
+    <td style={td}>
+  <input
+    type="number"
+    value={assignment.planned_count ?? ""}
+    onChange={(e) =>
+      updateAssignmentField(
+        assignment.id,
+        "planned_count",
+        Number(e.target.value)
+      )
+    }
+    style={{
+      width: 60,
+      padding: 4,
+      border: "1px solid #ccc",
+      borderRadius: 4,
+    }}
+  />
+</td>
+
+<td style={td}>
+  <textarea
+    value={assignment.detail || ""}
+    onChange={(e) =>
+      updateAssignmentField(
+        assignment.id,
+        "detail",
+        e.target.value
+      )
+    }
+    style={{
+      width: 180,
+      minHeight: 60,
+      padding: 6,
+      border: "1px solid #ccc",
+      borderRadius: 4,
+      resize: "vertical",
+    }}
+  />
+</td>
                   
 
                   {days.map((date) => {
@@ -698,7 +778,7 @@ setMeetingTime("08:00");
               ))}
 
               <tr>
-                <td style={{ ...td, fontWeight: 800 }} colSpan={7}>
+                <td style={{ ...td, fontWeight: 800 }} colSpan={9}>
                   未配置メンバー
                 </td>
 
