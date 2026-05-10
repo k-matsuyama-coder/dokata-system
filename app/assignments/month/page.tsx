@@ -32,6 +32,11 @@ type Employee = {
   name: string;
 };
 
+type Contractor = {
+    id: string;
+    name: string;
+  };
+
 type ContractorContact = {
     id: string;
     contractor_id: string;
@@ -83,7 +88,7 @@ const [contractorContacts, setContractorContacts] = useState<ContractorContact[]
 
     const { data: contractorData } = await supabase
   .from("contractors")
-  .select("id, name, manager_name, contact_phone")
+  .select("id, name")
   .order("name", { ascending: true });
 
 setContractors(contractorData ?? []);
