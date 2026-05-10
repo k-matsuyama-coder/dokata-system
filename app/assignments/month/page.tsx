@@ -236,6 +236,24 @@ export default function MonthlyAssignmentsPage() {
     setSiteMembers((prev) => prev.filter((m) => m.id !== id));
   };
 
+  const deleteAssignment = async (id: string) => {
+    const ok = window.confirm("この現場を削除しますか？");
+    if (!ok) return;
+  
+    const { error } = await supabase
+      .from("assignments")
+      .delete()
+      .eq("id", id);
+  
+    if (error) {
+      alert("現場削除失敗: " + error.message);
+      return;
+    }
+  
+    setAssignments((prev) => prev.filter((a) => a.id !== id));
+    setSiteMembers((prev) => prev.filter((m) => m.assignment_id !== id));
+  };
+
   const getCellMembers = (assignmentId: string, workDate: string) => {
     return siteMembers.filter(
       (m) => m.assignment_id === assignmentId && m.work_date === workDate
@@ -410,7 +428,27 @@ export default function MonthlyAssignmentsPage() {
               {assignments.map((assignment) => (
                 <tr key={assignment.id}>
                   <td style={td}>{assignment.contractor_name || "-"}</td>
-                  <td style={{ ...td, fontWeight: 800 }}>{assignment.site_name || "-"}</td>
+                  <td style={{ ...td, fontWeight: 800 }}>
+  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+    <span>{assignment.site_name || "-"}</span>
+
+    <button
+      type="button"
+      onClick={() => deleteAssignment(assignment.id)}
+      style={{
+        backgroundColor: "#d11a2a",
+        color: "#fff",
+        border: "none",
+        borderRadius: 6,
+        padding: "4px 8px",
+        cursor: "pointer",
+        fontSize: 12,
+      }}
+    >
+      削除
+    </button>
+  </div>
+</td>
                   <td style={td}>{assignment.shift_type === "night" ? "夜" : "昼"}</td>
                   <td style={td}>
                     {assignment.start_time || "-"}〜{assignment.end_time || "-"}
