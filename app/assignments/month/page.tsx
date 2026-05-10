@@ -12,6 +12,10 @@ type Assignment = {
   shift_type: string | null;
   start_time: string | null;
   end_time: string | null;
+  manager_name: string | null;
+contact_phone: string | null;
+address: string | null;
+meeting_time: string | null;
 };
 
 type SiteMember = {
@@ -39,6 +43,10 @@ export default function MonthlyAssignmentsPage() {
   const [shiftType, setShiftType] = useState("day");
   const [startTime, setStartTime] = useState("08:00");
   const [endTime, setEndTime] = useState("17:00");
+  const [managerName, setManagerName] = useState("");
+const [contactPhone, setContactPhone] = useState("");
+const [address, setAddress] = useState("");
+const [meetingTime, setMeetingTime] = useState("08:00");
 
   const [draggingEmployeeName, setDraggingEmployeeName] = useState<string | null>(null);
   const [draggingSiteMemberId, setDraggingSiteMemberId] = useState<string | null>(null);
@@ -66,7 +74,7 @@ export default function MonthlyAssignmentsPage() {
 
     const { data: assignmentData, error } = await supabase
       .from("assignments")
-      .select("id, assignment_date, site_name, contractor_name, shift_type, start_time, end_time")
+      .select("id, assignment_date, site_name, contractor_name, shift_type, start_time, end_time,manager_name, contact_phone, address, meeting_time")
       .gte("assignment_date", startDate)
       .lte("assignment_date", endDate)
       .order("created_at", { ascending: true });
@@ -141,6 +149,10 @@ export default function MonthlyAssignmentsPage() {
       shift_type: shiftType,
       start_time: startTime,
       end_time: endTime,
+      manager_name: managerName,
+contact_phone: contactPhone,
+address,
+meeting_time: meetingTime,
     });
 
     if (error) {
@@ -149,10 +161,12 @@ export default function MonthlyAssignmentsPage() {
     }
 
     setSiteName("");
-    setContractorName("");
-    setShiftType("day");
-    setStartTime("08:00");
-    setEndTime("17:00");
+setContractorName("");
+setManagerName("");
+setContactPhone("");
+setAddress("");
+setShiftType("day");
+setMeetingTime("08:00");
 
     fetchData();
   };
@@ -327,6 +341,27 @@ export default function MonthlyAssignmentsPage() {
             style={inputStyle}
           />
 
+<input
+  value={managerName}
+  onChange={(e) => setManagerName(e.target.value)}
+  placeholder="担当者"
+  style={inputStyle}
+/>
+
+<input
+  value={contactPhone}
+  onChange={(e) => setContactPhone(e.target.value)}
+  placeholder="連絡先"
+  style={inputStyle}
+/>
+
+<input
+  value={address}
+  onChange={(e) => setAddress(e.target.value)}
+  placeholder="住所"
+  style={inputStyle}
+/>
+
           <div style={{ display: "flex", gap: 8 }}>
             <button
               type="button"
@@ -367,20 +402,12 @@ export default function MonthlyAssignmentsPage() {
             </button>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            <input
-              type="time"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-              style={inputStyle}
-            />
-            <input
-              type="time"
-              value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
-              style={inputStyle}
-            />
-          </div>
+          <input
+  type="time"
+  value={meetingTime}
+  onChange={(e) => setMeetingTime(e.target.value)}
+  style={inputStyle}
+/>
 
           <button
             type="button"
@@ -411,10 +438,13 @@ export default function MonthlyAssignmentsPage() {
           >
             <thead>
               <tr>
-                <th style={th}>元請</th>
-                <th style={th}>現場名</th>
-                <th style={th}>昼/夜</th>
-                <th style={th}>時間</th>
+              <th style={th}>元請</th>
+<th style={th}>現場名</th>
+<th style={th}>担当者</th>
+<th style={th}>連絡先</th>
+<th style={th}>住所</th>
+<th style={th}>昼/夜</th>
+<th style={th}>集合時間</th>
 
                 {days.map((date) => (
                   <th key={date} style={th}>
@@ -425,34 +455,57 @@ export default function MonthlyAssignmentsPage() {
             </thead>
 
             <tbody>
-              {assignments.map((assignment) => (
-                <tr key={assignment.id}>
-                  <td style={td}>{assignment.contractor_name || "-"}</td>
-                  <td style={{ ...td, fontWeight: 800 }}>
-  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-    <span>{assignment.site_name || "-"}</span>
+            {assignments.map((assignment) => (
+  <tr key={assignment.id}>
+    <td style={td}>{assignment.contractor_name || "-"}</td>
 
-    <button
-      type="button"
-      onClick={() => deleteAssignment(assignment.id)}
-      style={{
-        backgroundColor: "#d11a2a",
-        color: "#fff",
-        border: "none",
-        borderRadius: 6,
-        padding: "4px 8px",
-        cursor: "pointer",
-        fontSize: 12,
-      }}
-    >
-      削除
-    </button>
-  </div>
-</td>
-                  <td style={td}>{assignment.shift_type === "night" ? "夜" : "昼"}</td>
-                  <td style={td}>
-                    {assignment.start_time || "-"}〜{assignment.end_time || "-"}
-                  </td>
+    <td style={{ ...td, fontWeight: 800 }}>
+      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <span>{assignment.site_name || "-"}</span>
+
+        <button
+          type="button"
+          onClick={() => deleteAssignment(assignment.id)}
+          style={{
+            backgroundColor: "#d11a2a",
+            color: "#fff",
+            border: "none",
+            borderRadius: 6,
+            padding: "4px 8px",
+            cursor: "pointer",
+            fontSize: 12,
+          }}
+        >
+          削除
+        </button>
+      </div>
+    </td>
+
+    <td style={td}>{assignment.manager_name || "-"}</td>
+
+    <td style={td}>{assignment.contact_phone || "-"}</td>
+
+    <td style={td}>
+      {assignment.address ? (
+        <a
+          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+            assignment.address
+          )}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: "#0a66c2", fontWeight: 700 }}
+        >
+          地図
+        </a>
+      ) : (
+        "-"
+      )}
+    </td>
+
+    <td style={td}>{assignment.shift_type === "night" ? "夜" : "昼"}</td>
+
+    <td style={td}>{assignment.meeting_time || "-"}</td>
+                  
 
                   {days.map((date) => {
                     const cellMembers = getCellMembers(assignment.id, date);
@@ -505,7 +558,7 @@ export default function MonthlyAssignmentsPage() {
               ))}
 
               <tr>
-                <td style={{ ...td, fontWeight: 800 }} colSpan={4}>
+                <td style={{ ...td, fontWeight: 800 }} colSpan={7}>
                   未配置メンバー
                 </td>
 
