@@ -481,31 +481,45 @@ setMeetingTime("08:00");
         style={inputStyle}
       />
 
-      <div style={{ display: "flex", gap: 8 }}>
-        <button
-          type="button"
-          onClick={() => setShiftType("day")}
-          style={{
-            flex: 1,
-            padding: 10,
-            borderRadius: 8,
-          }}
-        >
-          昼
-        </button>
+<div style={{ display: "flex", gap: 8 }}>
+  <button
+    type="button"
+    onClick={() => {
+      setShiftType("day");
+      setMeetingTime("08:00");
+    }}
+    style={{
+      flex: 1,
+      padding: 10,
+      borderRadius: 8,
+      border: shiftType === "day" ? "2px solid #111" : "1px solid #ccc",
+      backgroundColor: shiftType === "day" ? "#f3f3f3" : "#fff",
+      fontWeight: 700,
+      cursor: "pointer",
+    }}
+  >
+    昼
+  </button>
 
-        <button
-          type="button"
-          onClick={() => setShiftType("night")}
-          style={{
-            flex: 1,
-            padding: 10,
-            borderRadius: 8,
-          }}
-        >
-          夜
-        </button>
-      </div>
+  <button
+    type="button"
+    onClick={() => {
+      setShiftType("night");
+      setMeetingTime("20:00");
+    }}
+    style={{
+      flex: 1,
+      padding: 10,
+      borderRadius: 8,
+      border: shiftType === "night" ? "2px solid #111" : "1px solid #ccc",
+      backgroundColor: shiftType === "night" ? "#f3f3f3" : "#fff",
+      fontWeight: 700,
+      cursor: "pointer",
+    }}
+  >
+    夜
+  </button>
+</div>
 
       <input
         type="time"
