@@ -32,6 +32,13 @@ type Employee = {
   name: string;
 };
 
+type ContractorContact = {
+    id: string;
+    contractor_id: string;
+    manager_name: string;
+    contact_phone: string | null;
+  };
+
 export default function MonthlyAssignmentsPage() {
   const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [assignments, setAssignments] = useState<Assignment[]>([]);
@@ -47,6 +54,8 @@ export default function MonthlyAssignmentsPage() {
 const [contactPhone, setContactPhone] = useState("");
 const [address, setAddress] = useState("");
 const [meetingTime, setMeetingTime] = useState("08:00");
+const [contractors, setContractors] = useState<Contractor[]>([]);
+const [contractorContacts, setContractorContacts] = useState<ContractorContact[]>([]);
 
   const [draggingEmployeeName, setDraggingEmployeeName] = useState<string | null>(null);
   const [draggingSiteMemberId, setDraggingSiteMemberId] = useState<string | null>(null);
@@ -71,6 +80,19 @@ const [meetingTime, setMeetingTime] = useState("08:00");
       .order("name", { ascending: true });
 
     setEmployees(employeeData ?? []);
+
+    const { data: contractorData } = await supabase
+  .from("contractors")
+  .select("id, name, manager_name, contact_phone")
+  .order("name", { ascending: true });
+
+setContractors(contractorData ?? []);
+
+const { data: contactData } = await supabase
+  .from("contractor_contacts")
+  .select("id, contractor_id, manager_name, contact_phone");
+
+setContractorContacts(contactData ?? []);
 
     const { data: assignmentData, error } = await supabase
       .from("assignments")
@@ -327,12 +349,29 @@ setMeetingTime("08:00");
         >
           <h2 style={{ margin: 0 }}>現場追加</h2>
 
-          <input
-            value={contractorName}
-            onChange={(e) => setContractorName(e.target.value)}
-            placeholder="元請"
-            style={inputStyle}
-          />
+          <div>
+  <input
+    list="contractors"
+    value={contractorName}
+    onChange={(e) => {
+      setContractorName(e.target.value);
+
+      setManagerName("");
+      setContactPhone("");
+    }}
+    placeholder="元請"
+    style={inputStyle}
+  />
+
+  <datalist id="contractors">
+    {contractors.map((contractor) => (
+      <option
+        key={contractor.id}
+        value={contractor.name}
+      />
+    ))}
+  </datalist>
+</div>
 
           <input
             value={siteName}
@@ -341,12 +380,52 @@ setMeetingTime("08:00");
             style={inputStyle}
           />
 
-<input
-  value={managerName}
-  onChange={(e) => setManagerName(e.target.value)}
-  placeholder="担当者"
-  style={inputStyle}
-/>
+<div>
+  <input
+    list="manager-list"
+    value={managerName}
+    onChange={(e) => {
+      const value = e.target.value;
+
+      setManagerName(value);
+
+      const contractor = contractors.find(
+        (c) => c.name === contractorName
+      );
+
+      if (!contractor) return;
+
+      const contact = contractorContacts.find(
+        (c) =>
+          c.contractor_id === contractor.id &&
+          c.manager_name === value
+      );
+
+      if (contact) {
+        setContactPhone(contact.contact_phone ?? "");
+      }
+    }}
+    placeholder="担当者"
+    style={inputStyle}
+  />
+
+  <datalist id="manager-list">
+    {contractorContacts
+      .filter((contact) => {
+        const contractor = contractors.find(
+          (c) => c.id === contact.contractor_id
+        );
+
+        return contractor?.name === contractorName;
+      })
+      .map((contact) => (
+        <option
+          key={contact.id}
+          value={contact.manager_name}
+        />
+      ))}
+  </datalist>
+</div>
 
 <input
   value={contactPhone}
