@@ -644,7 +644,16 @@ setMeetingTime("08:00");
   </div>
 )}
 
-        <div style={{ overflowX: "auto", border: "1px solid #ddd" }}>
+<div
+  style={{
+    overflowX: "auto",
+    border: "1px solid #ddd",
+    borderRadius: 12,
+    backgroundColor: "#fff",
+    maxHeight: "75vh",
+    overflowY: "auto",
+  }}
+>
           <table
             style={{
               borderCollapse: "collapse",
@@ -772,10 +781,11 @@ setMeetingTime("08:00");
   placeholder="人"
   style={{
     width: "100%",
-    padding: 4,
-    border: "1px solid #ccc",
-    borderRadius: 4,
+    padding: "4px 6px",
+    border: "1px solid #ddd",
+    borderRadius: 6,
     fontSize: 12,
+    marginBottom: 4,
   }}
 />
 
@@ -792,10 +802,11 @@ setMeetingTime("08:00");
   placeholder="詳細"
   style={{
     width: "100%",
-    padding: 4,
-    border: "1px solid #ccc",
-    borderRadius: 4,
+    padding: "4px 6px",
+    border: "1px solid #ddd",
+    borderRadius: 6,
     fontSize: 12,
+    marginBottom: 4,
   }}
 />
 
@@ -811,14 +822,15 @@ setMeetingTime("08:00");
                               }}
                               onDoubleClick={() => deleteSiteMember(member.id)}
                               style={{
-                                padding: "4px 6px",
-                                borderRadius: 6,
+                                padding: "5px 8px",
+                                borderRadius: 999,
                                 backgroundColor:
-  selectedSiteMemberId === member.id ? "#cfe8ff" : "#f1f1f1",
-                                border: "1px solid #ddd",
+                                  selectedSiteMemberId === member.id ? "#dbeafe" : "#eef2ff",
+                                border: "1px solid #c7d2fe",
                                 cursor: "grab",
                                 whiteSpace: "nowrap",
                                 fontWeight: 700,
+                                fontSize: 12,
                               }}
                             >
                               {member.employee_name}
@@ -859,14 +871,15 @@ setMeetingTime("08:00");
                                 setSelectedSiteMemberId(null);
                               }}
                               style={{
-                                padding: "4px 6px",
-                                borderRadius: 6,
+                                padding: "5px 8px",
+                                borderRadius: 999,
                                 backgroundColor:
-  selectedEmployeeName === name ? "#cfe8ff" : "#fff8e1",
-                                border: "1px solid #e0c96a",
+                                  selectedEmployeeName === name ? "#dbeafe" : "#fff7ed",
+                                border: "1px solid #fed7aa",
                                 cursor: "grab",
                                 whiteSpace: "nowrap",
                                 fontWeight: 700,
+                                fontSize: 12,
                               }}
                             >
                               {name}
@@ -891,12 +904,16 @@ setMeetingTime("08:00");
 }
 
 const th = {
-  border: "1px solid #ccc",
-  padding: 8,
-  backgroundColor: "#f2f2f2",
-  whiteSpace: "nowrap" as const,
-  textAlign: "center" as const,
-};
+    border: "1px solid #ddd",
+    padding: 8,
+    backgroundColor: "#f5f5f5",
+    whiteSpace: "nowrap" as const,
+    textAlign: "center" as const,
+    position: "sticky" as const,
+    top: 0,
+    zIndex: 2,
+    fontSize: 12,
+  };
 
 const td = {
   border: "1px solid #ccc",
@@ -906,10 +923,11 @@ const td = {
 };
 
 const cellTd = {
-  border: "1px solid #ccc",
-  padding: 6,
-  minWidth: 95,
-  height: 62,
-  whiteSpace: "pre-wrap" as const,
-  verticalAlign: "top" as const,
-};
+    border: "1px solid #ddd",
+    padding: 6,
+    minWidth: 140,
+    height: 120,
+    whiteSpace: "pre-wrap" as const,
+    verticalAlign: "top" as const,
+    backgroundColor: "#fff",
+  };
