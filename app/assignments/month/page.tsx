@@ -136,7 +136,9 @@ const getCellStyle = (
   return {
     ...cellTd,
     backgroundColor: isShort
-      ? "#ffe5e5"
+  ? "#ffe5e5"
+  : isPerfect
+  ? "#e8f7e8"
       : isToday
       ? "#fffdf0"
       : dayType === "sunday"
@@ -144,7 +146,11 @@ const getCellStyle = (
       : dayType === "saturday"
       ? "#f7fbff"
       : "#fcfcfc",
-    border: isShort ? "2px solid #d11a2a" : cellTd.border,
+      border: isShort
+      ? "2px solid #d11a2a"
+      : isPerfect
+      ? "2px solid #22c55e"
+      : cellTd.border,
   };
 };
 
@@ -326,25 +332,23 @@ setMeetingTime("08:00");
     assignmentId: string,
     workDate: string
   ) => {
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from("assignment_site_members")
       .update({
         assignment_id: assignmentId,
         work_date: workDate,
       })
-      .eq("id", siteMemberId)
-      .select("id, assignment_id, work_date, employee_name, is_driver, is_operator, heavy_equipment")
-      .single();
-
-    if (error || !data) {
-      alert("移動失敗: " + (error?.message || "取得失敗"));
+      .eq("id", siteMemberId);
+  
+    if (error) {
+      alert("移動失敗: " + error.message);
       return;
     }
-
-    setSiteMembers((prev) =>
-      prev.map((m) => (m.id === siteMemberId ? data : m))
-    );
+  
     setDraggingSiteMemberId(null);
+    setSelectedSiteMemberId(null);
+  
+    fetchData();
   };
 
   const deleteSiteMember = async (id: string) => {
@@ -809,6 +813,11 @@ const isShort =
   plannedCount > 0 &&
   memberCount < plannedCount;
 
+  const isPerfect =
+  plannedCount !== null &&
+  plannedCount > 0 &&
+  memberCount === plannedCount;
+
                     return (
                       <td
                         key={date}
@@ -842,7 +851,11 @@ const isShort =
   style={{
     fontSize: 11,
     fontWeight: 800,
-    color: isShort ? "#d11a2a" : "#555",
+    color: isShort
+  ? "#d11a2a"
+  : isPerfect
+  ? "#16a34a"
+  : "#555",
   }}
 >
   {plannedCount ? `${memberCount}/${plannedCount}人` : `${memberCount}人`}
@@ -917,10 +930,56 @@ const isShort =
                                 fontSize: 11,
                               }}
                             >
-                              {member.employee_name}
-                              {member.is_driver ? " 🚗" : ""}
-                              {member.is_operator ? " OP" : ""}
-                              {member.heavy_equipment ? ` ${member.heavy_equipment}` : ""}
+                              <div style={{ display: "grid", gap: 2 }}>
+  <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+    {member.is_driver && (
+      <span
+        style={{
+          fontSize: 10,
+          padding: "1px 6px",
+          borderRadius: 999,
+          backgroundColor: "#dbeafe",
+          color: "#1d4ed8",
+          fontWeight: 700,
+        }}
+      >
+        運転
+      </span>
+    )}
+
+    {member.is_operator && (
+      <span
+        style={{
+          fontSize: 10,
+          padding: "1px 6px",
+          borderRadius: 999,
+          backgroundColor: "#ede9fe",
+          color: "#6d28d9",
+          fontWeight: 700,
+        }}
+      >
+        OP
+      </span>
+    )}
+
+    {member.heavy_equipment && (
+      <span
+        style={{
+          fontSize: 10,
+          padding: "1px 6px",
+          borderRadius: 999,
+          backgroundColor: "#fef3c7",
+          color: "#b45309",
+          fontWeight: 700,
+        }}
+      >
+        {member.heavy_equipment}
+      </span>
+    )}
+  </div>
+
+  <div>{member.employee_name}</div>
+</div>
                             </div>
                           ))}
                         </div>
