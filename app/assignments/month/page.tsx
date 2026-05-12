@@ -74,6 +74,8 @@ const [showAddModal, setShowAddModal] = useState(false);
 
   const [draggingEmployeeName, setDraggingEmployeeName] = useState<string | null>(null);
   const [draggingSiteMemberId, setDraggingSiteMemberId] = useState<string | null>(null);
+  const [selectedEmployeeName, setSelectedEmployeeName] = useState<string | null>(null);
+const [selectedSiteMemberId, setSelectedSiteMemberId] = useState<string | null>(null);
 
   const days = useMemo(() => {
     const [year, monthNum] = month.split("-").map(Number);
@@ -740,6 +742,18 @@ setMeetingTime("08:00");
                             addEmployeeToCell(draggingEmployeeName, assignment.id, date);
                           }
                         }}
+                        onClick={() => {
+                            if (selectedSiteMemberId) {
+                              moveSiteMember(selectedSiteMemberId, assignment.id, date);
+                              setSelectedSiteMemberId(null);
+                              return;
+                            }
+                          
+                            if (selectedEmployeeName) {
+                              addEmployeeToCell(selectedEmployeeName, assignment.id, date);
+                              setSelectedEmployeeName(null);
+                            }
+                          }}
                         style={cellTd}
                       >
                         <div style={{ display: "grid", gap: 4 }}>
@@ -791,11 +805,16 @@ setMeetingTime("08:00");
                               draggable
                               onDragStart={() => setDraggingSiteMemberId(member.id)}
                               onDragEnd={() => setDraggingSiteMemberId(null)}
+                              onClick={() => {
+                                setSelectedSiteMemberId(member.id);
+                                setSelectedEmployeeName(null);
+                              }}
                               onDoubleClick={() => deleteSiteMember(member.id)}
                               style={{
                                 padding: "4px 6px",
                                 borderRadius: 6,
-                                backgroundColor: "#f1f1f1",
+                                backgroundColor:
+  selectedSiteMemberId === member.id ? "#cfe8ff" : "#f1f1f1",
                                 border: "1px solid #ddd",
                                 cursor: "grab",
                                 whiteSpace: "nowrap",
@@ -835,10 +854,15 @@ setMeetingTime("08:00");
                               draggable
                               onDragStart={() => setDraggingEmployeeName(name)}
                               onDragEnd={() => setDraggingEmployeeName(null)}
+                              onClick={() => {
+                                setSelectedEmployeeName(name);
+                                setSelectedSiteMemberId(null);
+                              }}
                               style={{
                                 padding: "4px 6px",
                                 borderRadius: 6,
-                                backgroundColor: "#fff8e1",
+                                backgroundColor:
+  selectedEmployeeName === name ? "#cfe8ff" : "#fff8e1",
                                 border: "1px solid #e0c96a",
                                 cursor: "grab",
                                 whiteSpace: "nowrap",
