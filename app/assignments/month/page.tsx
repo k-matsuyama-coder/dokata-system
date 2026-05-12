@@ -87,6 +87,67 @@ const [selectedSiteMemberId, setSelectedSiteMemberId] = useState<string | null>(
     });
   }, [month]);
 
+  const todayString = new Date().toISOString().slice(0, 10);
+
+const getDayType = (date: string) => {
+  const day = new Date(date).getDay();
+
+  if (day === 0) return "sunday";
+  if (day === 6) return "saturday";
+  return "weekday";
+};
+
+const getDateHeaderStyle = (date: string) => {
+  const dayType = getDayType(date);
+  const isToday = date === todayString;
+
+  return {
+    ...th,
+    backgroundColor: isToday
+      ? "#fff3cd"
+      : dayType === "sunday"
+      ? "#ffe5e5"
+      : dayType === "saturday"
+      ? "#e5f0ff"
+      : "#f5f5f5",
+    color:
+      dayType === "sunday"
+        ? "#d11a2a"
+        : dayType === "saturday"
+        ? "#0a66c2"
+        : "#111",
+    fontWeight: 800,
+  };
+};
+
+const getCellStyle = (
+  date: string,
+  plannedCount: number | null | undefined,
+  memberCount: number
+) => {
+  const dayType = getDayType(date);
+  const isToday = date === todayString;
+  const isShort =
+    plannedCount !== null &&
+    plannedCount !== undefined &&
+    plannedCount > 0 &&
+    memberCount < plannedCount;
+
+  return {
+    ...cellTd,
+    backgroundColor: isShort
+      ? "#ffe5e5"
+      : isToday
+      ? "#fffdf0"
+      : dayType === "sunday"
+      ? "#fff7f7"
+      : dayType === "saturday"
+      ? "#f7fbff"
+      : "#fcfcfc",
+    border: isShort ? "2px solid #d11a2a" : cellTd.border,
+  };
+};
+
   const fetchData = async () => {
     const startDate = `${month}-01`;
     const endDate = days[days.length - 1];
@@ -654,9 +715,10 @@ setMeetingTime("08:00");
     overflowY: "auto",
   }}
 >
-          <table
-            style={{
-              borderCollapse: "collapse",
+<table
+  style={{
+    borderCollapse: "separate",
+    borderSpacing: 0,
               minWidth: 1700,
               width: "100%",
               backgroundColor: "#fff",
@@ -665,7 +727,7 @@ setMeetingTime("08:00");
           >
             <thead>
               <tr>
-              <th style={th}>元請</th>
+              <th style={{ ...th, ...stickyTh }}>元請</th>
 <th style={th}>現場名</th>
 <th style={th}>担当者</th>
 <th style={th}>連絡先</th>
@@ -674,9 +736,9 @@ setMeetingTime("08:00");
 <th style={th}>集合時間</th>
 
                 {days.map((date) => (
-                  <th key={date} style={th}>
-                    {Number(date.slice(-2))}
-                  </th>
+                  <th key={date} style={getDateHeaderStyle(date)}>
+                  {Number(date.slice(-2))}
+                </th>
                 ))}
               </tr>
             </thead>
@@ -684,9 +746,11 @@ setMeetingTime("08:00");
             <tbody>
             {assignments.map((assignment) => (
   <tr key={assignment.id}>
-    <td style={td}>{assignment.contractor_name || "-"}</td>
+    <td style={{ ...td, ...stickyTd }}>
+  {assignment.contractor_name || "-"}
+</td>
 
-    <td style={{ ...td, fontWeight: 800 }}>
+<td style={{ ...td, ...stickyTd2, fontWeight: 800 }}>
       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
         <span>{assignment.site_name || "-"}</span>
 
@@ -708,7 +772,9 @@ setMeetingTime("08:00");
       </div>
     </td>
 
-    <td style={td}>{assignment.manager_name || "-"}</td>
+    <td style={{ ...td, ...stickyTd3 }}>
+  {assignment.manager_name || "-"}
+</td>
 
     <td style={td}>{assignment.contact_phone || "-"}</td>
 
@@ -736,6 +802,12 @@ setMeetingTime("08:00");
                   {days.map((date) => {
                     const cellMembers = getCellMembers(assignment.id, date);
                     const dailyInfo = getDailyInfo(assignment.id, date);
+                    const plannedCount = dailyInfo?.planned_count ?? null;
+const memberCount = cellMembers.length;
+const isShort =
+  plannedCount !== null &&
+  plannedCount > 0 &&
+  memberCount < plannedCount;
 
                     return (
                       <td
@@ -763,9 +835,18 @@ setMeetingTime("08:00");
                               setSelectedEmployeeName(null);
                             }
                           }}
-                        style={cellTd}
+                          style={getCellStyle(date, plannedCount, memberCount)}
                       >
                         <div style={{ display: "grid", gap: 4 }}>
+                        <div
+  style={{
+    fontSize: 11,
+    fontWeight: 800,
+    color: isShort ? "#d11a2a" : "#555",
+  }}
+>
+  {plannedCount ? `${memberCount}/${plannedCount}人` : `${memberCount}人`}
+</div>
 
                         　　　　　　　　　　　　　　　　<input
   type="number"
@@ -782,10 +863,11 @@ setMeetingTime("08:00");
   style={{
     width: "100%",
     padding: "4px 6px",
-    border: "1px solid #ddd",
+    border: "1px solid #d1d5db",
     borderRadius: 6,
-    fontSize: 12,
-    marginBottom: 4,
+    fontSize: 13,
+    fontWeight: 700,
+    backgroundColor: "#fff",
   }}
 />
 
@@ -803,10 +885,10 @@ setMeetingTime("08:00");
   style={{
     width: "100%",
     padding: "4px 6px",
-    border: "1px solid #ddd",
+    border: "1px solid #e5e7eb",
     borderRadius: 6,
-    fontSize: 12,
-    marginBottom: 4,
+    fontSize: 11,
+    backgroundColor: "#fff",
   }}
 />
 
@@ -822,15 +904,17 @@ setMeetingTime("08:00");
                               }}
                               onDoubleClick={() => deleteSiteMember(member.id)}
                               style={{
-                                padding: "5px 8px",
+                                padding: "4px 8px",
                                 borderRadius: 999,
                                 backgroundColor:
-                                  selectedSiteMemberId === member.id ? "#dbeafe" : "#eef2ff",
+                                  selectedSiteMemberId === member.id
+                                    ? "#dbeafe"
+                                    : "#eef2ff",
                                 border: "1px solid #c7d2fe",
                                 cursor: "grab",
                                 whiteSpace: "nowrap",
                                 fontWeight: 700,
-                                fontSize: 12,
+                                fontSize: 11,
                               }}
                             >
                               {member.employee_name}
@@ -923,11 +1007,39 @@ const td = {
 };
 
 const cellTd = {
-    border: "1px solid #ddd",
+    border: "1px solid #e5e7eb",
     padding: 6,
-    minWidth: 140,
-    height: 120,
+    minWidth: 150,
+    height: 140,
     whiteSpace: "pre-wrap" as const,
     verticalAlign: "top" as const,
+    backgroundColor: "#fcfcfc",
+  };
+
+  const stickyTd = {
+    position: "sticky" as const,
+    left: 0,
     backgroundColor: "#fff",
+    zIndex: 1,
+  };
+  
+  const stickyTd2 = {
+    position: "sticky" as const,
+    left: 70,
+    backgroundColor: "#fff",
+    zIndex: 1,
+  };
+  
+  const stickyTd3 = {
+    position: "sticky" as const,
+    left: 170,
+    backgroundColor: "#fff",
+    zIndex: 1,
+  };
+  
+  const stickyTh = {
+    position: "sticky" as const,
+    top: 0,
+    backgroundColor: "#f5f5f5",
+    zIndex: 3,
   };
