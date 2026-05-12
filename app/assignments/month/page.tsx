@@ -905,83 +905,47 @@ const isShort =
   }}
 />
 
-                          {cellMembers.map((member) => (
-                            <div
-                              key={member.id}
-                              draggable
-                              onDragStart={() => setDraggingSiteMemberId(member.id)}
-                              onDragEnd={() => setDraggingSiteMemberId(null)}
-                              onClick={() => {
-                                setSelectedSiteMemberId(member.id);
-                                setSelectedEmployeeName(null);
-                              }}
-                              onDoubleClick={() => deleteSiteMember(member.id)}
-                              style={{
-                                padding: "4px 8px",
-                                borderRadius: 999,
-                                backgroundColor:
-                                  selectedSiteMemberId === member.id
-                                    ? "#dbeafe"
-                                    : "#eef2ff",
-                                border: "1px solid #c7d2fe",
-                                cursor: "grab",
-                                whiteSpace: "nowrap",
-                                fontWeight: 700,
-                                fontSize: 11,
-                              }}
-                            >
-                              <div style={{ display: "grid", gap: 2 }}>
-  <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-    {member.is_driver && (
-      <span
-        style={{
-          fontSize: 10,
-          padding: "1px 6px",
-          borderRadius: 999,
-          backgroundColor: "#dbeafe",
-          color: "#1d4ed8",
-          fontWeight: 700,
-        }}
-      >
-        運転
-      </span>
-    )}
+{cellMembers.map((member) => (
+  <div
+    key={member.id}
+    draggable
+    onDragStart={() => setDraggingSiteMemberId(member.id)}
+    onDragEnd={() => setDraggingSiteMemberId(null)}
+    onClick={() => {
+      setSelectedSiteMemberId(member.id);
+      setSelectedEmployeeName(null);
+    }}
+    onDoubleClick={() => deleteSiteMember(member.id)}
+    style={{
+      padding: "4px 8px",
+      borderRadius: 10,
+      backgroundColor:
+        selectedSiteMemberId === member.id ? "#dbeafe" : "#eef2ff",
+      border: "1px solid #c7d2fe",
+      cursor: "grab",
+      fontWeight: 700,
+      fontSize: 11,
+    }}
+  >
+    <div style={{ display: "grid", gap: 2 }}>
+      <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+        {member.is_driver && (
+          <span style={tagBlue}>運転</span>
+        )}
 
-    {member.is_operator && (
-      <span
-        style={{
-          fontSize: 10,
-          padding: "1px 6px",
-          borderRadius: 999,
-          backgroundColor: "#ede9fe",
-          color: "#6d28d9",
-          fontWeight: 700,
-        }}
-      >
-        OP
-      </span>
-    )}
+        {member.is_operator && (
+          <span style={tagPurple}>OP</span>
+        )}
 
-    {member.heavy_equipment && (
-      <span
-        style={{
-          fontSize: 10,
-          padding: "1px 6px",
-          borderRadius: 999,
-          backgroundColor: "#fef3c7",
-          color: "#b45309",
-          fontWeight: 700,
-        }}
-      >
-        {member.heavy_equipment}
-      </span>
-    )}
+        {member.heavy_equipment && (
+          <span style={tagYellow}>{member.heavy_equipment}</span>
+        )}
+      </div>
+
+      <div>{member.employee_name}</div>
+    </div>
   </div>
-
-  <div>{member.employee_name}</div>
-</div>
-                            </div>
-                          ))}
+))}
                         </div>
                       </td>
                     );
@@ -1101,4 +1065,31 @@ const cellTd = {
     top: 0,
     backgroundColor: "#f5f5f5",
     zIndex: 3,
+  };
+
+  const tagBlue = {
+    fontSize: 10,
+    padding: "1px 6px",
+    borderRadius: 999,
+    backgroundColor: "#dbeafe",
+    color: "#1d4ed8",
+    fontWeight: 700,
+  };
+  
+  const tagPurple = {
+    fontSize: 10,
+    padding: "1px 6px",
+    borderRadius: 999,
+    backgroundColor: "#ede9fe",
+    color: "#6d28d9",
+    fontWeight: 700,
+  };
+  
+  const tagYellow = {
+    fontSize: 10,
+    padding: "1px 6px",
+    borderRadius: 999,
+    backgroundColor: "#fef3c7",
+    color: "#b45309",
+    fontWeight: 700,
   };
