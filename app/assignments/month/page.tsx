@@ -127,18 +127,25 @@ const getCellStyle = (
 ) => {
   const dayType = getDayType(date);
   const isToday = date === todayString;
+
   const isShort =
     plannedCount !== null &&
     plannedCount !== undefined &&
     plannedCount > 0 &&
     memberCount < plannedCount;
 
+  const isPerfect =
+    plannedCount !== null &&
+    plannedCount !== undefined &&
+    plannedCount > 0 &&
+    memberCount === plannedCount;
+
   return {
     ...cellTd,
     backgroundColor: isShort
-  ? "#ffe5e5"
-  : isPerfect
-  ? "#e8f7e8"
+      ? "#ffe5e5"
+      : isPerfect
+      ? "#e8f7e8"
       : isToday
       ? "#fffdf0"
       : dayType === "sunday"
@@ -146,7 +153,7 @@ const getCellStyle = (
       : dayType === "saturday"
       ? "#f7fbff"
       : "#fcfcfc",
-      border: isShort
+    border: isShort
       ? "2px solid #d11a2a"
       : isPerfect
       ? "2px solid #22c55e"
