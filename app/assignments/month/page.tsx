@@ -859,13 +859,22 @@ const isShort =
     fontSize: 11,
     fontWeight: 800,
     color: isShort
-  ? "#d11a2a"
-  : isPerfect
-  ? "#16a34a"
-  : "#555",
+      ? "#d11a2a"
+      : isPerfect
+      ? "#16a34a"
+      : "#555",
+    display: "grid",
+    gap: 2,
+    lineHeight: 1.4,
   }}
 >
-  {plannedCount ? `${memberCount}/${plannedCount}人` : `${memberCount}人`}
+  <div>
+    人数：{plannedCount ? `${memberCount}/${plannedCount}` : memberCount}
+  </div>
+
+  <div>
+    予定人数：{plannedCount ?? "-"}
+  </div>
 </div>
 
                         　　　　　　　　　　　　　　　　<input
