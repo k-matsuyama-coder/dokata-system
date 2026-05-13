@@ -868,13 +868,12 @@ const isShort =
     lineHeight: 1.4,
   }}
 >
-  <div>
-    人数：{plannedCount ? `${memberCount}/${plannedCount}` : memberCount}
-  </div>
-
-  <div>
+<div>
     予定人数：{plannedCount ?? "-"}
   </div>
+  <div>
+    人数：{plannedCount ? `${memberCount}/${plannedCount}` : memberCount}
+  </div>  
 </div>
 
                         　　　　　　　　　　　　　　　　<input
