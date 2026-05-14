@@ -454,9 +454,9 @@ setMeetingTime("08:00");
           ? value
           : existing?.detail ?? null,
           vehicle_names:
-          field === "vehicle_names"
-            ? value.split(",")
-            : existing?.vehicle_names ?? [],
+  field === "vehicle_names"
+    ? value ? value.split(",").filter(Boolean) : []
+    : existing?.vehicle_names ?? [],
     };
   
     const { data, error } = await supabase
@@ -1182,12 +1182,14 @@ const isShort =
                         v !== vehicle.vehicle_name
                     );
 
-                updateDailyInfo(
-                  vehicleTarget.assignmentId,
-                  vehicleTarget.workDate,
-                  "vehicle_names",
-                  next.join(",")
-                );
+                    updateDailyInfo(
+                      vehicleTarget.assignmentId,
+                      vehicleTarget.workDate,
+                      "vehicle_names",
+                      next.join(",")
+                    );
+                    
+                    fetchData();
               }}
             />
 
