@@ -29,12 +29,13 @@ type SiteMember = {
 };
 
 type DailyInfo = {
-    id: string;
-    assignment_id: string;
-    work_date: string;
-    planned_count: number | null;
-    detail: string | null;
-  };
+  id: string;
+  assignment_id: string;
+  work_date: string;
+  planned_count: number | null;
+  detail: string | null;
+  vehicle_names: string[] | null;
+};
 
 type Employee = {
   name: string;
@@ -76,6 +77,13 @@ const [showAddModal, setShowAddModal] = useState(false);
   const [draggingSiteMemberId, setDraggingSiteMemberId] = useState<string | null>(null);
   const [selectedEmployeeName, setSelectedEmployeeName] = useState<string | null>(null);
 const [selectedSiteMemberId, setSelectedSiteMemberId] = useState<string | null>(null);
+const [vehicles, setVehicles] = useState<
+  {
+    id: string;
+    vehicle_name: string;
+    vehicle_type: string | null;
+  }[]
+>([]);
 
   const days = useMemo(() => {
     const [year, monthNum] = month.split("-").map(Number);
@@ -220,7 +228,7 @@ setContractorContacts(contactData ?? []);
 
     const { data: dailyInfoData, error: dailyInfoError } = await supabase
   .from("assignment_site_daily_infos")
-  .select("id, assignment_id, work_date, planned_count, detail")
+  .select("id, assignment_id, work_date, planned_count, detail, vehicle_names")
   .in("assignment_id", assignmentIds)
   .gte("work_date", startDate)
   .lte("work_date", endDate);
@@ -410,7 +418,7 @@ setMeetingTime("08:00");
   const updateDailyInfo = async (
     assignmentId: string,
     workDate: string,
-    field: "planned_count" | "detail",
+    field: "planned_count" | "detail" | "vehicle_names",
     value: string
   ) => {
     const existing = getDailyInfo(assignmentId, workDate);
@@ -426,6 +434,10 @@ setMeetingTime("08:00");
         field === "detail"
           ? value
           : existing?.detail ?? null,
+          vehicle_names:
+          field === "vehicle_names"
+            ? value.split(",")
+            : existing?.vehicle_names ?? [],
     };
   
     const { data, error } = await supabase
@@ -461,6 +473,13 @@ setMeetingTime("08:00");
       .filter((employee) => !assignedNames.includes(employee.name))
       .map((employee) => employee.name);
   };
+
+  const { data: vehicleData } = await supabase
+  .from("vehicles")
+  .select("id, vehicle_name, vehicle_type")
+  .order("vehicle_name");
+
+setVehicles(vehicleData ?? []);
 
   const inputStyle = {
     width: "100%",
@@ -919,6 +938,70 @@ const isShort =
     backgroundColor: "#fff",
   }}
 />
+
+<div
+  style={{
+    display: "grid",
+    gap: 4,
+    marginTop: 4,
+    padding: 6,
+    borderRadius: 8,
+    backgroundColor: "#f9fafb",
+  }}
+>
+  <div
+    style={{
+      fontSize: 11,
+      fontWeight: 700,
+      color: "#555",
+    }}
+  >
+    車両
+  </div>
+
+  {vehicles.map((vehicle) => {
+    const checked =
+      dailyInfo?.vehicle_names?.includes(
+        vehicle.vehicle_name
+      ) ?? false;
+
+    return (
+      <label
+        key={vehicle.id}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          fontSize: 11,
+        }}
+      >
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={(e) => {
+            const current =
+              dailyInfo?.vehicle_names ?? [];
+
+            const next = e.target.checked
+              ? [...current, vehicle.vehicle_name]
+              : current.filter(
+                  (v) => v !== vehicle.vehicle_name
+                );
+
+            updateDailyInfo(
+              assignment.id,
+              date,
+              "vehicle_names",
+              next.join(",")
+            );
+          }}
+        />
+
+        {vehicle.vehicle_name}
+      </label>
+    );
+  })}
+</div>
 
 {cellMembers.map((member) => (
   <div

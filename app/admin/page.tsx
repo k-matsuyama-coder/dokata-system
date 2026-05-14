@@ -81,6 +81,10 @@ export default function AdminPage() {
   会社管理
 </a>
 
+<a href="/admin/vehicles" style={linkStyle}>
+  車両管理
+  </a>
+
         <a href="/admin/analytics" style={linkStyle}>
           分析
         </a>
