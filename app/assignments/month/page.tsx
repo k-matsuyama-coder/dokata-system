@@ -85,6 +85,13 @@ const [vehicles, setVehicles] = useState<
   }[]
 >([]);
 
+const [showVehicleModal, setShowVehicleModal] = useState(false);
+
+const [vehicleTarget, setVehicleTarget] = useState<{
+  assignmentId: string;
+  workDate: string;
+} | null>(null);
+
   const days = useMemo(() => {
     const [year, monthNum] = month.split("-").map(Number);
     const lastDay = new Date(year, monthNum, 0).getDate();
@@ -955,12 +962,43 @@ const isShort =
 >
   <div
     style={{
-      fontWeight: 700,
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
       marginBottom: 4,
-      color: "#555",
     }}
   >
-    車両
+    <div
+      style={{
+        fontWeight: 700,
+        color: "#555",
+      }}
+    >
+      車両
+    </div>
+
+    <button
+      type="button"
+      onClick={() => {
+        setVehicleTarget({
+          assignmentId: assignment.id,
+          workDate: date,
+        });
+
+        setShowVehicleModal(true);
+      }}
+      style={{
+        border: "none",
+        backgroundColor: "#111",
+        color: "#fff",
+        borderRadius: 6,
+        padding: "2px 8px",
+        fontSize: 10,
+        cursor: "pointer",
+      }}
+    >
+      ＋選択
+    </button>
   </div>
 
   {dailyInfo?.vehicle_names?.length ? (
@@ -1082,6 +1120,101 @@ const isShort =
             </tbody>
           </table>
         </div>
+
+        {showVehicleModal && vehicleTarget && (
+  <div
+    onClick={() => setShowVehicleModal(false)}
+    style={{
+      position: "fixed",
+      inset: 0,
+      backgroundColor: "rgba(0,0,0,0.4)",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      zIndex: 99999,
+    }}
+  >
+    <div
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        width: 320,
+        maxHeight: "70vh",
+        overflowY: "auto",
+        backgroundColor: "#fff",
+        borderRadius: 12,
+        padding: 16,
+        display: "grid",
+        gap: 8,
+      }}
+    >
+      <h3 style={{ margin: 0 }}>車両選択</h3>
+
+      {vehicles.map((vehicle) => {
+        const info = getDailyInfo(
+          vehicleTarget.assignmentId,
+          vehicleTarget.workDate
+        );
+
+        const current = info?.vehicle_names ?? [];
+
+        const checked = current.includes(
+          vehicle.vehicle_name
+        );
+
+        return (
+          <label
+            key={vehicle.id}
+            style={{
+              display: "flex",
+              gap: 8,
+              alignItems: "center",
+              fontSize: 14,
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={checked}
+              onChange={(e) => {
+                const next = e.target.checked
+                  ? [...current, vehicle.vehicle_name]
+                  : current.filter(
+                      (v) =>
+                        v !== vehicle.vehicle_name
+                    );
+
+                updateDailyInfo(
+                  vehicleTarget.assignmentId,
+                  vehicleTarget.workDate,
+                  "vehicle_names",
+                  next.join(",")
+                );
+              }}
+            />
+
+            {vehicle.vehicle_name}
+          </label>
+        );
+      })}
+
+      <button
+        type="button"
+        onClick={() => setShowVehicleModal(false)}
+        style={{
+          marginTop: 8,
+          border: "none",
+          backgroundColor: "#111",
+          color: "#fff",
+          borderRadius: 8,
+          padding: 10,
+          fontWeight: 700,
+          cursor: "pointer",
+        }}
+      >
+        閉じる
+      </button>
+    </div>
+  </div>
+)}
 
         <p style={{ color: "#666", fontSize: 13 }}>
           ※ メンバーを外す場合は、配置済みの名前をダブルクリックしてください。
