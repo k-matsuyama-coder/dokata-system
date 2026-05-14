@@ -769,9 +769,9 @@ setMeetingTime("08:00");
           >
             <thead>
               <tr>
-              <th style={th}>元請</th>
-<th style={th}>現場名</th>
-<th style={th}>担当者</th>
+              <th style={{ ...th, ...stickyTh1 }}>元請</th>
+<th style={{ ...th, ...stickyTh2 }}>現場名</th>
+<th style={{ ...th, ...stickyTh3 }}>担当者</th>
 <th style={th}>連絡先</th>
 <th style={th}>住所</th>
 <th style={th}>昼/夜</th>
@@ -788,11 +788,11 @@ setMeetingTime("08:00");
             <tbody>
             {assignments.map((assignment) => (
   <tr key={assignment.id}>
-    <td style={td}>
+    <td style={{ ...td, ...stickyTd1 }}>
   {assignment.contractor_name || "-"}
 </td>
 
-<td style={{ ...td, fontWeight: 800 }}>
+<td style={{ ...td, ...stickyTd2, fontWeight: 800 }}>
       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
         <span>{assignment.site_name || "-"}</span>
 
@@ -814,7 +814,7 @@ setMeetingTime("08:00");
       </div>
     </td>
 
-    <td style={td}>
+    <td style={{ ...td, ...stickyTd3 }}>
   {assignment.manager_name || "-"}
 </td>
 
@@ -1238,12 +1238,13 @@ const th = {
     fontSize: 12,
   };
 
-const td = {
-  border: "1px solid #ccc",
-  padding: 8,
-  whiteSpace: "nowrap" as const,
-  verticalAlign: "top" as const,
-};
+  const td = {
+    border: "1px solid #ccc",
+    padding: 8,
+    whiteSpace: "nowrap" as const,
+    verticalAlign: "top" as const,
+    backgroundColor: "#fff",
+  };
 
 const cellTd = {
     border: "1px solid #e5e7eb",
@@ -1255,32 +1256,61 @@ const cellTd = {
     backgroundColor: "#fcfcfc",
   };
 
-  const stickyTd = {
+  const stickyTd1 = {
     position: "sticky" as const,
     left: 0,
+    zIndex: 5,
     backgroundColor: "#fff",
-    zIndex: 1,
+    minWidth: 70,
+    width: 70,
   };
   
   const stickyTd2 = {
     position: "sticky" as const,
     left: 70,
+    zIndex: 5,
     backgroundColor: "#fff",
-    zIndex: 1,
+    minWidth: 140,
+    width: 140,
   };
   
   const stickyTd3 = {
     position: "sticky" as const,
-    left: 170,
+    left: 210,
+    zIndex: 5,
     backgroundColor: "#fff",
-    zIndex: 1,
+    minWidth: 100,
+    width: 100,
   };
   
-  const stickyTh = {
+  const stickyTh1 = {
     position: "sticky" as const,
+    left: 0,
     top: 0,
+    zIndex: 20,
     backgroundColor: "#f5f5f5",
-    zIndex: 3,
+    minWidth: 70,
+    width: 70,
+  };
+  
+  const stickyTh2 = {
+    position: "sticky" as const,
+    left: 70,
+    top: 0,
+    zIndex: 20,
+    backgroundColor: "#f5f5f5",
+    minWidth: 140,
+    width: 140,
+  };
+  
+  const stickyTh3 = {
+    position: "sticky" as const,
+    left: 210,
+    top: 0,
+    zIndex: 20,
+    backgroundColor: "#f5f5f5",
+    minWidth: 100,
+    width: 100,
   };
 
   const tagBlue = {
