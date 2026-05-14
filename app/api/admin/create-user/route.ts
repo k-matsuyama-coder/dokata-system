@@ -5,15 +5,15 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { lastName, firstName, email, role, companyName } = body;
 
-    if (!lastName || !firstName || !email) {
+    if (!firstName || !email) {
       return Response.json(
-        { error: "必須項目が不足しています" },
+        { error: "名前とメールアドレスは必須です" },
         { status: 400 }
       );
     }
-
+    
     const password = Math.random().toString(36).slice(-8);
-    const fullName = `${lastName} ${firstName}`;
+    const fullName = [lastName, firstName].filter(Boolean).join(" ");
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,

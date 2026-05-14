@@ -33,8 +33,8 @@ export default function NewUserPage() {
   }, []);
 
   const handleCreate = async () => {
-    if (!lastName || !firstName || !email) {
-      alert("すべて入力してください");
+    if (!firstName || !email) {
+      alert("名前とメールアドレスを入力してください");
       return;
     }
 
