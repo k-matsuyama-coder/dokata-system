@@ -113,9 +113,10 @@ export default function VehiclesPage() {
         >
           <option value="">分類を選択</option>
           <option value="ダンプ">ダンプ</option>
+          <option value="キャブ">キャブ</option>
+          <option value="連絡車">連絡車</option>
+          <option value="回送車">回送車</option>
           <option value="重機">重機</option>
-          <option value="ローラー">ローラー</option>
-          <option value="フィニッシャー">フィニッシャー</option>
           <option value="特殊車両">特殊車両</option>
           <option value="その他">その他</option>
         </select>
