@@ -954,58 +954,46 @@ const isShort =
     backgroundColor: "#f9fafb",
   }}
 >
+<div
+  style={{
+    marginTop: 4,
+    padding: 6,
+    borderRadius: 8,
+    backgroundColor: "#f9fafb",
+    fontSize: 11,
+  }}
+>
   <div
     style={{
-      fontSize: 11,
       fontWeight: 700,
+      marginBottom: 4,
       color: "#555",
     }}
   >
     車両
   </div>
 
-  {vehicles.map((vehicle) => {
-    const checked =
-      dailyInfo?.vehicle_names?.includes(
-        vehicle.vehicle_name
-      ) ?? false;
-
-    return (
-      <label
-        key={vehicle.id}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-          fontSize: 11,
-        }}
-      >
-        <input
-          type="checkbox"
-          checked={checked}
-          onChange={(e) => {
-            const current =
-              dailyInfo?.vehicle_names ?? [];
-
-            const next = e.target.checked
-              ? [...current, vehicle.vehicle_name]
-              : current.filter(
-                  (v) => v !== vehicle.vehicle_name
-                );
-
-            updateDailyInfo(
-              assignment.id,
-              date,
-              "vehicle_names",
-              next.join(",")
-            );
+  {dailyInfo?.vehicle_names?.length ? (
+    <div style={{ display: "grid", gap: 2 }}>
+      {dailyInfo.vehicle_names.map((name) => (
+        <div
+          key={name}
+          style={{
+            padding: "2px 6px",
+            borderRadius: 6,
+            backgroundColor: "#e0f2fe",
+            color: "#0369a1",
+            fontWeight: 700,
+            width: "fit-content",
           }}
-        />
-
-        {vehicle.vehicle_name}
-      </label>
-    );
-  })}
+        >
+          {name}
+        </div>
+      ))}
+    </div>
+  ) : (
+    <div style={{ color: "#999" }}>未選択</div>
+  )}
 </div>
 
 {cellMembers.map((member) => (
