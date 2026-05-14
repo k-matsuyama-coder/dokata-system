@@ -769,7 +769,7 @@ setMeetingTime("08:00");
           >
             <thead>
               <tr>
-              <th style={{ ...th, ...stickyTh }}>元請</th>
+              <th style={th}>元請</th>
 <th style={th}>現場名</th>
 <th style={th}>担当者</th>
 <th style={th}>連絡先</th>
@@ -788,11 +788,11 @@ setMeetingTime("08:00");
             <tbody>
             {assignments.map((assignment) => (
   <tr key={assignment.id}>
-    <td style={{ ...td, ...stickyTd }}>
+    <td style={td}>
   {assignment.contractor_name || "-"}
 </td>
 
-<td style={{ ...td, ...stickyTd2, fontWeight: 800 }}>
+<td style={{ ...td, fontWeight: 800 }}>
       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
         <span>{assignment.site_name || "-"}</span>
 
@@ -814,7 +814,7 @@ setMeetingTime("08:00");
       </div>
     </td>
 
-    <td style={{ ...td, ...stickyTd3 }}>
+    <td style={td}>
   {assignment.manager_name || "-"}
 </td>
 
