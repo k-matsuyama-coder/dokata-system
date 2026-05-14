@@ -180,6 +180,18 @@ const getCellStyle = (
 
     setEmployees(employeeData ?? []);
 
+    const { data: vehicleData, error: vehicleError } = await supabase
+  .from("vehicles")
+  .select("id, vehicle_name, vehicle_type")
+  .order("vehicle_name", { ascending: true });
+
+if (vehicleError) {
+  alert("車両取得失敗: " + vehicleError.message);
+  return;
+}
+
+setVehicles(vehicleData ?? []);
+
     const { data: contractorData } = await supabase
   .from("contractors")
   .select("id, name")
@@ -445,7 +457,7 @@ setMeetingTime("08:00");
       .upsert(payload, {
         onConflict: "assignment_id,work_date",
       })
-      .select("id, assignment_id, work_date, planned_count, detail")
+      .select("id, assignment_id, work_date, planned_count, detail, vehicle_names")
       .single();
   
     if (error || !data) {
@@ -473,13 +485,6 @@ setMeetingTime("08:00");
       .filter((employee) => !assignedNames.includes(employee.name))
       .map((employee) => employee.name);
   };
-
-  const { data: vehicleData } = await supabase
-  .from("vehicles")
-  .select("id, vehicle_name, vehicle_type")
-  .order("vehicle_name");
-
-setVehicles(vehicleData ?? []);
 
   const inputStyle = {
     width: "100%",
