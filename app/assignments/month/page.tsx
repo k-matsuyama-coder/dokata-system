@@ -946,16 +946,6 @@ const isShort =
 
 <div
   style={{
-    display: "grid",
-    gap: 4,
-    marginTop: 4,
-    padding: 6,
-    borderRadius: 8,
-    backgroundColor: "#f9fafb",
-  }}
->
-<div
-  style={{
     marginTop: 4,
     padding: 6,
     borderRadius: 8,
