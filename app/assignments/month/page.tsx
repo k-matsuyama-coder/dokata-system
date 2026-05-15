@@ -140,7 +140,8 @@ const getDateHeaderStyle = (date: string) => {
 const getCellStyle = (
   date: string,
   plannedCount: number | null | undefined,
-  memberCount: number
+  memberCount: number,
+  shiftType: string | null
 ) => {
   const dayType = getDayType(date);
   const isToday = date === todayString;
@@ -159,22 +160,20 @@ const getCellStyle = (
 
   return {
     ...cellTd,
-    backgroundColor: isShort
-      ? "#ffe5e5"
-      : isPerfect
-      ? "#e8f7e8"
-      : isToday
-      ? "#fffdf0"
-      : dayType === "sunday"
-      ? "#fff7f7"
-      : dayType === "saturday"
-      ? "#f7fbff"
-      : "#fcfcfc",
-    border: isShort
-      ? "2px solid #d11a2a"
-      : isPerfect
-      ? "2px solid #22c55e"
-      : cellTd.border,
+    backgroundColor:
+  shiftType === "night"
+    ? "#e5e7eb"
+    : isShort
+    ? "#ffe5e5"
+    : isPerfect
+    ? "#e8f7e8"
+    : isToday
+    ? "#fffdf0"
+    : dayType === "sunday"
+    ? "#fff7f7"
+    : dayType === "saturday"
+    ? "#f7fbff"
+    : "#fcfcfc",
   };
 };
 
@@ -796,11 +795,26 @@ setMeetingTime("08:00");
         : "#fff",
   }}
 >
-    <td style={{ ...td, ...stickyTd1 }}>
+<td
+  style={{
+    ...td,
+    ...stickyTd1,
+    backgroundColor:
+      assignment.shift_type === "night" ? "#e5e7eb" : "#fff",
+  }}
+>
   {assignment.contractor_name || "-"}
 </td>
 
-<td style={{ ...td, ...stickyTd2, fontWeight: 800 }}>
+<td
+  style={{
+    ...td,
+    ...stickyTd2,
+    fontWeight: 800,
+    backgroundColor:
+      assignment.shift_type === "night" ? "#e5e7eb" : "#fff",
+  }}
+>
       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
         <span>{assignment.site_name || "-"}</span>
 
@@ -822,7 +836,14 @@ setMeetingTime("08:00");
       </div>
     </td>
 
-    <td style={{ ...td, ...stickyTd3 }}>
+    <td
+  style={{
+    ...td,
+    ...stickyTd3,
+    backgroundColor:
+      assignment.shift_type === "night" ? "#e5e7eb" : "#fff",
+  }}
+>
   {assignment.manager_name || "-"}
 </td>
 
@@ -887,7 +908,12 @@ const isShort =
                               setSelectedEmployeeName(null);
                             }
                           }}
-                          style={getCellStyle(date, plannedCount, memberCount)}
+                          style={getCellStyle(
+                            date,
+                            plannedCount,
+                            memberCount,
+                            assignment.shift_type
+                          )}
                       >
                         <div style={{ display: "grid", gap: 4 }}>
                         <div
