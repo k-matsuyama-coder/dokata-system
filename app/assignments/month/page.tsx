@@ -764,11 +764,12 @@ setMeetingTime("08:00");
   style={{
     borderCollapse: "separate",
     borderSpacing: 0,
-              width: "100%",
-              backgroundColor: "#fff",
-              fontSize: 12,
-            }}
-          >
+    minWidth: 310 + days.length * 95,
+    width: "max-content",
+    backgroundColor: "#fff",
+    fontSize: 12,
+  }}
+>
             <thead>
               <tr>
               <th style={{ ...th, ...stickyTh1 }}>元請</th>
@@ -1294,7 +1295,7 @@ const cellTd = {
   const stickyTd1 = {
     position: "sticky" as const,
     left: 0,
-    zIndex: 20,
+    zIndex: 40,
     backgroundColor: "#fff",
     minWidth: 70,
     width: 70,
@@ -1303,7 +1304,7 @@ const cellTd = {
   const stickyTd2 = {
     position: "sticky" as const,
     left: 70,
-    zIndex: 20,
+    zIndex: 40,
     backgroundColor: "#fff",
     minWidth: 140,
     width: 140,
@@ -1312,7 +1313,7 @@ const cellTd = {
   const stickyTd3 = {
     position: "sticky" as const,
     left: 210,
-    zIndex: 20,
+    zIndex: 40,
     backgroundColor: "#fff",
     minWidth: 100,
     width: 100,
@@ -1322,7 +1323,7 @@ const cellTd = {
     position: "sticky" as const,
     left: 0,
     top: 0,
-    zIndex: 20,
+    zIndex: 80,
     backgroundColor: "#f5f5f5",
     minWidth: 70,
     width: 70,
@@ -1332,7 +1333,7 @@ const cellTd = {
     position: "sticky" as const,
     left: 70,
     top: 0,
-    zIndex: 20,
+    zIndex: 80,
     backgroundColor: "#f5f5f5",
     minWidth: 140,
     width: 140,
@@ -1342,7 +1343,7 @@ const cellTd = {
     position: "sticky" as const,
     left: 210,
     top: 0,
-    zIndex: 20,
+    zIndex: 80,
     backgroundColor: "#f5f5f5",
     minWidth: 100,
     width: 100,
