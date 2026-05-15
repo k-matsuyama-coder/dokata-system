@@ -763,7 +763,7 @@ setMeetingTime("08:00");
   style={{
     borderCollapse: "separate",
     borderSpacing: 0,
-    minWidth: 360 + days.length * 78,
+    minWidth: 360 + days.length * 105,
     width: "max-content",
     backgroundColor: "#fff",
     fontSize: 12,
@@ -1313,9 +1313,9 @@ const th = {
 const cellTd = {
     border: "1px solid #e5e7eb",
     padding: 6,
-    minWidth: 78,
-width: 78,
-maxWidth: 78,
+    minWidth: 105,
+width: 105,
+maxWidth: 105,
 height: 140,
     whiteSpace: "pre-wrap" as const,
     verticalAlign: "top" as const,
