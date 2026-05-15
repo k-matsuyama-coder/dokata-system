@@ -119,6 +119,7 @@ const getDateHeaderStyle = (date: string) => {
 
   return {
     ...th,
+    boxShadow: "0 2px 4px rgba(0,0,0,0.08)",
     backgroundColor: isToday
       ? "#fff3cd"
       : dayType === "sunday"
@@ -751,18 +752,18 @@ setMeetingTime("08:00");
 <div
   style={{
     overflowX: "auto",
+    overflowY: "auto",
     border: "1px solid #ddd",
     borderRadius: 12,
     backgroundColor: "#fff",
-    maxHeight: "75vh",
-    overflowY: "auto",
+    maxHeight: "78vh",
+    position: "relative",
   }}
 >
 <table
   style={{
     borderCollapse: "separate",
     borderSpacing: 0,
-              minWidth: 1700,
               width: "100%",
               backgroundColor: "#fff",
               fontSize: 12,
@@ -773,10 +774,7 @@ setMeetingTime("08:00");
               <th style={{ ...th, ...stickyTh1 }}>元請</th>
 <th style={{ ...th, ...stickyTh2 }}>現場名</th>
 <th style={{ ...th, ...stickyTh3 }}>担当者</th>
-<th style={th}>連絡先</th>
-<th style={th}>住所</th>
 <th style={th}>昼/夜</th>
-<th style={th}>集合時間</th>
 
                 {days.map((date) => (
                   <th key={date} style={getDateHeaderStyle(date)}>
@@ -788,7 +786,15 @@ setMeetingTime("08:00");
 
             <tbody>
             {assignments.map((assignment) => (
-  <tr key={assignment.id}>
+  <tr
+  key={assignment.id}
+  style={{
+    backgroundColor:
+      assignment.shift_type === "night"
+        ? "#f3f4f6"
+        : "#fff",
+  }}
+>
     <td style={{ ...td, ...stickyTd1 }}>
   {assignment.contractor_name || "-"}
 </td>
@@ -819,28 +825,23 @@ setMeetingTime("08:00");
   {assignment.manager_name || "-"}
 </td>
 
-    <td style={td}>{assignment.contact_phone || "-"}</td>
-
-    <td style={td}>
-      {assignment.address ? (
-        <a
-          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-            assignment.address
-          )}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ color: "#0a66c2", fontWeight: 700 }}
-        >
-          地図
-        </a>
-      ) : (
-        "-"
-      )}
-    </td>
-
-    <td style={td}>{assignment.shift_type === "night" ? "夜" : "昼"}</td>
-
-    <td style={td}>{assignment.meeting_time || "-"}</td>                  
+<td
+  style={{
+    ...td,
+    fontWeight: 800,
+    color:
+      assignment.shift_type === "night"
+        ? "#fff"
+        : "#111",
+    backgroundColor:
+      assignment.shift_type === "night"
+        ? "#374151"
+        : "#f3f4f6",
+    textAlign: "center",
+  }}
+>
+  {assignment.shift_type === "night" ? "夜" : "昼"}
+</td>
 
                   {days.map((date) => {
                     const cellMembers = getCellMembers(assignment.id, date);
@@ -927,7 +928,7 @@ const isShort =
     padding: "4px 6px",
     border: "1px solid #d1d5db",
     borderRadius: 6,
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: 700,
     backgroundColor: "#fff",
   }}
@@ -1102,6 +1103,28 @@ const isShort =
     {selectedDate || "日付未選択"}
   </div>
 
+  {selectedDate && (
+  <button
+    type="button"
+    onClick={() => {
+      setSelectedDate(null);
+      setSelectedEmployeeName(null);
+    }}
+    style={{
+      marginBottom: 10,
+      width: "100%",
+      padding: "8px 10px",
+      borderRadius: 8,
+      border: "1px solid #ccc",
+      backgroundColor: "#fff",
+      cursor: "pointer",
+      fontWeight: 700,
+    }}
+  >
+    全員表示
+  </button>
+)}
+
   <div style={{ display: "grid", gap: 6 }}>
     {(selectedDate
       ? getUnassignedEmployeesByDate(selectedDate)
@@ -1239,20 +1262,20 @@ const isShort =
 }
 
 const th = {
-    border: "1px solid #ddd",
-    padding: 8,
-    backgroundColor: "#f5f5f5",
-    whiteSpace: "nowrap" as const,
-    textAlign: "center" as const,
-    position: "sticky" as const,
-    top: 0,
-    zIndex: 2,
-    fontSize: 12,
-  };
+  border: "1px solid #ddd",
+  padding: 4,
+  backgroundColor: "#f5f5f5",
+  whiteSpace: "nowrap" as const,
+  textAlign: "center" as const,
+  position: "sticky" as const,
+  top: 0,
+  zIndex: 50,
+  fontSize: 12,
+};
 
   const td = {
     border: "1px solid #ccc",
-    padding: 8,
+    padding: 4,
     whiteSpace: "nowrap" as const,
     verticalAlign: "top" as const,
     backgroundColor: "#fff",
@@ -1261,7 +1284,7 @@ const th = {
 const cellTd = {
     border: "1px solid #e5e7eb",
     padding: 6,
-    minWidth: 150,
+    minWidth: 95,
     height: 140,
     whiteSpace: "pre-wrap" as const,
     verticalAlign: "top" as const,
@@ -1271,7 +1294,7 @@ const cellTd = {
   const stickyTd1 = {
     position: "sticky" as const,
     left: 0,
-    zIndex: 5,
+    zIndex: 20,
     backgroundColor: "#fff",
     minWidth: 70,
     width: 70,
@@ -1280,7 +1303,7 @@ const cellTd = {
   const stickyTd2 = {
     position: "sticky" as const,
     left: 70,
-    zIndex: 5,
+    zIndex: 20,
     backgroundColor: "#fff",
     minWidth: 140,
     width: 140,
@@ -1289,7 +1312,7 @@ const cellTd = {
   const stickyTd3 = {
     position: "sticky" as const,
     left: 210,
-    zIndex: 5,
+    zIndex: 20,
     backgroundColor: "#fff",
     minWidth: 100,
     width: 100,
