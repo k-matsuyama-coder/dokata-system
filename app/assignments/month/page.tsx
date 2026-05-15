@@ -763,7 +763,7 @@ setMeetingTime("08:00");
   style={{
     borderCollapse: "separate",
     borderSpacing: 0,
-    minWidth: 310 + days.length * 95,
+    minWidth: 360 + days.length * 78,
     width: "max-content",
     backgroundColor: "#fff",
     fontSize: 12,
@@ -958,6 +958,7 @@ const isShort =
     fontSize: 11,
     fontWeight: 700,
     backgroundColor: "#fff",
+    boxSizing: "border-box",
   }}
 />
 
@@ -979,6 +980,7 @@ const isShort =
     borderRadius: 6,
     fontSize: 11,
     backgroundColor: "#fff",
+    boxSizing: "border-box",
   }}
 />
 
@@ -1111,7 +1113,7 @@ const isShort =
     position: "fixed",
     right: 16,
     top: 90,
-    width: 240,
+    width: 200,
     maxHeight: "75vh",
     overflowY: "auto",
     border: "1px solid #ddd",
@@ -1311,8 +1313,10 @@ const th = {
 const cellTd = {
     border: "1px solid #e5e7eb",
     padding: 6,
-    minWidth: 95,
-    height: 140,
+    minWidth: 78,
+width: 78,
+maxWidth: 78,
+height: 140,
     whiteSpace: "pre-wrap" as const,
     verticalAlign: "top" as const,
     backgroundColor: "#fcfcfc",
