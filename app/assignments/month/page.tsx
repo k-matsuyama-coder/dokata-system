@@ -77,6 +77,7 @@ const [showAddModal, setShowAddModal] = useState(false);
   const [draggingSiteMemberId, setDraggingSiteMemberId] = useState<string | null>(null);
   const [selectedEmployeeName, setSelectedEmployeeName] = useState<string | null>(null);
 const [selectedSiteMemberId, setSelectedSiteMemberId] = useState<string | null>(null);
+const [selectedDate, setSelectedDate] = useState<string | null>(null);
 const [vehicles, setVehicles] = useState<
   {
     id: string;
@@ -871,7 +872,9 @@ const isShort =
                           }
                         }}
                         onClick={() => {
-                            if (selectedSiteMemberId) {
+                          setSelectedDate(date);
+                        
+                          if (selectedSiteMemberId) {
                               moveSiteMember(selectedSiteMemberId, assignment.id, date);
                               setSelectedSiteMemberId(null);
                               return;
@@ -1071,55 +1074,64 @@ const isShort =
                   })}
                 </tr>
               ))}
-
-              <tr>
-                <td style={{ ...td, fontWeight: 800 }} colSpan={7}>
-                  未配置メンバー
-                </td>
-
-                {days.map((date) => {
-                  const unassigned = getUnassignedEmployeesByDate(date);
-
-                  return (
-                    <td key={date} style={cellTd}>
-                      {unassigned.length === 0 ? (
-                        "-"
-                      ) : (
-                        <div style={{ display: "grid", gap: 4 }}>
-                          {unassigned.map((name) => (
-                            <div
-                              key={name}
-                              draggable
-                              onDragStart={() => setDraggingEmployeeName(name)}
-                              onDragEnd={() => setDraggingEmployeeName(null)}
-                              onClick={() => {
-                                setSelectedEmployeeName(name);
-                                setSelectedSiteMemberId(null);
-                              }}
-                              style={{
-                                padding: "5px 8px",
-                                borderRadius: 999,
-                                backgroundColor:
-                                  selectedEmployeeName === name ? "#dbeafe" : "#fff7ed",
-                                border: "1px solid #fed7aa",
-                                cursor: "grab",
-                                whiteSpace: "nowrap",
-                                fontWeight: 700,
-                                fontSize: 12,
-                              }}
-                            >
-                              {name}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </td>
-                  );
-                })}
-              </tr>
             </tbody>
           </table>
         </div>
+
+        <div
+  style={{
+    position: "fixed",
+    right: 16,
+    top: 90,
+    width: 240,
+    maxHeight: "75vh",
+    overflowY: "auto",
+    border: "1px solid #ddd",
+    borderRadius: 12,
+    backgroundColor: "#fff",
+    padding: 12,
+    zIndex: 1000,
+    boxShadow: "0 6px 18px rgba(0,0,0,0.12)",
+  }}
+>
+  <div style={{ fontWeight: 800, marginBottom: 6 }}>
+    {selectedDate ? "未配置メンバー" : "全メンバー"}
+  </div>
+
+  <div style={{ fontSize: 12, color: "#666", marginBottom: 10 }}>
+    {selectedDate || "日付未選択"}
+  </div>
+
+  <div style={{ display: "grid", gap: 6 }}>
+    {(selectedDate
+      ? getUnassignedEmployeesByDate(selectedDate)
+      : employees.map((employee) => employee.name)
+    ).map((name) => (
+      <div
+        key={name}
+        draggable
+        onDragStart={() => setDraggingEmployeeName(name)}
+        onDragEnd={() => setDraggingEmployeeName(null)}
+        onClick={() => {
+          setSelectedEmployeeName(name);
+          setSelectedSiteMemberId(null);
+        }}
+        style={{
+          padding: "8px 10px",
+          borderRadius: 999,
+          backgroundColor:
+            selectedEmployeeName === name ? "#dbeafe" : "#fff7ed",
+          border: "1px solid #fed7aa",
+          cursor: "grab",
+          fontWeight: 700,
+          fontSize: 13,
+        }}
+      >
+        {name}
+      </div>
+    ))}
+  </div>
+</div>
 
         {showVehicleModal && vehicleTarget && (
   <div
