@@ -1,11 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import BackButton from "@/app/components/BackButton";
 
 const menuGroups = [
   {
-    title: "配置管理",
+    title: "配置",
     items: [
       { label: "月間番割", href: "/assignments/month", icon: "📅", desc: "月別の配置を確認・編集" },
       { label: "番割", href: "/assignments", icon: "📋", desc: "日別の番割入力" },
@@ -13,7 +14,7 @@ const menuGroups = [
     ],
   },
   {
-    title: "人員管理",
+    title: "人員",
     items: [
       { label: "社員一覧", href: "/admin/users", icon: "👷", desc: "社員の確認・追加" },
       { label: "会社管理", href: "/admin/companies", icon: "🏢", desc: "所属会社の管理" },
@@ -37,16 +38,39 @@ const menuGroups = [
 ];
 
 export default function AdminPage() {
+  const [activeTab, setActiveTab] = useState("配置");
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+
+    window.addEventListener("resize", checkMobile);
+
+    return () =>
+      window.removeEventListener(
+        "resize",
+        checkMobile
+      );
+  }, []);
+
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#f5f6f8" }}>
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "240px 1fr",
+          gridTemplateColumns: isMobile
+  ? "1fr"
+  : "240px 1fr",
           minHeight: "100vh",
         }}
       >
-        <aside
+        {!isMobile && (
+  <aside
+  
           style={{
             backgroundColor: "#111827",
             color: "#fff",
@@ -92,21 +116,66 @@ export default function AdminPage() {
             ))}
           </div>
         </aside>
+        )}
 
         <main style={{ padding: 24 }}>
           <BackButton />
 
           <h1>管理者画面</h1>
+
+          <div
+  style={{
+    display: "flex",
+    gap: 8,
+    overflowX: "auto",
+    marginBottom: 20,
+    paddingBottom: 4,
+  }}
+>
+  {menuGroups.map((group) => (
+    <button
+      key={group.title}
+      type="button"
+      onClick={() => setActiveTab(group.title)}
+      style={{
+        border: "none",
+        padding: "10px 16px",
+        borderRadius: 999,
+        cursor: "pointer",
+        whiteSpace: "nowrap",
+        fontWeight: 700,
+        backgroundColor:
+          activeTab === group.title
+            ? "#111"
+            : "#e5e7eb",
+        color:
+          activeTab === group.title
+            ? "#fff"
+            : "#111",
+      }}
+    >
+      {group.title}
+    </button>
+  ))}
+</div>
+
           <p style={{ color: "#666" }}>よく使う機能を選択してください。</p>
 
-          {menuGroups.map((group) => (
+          {menuGroups
+  .filter(
+    (group) =>
+      group.title === activeTab
+  )
+  .map((group) => (
             <section key={group.title} style={{ marginTop: 28 }}>
               <h2>{group.title}</h2>
 
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                  gridTemplateColumns: isMobile
+  ? "1fr"
+  : "repeat(auto-fit, minmax(220px, 1fr))",
                   gap: 14,
                 }}
               >
