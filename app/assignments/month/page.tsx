@@ -921,7 +921,14 @@ const isShort =
                             assignment.shift_type
                           )}
                       >
-                        <div style={{ display: "grid", gap: 4 }}>
+                        <div
+  style={{
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 4,
+    alignItems: "center",
+  }}
+>
                         <div
   style={{
     fontSize: 11,
@@ -1075,15 +1082,15 @@ const isShort =
     }}
     onDoubleClick={() => deleteSiteMember(member.id)}
     style={{
-      padding: "2px 8px",
-      borderRadius: 8,
+      padding: "2px 6px",
+      borderRadius: 6,
       backgroundColor:
         selectedSiteMemberId === member.id ? "#dbeafe" : "#eef2ff",
       border: "1px solid #c7d2fe",
       cursor: "grab",
       fontWeight: 700,
       fontSize: 11,
-      lineHeight: 1.2,
+      width: "fit-content",
     }}
   >
     <div
