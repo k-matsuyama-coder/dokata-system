@@ -120,6 +120,9 @@ const getDateHeaderStyle = (date: string) => {
   return {
     ...th,
     boxShadow: "0 2px 4px rgba(0,0,0,0.08)",
+    minWidth: 105,
+width: 105,
+maxWidth: 105,
     backgroundColor: isToday
       ? "#fff3cd"
       : dayType === "sunday"
@@ -507,7 +510,13 @@ setMeetingTime("08:00");
     <div style={{ padding: 16 }}>
       <BackButton />
 
-      <div style={{ maxWidth: 1500, margin: "0 auto" }}>
+      <div
+  style={{
+    maxWidth: 1500,
+    margin: "0 auto",
+    paddingRight: 230,
+  }}
+>
         <h1>月間番割表</h1>
 
         <div style={{ marginBottom: 16 }}>
@@ -1310,13 +1319,14 @@ const th = {
     backgroundColor: "#fff",
   };
 
-const cellTd = {
+  const cellTd = {
     border: "1px solid #e5e7eb",
     padding: 6,
     minWidth: 105,
-width: 105,
-maxWidth: 105,
-height: 140,
+    width: 105,
+    maxWidth: 105,
+    height: 140,
+    boxSizing: "border-box" as const,
     whiteSpace: "pre-wrap" as const,
     verticalAlign: "top" as const,
     backgroundColor: "#fcfcfc",
