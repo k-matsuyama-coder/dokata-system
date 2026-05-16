@@ -1086,8 +1086,14 @@ const isShort =
       lineHeight: 1.2,
     }}
   >
-    <div style={{ display: "grid", gap: 0 }}>
-      <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+    <div
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: 4,
+    flexWrap: "wrap",
+  }}
+>
         {member.is_driver && (
           <span style={tagBlue}>運転</span>
         )}
@@ -1101,8 +1107,7 @@ const isShort =
         )}
       </div>
 
-      <div>{member.employee_name}</div>
-    </div>
+      <span>{member.employee_name}</span>
   </div>
 ))}
                         </div>
