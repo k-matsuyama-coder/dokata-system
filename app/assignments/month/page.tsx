@@ -1075,17 +1075,18 @@ const isShort =
     }}
     onDoubleClick={() => deleteSiteMember(member.id)}
     style={{
-      padding: "4px 8px",
-      borderRadius: 10,
+      padding: "2px 8px",
+      borderRadius: 8,
       backgroundColor:
         selectedSiteMemberId === member.id ? "#dbeafe" : "#eef2ff",
       border: "1px solid #c7d2fe",
       cursor: "grab",
       fontWeight: 700,
       fontSize: 11,
+      lineHeight: 1.2,
     }}
   >
-    <div style={{ display: "grid", gap: 2 }}>
+    <div style={{ display: "grid", gap: 0 }}>
       <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
         {member.is_driver && (
           <span style={tagBlue}>運転</span>
