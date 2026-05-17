@@ -921,14 +921,7 @@ const isShort =
                             assignment.shift_type
                           )}
                       >
-                        <div
-  style={{
-    display: "flex",
-    flexWrap: "wrap",
-    gap: 4,
-    alignItems: "center",
-  }}
->
+                        <div style={{ display: "grid", gap: 4 }}>
                         <div
   style={{
     fontSize: 11,
@@ -951,7 +944,7 @@ const isShort =
   </div>  
 </div>
 
-                        　　　　　　　　　　　　　　　　<input
+<input
   type="number"
   value={dailyInfo?.planned_count ?? ""}
   onChange={(e) =>
@@ -999,7 +992,7 @@ const isShort =
 
 <div
   style={{
-    marginTop: 4,
+    marginTop: 0,
     padding: 6,
     borderRadius: 8,
     backgroundColor: "#f9fafb",
@@ -1069,7 +1062,15 @@ const isShort =
     <div style={{ color: "#999" }}>未選択</div>
   )}
 </div>
-
+<div
+  style={{
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 4,
+    alignItems: "center",
+    marginTop: 4,
+  }}
+>
 {cellMembers.map((member) => (
   <div
     key={member.id}
@@ -1117,6 +1118,7 @@ const isShort =
       <span>{member.employee_name}</span>
   </div>
 ))}
+</div>
                         </div>
                       </td>
                     );
@@ -1334,6 +1336,7 @@ const th = {
     padding: 6,
     minWidth: 150,
 height: 140,
+boxSizing: "border-box" as const,
     whiteSpace: "pre-wrap" as const,
     verticalAlign: "top" as const,
     backgroundColor: "#fcfcfc",
