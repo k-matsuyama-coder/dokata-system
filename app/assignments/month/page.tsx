@@ -1365,8 +1365,8 @@ boxSizing: "border-box" as const,
     left: 210,
     zIndex: 40,
     backgroundColor: "#fff",
-    minWidth: 100,
-    width: 100,
+    minWidth: 70,
+    width: 70,
   };
   
   const stickyTh1 = {
@@ -1395,8 +1395,8 @@ boxSizing: "border-box" as const,
     top: 0,
     zIndex: 80,
     backgroundColor: "#f5f5f5",
-    minWidth: 100,
-    width: 100,
+    minWidth: 70,
+    width: 70,
   };
 
   const tagBlue = {
