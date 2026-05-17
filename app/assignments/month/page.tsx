@@ -291,6 +291,41 @@ setContractorContacts(contactData ?? []);
     checkAdmin();
   }, [month, days.length]);
 
+  useEffect(() => {
+    const channel = supabase
+      .channel("monthly-assignments-realtime")
+  
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "assignment_site_members",
+        },
+        () => {
+          fetchData();
+        }
+      )
+  
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "assignment_site_daily_infos",
+        },
+        () => {
+          fetchData();
+        }
+      )
+  
+      .subscribe();
+  
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [month]);
+
   const handleAddSite = async () => {
     if (!siteName || !contractorName) {
       alert("元請と現場名を入力してください");
