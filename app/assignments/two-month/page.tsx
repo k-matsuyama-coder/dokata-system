@@ -555,6 +555,7 @@ setContractorContacts(contactData ?? []);
             <td key={date} style={td}>
               <input
                 type="number"
+                inputMode="numeric"
                 value={count}
                 onChange={(e) =>
                   updatePlannedCount(
@@ -564,13 +565,15 @@ setContractorContacts(contactData ?? []);
                   )
                 }
                 style={{
-                  width: 44,
-                  padding: 4,
-                  border: "1px solid #ccc",
-                  borderRadius: 4,
-                  textAlign: "center",
-                  fontSize: 12,
-                }}
+                    width: 44,
+                    padding: 4,
+                    border: "1px solid #ccc",
+                    borderRadius: 4,
+                    textAlign: "center",
+                    fontSize: 12,
+                    appearance: "textfield",
+                    MozAppearance: "textfield",
+                  }}
               />
             </td>
           );
@@ -669,3 +672,14 @@ const smallButton = {
     }
   `}</style>
 </>
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
