@@ -175,12 +175,6 @@ setContractorContacts(contactData ?? []);
       .reduce((sum, d) => sum + (d.planned_count ?? 0), 0);
   };
 
-  const getDailyTotal = (workDate: string) => {
-    return dailyInfos
-      .filter((d) => d.work_date === workDate)
-      .reduce((sum, d) => sum + (d.planned_count ?? 0), 0);
-  };
-
   const handleAddSite = async () => {
     if (!siteName || !contractorName) {
       alert("元請と現場名を入力してください");
