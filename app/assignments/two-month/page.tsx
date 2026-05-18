@@ -17,9 +17,32 @@ type Assignment = {
   contractor_name: string | null;
 };
 
+type Contractor = {
+    id: string;
+    name: string;
+  };
+  
+  type ContractorContact = {
+    id: string;
+    contractor_id: string;
+    manager_name: string;
+    contact_phone: string | null;
+  };
+
 export default function TwoMonthPage() {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [dailyInfos, setDailyInfos] = useState<DailyInfo[]>([]);
+  const [siteName, setSiteName] = useState("");
+const [contractorName, setContractorName] = useState("");
+const [managerName, setManagerName] = useState("");
+const [contactPhone, setContactPhone] = useState("");
+const [address, setAddress] = useState("");
+const [shiftType, setShiftType] = useState("day");
+const [meetingTime, setMeetingTime] = useState("08:00");
+const [showAddModal, setShowAddModal] = useState(false);
+
+const [contractors, setContractors] = useState<Contractor[]>([]);
+const [contractorContacts, setContractorContacts] = useState<ContractorContact[]>([]);
 
   const days = useMemo(() => {
     const start = new Date();
@@ -35,6 +58,18 @@ export default function TwoMonthPage() {
   const fetchData = async () => {
     const startDate = days[0];
     const endDate = days[days.length - 1];
+    const { data: contractorData } = await supabase
+  .from("contractors")
+  .select("id, name")
+  .order("name", { ascending: true });
+
+setContractors(contractorData ?? []);
+
+const { data: contactData } = await supabase
+  .from("contractor_contacts")
+  .select("id, contractor_id, manager_name, contact_phone");
+
+setContractorContacts(contactData ?? []);
 
     const { data: assignmentData, error: assignmentError } = await supabase
       .from("assignments")
@@ -81,6 +116,41 @@ export default function TwoMonthPage() {
       )?.planned_count ?? ""
     );
   };
+
+  const handleAddSite = async () => {
+    if (!siteName || !contractorName) {
+      alert("元請と現場名を入力してください");
+      return;
+    }
+  
+    const { error } = await supabase.from("assignments").insert({
+      assignment_date: days[0],
+      contractor_name: contractorName,
+      site_name: siteName,
+      shift_type: shiftType,
+      manager_name: managerName,
+      contact_phone: contactPhone,
+      address,
+      meeting_time: meetingTime,
+    });
+  
+    if (error) {
+      alert("現場追加失敗: " + error.message);
+      return;
+    }
+  
+    setSiteName("");
+    setContractorName("");
+    setManagerName("");
+    setContactPhone("");
+    setAddress("");
+    setShiftType("day");
+    setMeetingTime("08:00");
+    setShowAddModal(false);
+  
+    fetchData();
+  };
+
   const updatePlannedCount = async (
     assignmentId: string,
     workDate: string,
@@ -130,6 +200,212 @@ export default function TwoMonthPage() {
       <BackButton />
 
       <h1>2ヶ月工程表</h1>
+
+      <div style={{ marginBottom: 16 }}>
+  <button
+    type="button"
+    onClick={() => setShowAddModal(true)}
+    style={{
+      padding: "10px 16px",
+      borderRadius: 8,
+      border: "none",
+      backgroundColor: "#111",
+      color: "#fff",
+      fontWeight: 700,
+      cursor: "pointer",
+    }}
+  >
+    ＋ 現場追加
+  </button>
+</div>
+
+{showAddModal && (
+  <div
+    onClick={() => setShowAddModal(false)}
+    style={{
+      position: "fixed",
+      inset: 0,
+      backgroundColor: "rgba(0,0,0,0.45)",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      zIndex: 9999,
+      padding: 16,
+    }}
+  >
+    <div
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        width: "100%",
+        maxWidth: 520,
+        backgroundColor: "#fff",
+        borderRadius: 16,
+        padding: 20,
+        display: "grid",
+        gap: 10,
+      }}
+    >
+      <h2 style={{ margin: 0 }}>現場追加</h2>
+
+      <input
+        list="contractors"
+        value={contractorName}
+        onChange={(e) => {
+          setContractorName(e.target.value);
+          setManagerName("");
+          setContactPhone("");
+        }}
+        placeholder="元請"
+        style={inputStyle}
+      />
+
+      <datalist id="contractors">
+        {contractors.map((contractor) => (
+          <option key={contractor.id} value={contractor.name} />
+        ))}
+      </datalist>
+
+      <input
+        value={siteName}
+        onChange={(e) => setSiteName(e.target.value)}
+        placeholder="現場名"
+        style={inputStyle}
+      />
+
+      <input
+        list="manager-list"
+        value={managerName}
+        onChange={(e) => {
+          const value = e.target.value;
+          setManagerName(value);
+
+          const contractor = contractors.find(
+            (c) => c.name === contractorName
+          );
+
+          if (!contractor) return;
+
+          const contact = contractorContacts.find(
+            (c) =>
+              c.contractor_id === contractor.id &&
+              c.manager_name === value
+          );
+
+          if (contact) {
+            setContactPhone(contact.contact_phone ?? "");
+          }
+        }}
+        placeholder="担当者"
+        style={inputStyle}
+      />
+
+      <datalist id="manager-list">
+        {contractorContacts
+          .filter((contact) => {
+            const contractor = contractors.find(
+              (c) => c.id === contact.contractor_id
+            );
+
+            return contractor?.name === contractorName;
+          })
+          .map((contact) => (
+            <option key={contact.id} value={contact.manager_name} />
+          ))}
+      </datalist>
+
+      <input
+        value={contactPhone}
+        onChange={(e) => setContactPhone(e.target.value)}
+        placeholder="連絡先"
+        style={inputStyle}
+      />
+
+      <input
+        value={address}
+        onChange={(e) => setAddress(e.target.value)}
+        placeholder="住所"
+        style={inputStyle}
+      />
+
+      <div style={{ display: "flex", gap: 8 }}>
+        <button
+          type="button"
+          onClick={() => {
+            setShiftType("day");
+            setMeetingTime("08:00");
+          }}
+          style={{
+            flex: 1,
+            padding: 10,
+            borderRadius: 8,
+            border: shiftType === "day" ? "2px solid #111" : "1px solid #ccc",
+            backgroundColor: shiftType === "day" ? "#f3f3f3" : "#fff",
+            fontWeight: 700,
+          }}
+        >
+          昼
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setShiftType("night");
+            setMeetingTime("20:00");
+          }}
+          style={{
+            flex: 1,
+            padding: 10,
+            borderRadius: 8,
+            border: shiftType === "night" ? "2px solid #111" : "1px solid #ccc",
+            backgroundColor: shiftType === "night" ? "#f3f3f3" : "#fff",
+            fontWeight: 700,
+          }}
+        >
+          夜
+        </button>
+      </div>
+
+      <input
+        type="time"
+        value={meetingTime}
+        onChange={(e) => setMeetingTime(e.target.value)}
+        style={inputStyle}
+      />
+
+      <div style={{ display: "flex", gap: 8 }}>
+        <button
+          type="button"
+          onClick={() => setShowAddModal(false)}
+          style={{
+            flex: 1,
+            padding: 12,
+            borderRadius: 8,
+            border: "1px solid #ccc",
+            backgroundColor: "#fff",
+          }}
+        >
+          キャンセル
+        </button>
+
+        <button
+          type="button"
+          onClick={handleAddSite}
+          style={{
+            flex: 1,
+            padding: 12,
+            border: "none",
+            borderRadius: 8,
+            backgroundColor: "#111",
+            color: "#fff",
+            fontWeight: 700,
+          }}
+        >
+          追加
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
       <div
         style={{
@@ -210,6 +486,15 @@ export default function TwoMonthPage() {
     </div>
   );
 }
+
+const inputStyle = {
+    width: "100%",
+    padding: 10,
+    border: "1px solid #ccc",
+    borderRadius: 8,
+    fontSize: 15,
+    boxSizing: "border-box" as const,
+  };
 
 const th = {
   border: "1px solid #ddd",
