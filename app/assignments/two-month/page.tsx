@@ -32,6 +32,22 @@ type Contractor = {
 export default function TwoMonthPage() {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [dailyInfos, setDailyInfos] = useState<DailyInfo[]>([]);
+  const [baseMonth, setBaseMonth] = useState(() => {
+    const now = new Date();
+    let year = now.getFullYear();
+    let month = now.getMonth() + 1;
+  
+    if (month % 2 !== 0) {
+      month -= 1;
+    }
+  
+    if (month === 0) {
+      month = 12;
+      year -= 1;
+    }
+  
+    return `${year}-${String(month).padStart(2, "0")}`;
+  });
   const [siteName, setSiteName] = useState("");
 const [contractorName, setContractorName] = useState("");
 const [managerName, setManagerName] = useState("");
@@ -44,16 +60,17 @@ const [showAddModal, setShowAddModal] = useState(false);
 const [contractors, setContractors] = useState<Contractor[]>([]);
 const [contractorContacts, setContractorContacts] = useState<ContractorContact[]>([]);
 
-  const days = useMemo(() => {
-    const start = new Date();
-
+const days = useMemo(() => {
+    const [year, month] = baseMonth.split("-").map(Number);
+    const start = new Date(year, month - 1, 1);
+  
     return Array.from({ length: 62 }, (_, i) => {
       const d = new Date(start);
       d.setDate(start.getDate() + i);
-
+  
       return d.toISOString().slice(0, 10);
     });
-  }, []);
+  }, [baseMonth]);
 
   const fetchData = async () => {
     const startDate = days[0];
@@ -107,7 +124,7 @@ setContractorContacts(contactData ?? []);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [baseMonth]);
 
   const getPlannedCount = (assignmentId: string, workDate: string) => {
     return (
@@ -200,6 +217,44 @@ setContractorContacts(contactData ?? []);
       <BackButton />
 
       <h1>2ヶ月工程表</h1>
+
+      <div
+  style={{
+    display: "flex",
+    gap: 8,
+    alignItems: "center",
+    marginBottom: 16,
+    flexWrap: "wrap",
+  }}
+>
+  <button
+    type="button"
+    onClick={() => {
+      const [year, month] = baseMonth.split("-").map(Number);
+      const d = new Date(year, month - 3, 1);
+      setBaseMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
+    }}
+    style={smallButton}
+  >
+    前の2ヶ月
+  </button>
+
+  <strong>
+    {baseMonth.replace("-", "年")}月〜
+  </strong>
+
+  <button
+    type="button"
+    onClick={() => {
+      const [year, month] = baseMonth.split("-").map(Number);
+      const d = new Date(year, month + 1, 1);
+      setBaseMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
+    }}
+    style={smallButton}
+  >
+    次の2ヶ月
+  </button>
+</div>
 
       <div style={{ marginBottom: 16 }}>
   <button
@@ -530,3 +585,12 @@ const stickyTd = {
   zIndex: 1,
   minWidth: 180,
 };
+
+const smallButton = {
+    padding: "8px 12px",
+    borderRadius: 8,
+    border: "1px solid #ccc",
+    backgroundColor: "#fff",
+    cursor: "pointer",
+    fontWeight: 700,
+  };
