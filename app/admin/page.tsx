@@ -10,6 +10,7 @@ const menuGroups = [
     items: [
       { label: "月間番割", href: "/assignments/month", icon: "📅", desc: "月別の配置を確認・編集" },
       { label: "番割", href: "/assignments", icon: "📋", desc: "日別の番割入力" },
+      { label: "2ヶ月工程表", href: "/assignments/two-month", icon: "🗓️", desc: "2ヶ月工程の確認・編集" },
       { label: "現場管理", href: "/admin/sites", icon: "🏗️", desc: "現場情報の管理" },
     ],
   },

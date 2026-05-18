@@ -138,6 +138,34 @@ setContractorContacts(contactData ?? []);
     );
   };
 
+  const getMonthlyTotal = (
+    assignmentId: string,
+    targetMonthIndex: 0 | 1
+  ) => {
+    const [baseYear, baseMonthNum] = baseMonth.split("-").map(Number);
+  
+    const targetDate = new Date(
+      baseYear,
+      baseMonthNum - 1 + targetMonthIndex,
+      1
+    );
+  
+    const targetYear = targetDate.getFullYear();
+    const targetMonth = targetDate.getMonth() + 1;
+  
+    return dailyInfos
+      .filter((d) => {
+        const [year, month] = d.work_date.split("-").map(Number);
+  
+        return (
+          d.assignment_id === assignmentId &&
+          year === targetYear &&
+          month === targetMonth
+        );
+      })
+      .reduce((sum, d) => sum + (d.planned_count ?? 0), 0);
+  };
+
   const handleAddSite = async () => {
     if (!siteName || !contractorName) {
       alert("元請と現場名を入力してください");
@@ -484,7 +512,9 @@ setContractorContacts(contactData ?? []);
         >
           <thead>
             <tr>
-              <th style={stickyTh}>現場名</th>
+            <th style={stickyTh}>現場名</th>
+<th style={totalTh}>前月合計</th>
+<th style={totalTh}>後月合計</th>
 
               {days.map((date) => (
                 <th key={date} style={th}>
@@ -498,16 +528,24 @@ setContractorContacts(contactData ?? []);
   {assignments.map((assignment) => (
     <tr key={assignment.id}>
       <td style={stickyTd}>
-        <div style={{ fontWeight: 800 }}>
-          {assignment.site_name || "-"}
-        </div>
+  <div style={{ fontWeight: 800 }}>
+    {assignment.site_name || "-"}
+  </div>
 
-        <div style={{ fontSize: 11, color: "#666" }}>
-          {assignment.contractor_name || "-"}
-        </div>
-      </td>
+  <div style={{ fontSize: 11, color: "#666" }}>
+    {assignment.contractor_name || "-"}
+  </div>
+</td>
 
-      {days.map((date) => {
+<td style={totalTd}>
+  {getMonthlyTotal(assignment.id, 0)}
+</td>
+
+<td style={totalTd}>
+  {getMonthlyTotal(assignment.id, 1)}
+</td>
+
+{days.map((date) => {
         const count = getPlannedCount(
           assignment.id,
           date
@@ -597,4 +635,23 @@ const smallButton = {
     backgroundColor: "#fff",
     cursor: "pointer",
     fontWeight: 700,
+  };
+
+  const totalTh = {
+    border: "1px solid #ddd",
+    padding: 6,
+    backgroundColor: "#eef2ff",
+    whiteSpace: "nowrap" as const,
+    textAlign: "center" as const,
+    minWidth: 70,
+    fontWeight: 800,
+  };
+  
+  const totalTd = {
+    border: "1px solid #ddd",
+    padding: 6,
+    textAlign: "center" as const,
+    minWidth: 70,
+    fontWeight: 800,
+    backgroundColor: "#f8fafc",
   };
