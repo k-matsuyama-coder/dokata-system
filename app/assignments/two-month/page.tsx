@@ -138,6 +138,15 @@ setContractorContacts(contactData ?? []);
     );
   };
 
+  const getDailyTotal = (workDate: string) => {
+    return dailyInfos
+      .filter((d) => d.work_date === workDate)
+      .reduce(
+        (sum, d) => sum + (d.planned_count ?? 0),
+        0
+      );
+  };
+
   const getMonthlyTotal = (
     assignmentId: string,
     targetMonthIndex: 0 | 1
@@ -517,21 +526,43 @@ setContractorContacts(contactData ?? []);
           }}
         >
           <thead>
-            <tr>
-            <th style={stickyTh}>現場名</th>
-<th style={totalTh}>前月合計</th>
-<th style={totalTh}>後月合計</th>
+  {/* 日付ヘッダー */}
+  <tr>
+    <th style={stickyTh}>現場名</th>
 
-{days.map((date) => (
-  <th key={date} style={th}>
-    <div>{date.slice(5).replace("-", "/")}</div>
-    <div style={{ fontSize: 11, color: "#d11a2a", fontWeight: 800 }}>
-      合計 {getDailyTotal(date)}
-    </div>
-  </th>
-))}
-            </tr>
-          </thead>
+    <th style={th}>前月合計</th>
+    <th style={th}>後月合計</th>
+
+    {days.map((date) => (
+      <th key={date} style={th}>
+        {date.slice(5).replace("-", "/")}
+      </th>
+    ))}
+  </tr>
+
+  {/* 日別合計 */}
+  <tr>
+    <th style={stickyTh}>
+      日別合計
+    </th>
+
+    <th style={th}></th>
+    <th style={th}></th>
+
+    {days.map((date) => (
+      <th
+        key={date}
+        style={{
+          ...th,
+          color: "#d11a2a",
+          fontWeight: 800,
+        }}
+      >
+        {getDailyTotal(date)}
+      </th>
+    ))}
+  </tr>
+</thead>
 
           <tbody>
   {assignments.map((assignment) => (
