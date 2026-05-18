@@ -184,18 +184,3 @@ const stickyTd = {
   zIndex: 1,
   minWidth: 180,
 };
-          {assignment.site_name}
-        </td>
-
-        {days.map((date) => (
-          <td key={date}>
-            {getPlannedCount(
-              assignment.id,
-              date
-            )}
-          </td>
-        ))}
-      </tr>
-    ))}
-  </tbody>
-</table>
