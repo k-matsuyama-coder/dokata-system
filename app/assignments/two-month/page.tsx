@@ -527,11 +527,33 @@ setContractorContacts(contactData ?? []);
     <th style={th}>前月合計</th>
     <th style={th}>後月合計</th>
 
-    {days.map((date) => (
-      <th key={date} style={th}>
-        {date.slice(5).replace("-", "/")}
-      </th>
-    ))}
+    {days.map((date) => {
+  const day = new Date(date).getDay();
+
+  const isSunday = day === 0;
+  const isSaturday = day === 6;
+
+  return (
+    <th
+      key={date}
+      style={{
+        ...th,
+        backgroundColor: isSunday
+          ? "#ffe5e5"
+          : isSaturday
+          ? "#e5f0ff"
+          : "#f5f5f5",
+        color: isSunday
+          ? "#d11a2a"
+          : isSaturday
+          ? "#2563eb"
+          : "#111",
+      }}
+    >
+      {date.slice(5).replace("-", "/")}
+    </th>
+  );
+})}
   </tr>
 
   {/* 日別合計 */}
@@ -543,18 +565,34 @@ setContractorContacts(contactData ?? []);
     <th style={th}></th>
     <th style={th}></th>
 
-    {days.map((date) => (
-      <th
-        key={date}
-        style={{
-          ...th,
-          color: "#d11a2a",
-          fontWeight: 800,
-        }}
-      >
-        {getDailyTotal(date)}
-      </th>
-    ))}
+    {days.map((date) => {
+  const day = new Date(date).getDay();
+
+  const isSunday = day === 0;
+  const isSaturday = day === 6;
+
+  return (
+    <th
+      key={date}
+      style={{
+        ...th,
+        fontWeight: 800,
+        backgroundColor: isSunday
+          ? "#ffe5e5"
+          : isSaturday
+          ? "#e5f0ff"
+          : "#f9fafb",
+        color: isSunday
+          ? "#d11a2a"
+          : isSaturday
+          ? "#2563eb"
+          : "#111",
+      }}
+    >
+      {getDailyTotal(date)}
+    </th>
+  );
+})}
   </tr>
 </thead>
 
@@ -586,7 +624,18 @@ setContractorContacts(contactData ?? []);
         );
 
         return (
-            <td key={date} style={td}>
+            <td
+  key={date}
+  style={{
+    ...td,
+    backgroundColor:
+      new Date(date).getDay() === 0
+        ? "#fff7f7"
+        : new Date(date).getDay() === 6
+        ? "#f7fbff"
+        : "#fff",
+  }}
+>
               <input
                 type="number"
                 inputMode="numeric"
