@@ -117,29 +117,33 @@ export default function TwoMonthPage() {
           </thead>
 
           <tbody>
-            {assignments.map((assignment) => (
-              <tr key={assignment.id}>
-                <td style={stickyTd}>
-                  <div style={{ fontWeight: 800 }}>
-                    {assignment.site_name || "-"}
-                  </div>
-                  <div style={{ fontSize: 11, color: "#666" }}>
-                    {assignment.contractor_name || "-"}
-                  </div>
-                </td>
+  {assignments.map((assignment) => (
+    <tr key={assignment.id}>
+      <td style={stickyTd}>
+        <div style={{ fontWeight: 800 }}>
+          {assignment.site_name || "-"}
+        </div>
 
-                {days.map((date) => {
-                  const count = getPlannedCount(assignment.id, date);
+        <div style={{ fontSize: 11, color: "#666" }}>
+          {assignment.contractor_name || "-"}
+        </div>
+      </td>
 
-                  return (
-                    <td key={date} style={td}>
-                      {count}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
+      {days.map((date) => {
+        const count = getPlannedCount(
+          assignment.id,
+          date
+        );
+
+        return (
+          <td key={date} style={td}>
+            {count}
+          </td>
+        );
+      })}
+    </tr>
+  ))}
+</tbody>
         </table>
       </div>
     </div>
