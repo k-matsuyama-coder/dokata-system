@@ -655,3 +655,17 @@ const smallButton = {
     fontWeight: 800,
     backgroundColor: "#f8fafc",
   };
+
+  <>
+  <style jsx global>{`
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    input[type="number"] {
+      -moz-appearance: textfield;
+    }
+  `}</style>
+</>
