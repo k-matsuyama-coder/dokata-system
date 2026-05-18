@@ -81,6 +81,49 @@ export default function TwoMonthPage() {
       )?.planned_count ?? ""
     );
   };
+  const updatePlannedCount = async (
+    assignmentId: string,
+    workDate: string,
+    value: string
+  ) => {
+    const payload = {
+      assignment_id: assignmentId,
+      work_date: workDate,
+      planned_count: value === "" ? null : Number(value),
+    };
+  
+    const { data, error } = await supabase
+      .from("assignment_site_daily_infos")
+      .upsert(payload, {
+        onConflict: "assignment_id,work_date",
+      })
+      .select("id, assignment_id, work_date, planned_count")
+      .single();
+  
+    if (error || !data) {
+      alert("更新失敗: " + (error?.message || "取得失敗"));
+      return;
+    }
+  
+    setDailyInfos((prev) => {
+      const exists = prev.some(
+        (d) =>
+          d.assignment_id === assignmentId &&
+          d.work_date === workDate
+      );
+  
+      if (exists) {
+        return prev.map((d) =>
+          d.assignment_id === assignmentId &&
+          d.work_date === workDate
+            ? data
+            : d
+        );
+      }
+  
+      return [...prev, data];
+    });
+  };
 
   return (
     <div style={{ padding: 16 }}>
@@ -136,10 +179,28 @@ export default function TwoMonthPage() {
         );
 
         return (
-          <td key={date} style={td}>
-            {count}
-          </td>
-        );
+            <td key={date} style={td}>
+              <input
+                type="number"
+                value={count}
+                onChange={(e) =>
+                  updatePlannedCount(
+                    assignment.id,
+                    date,
+                    e.target.value
+                  )
+                }
+                style={{
+                  width: 44,
+                  padding: 4,
+                  border: "1px solid #ccc",
+                  borderRadius: 4,
+                  textAlign: "center",
+                  fontSize: 12,
+                }}
+              />
+            </td>
+          );
       })}
     </tr>
   ))}
