@@ -154,6 +154,14 @@ setContractorContacts(contactData ?? []);
     assignmentId: string,
     targetMonthIndex: 0 | 1
   ) => {
+    const getBandColor = (assignment: Assignment) => {
+        if (assignment.construction_type === "第二工事") {
+          return "#dbeafe"; // 青
+        }
+      
+        return "#dcfce7"; // 緑
+      };
+
     const [baseYear, baseMonthNum] = baseMonth.split("-").map(Number);
   
     const targetDate = new Date(
@@ -716,11 +724,17 @@ setContractorContacts(contactData ?? []);
   style={{
     ...td,
     backgroundColor:
-      new Date(date).getDay() === 0
+      count !== ""
+        ? getBandColor(assignment)
+        : new Date(date).getDay() === 0
         ? "#fff7f7"
         : new Date(date).getDay() === 6
         ? "#f7fbff"
         : "#fff",
+    borderTop:
+      count !== ""
+        ? "5px solid #22c55e"
+        : td.border,
   }}
 >
               <input
