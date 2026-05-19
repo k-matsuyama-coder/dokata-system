@@ -186,6 +186,14 @@ setContractorContacts(contactData ?? []);
       .reduce((sum, d) => sum + (d.planned_count ?? 0), 0);
   };
 
+  const getBandColor = (assignment: Assignment) => {
+    if (assignment.construction_type === "第二工事") {
+      return "#dbeafe";
+    }
+  
+    return "#dcfce7";
+  };
+
   const handleAddSite = async () => {
     if (!siteName || !contractorName) {
       alert("元請と現場名を入力してください");
