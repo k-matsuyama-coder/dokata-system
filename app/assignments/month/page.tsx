@@ -74,6 +74,7 @@ const [contractors, setContractors] = useState<Contractor[]>([]);
 const [contractorContacts, setContractorContacts] = useState<ContractorContact[]>([]);
 const [showAddModal, setShowAddModal] = useState(false);
 const [constructionType, setConstructionType] = useState("第一工事");
+const [sortMode, setSortMode] = useState("manual");
 
   const [draggingEmployeeName, setDraggingEmployeeName] = useState<string | null>(null);
   const [draggingSiteMemberId, setDraggingSiteMemberId] = useState<string | null>(null);
@@ -542,6 +543,43 @@ setMeetingTime("08:00");
     boxSizing: "border-box" as const,
   };
 
+  const sortedAssignments = [...assignments].sort((a, b) => {
+    switch (sortMode) {
+      case "site":
+        return (a.site_name || "").localeCompare(
+          b.site_name || "",
+          "ja"
+        );
+  
+      case "contractor":
+        return (a.contractor_name || "").localeCompare(
+          b.contractor_name || "",
+          "ja"
+        );
+  
+      case "manager":
+        return (a.manager_name || "").localeCompare(
+          b.manager_name || "",
+          "ja"
+        );
+  
+      case "construction":
+        return (a.construction_type || "").localeCompare(
+          b.construction_type || "",
+          "ja"
+        );
+  
+      case "shift":
+        return (a.shift_type || "").localeCompare(
+          b.shift_type || "",
+          "ja"
+        );
+  
+      default:
+        return 0;
+    }
+  });
+
   return (
     <div style={{ padding: 16 }}>
       <BackButton />
@@ -568,6 +606,33 @@ setMeetingTime("08:00");
             }}
           />
         </div>
+
+        <div
+  style={{
+    display: "flex",
+    gap: 8,
+    marginBottom: 16,
+    flexWrap: "wrap",
+  }}
+>
+  <select
+    value={sortMode}
+    onChange={(e) => setSortMode(e.target.value)}
+    style={{
+      padding: "8px 12px",
+      borderRadius: 8,
+      border: "1px solid #ccc",
+      fontWeight: 700,
+    }}
+  >
+    <option value="manual">標準</option>
+    <option value="site">現場順</option>
+    <option value="contractor">元請順</option>
+    <option value="manager">担当者順</option>
+    <option value="construction">工事区分順</option>
+    <option value="shift">昼夜順</option>
+  </select>
+</div>
 
         <div style={{ marginBottom: 16 }}>
   <button
@@ -839,7 +904,7 @@ width: "100%",
             </thead>
 
             <tbody>
-            {assignments.map((assignment) => (
+            {sortedAssignments.map((assignment) => (
   <tr
   key={assignment.id}
   style={{
