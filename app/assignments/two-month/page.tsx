@@ -15,6 +15,7 @@ type Assignment = {
   id: string;
   site_name: string | null;
   contractor_name: string | null;
+  construction_type: string | null;
 };
 
 type Contractor = {
@@ -56,6 +57,7 @@ const [address, setAddress] = useState("");
 const [shiftType, setShiftType] = useState("day");
 const [meetingTime, setMeetingTime] = useState("08:00");
 const [showAddModal, setShowAddModal] = useState(false);
+const [constructionType, setConstructionType] = useState("第一工事");
 
 const [contractors, setContractors] = useState<Contractor[]>([]);
 const [contractorContacts, setContractorContacts] = useState<ContractorContact[]>([]);
@@ -94,7 +96,7 @@ setContractorContacts(contactData ?? []);
 
     const { data: assignmentData, error: assignmentError } = await supabase
       .from("assignments")
-      .select("id, site_name, contractor_name")
+      .select("id, site_name, contractor_name, construction_type")
       .order("created_at", { ascending: true });
 
     if (assignmentError) {
@@ -190,6 +192,7 @@ setContractorContacts(contactData ?? []);
       contact_phone: contactPhone,
       address,
       meeting_time: meetingTime,
+      construction_type: constructionType,
     });
   
     if (error) {
@@ -367,6 +370,15 @@ setContractorContacts(contactData ?? []);
         placeholder="現場名"
         style={inputStyle}
       />
+
+<select
+  value={constructionType}
+  onChange={(e) => setConstructionType(e.target.value)}
+  style={inputStyle}
+>
+  <option value="第一工事">第一工事</option>
+  <option value="第二工事">第二工事</option>
+</select>
 
       <input
         list="manager-list"
@@ -604,6 +616,16 @@ setContractorContacts(contactData ?? []);
     {assignment.site_name || "-"}
   </div>
 
+  <div
+    style={{
+      fontSize: 11,
+      color: "#555",
+      fontWeight: 700,
+    }}
+  >
+    {assignment.construction_type || "第一工事"}
+  </div>
+
   <div style={{ fontSize: 11, color: "#666" }}>
     {assignment.contractor_name || "-"}
   </div>
@@ -741,17 +763,3 @@ const smallButton = {
     fontWeight: 800,
     backgroundColor: "#f8fafc",
   };
-
-  <>
-  <style jsx global>{`
-    input[type="number"]::-webkit-outer-spin-button,
-    input[type="number"]::-webkit-inner-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
-    }
-
-    input[type="number"] {
-      -moz-appearance: textfield;
-    }
-  `}</style>
-</>

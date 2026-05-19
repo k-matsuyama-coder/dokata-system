@@ -16,6 +16,7 @@ type Assignment = {
 contact_phone: string | null;
 address: string | null;
 meeting_time: string | null;
+construction_type: string | null;
 };
 
 type SiteMember = {
@@ -72,6 +73,7 @@ const [meetingTime, setMeetingTime] = useState("08:00");
 const [contractors, setContractors] = useState<Contractor[]>([]);
 const [contractorContacts, setContractorContacts] = useState<ContractorContact[]>([]);
 const [showAddModal, setShowAddModal] = useState(false);
+const [constructionType, setConstructionType] = useState("第一工事");
 
   const [draggingEmployeeName, setDraggingEmployeeName] = useState<string | null>(null);
   const [draggingSiteMemberId, setDraggingSiteMemberId] = useState<string | null>(null);
@@ -215,7 +217,7 @@ setContractorContacts(contactData ?? []);
 
     const { data: assignmentData, error } = await supabase
       .from("assignments")
-      .select("id, assignment_date, site_name, contractor_name, shift_type, start_time, end_time, manager_name, contact_phone, address, meeting_time, planned_count, detail")
+      .select("id, assignment_date, site_name, contractor_name, construction_type, shift_type, start_time, end_time, manager_name, contact_phone, address, meeting_time, planned_count, detail")
       .gte("assignment_date", startDate)
       .lte("assignment_date", endDate)
       .order("created_at", { ascending: true });
@@ -343,6 +345,7 @@ setContractorContacts(contactData ?? []);
 contact_phone: contactPhone,
 address,
 meeting_time: meetingTime,
+construction_type: constructionType,
     });
 
     if (error) {
@@ -356,6 +359,7 @@ setManagerName("");
 setContactPhone("");
 setAddress("");
 setShiftType("day");
+setConstructionType("第一工事");
 setMeetingTime("08:00");
 
     fetchData();
@@ -642,6 +646,15 @@ setMeetingTime("08:00");
         placeholder="現場名"
         style={inputStyle}
       />
+
+<select
+  value={constructionType}
+  onChange={(e) => setConstructionType(e.target.value)}
+  style={inputStyle}
+>
+  <option value="第一工事">第一工事</option>
+  <option value="第二工事">第二工事</option>
+</select>
 
       <div>
         <input
