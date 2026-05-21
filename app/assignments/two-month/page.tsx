@@ -214,6 +214,14 @@ setContractorContacts(contactData ?? []);
       );
   };
 
+  const getWorkingEmployeeCount = (workDate: string) => {
+    const names = siteMembers
+      .filter((m) => m.work_date === workDate)
+      .map((m) => m.employee_name);
+  
+    return new Set(names).size;
+  };
+
   const getMonthlyTotal = (
     assignmentId: string,
     targetMonthIndex: 0 | 1
@@ -755,7 +763,9 @@ setContractorContacts(contactData ?? []);
           : "#111",
       }}
     >
-      {getDailyTotal(date)}
+      <div>
+  {getWorkingEmployeeCount(date)} / {employees.length}
+</div>
     </th>
   );
 })}
@@ -825,6 +835,9 @@ setContractorContacts(contactData ?? []);
     justifyItems: "center",
   }}
 >
+
+
+
   <input
     defaultValue={getDetail(
       assignment.id,
@@ -838,7 +851,7 @@ setContractorContacts(contactData ?? []);
         e.target.value
       )
     }
-    placeholder="作業"
+    placeholder=""
     style={{
       width: 52,
       padding: "2px 4px",
