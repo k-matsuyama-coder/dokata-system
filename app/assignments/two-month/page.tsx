@@ -1035,7 +1035,7 @@ setSiteMembers(memberData ?? []);
 
   <input
     list="detail-history"
-    placeholder="+作業"
+    placeholder="+"
     onKeyDown={(e) => {
       if (e.key !== "Enter") return;
 
