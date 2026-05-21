@@ -21,6 +21,17 @@ type Assignment = {
   shift_type: string | null;
 };
 
+type SiteMember = {
+  id: string;
+  assignment_id: string;
+  work_date: string;
+  employee_name: string;
+};
+
+type Employee = {
+  name: string;
+};
+
 type Contractor = {
     id: string;
     name: string;
@@ -36,6 +47,8 @@ type Contractor = {
 export default function TwoMonthPage() {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [dailyInfos, setDailyInfos] = useState<DailyInfo[]>([]);
+  const [siteMembers, setSiteMembers] = useState<SiteMember[]>([]);
+const [employees, setEmployees] = useState<Employee[]>([]);
   const [baseMonth, setBaseMonth] = useState(() => {
     const now = new Date();
     let year = now.getFullYear();
@@ -84,6 +97,12 @@ return `${y}-${m}-${day}`;
 
   const fetchData = async () => {
     const startDate = days[0];
+    const { data: employeeData } = await supabase
+  .from("employees")
+  .select("name")
+  .order("name", { ascending: true });
+
+setEmployees(employeeData ?? []);
     const endDate = days[days.length - 1];
     const { data: contractorData } = await supabase
   .from("contractors")
@@ -120,6 +139,7 @@ setContractorContacts(contactData ?? []);
     if (assignmentIds.length === 0) {
       setAssignments([]);
       setDailyInfos([]);
+      setSiteMembers([]);
       return;
     }
 
@@ -141,8 +161,21 @@ setContractorContacts(contactData ?? []);
       return;
     }
 
-    setAssignments(assignmentData ?? []);
-    setDailyInfos(dailyInfoData ?? []);
+    const { data: memberData, error: memberError } = await supabase
+  .from("assignment_site_members")
+  .select("id, assignment_id, work_date, employee_name")
+  .in("assignment_id", assignmentIds)
+  .gte("work_date", startDate)
+  .lte("work_date", endDate);
+
+if (memberError) {
+  alert("メンバー取得失敗: " + memberError.message);
+  return;
+}
+
+setAssignments(assignmentData ?? []);
+setDailyInfos(dailyInfoData ?? []);
+setSiteMembers(memberData ?? []);
   };
 
   useEffect(() => {
@@ -171,6 +204,18 @@ setContractorContacts(contactData ?? []);
           event: "*",
           schema: "public",
           table: "assignments",
+        },
+        () => {
+          fetchData();
+        }
+      )
+
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "assignment_site_members",
         },
         () => {
           fetchData();
