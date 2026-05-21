@@ -78,6 +78,21 @@ const [sortMode, setSortMode] = useState("manual");
 
 const [contractors, setContractors] = useState<Contractor[]>([]);
 const [contractorContacts, setContractorContacts] = useState<ContractorContact[]>([]);
+const presetDetails = [
+  "舗装",
+  "掘削",
+  "準備",
+  "表層",
+  "基層",
+  "路盤",
+  "片付け",
+  "後片付け",
+  "解体",
+  "不陸",
+  "床掘",
+  "土工",
+  "準備工",
+];
 
 const days = useMemo(() => {
     const [year, month] = baseMonth.split("-").map(Number);
@@ -249,6 +264,19 @@ setSiteMembers(memberData ?? []);
       )?.detail ?? ""
     );
   };
+
+  const detailHistory = useMemo(() => {
+    const history = dailyInfos
+      .map((d) => d.detail)
+      .filter((detail): detail is string => !!detail);
+  
+    return Array.from(
+      new Set([
+        ...presetDetails,
+        ...history,
+      ])
+    );
+  }, [dailyInfos]);
 
   const getDailyTotal = (workDate: string) => {
     return dailyInfos
@@ -442,6 +470,11 @@ setSiteMembers(memberData ?? []);
 
       <h1>2ヶ月工程表</h1>
 
+      <datalist id="detail-history">
+  {detailHistory.map((detail) => (
+    <option key={detail} value={detail} />
+  ))}
+</datalist>
       
       <div
   style={{
@@ -886,11 +919,12 @@ setSiteMembers(memberData ?? []);
 
 
 
-  <input
-    defaultValue={getDetail(
-      assignment.id,
-      date
-    )}
+<input
+  list="detail-history"
+  defaultValue={getDetail(
+    assignment.id,
+    date
+  )}
     onBlur={(e) =>
       updateDailyInfo(
         assignment.id,
