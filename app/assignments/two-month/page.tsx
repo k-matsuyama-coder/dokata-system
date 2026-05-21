@@ -843,8 +843,27 @@ setSiteMembers(memberData ?? []);
   <tr>
     <th style={stickyTh}>現場名</th>
 
-    <th style={th}>前月合計</th>
-    <th style={th}>後月合計</th>
+    <th
+  style={{
+    ...totalTh,
+    position: "sticky",
+    left: 180,
+    zIndex: 3,
+  }}
+>
+  前月合計
+</th>
+
+<th
+  style={{
+    ...totalTh,
+    position: "sticky",
+    left: 250,
+    zIndex: 3,
+  }}
+>
+  後月合計
+</th>
 
     {days.map((date) => {
   const day = new Date(date).getDay();
@@ -940,11 +959,11 @@ setSiteMembers(memberData ?? []);
   </div>
 </td>
 
-<td style={totalTd}>
+<td style={stickyTotalTd1}>
   {getMonthlyTotal(assignment.id, 0)}
 </td>
 
-<td style={totalTd}>
+<td style={stickyTotalTd2}>
   {getMonthlyTotal(assignment.id, 1)}
 </td>
 
@@ -1169,4 +1188,18 @@ const smallButton = {
     minWidth: 70,
     fontWeight: 800,
     backgroundColor: "#f8fafc",
+  };
+
+  const stickyTotalTd1 = {
+    ...totalTd,
+    position: "sticky" as const,
+    left: 180,
+    zIndex: 1,
+  };
+  
+  const stickyTotalTd2 = {
+    ...totalTd,
+    position: "sticky" as const,
+    left: 250,
+    zIndex: 1,
   };
