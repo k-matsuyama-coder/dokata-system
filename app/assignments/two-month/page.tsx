@@ -809,7 +809,7 @@ setSiteMembers(memberData ?? []);
       }}
     >
       <div>
-  {getWorkingEmployeeCount(date)} / {employees.length}
+  {getDailyTotal(date)} / {employees.length}
 </div>
     </th>
   );
