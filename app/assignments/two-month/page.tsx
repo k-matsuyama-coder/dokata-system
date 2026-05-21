@@ -265,10 +265,74 @@ setSiteMembers(memberData ?? []);
     );
   };
 
+  const getDetailTags = (
+    assignmentId: string,
+    workDate: string
+  ) => {
+    const detail = getDetail(assignmentId, workDate);
+  
+    if (!detail) return [];
+  
+    return detail
+      .split(",")
+      .map((v) => v.trim())
+      .filter(Boolean);
+  };
+
+  const addDetailTag = async (
+    assignmentId: string,
+    workDate: string,
+    tag: string
+  ) => {
+    if (!tag.trim()) return;
+  
+    const current = getDetailTags(
+      assignmentId,
+      workDate
+    );
+  
+    if (current.includes(tag)) return;
+  
+    const next = [...current, tag];
+  
+    await updateDailyInfo(
+      assignmentId,
+      workDate,
+      "detail",
+      next.join(",")
+    );
+  };
+
+  const removeDetailTag = async (
+    assignmentId: string,
+    workDate: string,
+    tag: string
+  ) => {
+    const current = getDetailTags(
+      assignmentId,
+      workDate
+    );
+  
+    const next = current.filter(
+      (v) => v !== tag
+    );
+  
+    await updateDailyInfo(
+      assignmentId,
+      workDate,
+      "detail",
+      next.join(",")
+    );
+  };
+
   const detailHistory = useMemo(() => {
     const history = dailyInfos
-      .map((d) => d.detail)
-      .filter((detail): detail is string => !!detail);
+      .flatMap((d) =>
+        (d.detail ?? "")
+          .split(",")
+          .map((v) => v.trim())
+          .filter(Boolean)
+      );
   
     return Array.from(
       new Set([
@@ -919,32 +983,84 @@ setSiteMembers(memberData ?? []);
 
 
 
-<input
-  list="detail-history"
-  defaultValue={getDetail(
+<div
+  style={{
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 4,
+    justifyContent: "center",
+  }}
+>
+  {getDetailTags(
     assignment.id,
     date
-  )}
-    onBlur={(e) =>
-      updateDailyInfo(
+  ).map((tag) => (
+    <div
+      key={tag}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 4,
+        backgroundColor: "#dcfce7",
+        color: "#166534",
+        padding: "2px 6px",
+        borderRadius: 999,
+        fontSize: 10,
+        fontWeight: 700,
+      }}
+    >
+      {tag}
+
+      <button
+        type="button"
+        onClick={() =>
+          removeDetailTag(
+            assignment.id,
+            date,
+            tag
+          )
+        }
+        style={{
+          border: "none",
+          background: "transparent",
+          cursor: "pointer",
+          color: "#166534",
+          fontWeight: 700,
+        }}
+      >
+        ×
+      </button>
+    </div>
+  ))}
+
+  <input
+    list="detail-history"
+    placeholder="+作業"
+    onKeyDown={(e) => {
+      if (e.key !== "Enter") return;
+
+      e.preventDefault();
+
+      const value =
+        e.currentTarget.value.trim();
+
+      addDetailTag(
         assignment.id,
         date,
-        "detail",
-        e.target.value
-      )
-    }
-    placeholder=""
+        value
+      );
+
+      e.currentTarget.value = "";
+    }}
     style={{
-      width: 52,
-      padding: "2px 4px",
+      width: 60,
       border: "none",
       background: "transparent",
-      textAlign: "center",
       fontSize: 10,
-      fontWeight: 700,
-      color: "#166534",
+      textAlign: "center",
     }}
   />
+</div>
 
   <input
     type="number"
