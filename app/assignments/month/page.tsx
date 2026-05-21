@@ -306,6 +306,7 @@ setContractorContacts(contactData ?? []);
           table: "assignment_site_members",
         },
         () => {
+          console.log("メンバー配置更新あり");
           fetchData();
         }
       )
@@ -318,6 +319,19 @@ setContractorContacts(contactData ?? []);
           table: "assignment_site_daily_infos",
         },
         () => {
+          fetchData();
+        }
+      )
+
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "assignments",
+        },
+        () => {
+          console.log("現場更新あり");
           fetchData();
         }
       )
