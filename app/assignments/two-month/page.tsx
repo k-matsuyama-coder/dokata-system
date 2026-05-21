@@ -9,6 +9,7 @@ type DailyInfo = {
   assignment_id: string;
   work_date: string;
   planned_count: number | null;
+  detail: string | null;
 };
 
 type Assignment = {
@@ -16,6 +17,8 @@ type Assignment = {
   site_name: string | null;
   contractor_name: string | null;
   construction_type: string | null;
+  manager_name: string | null;
+  shift_type: string | null;
 };
 
 type Contractor = {
@@ -97,7 +100,14 @@ setContractorContacts(contactData ?? []);
 
     const { data: assignmentData, error: assignmentError } = await supabase
       .from("assignments")
-      .select("id, site_name, contractor_name, construction_type")
+      .select(`
+  id,
+  site_name,
+  contractor_name,
+  construction_type,
+  manager_name,
+  shift_type
+`)
       .order("created_at", { ascending: true });
 
     if (assignmentError) {
@@ -115,7 +125,13 @@ setContractorContacts(contactData ?? []);
 
     const { data: dailyInfoData, error: dailyInfoError } = await supabase
       .from("assignment_site_daily_infos")
-      .select("id, assignment_id, work_date, planned_count")
+      .select(`
+  id,
+  assignment_id,
+  work_date,
+  planned_count,
+  detail
+`)
       .in("assignment_id", assignmentIds)
       .gte("work_date", startDate)
       .lte("work_date", endDate);
@@ -141,6 +157,19 @@ setContractorContacts(contactData ?? []);
     );
   };
 
+  const getDetail = (
+    assignmentId: string,
+    workDate: string
+  ) => {
+    return (
+      dailyInfos.find(
+        (d) =>
+          d.assignment_id === assignmentId &&
+          d.work_date === workDate
+      )?.detail ?? ""
+    );
+  };
+
   const getDailyTotal = (workDate: string) => {
     return dailyInfos
       .filter((d) => d.work_date === workDate)
@@ -154,13 +183,6 @@ setContractorContacts(contactData ?? []);
     assignmentId: string,
     targetMonthIndex: 0 | 1
   ) => {
-    const getBandColor = (assignment: Assignment) => {
-        if (assignment.construction_type === "第二工事") {
-          return "#dbeafe"; // 青
-        }
-      
-        return "#dcfce7"; // 緑
-      };
 
     const [baseYear, baseMonthNum] = baseMonth.split("-").map(Number);
   
@@ -229,15 +251,31 @@ setContractorContacts(contactData ?? []);
     fetchData();
   };
 
-  const updatePlannedCount = async (
+  const updateDailyInfo = async (
     assignmentId: string,
     workDate: string,
+    field: "planned_count" | "detail",
     value: string
   ) => {
+    const existing = dailyInfos.find(
+      (d) =>
+        d.assignment_id === assignmentId &&
+        d.work_date === workDate
+    );
+  
     const payload = {
       assignment_id: assignmentId,
       work_date: workDate,
-      planned_count: value === "" ? null : Number(value),
+      planned_count:
+        field === "planned_count"
+          ? value === ""
+            ? null
+            : Number(value)
+          : existing?.planned_count ?? null,
+      detail:
+        field === "detail"
+          ? value
+          : existing?.detail ?? null,
     };
   
     const { data, error } = await supabase
@@ -245,7 +283,7 @@ setContractorContacts(contactData ?? []);
       .upsert(payload, {
         onConflict: "assignment_id,work_date",
       })
-      .select("id, assignment_id, work_date, planned_count")
+      .select("id, assignment_id, work_date, planned_count, detail")
       .single();
   
     if (error || !data) {
@@ -745,28 +783,64 @@ setContractorContacts(contactData ?? []);
         : td.border,
   }}
 >
-              <input
-                type="number"
-                inputMode="numeric"
-                value={count}
-                onChange={(e) =>
-                  updatePlannedCount(
-                    assignment.id,
-                    date,
-                    e.target.value
-                  )
-                }
-                style={{
-                    width: 44,
-                    padding: 4,
-                    border: "1px solid #ccc",
-                    borderRadius: 4,
-                    textAlign: "center",
-                    fontSize: 12,
-                    appearance: "textfield",
-                    MozAppearance: "textfield",
-                  }}
-              />
+<div
+  style={{
+    display: "grid",
+    gap: 4,
+    justifyItems: "center",
+  }}
+>
+  <input
+    defaultValue={getDetail(
+      assignment.id,
+      date
+    )}
+    onBlur={(e) =>
+      updateDailyInfo(
+        assignment.id,
+        date,
+        "detail",
+        e.target.value
+      )
+    }
+    placeholder="作業"
+    style={{
+      width: 52,
+      padding: "2px 4px",
+      border: "none",
+      background: "transparent",
+      textAlign: "center",
+      fontSize: 10,
+      fontWeight: 700,
+      color: "#166534",
+    }}
+  />
+
+  <input
+    type="number"
+    inputMode="numeric"
+    defaultValue={count}
+    onBlur={(e) =>
+      updateDailyInfo(
+        assignment.id,
+        date,
+        "planned_count",
+        e.target.value
+      )
+    }
+    style={{
+      width: 44,
+      padding: 4,
+      border: "1px solid #ccc",
+      borderRadius: 4,
+      textAlign: "center",
+      fontSize: 12,
+      backgroundColor: "#fff",
+      appearance: "textfield",
+      MozAppearance: "textfield",
+    }}
+  />
+</div>
             </td>
           );
       })}
