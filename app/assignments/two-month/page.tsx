@@ -149,6 +149,41 @@ setContractorContacts(contactData ?? []);
     fetchData();
   }, [baseMonth]);
 
+  useEffect(() => {
+    const channel = supabase
+      .channel("two-month-realtime")
+  
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "assignment_site_daily_infos",
+        },
+        () => {
+          fetchData();
+        }
+      )
+  
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "assignments",
+        },
+        () => {
+          fetchData();
+        }
+      )
+  
+      .subscribe();
+  
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [baseMonth]);
+
   const getPlannedCount = (assignmentId: string, workDate: string) => {
     return (
       dailyInfos.find(
