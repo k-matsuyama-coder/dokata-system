@@ -442,13 +442,15 @@ setSiteMembers(memberData ?? []);
 
       <h1>2ヶ月工程表</h1>
 
+      
       <div
   style={{
     display: "flex",
-    gap: 8,
+    gap: 12,
     alignItems: "center",
+    flexWrap: "nowrap",
     marginBottom: 16,
-    flexWrap: "wrap",
+    overflowX: "auto",
   }}
 >
   <button
@@ -456,7 +458,12 @@ setSiteMembers(memberData ?? []);
     onClick={() => {
       const [year, month] = baseMonth.split("-").map(Number);
       const d = new Date(year, month - 3, 1);
-      setBaseMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
+
+      setBaseMonth(
+        `${d.getFullYear()}-${String(
+          d.getMonth() + 1
+        ).padStart(2, "0")}`
+      );
     }}
     style={smallButton}
   >
@@ -472,22 +479,18 @@ setSiteMembers(memberData ?? []);
     onClick={() => {
       const [year, month] = baseMonth.split("-").map(Number);
       const d = new Date(year, month + 1, 1);
-      setBaseMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
+
+      setBaseMonth(
+        `${d.getFullYear()}-${String(
+          d.getMonth() + 1
+        ).padStart(2, "0")}`
+      );
     }}
     style={smallButton}
   >
     次の2ヶ月
   </button>
-</div>
 
-<div
-  style={{
-    display: "flex",
-    gap: 8,
-    marginBottom: 16,
-    flexWrap: "wrap",
-  }}
->
   <select
     value={sortMode}
     onChange={(e) => setSortMode(e.target.value)}
@@ -496,6 +499,7 @@ setSiteMembers(memberData ?? []);
       borderRadius: 8,
       border: "1px solid #ccc",
       fontWeight: 700,
+      height: 42,
     }}
   >
     <option value="manual">標準</option>
@@ -505,9 +509,7 @@ setSiteMembers(memberData ?? []);
     <option value="construction">工事区分順</option>
     <option value="shift">昼夜順</option>
   </select>
-</div>
 
-      <div style={{ marginBottom: 16 }}>
   <button
     type="button"
     onClick={() => setShowAddModal(true)}
@@ -519,6 +521,7 @@ setSiteMembers(memberData ?? []);
       color: "#fff",
       fontWeight: 700,
       cursor: "pointer",
+      height: 42,
     }}
   >
     ＋ 現場追加
