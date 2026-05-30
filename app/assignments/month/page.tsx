@@ -638,7 +638,7 @@ setMeetingTime("08:00");
   style={{
     maxWidth: 1500,
     margin: "0 auto",
-    paddingRight: 230,
+    paddingRight: 190,
   }}
 >
         <h1>月間番割表</h1>
@@ -1314,9 +1314,9 @@ const isShort =
         <div
   style={{
     position: "fixed",
-    right: 16,
-    top: 90,
-    width: 200,
+    right: 4,
+width: 180,
+padding: 8,
     maxHeight: "75vh",
     overflowY: "auto",
     border: "1px solid #ddd",
