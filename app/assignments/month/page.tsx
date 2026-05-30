@@ -75,6 +75,7 @@ const [contractorContacts, setContractorContacts] = useState<ContractorContact[]
 const [showAddModal, setShowAddModal] = useState(false);
 const [constructionType, setConstructionType] = useState("第一工事");
 const [sortMode, setSortMode] = useState("manual");
+const [draggingAssignmentId, setDraggingAssignmentId] = useState<string | null>(null);
 
   const [draggingEmployeeName, setDraggingEmployeeName] = useState<string | null>(null);
   const [draggingSiteMemberId, setDraggingSiteMemberId] = useState<string | null>(null);
@@ -221,7 +222,8 @@ setContractorContacts(contactData ?? []);
       .select("id, assignment_date, site_name, contractor_name, construction_type, shift_type, start_time, end_time, manager_name, contact_phone, address, meeting_time, planned_count, detail")
       .gte("assignment_date", startDate)
       .lte("assignment_date", endDate)
-      .order("created_at", { ascending: true });
+      .order("sort_order", { ascending: true })
+.order("created_at", { ascending: true });
 
     if (error) {
       alert("現場取得失敗: " + error.message);
@@ -473,6 +475,40 @@ setMeetingTime("08:00");
   
     setAssignments((prev) => prev.filter((a) => a.id !== id));
     setSiteMembers((prev) => prev.filter((m) => m.assignment_id !== id));
+  };
+
+  const moveAssignmentRow = async (
+    fromAssignmentId: string,
+    toAssignmentId: string
+  ) => {
+    if (fromAssignmentId === toAssignmentId) return;
+  
+    const fromIndex = assignments.findIndex((a) => a.id === fromAssignmentId);
+    const toIndex = assignments.findIndex((a) => a.id === toAssignmentId);
+  
+    if (fromIndex === -1 || toIndex === -1) return;
+  
+    const nextAssignments = [...assignments];
+    const [moved] = nextAssignments.splice(fromIndex, 1);
+    nextAssignments.splice(toIndex, 0, moved);
+  
+    setAssignments(nextAssignments);
+  
+    const updates = nextAssignments.map((assignment, index) =>
+      supabase
+        .from("assignments")
+        .update({ sort_order: index })
+        .eq("id", assignment.id)
+    );
+  
+    const results = await Promise.all(updates);
+  
+    const failed = results.find((result) => result.error);
+  
+    if (failed?.error) {
+      alert("並び替え保存失敗: " + failed.error.message);
+      fetchData();
+    }
   };
 
   const getCellMembers = (assignmentId: string, workDate: string) => {
@@ -940,12 +976,29 @@ width: "100%",
 </td>
 
 <td
+  draggable={sortMode === "manual"}
+  onDragStart={() => setDraggingAssignmentId(assignment.id)}
+  onDragEnd={() => setDraggingAssignmentId(null)}
+  onDragOver={(e) => e.preventDefault()}
+  onDrop={() => {
+    if (!draggingAssignmentId) return;
+
+    moveAssignmentRow(
+      draggingAssignmentId,
+      assignment.id
+    );
+  }}
   style={{
     ...td,
     ...stickyTd2,
     fontWeight: 800,
+    cursor: sortMode === "manual" ? "grab" : "default",
     backgroundColor:
-      assignment.shift_type === "night" ? "#e5e7eb" : "#fff",
+      draggingAssignmentId === assignment.id
+        ? "#dbeafe"
+        : assignment.shift_type === "night"
+        ? "#e5e7eb"
+        : "#fff",
   }}
 >
       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>

@@ -843,25 +843,11 @@ setSiteMembers(memberData ?? []);
   <tr>
     <th style={stickyTh}>現場名</th>
 
-    <th
-  style={{
-    ...totalTh,
-    position: "sticky",
-    left: 180,
-    zIndex: 3,
-  }}
->
+    <th style={{ ...totalTh, position: "sticky", left: 180, zIndex: 3 }}>
   前月合計
 </th>
 
-<th
-  style={{
-    ...totalTh,
-    position: "sticky",
-    left: 250,
-    zIndex: 3,
-  }}
->
+<th style={{ ...totalTh, position: "sticky", left: 250, zIndex: 3 }}>
   後月合計
 </th>
 
@@ -900,8 +886,8 @@ setSiteMembers(memberData ?? []);
       日別合計
     </th>
 
-    <th style={th}></th>
-    <th style={th}></th>
+    <th style={{ ...totalTh, position: "sticky", left: 180, zIndex: 3 }}></th>
+<th style={{ ...totalTh, position: "sticky", left: 250, zIndex: 3 }}></th>
 
     {days.map((date) => {
   const day = new Date(date).getDay();
