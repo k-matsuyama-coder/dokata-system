@@ -643,28 +643,29 @@ setMeetingTime("08:00");
 >
         <h1>月間番割表</h1>
 
-        <div style={{ marginBottom: 16 }}>
-          <input
-            type="month"
-            value={month}
-            onChange={(e) => setMonth(e.target.value)}
-            style={{
-              padding: 10,
-              borderRadius: 8,
-              border: "1px solid #ccc",
-              fontSize: 16,
-            }}
-          />
-        </div>
-
         <div
   style={{
     display: "flex",
-    gap: 8,
+    gap: 12,
+    alignItems: "center",
+    flexWrap: "nowrap",
     marginBottom: 16,
-    flexWrap: "wrap",
+    overflowX: "auto",
   }}
 >
+  <input
+    type="month"
+    value={month}
+    onChange={(e) => setMonth(e.target.value)}
+    style={{
+      padding: 10,
+      borderRadius: 8,
+      border: "1px solid #ccc",
+      fontSize: 16,
+      height: 42,
+    }}
+  />
+
   <select
     value={sortMode}
     onChange={(e) => setSortMode(e.target.value)}
@@ -673,6 +674,7 @@ setMeetingTime("08:00");
       borderRadius: 8,
       border: "1px solid #ccc",
       fontWeight: 700,
+      height: 42,
     }}
   >
     <option value="manual">標準</option>
@@ -682,9 +684,7 @@ setMeetingTime("08:00");
     <option value="construction">工事区分順</option>
     <option value="shift">昼夜順</option>
   </select>
-</div>
 
-        <div style={{ marginBottom: 16 }}>
   <button
     type="button"
     onClick={() => setShowAddModal(true)}
@@ -696,6 +696,8 @@ setMeetingTime("08:00");
       color: "#fff",
       fontWeight: 700,
       cursor: "pointer",
+      height: 42,
+      whiteSpace: "nowrap",
     }}
   >
     ＋ 現場追加
