@@ -1315,14 +1315,14 @@ const isShort =
   style={{
     position: "fixed",
     right: 4,
-width: 180,
-padding: 8,
+    top: 90,
+    width: 180,
     maxHeight: "75vh",
     overflowY: "auto",
     border: "1px solid #ddd",
     borderRadius: 12,
     backgroundColor: "#fff",
-    padding: 12,
+    padding: 8,
     zIndex: 1000,
     boxShadow: "0 6px 18px rgba(0,0,0,0.12)",
   }}
