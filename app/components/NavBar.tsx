@@ -30,20 +30,6 @@ export default function NavBar() {
     fetchRole();
   }, []);
 
-  useEffect(() => {
-    const handleClickOutside = () => {
-      setMenuOpen(false);
-    };
-  
-    if (menuOpen) {
-      window.addEventListener("click", handleClickOutside);
-    }
-  
-    return () => {
-      window.removeEventListener("click", handleClickOutside);
-    };
-  }, [menuOpen]);
-
   const handleLogout = async () => {
     await supabase.auth.signOut();
     window.location.href = "/login";
@@ -81,23 +67,6 @@ export default function NavBar() {
   DOKATA-System
 </a>
 
-<button
-  onClick={(e) => {
-    e.stopPropagation();
-    setMenuOpen(!menuOpen);
-  }}
-  style={{
-    border: "1px solid #ddd",
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    padding: "8px 12px",
-    cursor: "pointer",
-    fontSize: 18,
-  }}
->
-  ☰
-</button>
-
         <>
   {menuOpen && (
     <div
@@ -111,24 +80,26 @@ export default function NavBar() {
     />
   )}
 
-  <div
-    style={{
-      position: "fixed",
-      top: 0,
-      left: menuOpen ? 0 : -260,
-      width: 250,
-      height: "100vh",
-      backgroundColor: "#fff",
-      borderRight: "1px solid #ddd",
-      padding: 20,
-      display: "flex",
-      flexDirection: "column",
-      gap: 16,
-      transition: "left 0.25s ease",
-      zIndex: 1000,
-      boxShadow: "2px 0 10px rgba(0,0,0,0.12)",
-    }}
-  >
+<div
+  onMouseEnter={() => setMenuOpen(true)}
+  onMouseLeave={() => setMenuOpen(false)}
+  style={{
+    position: "fixed",
+    top: 0,
+    right: menuOpen ? 0 : -260,
+    width: 250,
+    height: "100vh",
+    backgroundColor: "#fff",
+    borderLeft: "1px solid #ddd",
+    padding: 20,
+    display: "flex",
+    flexDirection: "column",
+    gap: 16,
+    transition: "right 0.25s ease",
+    zIndex: 1000,
+    boxShadow: "-2px 0 10px rgba(0,0,0,0.12)",
+  }}
+>
 
 <div
   style={{
@@ -245,6 +216,19 @@ fontWeight: pathname.startsWith("/assignments/month") ? 700 : 500,
             </button>
           </div>
           </>
+
+          <div
+  onMouseEnter={() => setMenuOpen(true)}
+  style={{
+    position: "fixed",
+    top: 0,
+    right: 0,
+    width: 10,
+    height: "100vh",
+    zIndex: 998,
+  }}
+/>
+
     </header>
   );
 }
