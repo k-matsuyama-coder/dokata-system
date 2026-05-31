@@ -81,24 +81,6 @@ export default function NavBar() {
   DOKATA-System
 </a>
 
-      <div>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            setMenuOpen(!menuOpen);
-          }}
-          style={{
-            border: "1px solid #ddd",
-            backgroundColor: "#fff",
-            borderRadius: 8,
-            padding: "8px 12px",
-            cursor: "pointer",
-            fontSize: 18,
-          }}
-        >
-          ☰
-        </button>
-
         <>
   {menuOpen && (
     <div
