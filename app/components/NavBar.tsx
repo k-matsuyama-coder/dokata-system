@@ -86,7 +86,7 @@ export default function NavBar() {
   style={{
     position: "fixed",
     top: 0,
-    right: menuOpen ? 0 : -260,
+    left: menuOpen ? 0 : -260,
     width: 250,
     height: "100vh",
     backgroundColor: "#fff",
@@ -222,8 +222,8 @@ fontWeight: pathname.startsWith("/assignments/month") ? 700 : 500,
   style={{
     position: "fixed",
     top: 0,
-    right: 0,
-    width: 10,
+    left: 0,
+    width: 15,
     height: "100vh",
     zIndex: 998,
   }}
