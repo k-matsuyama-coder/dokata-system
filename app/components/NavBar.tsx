@@ -139,6 +139,17 @@ export default function NavBar() {
             </a>
 
             <a
+  href="/assignments/view"
+  className="nav-link"
+  style={{
+    color: pathname.startsWith("/assignments/view") ? "#0070f3" : "#333",
+    fontWeight: pathname.startsWith("/assignments/view") ? 700 : 500,
+  }}
+>
+  番割
+</a>
+
+            <a
               href="/profile"
               className="nav-link"
               style={{
@@ -159,6 +170,19 @@ export default function NavBar() {
 >
   分析
 </a>
+
+{role === "admin" && (
+  <a
+    href="/assignments"
+    className="nav-link"
+    style={{
+      color: pathname === "/assignments" ? "#0070f3" : "#333",
+      fontWeight: pathname === "/assignments" ? 700 : 500,
+    }}
+  >
+    番割作成
+  </a>
+)}
 
             {role === "admin" && (
               <a
