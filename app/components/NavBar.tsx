@@ -69,6 +69,7 @@ export default function NavBar() {
     >
       <a
   href="/home"
+  onClick={() => setMenuOpen(false)}
   style={{
     fontWeight: "bold",
     fontSize: 18,
@@ -98,26 +99,52 @@ export default function NavBar() {
           ☰
         </button>
 
-        {menuOpen && (
-          <div
-            style={{
-              position: "absolute",
-              top: 68,
-              right: 12,
-              left: 12,
-              backgroundColor: "#fff",
-              border: "1px solid #ddd",
-              borderRadius: 12,
-              padding: 16,
-              boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
-              display: "flex",
-              flexDirection: "column",
-              gap: 16,
-              zIndex: 1000,
-            }}
-          >
+        <>
+  {menuOpen && (
+    <div
+      onClick={() => setMenuOpen(false)}
+      style={{
+        position: "fixed",
+        inset: 0,
+        backgroundColor: "rgba(0,0,0,0.3)",
+        zIndex: 999,
+      }}
+    />
+  )}
+
+  <div
+    style={{
+      position: "fixed",
+      top: 0,
+      left: menuOpen ? 0 : -260,
+      width: 250,
+      height: "100vh",
+      backgroundColor: "#fff",
+      borderRight: "1px solid #ddd",
+      padding: 20,
+      display: "flex",
+      flexDirection: "column",
+      gap: 16,
+      transition: "left 0.25s ease",
+      zIndex: 1000,
+      boxShadow: "2px 0 10px rgba(0,0,0,0.12)",
+    }}
+  >
+
+<div
+  style={{
+    fontSize: 20,
+    fontWeight: 800,
+    marginBottom: 10,
+    borderBottom: "1px solid #eee",
+    paddingBottom: 12,
+  }}
+>
+DOKATA-System
+</div>
             <a
               href="/home"
+              onClick={() => setMenuOpen(false)}
               className="nav-link"
               style={{
                 color: pathname === "/home" ? "#0070f3" : "#333",
@@ -129,6 +156,7 @@ export default function NavBar() {
 
             <a
               href="/reports"
+              onClick={() => setMenuOpen(false)}
               className="nav-link"
               style={{
                 color: pathname.startsWith("/reports") ? "#0070f3" : "#333",
@@ -140,6 +168,7 @@ export default function NavBar() {
 
             <a
   href="/assignments/view"
+  onClick={() => setMenuOpen(false)}
   className="nav-link"
   style={{
     color: pathname.startsWith("/assignments/view") ? "#0070f3" : "#333",
@@ -151,6 +180,7 @@ export default function NavBar() {
 
             <a
               href="/profile"
+              onClick={() => setMenuOpen(false)}
               className="nav-link"
               style={{
                 color: pathname.startsWith("/profile") ? "#0070f3" : "#333",
@@ -162,6 +192,7 @@ export default function NavBar() {
 
             <a
   href="/analytics"
+  onClick={() => setMenuOpen(false)}
   className="nav-link"
   style={{
     color: pathname.startsWith("/analytics") ? "#0070f3" : "#333",
@@ -174,10 +205,11 @@ export default function NavBar() {
 {role === "admin" && (
   <a
     href="/assignments/month"
+    onClick={() => setMenuOpen(false)}
     className="nav-link"
     style={{
-      color: pathname === "/assignments" ? "#0070f3" : "#333",
-      fontWeight: pathname === "/assignments" ? 700 : 500,
+      color: pathname.startsWith("/assignments/month") ? "#0070f3" : "#333",
+fontWeight: pathname.startsWith("/assignments/month") ? 700 : 500,
     }}
   >
     番割作成
@@ -187,6 +219,7 @@ export default function NavBar() {
             {role === "admin" && (
               <a
                 href="/admin"
+                onClick={() => setMenuOpen(false)}
                 className="nav-link"
                 style={{
                   color: pathname.startsWith("/admin") ? "#0070f3" : "#333",
@@ -212,7 +245,7 @@ export default function NavBar() {
               ログアウト
             </button>
           </div>
-        )}
+          </>
       </div>
     </header>
   );
