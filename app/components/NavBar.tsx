@@ -173,7 +173,7 @@ export default function NavBar() {
 
 {role === "admin" && (
   <a
-    href="/assignments"
+    href="/assignments/month"
     className="nav-link"
     style={{
       color: pathname === "/assignments" ? "#0070f3" : "#333",
