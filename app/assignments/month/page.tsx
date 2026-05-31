@@ -680,7 +680,7 @@ setMeetingTime("08:00");
     }}
   />
 
-  <<select
+  <select
   value={sortMode}
   onChange={(e) => setSortMode(e.target.value)}
 >
