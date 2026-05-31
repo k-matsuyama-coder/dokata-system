@@ -75,6 +75,7 @@ const [contractorContacts, setContractorContacts] = useState<ContractorContact[]
 const [showAddModal, setShowAddModal] = useState(false);
 const [constructionType, setConstructionType] = useState("第一工事");
 const [sortMode, setSortMode] = useState("manual");
+const [showFinished, setShowFinished] = useState(false);
 const [draggingAssignmentId, setDraggingAssignmentId] = useState<string | null>(null);
 
   const [draggingEmployeeName, setDraggingEmployeeName] = useState<string | null>(null);
@@ -630,6 +631,19 @@ setMeetingTime("08:00");
     }
   });
 
+  const visibleAssignments = sortedAssignments.filter(
+    (assignment) => {
+      if (showFinished) return true;
+  
+      return dailyInfos.some(
+        (d) =>
+          d.assignment_id === assignment.id &&
+          d.work_date >= todayString &&
+          (d.planned_count ?? 0) > 0
+      );
+    }
+  );
+
   return (
     <div style={{ padding: 16 }}>
       <BackButton />
@@ -666,42 +680,36 @@ setMeetingTime("08:00");
     }}
   />
 
-  <select
-    value={sortMode}
-    onChange={(e) => setSortMode(e.target.value)}
-    style={{
-      padding: "8px 12px",
-      borderRadius: 8,
-      border: "1px solid #ccc",
-      fontWeight: 700,
-      height: 42,
-    }}
-  >
-    <option value="manual">標準</option>
-    <option value="site">現場順</option>
-    <option value="contractor">元請順</option>
-    <option value="manager">担当者順</option>
-    <option value="construction">工事区分順</option>
-    <option value="shift">昼夜順</option>
-  </select>
+  <<select
+  value={sortMode}
+  onChange={(e) => setSortMode(e.target.value)}
+>
+...
+</select>
 
-  <button
-    type="button"
-    onClick={() => setShowAddModal(true)}
-    style={{
-      padding: "10px 16px",
-      borderRadius: 8,
-      border: "none",
-      backgroundColor: "#111",
-      color: "#fff",
-      fontWeight: 700,
-      cursor: "pointer",
-      height: 42,
-      whiteSpace: "nowrap",
-    }}
-  >
-    ＋ 現場追加
-  </button>
+<label
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    fontWeight: 700,
+    whiteSpace: "nowrap",
+  }}
+>
+  <input
+    type="checkbox"
+    checked={showFinished}
+    onChange={(e) => setShowFinished(e.target.checked)}
+  />
+  終了現場表示
+</label>
+
+<button
+  type="button"
+  onClick={() => setShowAddModal(true)}
+>
+  ＋ 現場追加
+</button>
 </div>
 
         {showAddModal && (
@@ -956,7 +964,7 @@ width: "100%",
             </thead>
 
             <tbody>
-            {sortedAssignments.map((assignment) => (
+            {visibleAssignments.map((assignment) => (
   <tr
   key={assignment.id}
   style={{
