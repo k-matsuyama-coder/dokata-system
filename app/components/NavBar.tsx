@@ -67,6 +67,23 @@ export default function NavBar() {
   DOKATA-System
 </a>
 
+<button
+  onClick={(e) => {
+    e.stopPropagation();
+    setMenuOpen(!menuOpen);
+  }}
+  style={{
+    border: "1px solid #ddd",
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    padding: "8px 12px",
+    cursor: "pointer",
+    fontSize: 18,
+  }}
+>
+  ☰
+</button>
+
         <>
   {menuOpen && (
     <div
@@ -222,7 +239,7 @@ fontWeight: pathname.startsWith("/assignments/month") ? 700 : 500,
   style={{
     position: "fixed",
     top: 0,
-    left: 0,
+    right: 0,
     width: 15,
     height: "100vh",
     zIndex: 998,
