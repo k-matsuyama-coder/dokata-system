@@ -443,6 +443,7 @@ setMeetingTime("08:00");
     fetchData();
   };
 
+  const deleteSiteMember = async (id: string) => {
     const { error } = await supabase
       .from("assignment_site_members")
       .delete()
@@ -453,7 +454,9 @@ setMeetingTime("08:00");
       return;
     }
 
-    setSiteMembers((prev) => prev.filter((m) => m.id !== id));
+    setSiteMembers((prev) =>
+      prev.filter((m) => m.id !== id)
+    );
   };
 
   const deleteAssignment = async (id: string) => {
