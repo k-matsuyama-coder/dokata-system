@@ -237,7 +237,7 @@ useEffect(() => {
   const addMember = (name: string) => {
     if (selectedMembers.some((member) => member.name === name)) return;
   
-    const overtimeHour = String(Number(overtimeMinutes || 0) / 60);
+    const overtimeHour = overtimeMinutes || "0";
   
     setSelectedMembers([
       ...selectedMembers,
@@ -545,11 +545,23 @@ useEffect(() => {
 
       <div style={sectionStyle}>
         <p>残業（時間）</p>
+
         <select
-          value={overtimeMinutes}
-          onChange={(e) => setOvertimeMinutes(e.target.value)}
-          style={inputStyle}
-        >
+  value={overtimeMinutes}
+  onChange={(e) => {
+    const value = e.target.value;
+
+    setOvertimeMinutes(value);
+
+    setSelectedMembers(
+      selectedMembers.map((member) => ({
+        ...member,
+        overtime: value,
+      }))
+    );
+  }}
+  style={inputStyle}
+>
           <option value="0">0</option>
   <option value="0.5">0.5</option>
   <option value="1">1</option>
