@@ -103,7 +103,7 @@ export default function NavBar() {
   style={{
     position: "fixed",
     top: 0,
-    left: menuOpen ? 0 : -260,
+    right: menuOpen ? 0 : -260,
     width: 250,
     height: "100vh",
     backgroundColor: "#fff",
