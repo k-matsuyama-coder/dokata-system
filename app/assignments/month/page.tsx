@@ -443,10 +443,6 @@ setMeetingTime("08:00");
     fetchData();
   };
 
-  const deleteSiteMember = async (id: string) => {
-    const ok = window.confirm("このメンバーを外しますか？");
-    if (!ok) return;
-
     const { error } = await supabase
       .from("assignment_site_members")
       .delete()
