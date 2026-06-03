@@ -244,10 +244,18 @@ operator_name: operatorName,
       .select("id")
       .single();
 
-    if (reportError || !reportData) {
-      alert("日報保存失敗: " + (reportError?.message || "id取得失敗"));
-      return;
-    }
+      if (reportError || !reportData) {
+        if (
+          reportError?.message.includes("duplicate") ||
+          reportError?.message.includes("daily_reports_unique_daily")
+        ) {
+          alert("この日報は既に登録されています");
+          return;
+        }
+      
+        alert("日報保存失敗: " + (reportError?.message || "id取得失敗"));
+        return;
+      }
 
     const reportMembersPayload = selectedMembers.map((member) => ({
       report_id: reportData.id,

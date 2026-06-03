@@ -192,6 +192,7 @@ const [contractors, setContractors] = useState<Contractor[]>([]);
 const [sites, setSites] = useState<Site[]>([]);
 const [showContractorSuggestions, setShowContractorSuggestions] = useState(false);
 const [showSiteSuggestions, setShowSiteSuggestions] = useState(false);
+const [isSubmitting, setIsSubmitting] = useState(false);
 
 useEffect(() => {
   const fetchMasterData = async () => {
@@ -305,7 +306,9 @@ useEffect(() => {
     return null;
   };
   
-  const handleValidatedSubmit = () => {
+  const handleValidatedSubmit = async () => {
+    if (isSubmitting) return;
+  
     const errorMessage = validate();
   
     if (errorMessage) {
@@ -339,7 +342,13 @@ useEffect(() => {
       if (!ok) return;
     }
   
-    onSubmit();
+    setIsSubmitting(true);
+  
+    try {
+      await onSubmit();
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -1147,19 +1156,21 @@ useEffect(() => {
 
   <button
   onClick={handleValidatedSubmit}
-    style={{
-      width: "100%",
-      padding: 14,
-      fontSize: 16,
-      marginTop: 12,
-      border: "none",
-      borderRadius: 8,
-      backgroundColor: "#111",
-      color: "#fff",
-    }}
-  >
-    {submitLabel}
-  </button>
+  disabled={isSubmitting}
+  style={{
+    width: "100%",
+    padding: 14,
+    fontSize: 16,
+    marginTop: 12,
+    border: "none",
+    borderRadius: 8,
+    backgroundColor: isSubmitting ? "#777" : "#111",
+    color: "#fff",
+    cursor: isSubmitting ? "not-allowed" : "pointer",
+  }}
+>
+  {isSubmitting ? "送信中..." : submitLabel}
+</button>
 </div>
 );
 }

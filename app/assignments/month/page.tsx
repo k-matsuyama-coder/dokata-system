@@ -679,11 +679,17 @@ setMeetingTime("08:00");
     }}
   />
 
-  <select
+<select
   value={sortMode}
   onChange={(e) => setSortMode(e.target.value)}
+  style={inputStyle}
 >
-...
+  <option value="manual">標準</option>
+  <option value="site">現場順</option>
+  <option value="contractor">元請順</option>
+  <option value="manager">担当者順</option>
+  <option value="construction">工事区分順</option>
+  <option value="shift">昼夜順</option>
 </select>
 
 <label
