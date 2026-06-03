@@ -3,11 +3,13 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import MyMonthlyScheduleModal from "@/app/components/MyMonthlyScheduleModal";
 
 export default function NavBar() {
   const [role, setRole] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
+  const [showCalendarModal, setShowCalendarModal] = useState(false);
 
   useEffect(() => {
     const fetchRole = async () => {
@@ -66,6 +68,22 @@ export default function NavBar() {
 >
   DOKATA-System
 </a>
+
+<button
+  type="button"
+  onClick={() => setShowCalendarModal(true)}
+  style={{
+    border: "1px solid #ddd",
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    padding: "8px 12px",
+    cursor: "pointer",
+    fontSize: 18,
+    marginRight: 8,
+  }}
+>
+  📅
+</button>
 
 <button
   onClick={(e) => {
@@ -244,6 +262,11 @@ fontWeight: pathname.startsWith("/assignments/month") ? 700 : 500,
     height: "100vh",
     zIndex: 998,
   }}
+/>
+
+<MyMonthlyScheduleModal
+  open={showCalendarModal}
+  onClose={() => setShowCalendarModal(false)}
 />
 
     </header>
