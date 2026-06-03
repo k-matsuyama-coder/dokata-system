@@ -42,6 +42,7 @@ type DailyInfo = {
 
 type Employee = {
   name: string;
+  company_name: string | null;
 };
 
 type Contractor = {
@@ -195,9 +196,10 @@ const getCellStyle = (
     const endDate = days[days.length - 1];
 
     const { data: employeeData } = await supabase
-      .from("employees")
-      .select("name")
-      .order("name", { ascending: true });
+  .from("employees")
+  .select("name, company_name")
+  .order("company_name", { ascending: true })
+  .order("name", { ascending: true });
 
     setEmployees(employeeData ?? []);
 
@@ -619,10 +621,10 @@ setShowAddModal(false);
     const assignedNames = siteMembers
       .filter((m) => m.work_date === workDate)
       .map((m) => m.employee_name);
-
-    return employees
-      .filter((employee) => !assignedNames.includes(employee.name))
-      .map((employee) => employee.name);
+  
+    return employees.filter(
+      (employee) => !assignedNames.includes(employee.name)
+    );
   };
 
   const inputStyle = {
@@ -674,13 +676,13 @@ setShowAddModal(false);
   const visibleAssignments = sortedAssignments.filter((assignment) => {
     if (showFinished) return true;
   
-    if (!assignment.start_date && !assignment.end_date) {
+    if (!assignment.start_date || !assignment.end_date) {
       return true;
     }
   
     return (
-      assignment.start_date! <= days[days.length - 1] &&
-      assignment.end_date! >= todayString
+      assignment.start_date <= days[days.length - 1] &&
+      assignment.end_date >= todayString
     );
   });
 
@@ -1685,35 +1687,71 @@ const isShort =
   </button>
 )}
 
-  <div style={{ display: "grid", gap: 6 }}>
-    {(selectedDate
+<div style={{ display: "grid", gap: 10 }}>
+  {Object.entries(
+    (selectedDate
       ? getUnassignedEmployeesByDate(selectedDate)
-      : employees.map((employee) => employee.name)
-    ).map((name) => (
+      : employees
+    ).reduce((acc, employee) => {
+      const company = employee.company_name || "未設定";
+
+      if (!acc[company]) {
+        acc[company] = [];
+      }
+
+      acc[company].push(employee);
+
+      return acc;
+    }, {} as Record<string, Employee[]>)
+  ).map(([company, members]) => (
+    <div key={company}>
       <div
-        key={name}
-        draggable
-        onDragStart={() => setDraggingEmployeeName(name)}
-        onDragEnd={() => setDraggingEmployeeName(null)}
-        onClick={() => {
-          setSelectedEmployeeName(name);
-          setSelectedSiteMemberId(null);
-        }}
         style={{
-          padding: "8px 10px",
-          borderRadius: 999,
-          backgroundColor:
-            selectedEmployeeName === name ? "#dbeafe" : "#fff7ed",
-          border: "1px solid #fed7aa",
-          cursor: "grab",
-          fontWeight: 700,
-          fontSize: 13,
+          fontWeight: 800,
+          backgroundColor: "#f3f4f6",
+          padding: "6px 8px",
+          borderRadius: 6,
+          marginBottom: 6,
         }}
       >
-        {name}
+        {company}
       </div>
-    ))}
-  </div>
+
+      <div style={{ display: "grid", gap: 6 }}>
+        {members.map((employee) => (
+          <div
+            key={employee.name}
+            draggable
+            onDragStart={() =>
+              setDraggingEmployeeName(employee.name)
+            }
+            onDragEnd={() =>
+              setDraggingEmployeeName(null)
+            }
+            onClick={() => {
+              setSelectedEmployeeName(employee.name);
+              setSelectedSiteMemberId(null);
+            }}
+            style={{
+              padding: "8px 10px",
+              borderRadius: 999,
+              backgroundColor:
+                selectedEmployeeName === employee.name
+                  ? "#dbeafe"
+                  : "#fff7ed",
+              border: "1px solid #fed7aa",
+              cursor: "grab",
+              fontWeight: 700,
+              fontSize: 13,
+            }}
+          >
+            {employee.name}
+          </div>
+        ))}
+      </div>
+    </div>
+  ))}
+</div>
 </div>
 
         {showVehicleModal && vehicleTarget && (
