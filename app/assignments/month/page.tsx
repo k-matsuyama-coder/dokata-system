@@ -682,7 +682,18 @@ setMeetingTime("08:00");
 <select
   value={sortMode}
   onChange={(e) => setSortMode(e.target.value)}
-  style={inputStyle}
+  style={{
+    width: 160,
+    height: 42,
+    padding: "8px 12px",
+    border: "1px solid #ccc",
+    borderRadius: 8,
+    fontSize: 15,
+    fontWeight: 700,
+    backgroundColor: "#fff",
+    boxSizing: "border-box",
+    flexShrink: 0,
+  }}
 >
   <option value="manual">標準</option>
   <option value="site">現場順</option>
