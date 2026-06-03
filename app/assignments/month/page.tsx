@@ -227,9 +227,9 @@ setContractorContacts(contactData ?? []);
 
     const { data: assignmentData, error } = await supabase
       .from("assignments")
-      .select("id, assignment_date, site_name, contractor_name, construction_type, shift_type, start_time, end_time, manager_name, contact_phone, address, meeting_time, planned_count, detail")
-      .gte("assignment_date", startDate)
-      .lte("assignment_date", endDate)
+      .select("id, assignment_date, site_name, contractor_name, construction_type, shift_type, start_time, end_time, manager_name, contact_phone, address, meeting_time, start_date, end_date")
+.lte("start_date", endDate)
+.gte("end_date", startDate)
       .order("sort_order", { ascending: true })
 .order("created_at", { ascending: true });
 
@@ -354,13 +354,15 @@ setContractorContacts(contactData ?? []);
   }, [month]);
 
   const handleAddSite = async () => {
-    if (!siteName || !contractorName) {
-      alert("元請と現場名を入力してください");
+    if (!siteName || !contractorName || !startDate || !endDate) {
+      alert("元請・現場名・工期を入力してください");
       return;
     }
 
     const { error } = await supabase.from("assignments").insert({
       assignment_date: `${month}-01`,
+      start_date: startDate,
+end_date: endDate,
       contractor_name: contractorName,
       site_name: siteName,
       shift_type: shiftType,
@@ -386,6 +388,8 @@ setAddress("");
 setShiftType("day");
 setConstructionType("第一工事");
 setMeetingTime("08:00");
+setStartDate("");
+setEndDate("");
 
     fetchData();
   };
@@ -637,18 +641,16 @@ setMeetingTime("08:00");
     }
   });
 
-  const visibleAssignments = sortedAssignments.filter(
-    (assignment) => {
-      if (showFinished) return true;
+  const visibleAssignments = sortedAssignments.filter((assignment) => {
+    if (showFinished) return true;
   
-      return dailyInfos.some(
-        (d) =>
-          d.assignment_id === assignment.id &&
-          d.work_date >= todayString &&
-          (d.planned_count ?? 0) > 0
-      );
+    if (!assignment.start_date || !assignment.end_date) {
+      return false;
     }
-  );
+  
+    return assignment.start_date <= days[days.length - 1] &&
+      assignment.end_date >= todayString;
+  });
 
   return (
     <div style={{ padding: 16 }}>
@@ -864,6 +866,34 @@ setMeetingTime("08:00");
         placeholder="住所"
         style={inputStyle}
       />
+
+      <div style={{ display: "flex", gap: 8 }}>
+  <div style={{ flex: 1 }}>
+    <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>
+      工期開始
+    </div>
+
+    <input
+      type="date"
+      value={startDate}
+      onChange={(e) => setStartDate(e.target.value)}
+      style={inputStyle}
+    />
+  </div>
+
+  <div style={{ flex: 1 }}>
+    <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>
+      工期終了
+    </div>
+
+    <input
+      type="date"
+      value={endDate}
+      onChange={(e) => setEndDate(e.target.value)}
+      style={inputStyle}
+    />
+  </div>
+</div>
 
 <div style={{ display: "flex", gap: 8 }}>
   <button
