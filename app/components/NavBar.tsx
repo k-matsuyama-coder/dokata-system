@@ -69,38 +69,46 @@ export default function NavBar() {
   DOKATA-System
 </a>
 
-<button
-  type="button"
-  onClick={() => setShowCalendarModal(true)}
+<div
   style={{
-    border: "1px solid #ddd",
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    padding: "8px 12px",
-    cursor: "pointer",
-    fontSize: 18,
-    marginRight: 8,
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
   }}
 >
-  📅
-</button>
+  <button
+    type="button"
+    onClick={() => setShowCalendarModal(true)}
+    style={{
+      border: "1px solid #ddd",
+      backgroundColor: "#fff",
+      borderRadius: 8,
+      padding: "8px 12px",
+      cursor: "pointer",
+      fontSize: 18,
+    }}
+  >
+    📅
+  </button>
 
-<button
-  onClick={(e) => {
-    e.stopPropagation();
-    setMenuOpen(!menuOpen);
-  }}
-  style={{
-    border: "1px solid #ddd",
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    padding: "8px 12px",
-    cursor: "pointer",
-    fontSize: 18,
-  }}
->
-  ☰
-</button>
+  <button
+    type="button"
+    onClick={(e) => {
+      e.stopPropagation();
+      setMenuOpen(!menuOpen);
+    }}
+    style={{
+      border: "1px solid #ddd",
+      backgroundColor: "#fff",
+      borderRadius: 8,
+      padding: "8px 12px",
+      cursor: "pointer",
+      fontSize: 18,
+    }}
+  >
+    ☰
+  </button>
+</div>
 
         <>
   {menuOpen && (
