@@ -87,6 +87,7 @@ const [draggingAssignmentId, setDraggingAssignmentId] = useState<string | null>(
   const [selectedEmployeeName, setSelectedEmployeeName] = useState<string | null>(null);
 const [selectedSiteMemberId, setSelectedSiteMemberId] = useState<string | null>(null);
 const [selectedDate, setSelectedDate] = useState<string | null>(null);
+const [copiedEmployeeName, setCopiedEmployeeName] = useState<string | null>(null);
 const [vehicles, setVehicles] = useState<
   {
     id: string;
@@ -1114,15 +1115,21 @@ const isShort =
                           setSelectedDate(date);
                         
                           if (selectedSiteMemberId) {
-                              moveSiteMember(selectedSiteMemberId, assignment.id, date);
-                              setSelectedSiteMemberId(null);
-                              return;
-                            }
-                          
-                            if (selectedEmployeeName) {
-                              addEmployeeToCell(selectedEmployeeName, assignment.id, date);
-                              setSelectedEmployeeName(null);
-                            }
+                            moveSiteMember(selectedSiteMemberId, assignment.id, date);
+                            setSelectedSiteMemberId(null);
+                            return;
+                          }
+                        
+                          if (selectedEmployeeName) {
+                            addEmployeeToCell(selectedEmployeeName, assignment.id, date);
+                            setSelectedEmployeeName(null);
+                            return;
+                          }
+                        
+                          if (copiedEmployeeName) {
+                            addEmployeeToCell(copiedEmployeeName, assignment.id, date);
+                          }
+                        
                           }}
                           style={getCellStyle(
                             date,
@@ -1287,8 +1294,10 @@ const isShort =
     draggable
     onDragStart={() => setDraggingSiteMemberId(member.id)}
     onDragEnd={() => setDraggingSiteMemberId(null)}
-    onClick={() => {
-      setSelectedSiteMemberId(member.id);
+    onClick={(e) => {
+      e.stopPropagation();
+      setCopiedEmployeeName(member.employee_name);
+      setSelectedSiteMemberId(null);
       setSelectedEmployeeName(null);
     }}
     onDoubleClick={() => deleteSiteMember(member.id)}
@@ -1338,6 +1347,36 @@ const isShort =
             </tbody>
           </table>
         </div>
+
+        {copiedEmployeeName && (
+  <div
+    style={{
+      marginBottom: 10,
+      padding: 8,
+      borderRadius: 8,
+      backgroundColor: "#dbeafe",
+      color: "#1d4ed8",
+      fontWeight: 700,
+      fontSize: 12,
+    }}
+  >
+    コピー中：{copiedEmployeeName}
+
+    <button
+      type="button"
+      onClick={() => setCopiedEmployeeName(null)}
+      style={{
+        marginLeft: 8,
+        border: "none",
+        background: "transparent",
+        cursor: "pointer",
+        fontWeight: 800,
+      }}
+    >
+      ×
+    </button>
+  </div>
+)}
 
         <div
   style={{
