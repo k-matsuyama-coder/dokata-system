@@ -457,32 +457,25 @@ setSiteMembers(memberData ?? []);
   };
 
   const handleAddSite = async () => {
-    if (
-      !siteName ||
-      !contractorName ||
-      !startDate ||
-      !endDate
-    ) {
-      alert("工期を入力してください");
+    if (!siteName || !contractorName || !startDate || !endDate) {
+      alert("元請・現場名・工期を入力してください");
       return;
-
     }
   
     const { error } = await supabase.from("assignments").insert({
       assignment_date: days[0],
-    
-      start_date: startDate,
-      end_date: endDate,
-    
       contractor_name: contractorName,
       site_name: siteName,
-    
-      shift_type: shiftType,
+      construction_type: constructionType,
       manager_name: managerName,
       contact_phone: contactPhone,
       address,
+      shift_type: shiftType,
+      start_time: shiftType === "night" ? "20:00" : "08:00",
+      end_time: shiftType === "night" ? "05:00" : "17:00",
       meeting_time: meetingTime,
-      construction_type: constructionType,
+      start_date: startDate,
+      end_date: endDate,
     });
   
     if (error) {
@@ -497,9 +490,10 @@ setSiteMembers(memberData ?? []);
     setAddress("");
     setShiftType("day");
     setMeetingTime("08:00");
-setStartDate("");
-setEndDate("");
-setShowAddModal(false);
+    setConstructionType("第一工事");
+    setStartDate("");
+    setEndDate("");
+    setShowAddModal(false);
   
     fetchData();
   };
@@ -1063,6 +1057,70 @@ setShowAddModal(false);
           style={inputStyle}
         />
       </div>
+
+      <div style={{ display: "flex", gap: 8 }}>
+  <button
+    type="button"
+    onClick={() =>
+      setEditingAssignment({
+        ...editingAssignment,
+        shift_type: "day",
+        meeting_time: "08:00",
+      })
+    }
+    style={{
+      flex: 1,
+      padding: 10,
+      borderRadius: 8,
+      border:
+        editingAssignment.shift_type === "day"
+          ? "2px solid #111"
+          : "1px solid #ccc",
+      backgroundColor:
+        editingAssignment.shift_type === "day" ? "#f3f3f3" : "#fff",
+      fontWeight: 700,
+    }}
+  >
+    昼
+  </button>
+
+  <button
+    type="button"
+    onClick={() =>
+      setEditingAssignment({
+        ...editingAssignment,
+        shift_type: "night",
+        meeting_time: "20:00",
+      })
+    }
+    style={{
+      flex: 1,
+      padding: 10,
+      borderRadius: 8,
+      border:
+        editingAssignment.shift_type === "night"
+          ? "2px solid #111"
+          : "1px solid #ccc",
+      backgroundColor:
+        editingAssignment.shift_type === "night" ? "#f3f3f3" : "#fff",
+      fontWeight: 700,
+    }}
+  >
+    夜
+  </button>
+</div>
+
+<input
+  type="time"
+  value={editingAssignment.meeting_time ?? "08:00"}
+  onChange={(e) =>
+    setEditingAssignment({
+      ...editingAssignment,
+      meeting_time: e.target.value,
+    })
+  }
+  style={inputStyle}
+/>
 
       <div style={{ display: "flex", gap: 8 }}>
         <button
