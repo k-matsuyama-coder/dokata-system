@@ -439,6 +439,25 @@ setSiteMembers(memberData ?? []);
     fetchData();
   };
 
+  const deleteAssignment = async (id: string) => {
+    const ok = window.confirm("この現場を削除しますか？");
+    if (!ok) return;
+  
+    const { error } = await supabase
+      .from("assignments")
+      .delete()
+      .eq("id", id);
+  
+    if (error) {
+      alert("現場削除失敗: " + error.message);
+      return;
+    }
+  
+    setAssignments((prev) => prev.filter((a) => a.id !== id));
+    setDailyInfos((prev) => prev.filter((d) => d.assignment_id !== id));
+    setSiteMembers((prev) => prev.filter((m) => m.assignment_id !== id));
+  };
+
   const handleAddSite = async () => {
     if (
       !siteName ||
@@ -1183,6 +1202,24 @@ setShowAddModal(false);
 >
   {assignment.site_name || "-"}
 </div>
+
+<button
+  type="button"
+  onClick={() => deleteAssignment(assignment.id)}
+  style={{
+    marginTop: 6,
+    backgroundColor: "#d11a2a",
+    color: "#fff",
+    border: "none",
+    borderRadius: 6,
+    padding: "4px 8px",
+    cursor: "pointer",
+    fontSize: 11,
+    fontWeight: 700,
+  }}
+>
+  削除
+</button>
 
   <div
     style={{

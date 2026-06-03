@@ -231,7 +231,7 @@ setContractorContacts(contactData ?? []);
       .select("id, assignment_date, site_name, contractor_name, construction_type, shift_type, start_time, end_time, manager_name, contact_phone, address, meeting_time, start_date, end_date")
 .lte("start_date", endDate)
 .gte("end_date", startDate)
-      .order("sort_order", { ascending: true })
+.order("sort_order", { ascending: true })
 .order("created_at", { ascending: true });
 
     if (error) {
