@@ -87,7 +87,7 @@ const [draggingAssignmentId, setDraggingAssignmentId] = useState<string | null>(
   const [selectedEmployeeName, setSelectedEmployeeName] = useState<string | null>(null);
 const [selectedSiteMemberId, setSelectedSiteMemberId] = useState<string | null>(null);
 const [selectedDate, setSelectedDate] = useState<string | null>(null);
-const [copiedEmployeeName, setCopiedEmployeeName] = useState<string | null>(null);
+const [copiedEmployeeNames, setCopiedEmployeeNames] = useState<string[]>([]);
 const [vehicles, setVehicles] = useState<
   {
     id: string;
@@ -1126,8 +1126,10 @@ const isShort =
                             return;
                           }
                         
-                          if (copiedEmployeeName) {
-                            addEmployeeToCell(copiedEmployeeName, assignment.id, date);
+                          if (copiedEmployeeNames.length > 0) {
+                            copiedEmployeeNames.forEach((name) => {
+                              addEmployeeToCell(name, assignment.id, date);
+                            });
                           }
                         
                           }}
@@ -1296,7 +1298,11 @@ const isShort =
     onDragEnd={() => setDraggingSiteMemberId(null)}
     onClick={(e) => {
       e.stopPropagation();
-      setCopiedEmployeeName(member.employee_name);
+      setCopiedEmployeeNames((prev) =>
+  prev.includes(member.employee_name)
+    ? prev.filter((name) => name !== member.employee_name)
+    : [...prev, member.employee_name]
+);
       setSelectedSiteMemberId(null);
       setSelectedEmployeeName(null);
     }}
@@ -1348,7 +1354,7 @@ const isShort =
           </table>
         </div>
 
-        {copiedEmployeeName && (
+        {copiedEmployeeNames.length > 0 && (
   <div
     style={{
       marginBottom: 10,
@@ -1360,11 +1366,11 @@ const isShort =
       fontSize: 12,
     }}
   >
-    コピー中：{copiedEmployeeName}
+    コピー中：{copiedEmployeeNames.join("、")}
 
     <button
       type="button"
-      onClick={() => setCopiedEmployeeName(null)}
+      onClick={() => setCopiedEmployeeNames([])}
       style={{
         marginLeft: 8,
         border: "none",
