@@ -77,6 +77,7 @@ const [endDate, setEndDate] = useState("");
 const [contractors, setContractors] = useState<Contractor[]>([]);
 const [contractorContacts, setContractorContacts] = useState<ContractorContact[]>([]);
 const [showAddModal, setShowAddModal] = useState(false);
+const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
 const [constructionType, setConstructionType] = useState("第一工事");
 const [sortMode, setSortMode] = useState("manual");
 const [showFinished, setShowFinished] = useState(false);
@@ -353,6 +354,34 @@ setContractorContacts(contactData ?? []);
     };
   }, [month]);
 
+  const updateAssignment = async () => {
+    if (!editingAssignment) return;
+  
+    const { error } = await supabase
+      .from("assignments")
+      .update({
+        contractor_name: editingAssignment.contractor_name,
+        site_name: editingAssignment.site_name,
+        construction_type: editingAssignment.construction_type,
+        manager_name: editingAssignment.manager_name,
+        contact_phone: editingAssignment.contact_phone,
+        address: editingAssignment.address,
+        meeting_time: editingAssignment.meeting_time,
+        shift_type: editingAssignment.shift_type,
+        start_date: editingAssignment.start_date,
+        end_date: editingAssignment.end_date,
+      })
+      .eq("id", editingAssignment.id);
+  
+    if (error) {
+      alert("現場更新失敗: " + error.message);
+      return;
+    }
+  
+    setEditingAssignment(null);
+    fetchData();
+  };
+
   const handleAddSite = async () => {
     if (!siteName || !contractorName || !startDate || !endDate) {
       alert("元請・現場名・工期を入力してください");
@@ -390,6 +419,7 @@ setConstructionType("第一工事");
 setMeetingTime("08:00");
 setStartDate("");
 setEndDate("");
+setShowAddModal(false);
 
     fetchData();
   };
@@ -958,11 +988,8 @@ setEndDate("");
         </button>
 
         <button
-          type="button"
-          onClick={async () => {
-            await handleAddSite();
-            setShowAddModal(false);
-          }}
+  type="button"
+  onClick={handleAddSite}
           style={{
             flex: 1,
             padding: 12,
@@ -974,6 +1001,169 @@ setEndDate("");
           }}
         >
           追加
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+{editingAssignment && (
+  <div
+    onClick={() => setEditingAssignment(null)}
+    style={{
+      position: "fixed",
+      inset: 0,
+      backgroundColor: "rgba(0,0,0,0.45)",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      zIndex: 99999,
+      padding: 16,
+    }}
+  >
+    <div
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        width: "100%",
+        maxWidth: 520,
+        backgroundColor: "#fff",
+        borderRadius: 16,
+        padding: 20,
+        display: "grid",
+        gap: 10,
+      }}
+    >
+      <h2 style={{ margin: 0 }}>現場編集</h2>
+
+      <input
+        value={editingAssignment.contractor_name ?? ""}
+        onChange={(e) =>
+          setEditingAssignment({
+            ...editingAssignment,
+            contractor_name: e.target.value,
+          })
+        }
+        placeholder="元請"
+        style={inputStyle}
+      />
+
+      <input
+        value={editingAssignment.site_name ?? ""}
+        onChange={(e) =>
+          setEditingAssignment({
+            ...editingAssignment,
+            site_name: e.target.value,
+          })
+        }
+        placeholder="現場名"
+        style={inputStyle}
+      />
+
+      <select
+        value={editingAssignment.construction_type ?? "第一工事"}
+        onChange={(e) =>
+          setEditingAssignment({
+            ...editingAssignment,
+            construction_type: e.target.value,
+          })
+        }
+        style={inputStyle}
+      >
+        <option value="第一工事">第一工事</option>
+        <option value="第二工事">第二工事</option>
+      </select>
+
+      <input
+        value={editingAssignment.manager_name ?? ""}
+        onChange={(e) =>
+          setEditingAssignment({
+            ...editingAssignment,
+            manager_name: e.target.value,
+          })
+        }
+        placeholder="担当者"
+        style={inputStyle}
+      />
+
+      <input
+        value={editingAssignment.contact_phone ?? ""}
+        onChange={(e) =>
+          setEditingAssignment({
+            ...editingAssignment,
+            contact_phone: e.target.value,
+          })
+        }
+        placeholder="連絡先"
+        style={inputStyle}
+      />
+
+      <input
+        value={editingAssignment.address ?? ""}
+        onChange={(e) =>
+          setEditingAssignment({
+            ...editingAssignment,
+            address: e.target.value,
+          })
+        }
+        placeholder="住所"
+        style={inputStyle}
+      />
+
+      <div style={{ display: "flex", gap: 8 }}>
+        <input
+          type="date"
+          value={editingAssignment.start_date ?? ""}
+          onChange={(e) =>
+            setEditingAssignment({
+              ...editingAssignment,
+              start_date: e.target.value,
+            })
+          }
+          style={inputStyle}
+        />
+
+        <input
+          type="date"
+          value={editingAssignment.end_date ?? ""}
+          onChange={(e) =>
+            setEditingAssignment({
+              ...editingAssignment,
+              end_date: e.target.value,
+            })
+          }
+          style={inputStyle}
+        />
+      </div>
+
+      <div style={{ display: "flex", gap: 8 }}>
+        <button
+          type="button"
+          onClick={() => setEditingAssignment(null)}
+          style={{
+            flex: 1,
+            padding: 12,
+            borderRadius: 8,
+            border: "1px solid #ccc",
+            backgroundColor: "#fff",
+          }}
+        >
+          キャンセル
+        </button>
+
+        <button
+          type="button"
+          onClick={updateAssignment}
+          style={{
+            flex: 1,
+            padding: 12,
+            border: "none",
+            borderRadius: 8,
+            backgroundColor: "#111",
+            color: "#fff",
+            fontWeight: 700,
+          }}
+        >
+          保存
         </button>
       </div>
     </div>
@@ -1065,7 +1255,15 @@ width: "100%",
   }}
 >
       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-        <span>{assignment.site_name || "-"}</span>
+      <span
+  onClick={() => setEditingAssignment(assignment)}
+  style={{
+    cursor: "pointer",
+    textDecoration: "underline",
+  }}
+>
+  {assignment.site_name || "-"}
+</span>
 
         <button
           type="button"

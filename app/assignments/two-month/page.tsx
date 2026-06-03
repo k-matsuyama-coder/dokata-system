@@ -18,9 +18,12 @@ type Assignment = {
   contractor_name: string | null;
   construction_type: string | null;
   manager_name: string | null;
+  contact_phone: string | null;
+  address: string | null;
+  meeting_time: string | null;
   shift_type: string | null;
   start_date: string | null;
-end_date: string | null;
+  end_date: string | null;
 };
 
 type SiteMember = {
@@ -77,6 +80,7 @@ const [meetingTime, setMeetingTime] = useState("08:00");
 const [startDate, setStartDate] = useState("");
 const [endDate, setEndDate] = useState("");
 const [showAddModal, setShowAddModal] = useState(false);
+const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
 const [constructionType, setConstructionType] = useState("第一工事");
 const [sortMode, setSortMode] = useState("manual");
 
@@ -144,6 +148,9 @@ setContractorContacts(contactData ?? []);
   contractor_name,
   construction_type,
   manager_name,
+  contact_phone,
+  address,
+  meeting_time,
   shift_type,
   start_date,
   end_date
@@ -402,6 +409,34 @@ setSiteMembers(memberData ?? []);
     }
   
     return "#dcfce7";
+  };
+
+  const updateAssignment = async () => {
+    if (!editingAssignment) return;
+  
+    const { error } = await supabase
+      .from("assignments")
+      .update({
+        contractor_name: editingAssignment.contractor_name,
+        site_name: editingAssignment.site_name,
+        construction_type: editingAssignment.construction_type,
+        manager_name: editingAssignment.manager_name,
+        contact_phone: editingAssignment.contact_phone,
+        address: editingAssignment.address,
+        meeting_time: editingAssignment.meeting_time,
+        shift_type: editingAssignment.shift_type,
+        start_date: editingAssignment.start_date,
+        end_date: editingAssignment.end_date,
+      })
+      .eq("id", editingAssignment.id);
+  
+    if (error) {
+      alert("現場更新失敗: " + error.message);
+      return;
+    }
+  
+    setEditingAssignment(null);
+    fetchData();
   };
 
   const handleAddSite = async () => {
@@ -871,6 +906,169 @@ setShowAddModal(false);
   </div>
 )}
 
+{editingAssignment && (
+  <div
+    onClick={() => setEditingAssignment(null)}
+    style={{
+      position: "fixed",
+      inset: 0,
+      backgroundColor: "rgba(0,0,0,0.45)",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      zIndex: 99999,
+      padding: 16,
+    }}
+  >
+    <div
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        width: "100%",
+        maxWidth: 520,
+        backgroundColor: "#fff",
+        borderRadius: 16,
+        padding: 20,
+        display: "grid",
+        gap: 10,
+      }}
+    >
+      <h2 style={{ margin: 0 }}>現場編集</h2>
+
+      <input
+        value={editingAssignment.contractor_name ?? ""}
+        onChange={(e) =>
+          setEditingAssignment({
+            ...editingAssignment,
+            contractor_name: e.target.value,
+          })
+        }
+        placeholder="元請"
+        style={inputStyle}
+      />
+
+      <input
+        value={editingAssignment.site_name ?? ""}
+        onChange={(e) =>
+          setEditingAssignment({
+            ...editingAssignment,
+            site_name: e.target.value,
+          })
+        }
+        placeholder="現場名"
+        style={inputStyle}
+      />
+
+      <select
+        value={editingAssignment.construction_type ?? "第一工事"}
+        onChange={(e) =>
+          setEditingAssignment({
+            ...editingAssignment,
+            construction_type: e.target.value,
+          })
+        }
+        style={inputStyle}
+      >
+        <option value="第一工事">第一工事</option>
+        <option value="第二工事">第二工事</option>
+      </select>
+
+      <input
+        value={editingAssignment.manager_name ?? ""}
+        onChange={(e) =>
+          setEditingAssignment({
+            ...editingAssignment,
+            manager_name: e.target.value,
+          })
+        }
+        placeholder="担当者"
+        style={inputStyle}
+      />
+
+      <input
+        value={editingAssignment.contact_phone ?? ""}
+        onChange={(e) =>
+          setEditingAssignment({
+            ...editingAssignment,
+            contact_phone: e.target.value,
+          })
+        }
+        placeholder="連絡先"
+        style={inputStyle}
+      />
+
+      <input
+        value={editingAssignment.address ?? ""}
+        onChange={(e) =>
+          setEditingAssignment({
+            ...editingAssignment,
+            address: e.target.value,
+          })
+        }
+        placeholder="住所"
+        style={inputStyle}
+      />
+
+      <div style={{ display: "flex", gap: 8 }}>
+        <input
+          type="date"
+          value={editingAssignment.start_date ?? ""}
+          onChange={(e) =>
+            setEditingAssignment({
+              ...editingAssignment,
+              start_date: e.target.value,
+            })
+          }
+          style={inputStyle}
+        />
+
+        <input
+          type="date"
+          value={editingAssignment.end_date ?? ""}
+          onChange={(e) =>
+            setEditingAssignment({
+              ...editingAssignment,
+              end_date: e.target.value,
+            })
+          }
+          style={inputStyle}
+        />
+      </div>
+
+      <div style={{ display: "flex", gap: 8 }}>
+        <button
+          type="button"
+          onClick={() => setEditingAssignment(null)}
+          style={{
+            flex: 1,
+            padding: 12,
+            borderRadius: 8,
+            border: "1px solid #ccc",
+            backgroundColor: "#fff",
+          }}
+        >
+          キャンセル
+        </button>
+
+        <button
+          type="button"
+          onClick={updateAssignment}
+          style={{
+            flex: 1,
+            padding: 12,
+            border: "none",
+            borderRadius: 8,
+            backgroundColor: "#111",
+            color: "#fff",
+            fontWeight: 700,
+          }}
+        >
+          保存
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
       <div
         style={{
           overflowX: "auto",
@@ -975,9 +1173,16 @@ setShowAddModal(false);
           {sortedAssignments.map((assignment) => (
     <tr key={assignment.id}>
       <td style={stickyTd}>
-  <div style={{ fontWeight: 800 }}>
-    {assignment.site_name || "-"}
-  </div>
+      <div
+  onClick={() => setEditingAssignment(assignment)}
+  style={{
+    fontWeight: 800,
+    cursor: "pointer",
+    textDecoration: "underline",
+  }}
+>
+  {assignment.site_name || "-"}
+</div>
 
   <div
     style={{
