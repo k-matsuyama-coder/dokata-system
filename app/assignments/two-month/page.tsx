@@ -155,8 +155,6 @@ setContractorContacts(contactData ?? []);
   start_date,
   end_date
 `)
-.lte("start_date", endDate)
-.gte("end_date", startDate)
 .order("created_at", { ascending: true });
 
     if (assignmentError) {
