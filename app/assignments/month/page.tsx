@@ -227,15 +227,12 @@ const { data: contactData } = await supabase
 setContractorContacts(contactData ?? []);
 
 const { data: assignmentData, error } = await supabase
-.from("assignments")
-.select(
-  "id, assignment_date, site_name, contractor_name, construction_type, shift_type, start_time, end_time, manager_name, contact_phone, address, meeting_time, start_date, end_date"
-)
-.or(
-  `and(start_date.lte.${endDate},end_date.gte.${startDate}),and(start_date.is.null,end_date.is.null)`
-)
-.order("sort_order", { ascending: true })
-.order("created_at", { ascending: true });
+  .from("assignments")
+  .select(
+    "id, assignment_date, site_name, contractor_name, construction_type, shift_type, start_time, end_time, manager_name, contact_phone, address, meeting_time, start_date, end_date"
+  )
+  .order("sort_order", { ascending: true })
+  .order("created_at", { ascending: true });
 
     if (error) {
       alert("現場取得失敗: " + error.message);
