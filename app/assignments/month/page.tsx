@@ -88,6 +88,8 @@ const [draggingAssignmentId, setDraggingAssignmentId] = useState<string | null>(
 const [selectedSiteMemberId, setSelectedSiteMemberId] = useState<string | null>(null);
 const [selectedDate, setSelectedDate] = useState<string | null>(null);
 const [copiedEmployeeNames, setCopiedEmployeeNames] = useState<string[]>([]);
+const [editingDetails, setEditingDetails] = useState<Record<string, string>>({});
+const [saveTimers, setSaveTimers] = useState<Record<string, NodeJS.Timeout>>({});
 const [vehicles, setVehicles] = useState<
   {
     id: string;
@@ -1188,15 +1190,38 @@ const isShort =
 />
 
 <input
-  value={dailyInfo?.detail ?? ""}
-  onChange={(e) =>
-    updateDailyInfo(
-      assignment.id,
-      date,
-      "detail",
-      e.target.value
-    )
+  value={
+    editingDetails[`${assignment.id}_${date}`] ??
+    dailyInfo?.detail ??
+    ""
   }
+  onChange={(e) => {
+    const key = `${assignment.id}_${date}`;
+    const value = e.target.value;
+
+    setEditingDetails((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
+
+    if (saveTimers[key]) {
+      clearTimeout(saveTimers[key]);
+    }
+
+    const timer = setTimeout(() => {
+      updateDailyInfo(
+        assignment.id,
+        date,
+        "detail",
+        value
+      );
+    }, 500);
+
+    setSaveTimers((prev) => ({
+      ...prev,
+      [key]: timer,
+    }));
+  }}
   placeholder="詳細"
   style={{
     width: "100%",
