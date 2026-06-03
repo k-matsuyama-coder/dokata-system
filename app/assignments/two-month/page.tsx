@@ -19,6 +19,8 @@ type Assignment = {
   construction_type: string | null;
   manager_name: string | null;
   shift_type: string | null;
+  start_date: string | null;
+end_date: string | null;
 };
 
 type SiteMember = {
@@ -72,6 +74,8 @@ const [contactPhone, setContactPhone] = useState("");
 const [address, setAddress] = useState("");
 const [shiftType, setShiftType] = useState("day");
 const [meetingTime, setMeetingTime] = useState("08:00");
+const [startDate, setStartDate] = useState("");
+const [endDate, setEndDate] = useState("");
 const [showAddModal, setShowAddModal] = useState(false);
 const [constructionType, setConstructionType] = useState("第一工事");
 const [sortMode, setSortMode] = useState("manual");
@@ -140,9 +144,13 @@ setContractorContacts(contactData ?? []);
   contractor_name,
   construction_type,
   manager_name,
-  shift_type
+  shift_type,
+  start_date,
+  end_date
 `)
-      .order("created_at", { ascending: true });
+.lte("start_date", endDate)
+.gte("end_date", startDate)
+.order("created_at", { ascending: true });
 
     if (assignmentError) {
       alert("現場取得失敗: " + assignmentError.message);
@@ -397,15 +405,26 @@ setSiteMembers(memberData ?? []);
   };
 
   const handleAddSite = async () => {
-    if (!siteName || !contractorName) {
-      alert("元請と現場名を入力してください");
+    if (
+      !siteName ||
+      !contractorName ||
+      !startDate ||
+      !endDate
+    ) {
+      alert("工期を入力してください");
       return;
+
     }
   
     const { error } = await supabase.from("assignments").insert({
       assignment_date: days[0],
+    
+      start_date: startDate,
+      end_date: endDate,
+    
       contractor_name: contractorName,
       site_name: siteName,
+    
       shift_type: shiftType,
       manager_name: managerName,
       contact_phone: contactPhone,
@@ -426,7 +445,9 @@ setSiteMembers(memberData ?? []);
     setAddress("");
     setShiftType("day");
     setMeetingTime("08:00");
-    setShowAddModal(false);
+setStartDate("");
+setEndDate("");
+setShowAddModal(false);
   
     fetchData();
   };
@@ -742,6 +763,34 @@ setSiteMembers(memberData ?? []);
         style={inputStyle}
       />
 
+<div style={{ display: "flex", gap: 8 }}>
+  <div style={{ flex: 1 }}>
+    <div style={{ fontSize: 13, marginBottom: 4 }}>
+      工期開始
+    </div>
+
+    <input
+      type="date"
+      value={startDate}
+      onChange={(e) => setStartDate(e.target.value)}
+      style={inputStyle}
+    />
+  </div>
+
+  <div style={{ flex: 1 }}>
+    <div style={{ fontSize: 13, marginBottom: 4 }}>
+      工期終了
+    </div>
+
+    <input
+      type="date"
+      value={endDate}
+      onChange={(e) => setEndDate(e.target.value)}
+      style={inputStyle}
+    />
+  </div>
+</div>
+
       <div style={{ display: "flex", gap: 8 }}>
         <button
           type="button"
@@ -943,6 +992,18 @@ setSiteMembers(memberData ?? []);
   <div style={{ fontSize: 11, color: "#666" }}>
     {assignment.contractor_name || "-"}
   </div>
+
+  <div
+  style={{
+    fontSize: 10,
+    color: "#888",
+  }}
+>
+  {assignment.start_date}
+  {" ～ "}
+  {assignment.end_date}
+</div>
+
 </td>
 
 <td style={stickyTotalTd1}>

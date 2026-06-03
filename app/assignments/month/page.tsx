@@ -17,6 +17,8 @@ contact_phone: string | null;
 address: string | null;
 meeting_time: string | null;
 construction_type: string | null;
+start_date: string | null;
+end_date: string | null;
 };
 
 type SiteMember = {
@@ -70,6 +72,8 @@ export default function MonthlyAssignmentsPage() {
 const [contactPhone, setContactPhone] = useState("");
 const [address, setAddress] = useState("");
 const [meetingTime, setMeetingTime] = useState("08:00");
+const [startDate, setStartDate] = useState("");
+const [endDate, setEndDate] = useState("");
 const [contractors, setContractors] = useState<Contractor[]>([]);
 const [contractorContacts, setContractorContacts] = useState<ContractorContact[]>([]);
 const [showAddModal, setShowAddModal] = useState(false);
