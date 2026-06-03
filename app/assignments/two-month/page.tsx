@@ -564,7 +564,20 @@ setShowAddModal(false);
     });
   };
 
-  const sortedAssignments = [...assignments].sort((a, b) => {
+  const sortedAssignments = [...assignments].filter((assignment) => {
+    if (!assignment.start_date && !assignment.end_date) {
+      return true;
+    }
+  
+    if (!assignment.start_date || !assignment.end_date) {
+      return true;
+    }
+  
+    return (
+      assignment.start_date <= days[days.length - 1] &&
+      assignment.end_date >= days[0]
+    );
+  }).sort((a, b) => {
     switch (sortMode) {
       case "site":
         return (a.site_name || "").localeCompare(
