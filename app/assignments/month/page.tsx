@@ -707,7 +707,6 @@ setShowAddModal(false);
     paddingRight: 190,
   }}
 >
->
         <h1>月間番割表</h1>
 
         <div
