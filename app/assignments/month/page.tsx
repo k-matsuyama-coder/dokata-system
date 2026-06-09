@@ -370,6 +370,17 @@ const { data: assignmentData, error } = await supabase
         address: editingAssignment.address,
         meeting_time: editingAssignment.meeting_time,
         shift_type: editingAssignment.shift_type,
+      
+        start_time:
+          editingAssignment.shift_type === "night"
+            ? "20:00"
+            : "08:00",
+      
+        end_time:
+          editingAssignment.shift_type === "night"
+            ? "05:00"
+            : "17:00",
+      
         start_date: editingAssignment.start_date,
         end_date: editingAssignment.end_date,
       })
@@ -1138,6 +1149,70 @@ setShowAddModal(false);
           style={inputStyle}
         />
       </div>
+
+      <div style={{ display: "flex", gap: 8 }}>
+  <button
+    type="button"
+    onClick={() =>
+      setEditingAssignment({
+        ...editingAssignment,
+        shift_type: "day",
+        meeting_time: "08:00",
+      })
+    }
+    style={{
+      flex: 1,
+      padding: 10,
+      borderRadius: 8,
+      border:
+        editingAssignment.shift_type === "day"
+          ? "2px solid #111"
+          : "1px solid #ccc",
+      backgroundColor:
+        editingAssignment.shift_type === "day" ? "#f3f3f3" : "#fff",
+      fontWeight: 700,
+    }}
+  >
+    昼
+  </button>
+
+  <button
+    type="button"
+    onClick={() =>
+      setEditingAssignment({
+        ...editingAssignment,
+        shift_type: "night",
+        meeting_time: "20:00",
+      })
+    }
+    style={{
+      flex: 1,
+      padding: 10,
+      borderRadius: 8,
+      border:
+        editingAssignment.shift_type === "night"
+          ? "2px solid #111"
+          : "1px solid #ccc",
+      backgroundColor:
+        editingAssignment.shift_type === "night" ? "#f3f3f3" : "#fff",
+      fontWeight: 700,
+    }}
+  >
+    夜
+  </button>
+</div>
+
+<input
+  type="time"
+  value={editingAssignment.meeting_time ?? "08:00"}
+  onChange={(e) =>
+    setEditingAssignment({
+      ...editingAssignment,
+      meeting_time: e.target.value,
+    })
+  }
+  style={inputStyle}
+/>
 
       <div style={{ display: "flex", gap: 8 }}>
         <button
