@@ -1438,6 +1438,8 @@ const isShort =
                             copiedEmployeeNames.forEach((name) => {
                               addEmployeeToCell(name, assignment.id, date);
                             });
+                          
+                            setCopiedEmployeeNames([]);
                           }
                         
                           }}
@@ -1642,8 +1644,12 @@ const isShort =
       padding: "2px 6px",
       borderRadius: 6,
       backgroundColor:
-        selectedSiteMemberId === member.id ? "#dbeafe" : "#eef2ff",
-      border: "1px solid #c7d2fe",
+  copiedEmployeeNames.includes(member.employee_name)
+    ? "#fef3c7"
+    : "#eef2ff",
+border: copiedEmployeeNames.includes(member.employee_name)
+  ? "2px solid #f59e0b"
+  : "1px solid #c7d2fe",
       cursor: "grab",
       fontWeight: 700,
       fontSize: 11,
@@ -1685,35 +1691,7 @@ const isShort =
           </table>
         </div>
 
-        {copiedEmployeeNames.length > 0 && (
-  <div
-    style={{
-      marginBottom: 10,
-      padding: 8,
-      borderRadius: 8,
-      backgroundColor: "#dbeafe",
-      color: "#1d4ed8",
-      fontWeight: 700,
-      fontSize: 12,
-    }}
-  >
-    コピー中：{copiedEmployeeNames.join("、")}
-
-    <button
-      type="button"
-      onClick={() => setCopiedEmployeeNames([])}
-      style={{
-        marginLeft: 8,
-        border: "none",
-        background: "transparent",
-        cursor: "pointer",
-        fontWeight: 800,
-      }}
-    >
-      ×
-    </button>
-  </div>
-)}
+        
 
         <div
   style={{
@@ -1738,6 +1716,39 @@ const isShort =
   <div style={{ fontSize: 12, color: "#666", marginBottom: 10 }}>
     {selectedDate || "日付未選択"}
   </div>
+
+  {copiedEmployeeNames.length > 0 && (
+  <div
+    style={{
+      marginBottom: 10,
+      padding: 8,
+      borderRadius: 8,
+      backgroundColor: "#dbeafe",
+      color: "#1d4ed8",
+      fontWeight: 700,
+      fontSize: 12,
+    }}
+  >
+    選択中：{copiedEmployeeNames.length}名
+    <div style={{ marginTop: 4 }}>
+  {copiedEmployeeNames.join("、")}
+</div>
+
+    <button
+      type="button"
+      onClick={() => setCopiedEmployeeNames([])}
+      style={{
+        marginLeft: 8,
+        border: "none",
+        background: "transparent",
+        cursor: "pointer",
+        fontWeight: 800,
+      }}
+    >
+      ×
+    </button>
+  </div>
+)}
 
   {selectedDate && (
   <button
