@@ -703,10 +703,10 @@ setShowAddModal(false);
 
       <div
   style={{
-    maxWidth: 1500,
-    margin: "0 auto",
+    width: "100%",
     paddingRight: 190,
   }}
+>
 >
         <h1>月間番割表</h1>
 
