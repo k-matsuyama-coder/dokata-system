@@ -83,6 +83,7 @@ const [showAddModal, setShowAddModal] = useState(false);
 const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
 const [constructionType, setConstructionType] = useState("第一工事");
 const [sortMode, setSortMode] = useState("manual");
+const [draggingAssignmentId, setDraggingAssignmentId] = useState<string | null>(null);
 
 const [contractors, setContractors] = useState<Contractor[]>([]);
 const [contractorContacts, setContractorContacts] = useState<ContractorContact[]>([]);
@@ -155,6 +156,7 @@ setContractorContacts(contactData ?? []);
   start_date,
   end_date
 `)
+.order("sort_order", { ascending: true })
 .order("created_at", { ascending: true });
 
     if (assignmentError) {
@@ -454,6 +456,40 @@ setSiteMembers(memberData ?? []);
     setAssignments((prev) => prev.filter((a) => a.id !== id));
     setDailyInfos((prev) => prev.filter((d) => d.assignment_id !== id));
     setSiteMembers((prev) => prev.filter((m) => m.assignment_id !== id));
+  };
+
+  const moveAssignmentRow = async (
+    fromAssignmentId: string,
+    toAssignmentId: string
+  ) => {
+    if (fromAssignmentId === toAssignmentId) return;
+  
+    const fromIndex = sortedAssignments.findIndex((a) => a.id === fromAssignmentId);
+const toIndex = sortedAssignments.findIndex((a) => a.id === toAssignmentId);
+
+if (fromIndex === -1 || toIndex === -1) return;
+
+const nextAssignments = [...sortedAssignments];
+    const [moved] = nextAssignments.splice(fromIndex, 1);
+    nextAssignments.splice(toIndex, 0, moved);
+  
+    setAssignments(nextAssignments);
+  
+    const results = await Promise.all(
+      nextAssignments.map((assignment, index) =>
+        supabase
+          .from("assignments")
+          .update({ sort_order: index })
+          .eq("id", assignment.id)
+      )
+    );
+  
+    const failed = results.find((result) => result.error);
+  
+    if (failed?.error) {
+      alert("並び替え保存失敗: " + failed.error.message);
+      fetchData();
+    }
   };
 
   const handleAddSite = async () => {
@@ -1260,7 +1296,23 @@ setSiteMembers(memberData ?? []);
           <tbody>
           {sortedAssignments.map((assignment) => (
     <tr key={assignment.id}>
-      <td style={stickyTd}>
+      <td
+  draggable={sortMode === "manual"}
+  onDragStart={() => setDraggingAssignmentId(assignment.id)}
+  onDragEnd={() => setDraggingAssignmentId(null)}
+  onDragOver={(e) => e.preventDefault()}
+  onDrop={() => {
+    if (!draggingAssignmentId) return;
+
+    moveAssignmentRow(draggingAssignmentId, assignment.id);
+  }}
+  style={{
+    ...stickyTd,
+    cursor: sortMode === "manual" ? "grab" : "default",
+    backgroundColor:
+      draggingAssignmentId === assignment.id ? "#dbeafe" : "#fff",
+  }}
+>
       <div
   onClick={() => setEditingAssignment(assignment)}
   style={{
