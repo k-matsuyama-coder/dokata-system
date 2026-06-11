@@ -202,12 +202,25 @@ useEffect(() => {
       .order("name", { ascending: true });
 
     const { data: siteData } = await supabase
-      .from("sites")
+      .from("assignments")
       .select("site_name, contractor_name, manager_name")
+      .not("site_name", "is", null)
       .order("site_name", { ascending: true });
 
-    setContractors(contractorData ?? []);
-    setSites(siteData ?? []);
+      const uniqueSites: Site[] = Array.from(
+        new Map(
+          (siteData ?? []).map((s) => [
+            `${s.contractor_name}-${s.site_name}`,
+            {
+              site_name: s.site_name,
+              contractor_name: s.contractor_name,
+              manager_name: s.manager_name,
+            },
+          ])
+        ).values()
+      );
+      
+      setSites(uniqueSites);
   };
 
   fetchMasterData();
@@ -430,7 +443,7 @@ useEffect(() => {
     placeholder="現場名を入力"
   />
 
-  {showSiteSuggestions && site && (
+{showSiteSuggestions && (
     <div
       style={{
         border: "1px solid #ccc",
@@ -441,7 +454,9 @@ useEffect(() => {
       }}
     >
       {sites
-        .filter((s) => s.site_name.includes(site))
+        .filter((s) =>
+        !site || s.site_name.includes(site)
+      )
         .slice(0, 5)
         .map((s) => (
           <div
