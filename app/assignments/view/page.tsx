@@ -238,9 +238,15 @@ const endDate = displayDates[displayDates.length - 1];
           flexWrap: "wrap",
         }}
       >
-        <button type="button" onClick={() => moveDate(-1)} style={buttonStyle}>
-          前日
-        </button>
+        <button
+  type="button"
+  onClick={() =>
+    moveDate(viewMode === "week" ? -7 :  -1)
+  }
+  style={buttonStyle}
+>
+  {viewMode === "week" ? "前週" : "前日"}
+</button>
 
         <input
           type="date"
@@ -249,17 +255,33 @@ const endDate = displayDates[displayDates.length - 1];
           style={inputStyle}
         />
 
-        <button type="button" onClick={() => moveDate(1)} style={buttonStyle}>
-          翌日
-        </button>
+<button
+  type="button"
+  onClick={() =>
+    moveDate(viewMode === "week" ? 7 : 1)
+  }
+  style={buttonStyle}
+>
+  {viewMode === "week" ? "翌週" : "翌日"}
+</button>
 
-        <button
-          type="button"
-          onClick={() => setDate(new Date().toISOString().slice(0, 10))}
-          style={buttonStyle}
-        >
-          今日
-        </button>
+<button
+  type="button"
+  onClick={() => {
+    const today = new Date();
+
+    if (viewMode === "week") {
+      const day = today.getDay();
+      const diff = day === 0 ? -6 : 1 - day;
+      today.setDate(today.getDate() + diff);
+    }
+
+    setDate(today.toISOString().slice(0, 10));
+  }}
+  style={buttonStyle}
+>
+  {viewMode === "week" ? "今週" : "今日"}
+</button>
 
         <button type="button" onClick={() => setViewMode("day")} style={buttonStyle}>
   1日
@@ -276,7 +298,30 @@ const endDate = displayDates[displayDates.length - 1];
   3日間
 </button>
 
-<button type="button" onClick={() => setViewMode("week")} style={buttonStyle}>
+<button
+  type="button"
+  onClick={() => {
+    const today = new Date();
+
+    const day = today.getDay();
+
+    const diff =
+      day === 0
+        ? -6
+        : 1 - day;
+
+    today.setDate(
+      today.getDate() + diff
+    );
+
+    setDate(
+      today.toISOString().slice(0, 10)
+    );
+
+    setViewMode("week");
+  }}
+  style={buttonStyle}
+>
   7日間
 </button>
 
