@@ -283,7 +283,25 @@ const endDate = displayDates[displayDates.length - 1];
   {viewMode === "week" ? "今週" : "今日"}
 </button>
 
-        <button type="button" onClick={() => setViewMode("day")} style={buttonStyle}>
+<button
+  type="button"
+  onClick={() => setViewMode("day")}
+  style={{
+    ...buttonStyle,
+    backgroundColor:
+      viewMode === "day"
+        ? "#2563eb"
+        : "#fff",
+    color:
+      viewMode === "day"
+        ? "#fff"
+        : "#111",
+    border:
+      viewMode === "day"
+        ? "1px solid #2563eb"
+        : "1px solid #d1d5db",
+  }}
+>
   1日
 </button>
 
@@ -293,9 +311,13 @@ const endDate = displayDates[displayDates.length - 1];
     setDate(new Date().toISOString().slice(0, 10));
     setViewMode("3days");
   }}
-  style={buttonStyle}
+  style={buttonStyle,
+    backgroundColor:
+    viewMode === "3days"
+      ? "#2563eb"
+      : "#fff"}
 >
-  3日間
+  3日
 </button>
 
 <button
@@ -320,9 +342,13 @@ const endDate = displayDates[displayDates.length - 1];
 
     setViewMode("week");
   }}
-  style={buttonStyle}
+  style={buttonStyle,
+    backgroundColor:
+    viewMode === "3days"
+      ? "#2563eb"
+      : "#fff"}
 >
-  7日間
+  週間
 </button>
 
       </div>
