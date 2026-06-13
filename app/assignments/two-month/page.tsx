@@ -12,6 +12,13 @@ type DailyInfo = {
   detail: string | null;
 };
 
+type AssignmentFile = {
+  id: string;
+  assignment_id: string;
+  file_name: string;
+  file_url: string;
+};
+
 type Assignment = {
   id: string;
   site_name: string | null;
@@ -51,6 +58,7 @@ type Contractor = {
 
 export default function TwoMonthPage() {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [assignmentFiles, setAssignmentFiles] = useState<AssignmentFile[]>([]);
   const [dailyInfos, setDailyInfos] = useState<DailyInfo[]>([]);
   const [siteMembers, setSiteMembers] = useState<SiteMember[]>([]);
 const [employees, setEmployees] = useState<Employee[]>([]);
@@ -81,6 +89,7 @@ const [startDate, setStartDate] = useState("");
 const [endDate, setEndDate] = useState("");
 const [showAddModal, setShowAddModal] = useState(false);
 const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
+const [newFiles, setNewFiles] = useState<FileList | null>(null);
 const [constructionType, setConstructionType] = useState("第一工事");
 const [sortMode, setSortMode] = useState("manual");
 const [draggingAssignmentId, setDraggingAssignmentId] = useState<string | null>(null);
@@ -203,9 +212,58 @@ if (memberError) {
   return;
 }
 
+const { data: fileData, error: fileError } = await supabase
+  .from("assignment_files")
+  .select("id, assignment_id, file_name, file_url");
+
+if (fileError) {
+  alert("ファイル取得失敗: " + fileError.message);
+  return;
+}
+
+setAssignmentFiles(fileData ?? []);
 setAssignments(assignmentData ?? []);
 setDailyInfos(dailyInfoData ?? []);
 setSiteMembers(memberData ?? []);
+  };
+
+  const uploadFiles = async (
+    assignmentId: string,
+    files: FileList | null
+  ) => {
+    if (!files) return;
+  
+    for (const file of Array.from(files)) {
+      const filePath = `${assignmentId}/${Date.now()}_${file.name}`;
+  
+      const { error: uploadError } = await supabase.storage
+        .from("assignment-files")
+        .upload(filePath, file);
+  
+      if (uploadError) {
+        alert("アップロード失敗: " + uploadError.message);
+        return;
+      }
+  
+      const { data } = supabase.storage
+        .from("assignment-files")
+        .getPublicUrl(filePath);
+  
+      const { error: insertError } = await supabase
+        .from("assignment_files")
+        .insert({
+          assignment_id: assignmentId,
+          file_name: file.name,
+          file_url: data.publicUrl,
+        });
+  
+      if (insertError) {
+        alert("ファイル登録失敗: " + insertError.message);
+        return;
+      }
+    }
+  
+    fetchData();
   };
 
   useEffect(() => {
@@ -425,6 +483,10 @@ setSiteMembers(memberData ?? []);
         address: editingAssignment.address,
         meeting_time: editingAssignment.meeting_time,
         shift_type: editingAssignment.shift_type,
+        start_time:
+          editingAssignment.shift_type === "night" ? "20:00" : "08:00",
+        end_time:
+          editingAssignment.shift_type === "night" ? "05:00" : "17:00",
         start_date: editingAssignment.start_date,
         end_date: editingAssignment.end_date,
       })
@@ -498,26 +560,32 @@ const nextAssignments = [...sortedAssignments];
       return;
     }
   
-    const { error } = await supabase.from("assignments").insert({
-      assignment_date: days[0],
-      contractor_name: contractorName,
-      site_name: siteName,
-      construction_type: constructionType,
-      manager_name: managerName,
-      contact_phone: contactPhone,
-      address,
-      shift_type: shiftType,
-      start_time: shiftType === "night" ? "20:00" : "08:00",
-      end_time: shiftType === "night" ? "05:00" : "17:00",
-      meeting_time: meetingTime,
-      start_date: startDate,
-      end_date: endDate,
-    });
-  
-    if (error) {
-      alert("現場追加失敗: " + error.message);
-      return;
-    }
+    const { data, error } = await supabase
+  .from("assignments")
+  .insert({
+    assignment_date: days[0],
+    contractor_name: contractorName,
+    site_name: siteName,
+    construction_type: constructionType,
+    manager_name: managerName,
+    contact_phone: contactPhone,
+    address,
+    shift_type: shiftType,
+    start_time: shiftType === "night" ? "20:00" : "08:00",
+    end_time: shiftType === "night" ? "05:00" : "17:00",
+    meeting_time: meetingTime,
+    start_date: startDate,
+    end_date: endDate,
+  })
+  .select("id")
+  .single();
+
+if (error || !data) {
+  alert("現場追加失敗: " + (error?.message || "ID取得失敗"));
+  return;
+}
+
+await uploadFiles(data.id, newFiles);
   
     setSiteName("");
     setContractorName("");
@@ -530,6 +598,7 @@ const nextAssignments = [...sortedAssignments];
     setStartDate("");
     setEndDate("");
     setShowAddModal(false);
+    setNewFiles(null);
   
     fetchData();
   };
@@ -931,10 +1000,26 @@ const nextAssignments = [...sortedAssignments];
         style={inputStyle}
       />
 
+<div>
+  <div style={{ fontWeight: 800, marginBottom: 6 }}>
+    添付ファイル
+  </div>
+
+  <input
+    type="file"
+    multiple
+    onChange={(e) => setNewFiles(e.target.files)}
+    style={inputStyle}
+  />
+</div>
+
       <div style={{ display: "flex", gap: 8 }}>
         <button
           type="button"
-          onClick={() => setShowAddModal(false)}
+          onClick={() => {
+            setShowAddModal(false);
+            setNewFiles(null);
+          }}
           style={{
             flex: 1,
             padding: 12,
@@ -1158,10 +1243,51 @@ const nextAssignments = [...sortedAssignments];
   style={inputStyle}
 />
 
+<div>
+  <div style={{ fontWeight: 800, marginBottom: 6 }}>
+    添付ファイル
+  </div>
+
+  <input
+    type="file"
+    multiple
+    onChange={(e) =>
+      uploadFiles(editingAssignment.id, e.target.files)
+    }
+    style={inputStyle}
+  />
+
+  <div style={{ display: "grid", gap: 6, marginTop: 8 }}>
+    {assignmentFiles
+      .filter((file) => file.assignment_id === editingAssignment.id)
+      .map((file) => (
+        <a
+          key={file.id}
+          href={file.file_url}
+          target="_blank"
+          rel="noreferrer"
+          style={{
+            padding: 8,
+            border: "1px solid #ddd",
+            borderRadius: 8,
+            color: "#111",
+            textDecoration: "none",
+            fontWeight: 700,
+          }}
+        >
+          📎 {file.file_name}
+        </a>
+      ))}
+  </div>
+</div>
+
       <div style={{ display: "flex", gap: 8 }}>
         <button
           type="button"
-          onClick={() => setEditingAssignment(null)}
+          onClick={() => {
+            setShowAddModal(false);
+            setNewFiles(null);
+          }}
           style={{
             flex: 1,
             padding: 12,

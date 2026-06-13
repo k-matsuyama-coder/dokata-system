@@ -40,6 +40,13 @@ type DailyInfo = {
   vehicle_names: string[] | null;
 };
 
+type AssignmentFile = {
+  id: string;
+  assignment_id: string;
+  file_name: string;
+  file_url: string;
+};
+
 type Employee = {
   name: string;
   company_name: string | null;
@@ -60,6 +67,7 @@ type ContractorContact = {
 export default function MonthlyAssignmentsPage() {
   const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [assignmentFiles, setAssignmentFiles] = useState<AssignmentFile[]>([]);
   const [siteMembers, setSiteMembers] = useState<SiteMember[]>([]);
   const [dailyInfos, setDailyInfos] = useState<DailyInfo[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -243,6 +251,45 @@ const { data: assignmentData, error } = await supabase
 
     setAssignments(assignmentData ?? []);
 
+    const uploadFiles = async (
+      assignmentId: string,
+      files: FileList | null
+    ) => {
+      if (!files) return;
+    
+      for (const file of Array.from(files)) {
+        const filePath = `${assignmentId}/${Date.now()}_${file.name}`;
+    
+        const { error: uploadError } = await supabase.storage
+          .from("assignment-files")
+          .upload(filePath, file);
+    
+        if (uploadError) {
+          alert("アップロード失敗: " + uploadError.message);
+          return;
+        }
+    
+        const { data } = supabase.storage
+          .from("assignment-files")
+          .getPublicUrl(filePath);
+    
+        const { error: insertError } = await supabase
+          .from("assignment_files")
+          .insert({
+            assignment_id: assignmentId,
+            file_name: file.name,
+            file_url: data.publicUrl,
+          });
+    
+        if (insertError) {
+          alert("ファイル登録失敗: " + insertError.message);
+          return;
+        }
+      }
+    
+      fetchData();
+    };
+
     const assignmentIds = (assignmentData ?? []).map((a) => a.id);
 
     if (assignmentIds.length === 0) {
@@ -392,6 +439,45 @@ const { data: assignmentData, error } = await supabase
     }
   
     setEditingAssignment(null);
+    fetchData();
+  };
+
+  const uploadFiles = async (
+    assignmentId: string,
+    files: FileList | null
+  ) => {
+    if (!files) return;
+  
+    for (const file of Array.from(files)) {
+      const filePath = `${assignmentId}/${Date.now()}_${file.name}`;
+  
+      const { error: uploadError } = await supabase.storage
+        .from("assignment-files")
+        .upload(filePath, file);
+  
+      if (uploadError) {
+        alert("アップロード失敗: " + uploadError.message);
+        return;
+      }
+  
+      const { data } = supabase.storage
+        .from("assignment-files")
+        .getPublicUrl(filePath);
+  
+      const { error: insertError } = await supabase
+        .from("assignment_files")
+        .insert({
+          assignment_id: assignmentId,
+          file_name: file.name,
+          file_url: data.publicUrl,
+        });
+  
+      if (insertError) {
+        alert("ファイル登録失敗: " + insertError.message);
+        return;
+      }
+    }
+  
     fetchData();
   };
 
@@ -1212,6 +1298,44 @@ setShowAddModal(false);
   }
   style={inputStyle}
 />
+
+<div>
+  <div style={{ fontWeight: 800, marginBottom: 6 }}>
+    添付ファイル
+  </div>
+
+  <input
+    type="file"
+    multiple
+    onChange={(e) =>
+      uploadFiles(editingAssignment.id, e.target.files)
+    }
+    style={inputStyle}
+  />
+
+  <div style={{ display: "grid", gap: 6, marginTop: 8 }}>
+    {assignmentFiles
+      .filter((file) => file.assignment_id === editingAssignment.id)
+      .map((file) => (
+        <a
+          key={file.id}
+          href={file.file_url}
+          target="_blank"
+          rel="noreferrer"
+          style={{
+            padding: 8,
+            border: "1px solid #ddd",
+            borderRadius: 8,
+            color: "#111",
+            textDecoration: "none",
+            fontWeight: 700,
+          }}
+        >
+          📎 {file.file_name}
+        </a>
+      ))}
+  </div>
+</div>
 
       <div style={{ display: "flex", gap: 8 }}>
         <button

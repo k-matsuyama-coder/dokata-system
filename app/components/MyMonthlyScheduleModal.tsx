@@ -15,6 +15,14 @@ type Assignment = {
   site_name: string | null;
   contractor_name: string | null;
   shift_type: string | null;
+
+  manager_name: string | null;
+  contact_phone: string | null;
+  address: string | null;
+  meeting_time: string | null;
+  construction_type: string | null;
+  start_date: string | null;
+  end_date: string | null;
 };
 
 type Props = {
@@ -26,6 +34,7 @@ export default function MyMonthlyScheduleModal({ open, onClose }: Props) {
   const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [members, setMembers] = useState<SiteMember[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
 
   const days = useMemo(() => {
     const [year, monthNum] = month.split("-").map(Number);
@@ -81,9 +90,21 @@ export default function MyMonthlyScheduleModal({ open, onClose }: Props) {
       }
 
       const { data: assignmentData, error: assignmentError } = await supabase
-        .from("assignments")
-        .select("id, site_name, contractor_name, shift_type")
-        .in("id", assignmentIds);
+  .from("assignments")
+  .select(`
+    id,
+    site_name,
+    contractor_name,
+    shift_type,
+    manager_name,
+    contact_phone,
+    address,
+    meeting_time,
+    construction_type,
+    start_date,
+    end_date
+  `)
+  .in("id", assignmentIds);
 
       if (assignmentError) {
         alert("現場取得失敗: " + assignmentError.message);
@@ -228,9 +249,10 @@ export default function MyMonthlyScheduleModal({ open, onClose }: Props) {
                 </div>
 
                 <div style={{ display: "grid", gap: 4 }}>
-                  {schedules.map((assignment) => (
-                    <div
-                      key={assignment.id}
+                {schedules.map((assignment) => (
+  <div
+    key={assignment.id}
+    onClick={() => setSelectedAssignment(assignment)}
                       style={{
                         padding: "4px 6px",
                         borderRadius: 8,
@@ -242,6 +264,7 @@ export default function MyMonthlyScheduleModal({ open, onClose }: Props) {
                           assignment.shift_type === "night" ? "#fff" : "#166534",
                         fontSize: 12,
                         fontWeight: 700,
+                        cursor: "pointer",
                       }}
                     >
                       <div>{assignment.site_name || "-"}</div>
@@ -256,6 +279,98 @@ export default function MyMonthlyScheduleModal({ open, onClose }: Props) {
             );
           })}
         </div>
+        {selectedAssignment && (
+  <div
+    onClick={() => setSelectedAssignment(null)}
+    style={{
+      position: "fixed",
+      inset: 0,
+      backgroundColor: "rgba(0,0,0,0.45)",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      zIndex: 100000,
+      padding: 16,
+    }}
+  >
+    <div
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        width: "100%",
+        maxWidth: 520,
+        backgroundColor: "#fff",
+        borderRadius: 16,
+        padding: 20,
+        display: "grid",
+        gap: 10,
+      }}
+    >
+      <h2 style={{ margin: 0 }}>
+        {selectedAssignment.site_name}
+      </h2>
+
+      <div>
+        <strong>元請：</strong>
+        {selectedAssignment.contractor_name || "-"}
+      </div>
+
+      <div>
+        <strong>担当者：</strong>
+        {selectedAssignment.manager_name || "-"}
+      </div>
+
+      <div>
+        <strong>連絡先：</strong>
+        {selectedAssignment.contact_phone || "-"}
+      </div>
+
+      <div>
+        <strong>住所：</strong>
+        {selectedAssignment.address || "-"}
+      </div>
+
+      <div>
+        <strong>集合：</strong>
+        {selectedAssignment.meeting_time || "-"}
+      </div>
+
+      <div>
+        <strong>工事区分：</strong>
+        {selectedAssignment.construction_type || "-"}
+      </div>
+
+      <div>
+        <strong>工期：</strong>
+        {selectedAssignment.start_date || "-"}
+        {" ～ "}
+        {selectedAssignment.end_date || "-"}
+      </div>
+
+      <div>
+        <strong>昼夜：</strong>
+        {selectedAssignment.shift_type === "night"
+          ? "夜勤"
+          : "日勤"}
+      </div>
+
+      <button
+        onClick={() => setSelectedAssignment(null)}
+        style={{
+          marginTop: 10,
+          padding: 12,
+          border: "none",
+          borderRadius: 8,
+          backgroundColor: "#111",
+          color: "#fff",
+          fontWeight: 700,
+          cursor: "pointer",
+        }}
+      >
+        閉じる
+      </button>
+    </div>
+  </div>
+)}
       </div>
     </div>
   );
