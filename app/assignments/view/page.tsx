@@ -282,176 +282,159 @@ const endDate = displayDates[displayDates.length - 1];
 
       </div>
 
-      <div style={{ display: "grid", gap: 14 }}>
-        {visibleAssignments.length === 0 && (
-          <div
-            style={{
-              backgroundColor: "#fff",
-              borderRadius: 12,
-              padding: 20,
-              color: "#666",
-            }}
-          >
-            この日の番割はありません。
-          </div>
-        )}
+      <div
+  style={{
+    display: "grid",
+    gridTemplateColumns:
+      viewMode === "day"
+        ? "1fr"
+        : `repeat(${getDisplayDates().length}, minmax(280px, 1fr))`,
+    gap: 14,
+    overflowX: "auto",
+  }}
+>
+  {getDisplayDates().map((workDate, index) => {
+    const title =
+      viewMode === "3days"
+        ? index === 0
+          ? "今日"
+          : index === 1
+          ? "明日"
+          : "明後日"
+        : viewMode === "week"
+        ? ["月", "火", "水", "木", "金", "土", "日"][index]
+        : "今日";
 
-        {visibleAssignments.map((assignment) => {
-          const displayDates = getDisplayDates();
+    const dayAssignments = assignments.filter((assignment) => {
+      const members = getMembers(assignment.id, workDate);
+      const dailyInfo = getDailyInfo(assignment.id, workDate);
 
-          return (
+      return (
+        members.length > 0 ||
+        (dailyInfo?.planned_count ?? 0) > 0 ||
+        !!dailyInfo?.detail ||
+        !!dailyInfo?.vehicle_names?.length
+      );
+    });
+
+    return (
+      <div key={workDate}>
+        <div
+          style={{
+            fontWeight: 900,
+            fontSize: 18,
+            marginBottom: 8,
+            backgroundColor: "#111",
+            color: "#fff",
+            borderRadius: 10,
+            padding: 10,
+            textAlign: "center",
+          }}
+        >
+          {title}
+          <div style={{ fontSize: 12, opacity: 0.8 }}>{workDate}</div>
+        </div>
+
+        <div style={{ display: "grid", gap: 12 }}>
+          {dayAssignments.length === 0 && (
             <div
-              key={assignment.id}
               style={{
                 backgroundColor: "#fff",
-                borderRadius: 14,
+                borderRadius: 12,
                 padding: 16,
-                border: "1px solid #e5e7eb",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.04)",
+                color: "#666",
               }}
             >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  gap: 8,
-                  alignItems: "flex-start",
-                }}
-              >
-                <div>
-                  <div style={{ fontSize: 18, fontWeight: 900 }}>
-                    {assignment.site_name || "-"}
-                  </div>
-
-                  <div style={{ fontSize: 13, color: "#555", fontWeight: 700 }}>
-                    {assignment.construction_type || "第一工事"}
-                  </div>
-
-                  <div style={{ fontSize: 13, color: "#666" }}>
-                    元請：{assignment.contractor_name || "-"}
-                  </div>
-                </div>
-
-                <div
-                  style={{
-                    padding: "4px 10px",
-                    borderRadius: 999,
-                    backgroundColor:
-                      assignment.shift_type === "night" ? "#111827" : "#f3f4f6",
-                    color: assignment.shift_type === "night" ? "#fff" : "#111",
-                    fontWeight: 800,
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {assignment.shift_type === "night" ? "夜" : "昼"}
-                </div>
-              </div>
-
-              <div style={{ marginTop: 12, display: "grid", gap: 6 }}>
-                <div>集合：{assignment.meeting_time || "-"}</div>
-                <div>担当：{assignment.manager_name || "-"}</div>
-                <div>連絡先：{assignment.contact_phone || "-"}</div>
-                <div>住所：{assignment.address || "-"}</div>
-              </div>
-
-                <div
-                style={{
-                  marginTop: 16,
-                  display: "grid",
-                  gap: 12,
-                }}
-              >
-                {displayDates.map((workDate) => {
-                  const members = getMembers(
-                    assignment.id,
-                    workDate
-                  );
-              
-                  const dailyInfo = getDailyInfo(
-                    assignment.id,
-                    workDate
-                  );
-              
-                  if (
-                    members.length === 0 &&
-                    !dailyInfo?.detail &&
-                    !dailyInfo?.vehicle_names?.length &&
-                    !(dailyInfo?.planned_count ?? 0)
-                  ) {
-                    return null;
-                  }
-              
-                  return (
-                    <div
-                      key={workDate}
-                      style={{
-                        border: "1px solid #e5e7eb",
-                        borderRadius: 10,
-                        padding: 10,
-                        backgroundColor: "#fafafa",
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontWeight: 900,
-                          marginBottom: 8,
-                        }}
-                      >
-                        {workDate}
-                      </div>
-              
-                      {dailyInfo?.detail && (
-                        <div
-                          style={{
-                            marginBottom: 8,
-                            color: "#166534",
-                            fontWeight: 800,
-                          }}
-                        >
-                          作業：{dailyInfo.detail}
-                        </div>
-                      )}
-              
-                      {dailyInfo?.vehicle_names?.length ? (
-                        <div
-                          style={{
-                            marginBottom: 8,
-                          }}
-                        >
-                          🚚 {dailyInfo.vehicle_names.join(" / ")}
-                        </div>
-                      ) : null}
-              
-                      <div
-                        style={{
-                          display: "flex",
-                          flexWrap: "wrap",
-                          gap: 6,
-                        }}
-                      >
-                        {members.map((member) => (
-                          <div
-                            key={member.id}
-                            style={{
-                              padding: "6px 10px",
-                              borderRadius: 999,
-                              backgroundColor: "#fff7ed",
-                              border: "1px solid #fed7aa",
-                              fontWeight: 800,
-                            }}
-                          >
-                            {member.employee_name}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              番割なし
             </div>
-          );
-        })}
+          )}
+
+          {dayAssignments.map((assignment) => {
+            const members = getMembers(assignment.id, workDate);
+            const dailyInfo = getDailyInfo(assignment.id, workDate);
+
+            return (
+              <div
+                key={`${workDate}-${assignment.id}`}
+                style={{
+                  backgroundColor: "#fff",
+                  borderRadius: 14,
+                  padding: 14,
+                  border: "1px solid #e5e7eb",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.04)",
+                }}
+              >
+                <div style={{ fontSize: 17, fontWeight: 900 }}>
+                  {assignment.site_name || "-"}
+                </div>
+
+                <div style={{ fontSize: 13, color: "#666" }}>
+                  元請：{assignment.contractor_name || "-"}
+                </div>
+
+                <div style={{ marginTop: 8, display: "grid", gap: 4 }}>
+                  <div>集合：{assignment.meeting_time || "-"}</div>
+                  <div>担当：{assignment.manager_name || "-"}</div>
+                  <div>連絡先：{assignment.contact_phone || "-"}</div>
+                  <div>住所：{assignment.address || "-"}</div>
+                </div>
+
+                {dailyInfo?.detail && (
+                  <div
+                    style={{
+                      marginTop: 10,
+                      padding: 8,
+                      borderRadius: 8,
+                      backgroundColor: "#ecfdf5",
+                      color: "#166534",
+                      fontWeight: 800,
+                    }}
+                  >
+                    作業：{dailyInfo.detail}
+                  </div>
+                )}
+
+                {dailyInfo?.vehicle_names?.length ? (
+                  <div style={{ marginTop: 10 }}>
+                    🚚 {dailyInfo.vehicle_names.join(" / ")}
+                  </div>
+                ) : null}
+
+                <div style={{ marginTop: 12 }}>
+                  <div style={{ fontWeight: 900, marginBottom: 6 }}>
+                    人員 {members.length}人
+                  </div>
+
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {members.map((member) => (
+                      <div
+                        key={member.id}
+                        style={{
+                          padding: "6px 10px",
+                          borderRadius: 999,
+                          backgroundColor: "#fff7ed",
+                          border: "1px solid #fed7aa",
+                          fontWeight: 800,
+                        }}
+                      >
+                        {member.employee_name}
+                        {member.is_driver ? " 🚚" : ""}
+                        {member.is_operator ? " OP" : ""}
+                        {member.heavy_equipment
+                          ? ` ${member.heavy_equipment}`
+                          : ""}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
+    );
+  })}
+</div>
     </div>
   );
 }
