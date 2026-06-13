@@ -311,11 +311,24 @@ const endDate = displayDates[displayDates.length - 1];
     setDate(new Date().toISOString().slice(0, 10));
     setViewMode("3days");
   }}
-  style={buttonStyle,
+  style={{
+    ...buttonStyle,
+  
     backgroundColor:
-    viewMode === "3days"
-      ? "#2563eb"
-      : "#fff"}
+      viewMode === "3days"
+        ? "#2563eb"
+        : "#fff",
+  
+    color:
+      viewMode === "3days"
+        ? "#fff"
+        : "#111",
+  
+    border:
+      viewMode === "3days"
+        ? "1px solid #2563eb"
+        : "1px solid #d1d5db",
+  }}
 >
   3日
 </button>
@@ -342,11 +355,24 @@ const endDate = displayDates[displayDates.length - 1];
 
     setViewMode("week");
   }}
-  style={buttonStyle,
+  style={{
+    ...buttonStyle,
+  
     backgroundColor:
-    viewMode === "3days"
-      ? "#2563eb"
-      : "#fff"}
+      viewMode === "3days"
+        ? "#2563eb"
+        : "#fff",
+  
+    color:
+      viewMode === "3days"
+        ? "#fff"
+        : "#111",
+  
+    border:
+      viewMode === "3days"
+        ? "1px solid #2563eb"
+        : "1px solid #d1d5db",
+  }}
 >
   週間
 </button>
