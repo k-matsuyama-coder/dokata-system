@@ -43,8 +43,37 @@ export default function AssignmentViewPage() {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [siteMembers, setSiteMembers] = useState<SiteMember[]>([]);
   const [dailyInfos, setDailyInfos] = useState<DailyInfo[]>([]);
+  const [viewMode, setViewMode] = useState<"day" | "3days" | "week">("day");
+  
+  const getDisplayDates = () => {
+    if (viewMode === "3days") {
+      return Array.from({ length: 3 }, (_, i) => {
+        const d = new Date(date);
+        d.setDate(d.getDate() + i);
+        return d.toISOString().slice(0, 10);
+      });
+    }
+  
+    if (viewMode === "week") {
+      const d = new Date(date);
+      const day = d.getDay();
+      const diffToMonday = day === 0 ? -6 : 1 - day;
+      d.setDate(d.getDate() + diffToMonday);
+  
+      return Array.from({ length: 7 }, (_, i) => {
+        const x = new Date(d);
+        x.setDate(d.getDate() + i);
+        return x.toISOString().slice(0, 10);
+      });
+    }
+  
+    return [date];
+  };
 
   const fetchData = async () => {
+    const displayDates = getDisplayDates();
+const startDate = displayDates[0];
+const endDate = displayDates[displayDates.length - 1];
     const { data: assignmentData, error: assignmentError } = await supabase
       .from("assignments")
       .select(`
@@ -87,7 +116,8 @@ export default function AssignmentViewPage() {
         heavy_equipment
       `)
       .in("assignment_id", assignmentIds)
-      .eq("work_date", date);
+      .gte("work_date", startDate)
+.lte("work_date", endDate);
 
     if (memberError) {
       alert("メンバー取得失敗: " + memberError.message);
@@ -105,7 +135,8 @@ export default function AssignmentViewPage() {
         vehicle_names
       `)
       .in("assignment_id", assignmentIds)
-      .eq("work_date", date);
+      .gte("work_date", startDate)
+.lte("work_date", endDate);
 
     if (dailyInfoError) {
       alert("日別情報取得失敗: " + dailyInfoError.message);
@@ -119,7 +150,7 @@ export default function AssignmentViewPage() {
 
   useEffect(() => {
     fetchData();
-  }, [date]);
+  }, [date, viewMode]);
 
   useEffect(() => {
     const channel = supabase
@@ -156,21 +187,27 @@ export default function AssignmentViewPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [date]);
+  }, [date, viewMode]);
 
-  const getMembers = (assignmentId: string) => {
-    return siteMembers.filter((m) => m.assignment_id === assignmentId);
+  const getMembers = (assignmentId: string, workDate: string) => {
+    return siteMembers.filter(
+      (m) => m.assignment_id === assignmentId && m.work_date === workDate
+    );
+  };
+  
+  const getDailyInfo = (assignmentId: string, workDate: string) => {
+    return dailyInfos.find(
+      (d) => d.assignment_id === assignmentId && d.work_date === workDate
+    );
   };
 
-  const getDailyInfo = (assignmentId: string) => {
-    return dailyInfos.find((d) => d.assignment_id === assignmentId);
-  };
-
-  const visibleAssignments = useMemo(() => {
-    return assignments.filter((assignment) => {
-      const members = getMembers(assignment.id);
-      const dailyInfo = getDailyInfo(assignment.id);
-
+  const visibleAssignments = assignments.filter((assignment) => {
+    const displayDates = getDisplayDates();
+  
+    return displayDates.some((workDate) => {
+      const members = getMembers(assignment.id, workDate);
+      const dailyInfo = getDailyInfo(assignment.id, workDate);
+  
       return (
         members.length > 0 ||
         (dailyInfo?.planned_count ?? 0) > 0 ||
@@ -178,7 +215,7 @@ export default function AssignmentViewPage() {
         !!dailyInfo?.vehicle_names?.length
       );
     });
-  }, [assignments, siteMembers, dailyInfos]);
+  });
 
   const moveDate = (amount: number) => {
     const d = new Date(date);
@@ -223,6 +260,26 @@ export default function AssignmentViewPage() {
         >
           今日
         </button>
+
+        <button type="button" onClick={() => setViewMode("day")} style={buttonStyle}>
+  1日
+</button>
+
+<button
+  type="button"
+  onClick={() => {
+    setDate(new Date().toISOString().slice(0, 10));
+    setViewMode("3days");
+  }}
+  style={buttonStyle}
+>
+  3日間
+</button>
+
+<button type="button" onClick={() => setViewMode("week")} style={buttonStyle}>
+  7日間
+</button>
+
       </div>
 
       <div style={{ display: "grid", gap: 14 }}>
@@ -240,8 +297,7 @@ export default function AssignmentViewPage() {
         )}
 
         {visibleAssignments.map((assignment) => {
-          const members = getMembers(assignment.id);
-          const dailyInfo = getDailyInfo(assignment.id);
+          const displayDates = getDisplayDates();
 
           return (
             <div
@@ -298,67 +354,99 @@ export default function AssignmentViewPage() {
                 <div>住所：{assignment.address || "-"}</div>
               </div>
 
-              {dailyInfo?.detail && (
                 <div
-                  style={{
-                    marginTop: 12,
-                    padding: 10,
-                    borderRadius: 10,
-                    backgroundColor: "#ecfdf5",
-                    color: "#166534",
-                    fontWeight: 800,
-                  }}
-                >
-                  作業：{dailyInfo.detail}
-                </div>
-              )}
-
-              {dailyInfo?.vehicle_names?.length ? (
-                <div style={{ marginTop: 12 }}>
-                  <div style={{ fontWeight: 800, marginBottom: 6 }}>車両</div>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                    {dailyInfo.vehicle_names.map((name) => (
-                      <span
-                        key={name}
-                        style={{
-                          padding: "4px 8px",
-                          borderRadius: 999,
-                          backgroundColor: "#e0f2fe",
-                          color: "#0369a1",
-                          fontWeight: 700,
-                        }}
-                      >
-                        {name}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-
-              <div style={{ marginTop: 14 }}>
-                <div style={{ fontWeight: 900, marginBottom: 8 }}>
-                  人員 {members.length}人
-                </div>
-
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                  {members.map((member) => (
+                style={{
+                  marginTop: 16,
+                  display: "grid",
+                  gap: 12,
+                }}
+              >
+                {displayDates.map((workDate) => {
+                  const members = getMembers(
+                    assignment.id,
+                    workDate
+                  );
+              
+                  const dailyInfo = getDailyInfo(
+                    assignment.id,
+                    workDate
+                  );
+              
+                  if (
+                    members.length === 0 &&
+                    !dailyInfo?.detail &&
+                    !dailyInfo?.vehicle_names?.length &&
+                    !(dailyInfo?.planned_count ?? 0)
+                  ) {
+                    return null;
+                  }
+              
+                  return (
                     <div
-                      key={member.id}
+                      key={workDate}
                       style={{
-                        padding: "6px 10px",
-                        borderRadius: 999,
-                        backgroundColor: "#fff7ed",
-                        border: "1px solid #fed7aa",
-                        fontWeight: 800,
+                        border: "1px solid #e5e7eb",
+                        borderRadius: 10,
+                        padding: 10,
+                        backgroundColor: "#fafafa",
                       }}
                     >
-                      {member.employee_name}
-                      {member.is_driver ? " 🚚" : ""}
-                      {member.is_operator ? " OP" : ""}
-                      {member.heavy_equipment ? ` ${member.heavy_equipment}` : ""}
+                      <div
+                        style={{
+                          fontWeight: 900,
+                          marginBottom: 8,
+                        }}
+                      >
+                        {workDate}
+                      </div>
+              
+                      {dailyInfo?.detail && (
+                        <div
+                          style={{
+                            marginBottom: 8,
+                            color: "#166534",
+                            fontWeight: 800,
+                          }}
+                        >
+                          作業：{dailyInfo.detail}
+                        </div>
+                      )}
+              
+                      {dailyInfo?.vehicle_names?.length ? (
+                        <div
+                          style={{
+                            marginBottom: 8,
+                          }}
+                        >
+                          🚚 {dailyInfo.vehicle_names.join(" / ")}
+                        </div>
+                      ) : null}
+              
+                      <div
+                        style={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: 6,
+                        }}
+                      >
+                        {members.map((member) => (
+                          <div
+                            key={member.id}
+                            style={{
+                              padding: "6px 10px",
+                              borderRadius: 999,
+                              backgroundColor: "#fff7ed",
+                              border: "1px solid #fed7aa",
+                              fontWeight: 800,
+                            }}
+                          >
+                            {member.employee_name}
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
             </div>
           );
