@@ -319,20 +319,44 @@ const endDate = displayDates[displayDates.length - 1];
 
     return (
       <div key={workDate}>
-        <div
-          style={{
-            fontWeight: 900,
-            fontSize: 18,
-            marginBottom: 8,
-            backgroundColor: "#111",
-            color: "#fff",
-            borderRadius: 10,
-            padding: 10,
-            textAlign: "center",
-          }}
-        >
+        const day = new Date(workDate).getDay();
+
+<div
+  style={{
+    fontWeight: 900,
+    fontSize: 18,
+    marginBottom: 8,
+
+    backgroundColor:
+      day === 0
+        ? "#fee2e2"
+        : day === 6
+        ? "#dbeafe"
+        : "#f3f4f6",
+
+    color:
+      day === 0
+        ? "#dc2626"
+        : day === 6
+        ? "#2563eb"
+        : "#111827",
+
+    border: "1px solid #d1d5db",
+    borderRadius: 10,
+    padding: 10,
+    textAlign: "center",
+  }}
+>
           {title}
-          <div style={{ fontSize: 12, opacity: 0.8 }}>{workDate}</div>
+          <div
+  style={{
+    fontSize: 12,
+    marginTop: 4,
+    fontWeight: 600,
+  }}
+>
+  {workDate}
+</div>
         </div>
 
         <div style={{ display: "grid", gap: 12 }}>
