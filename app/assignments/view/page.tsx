@@ -293,8 +293,11 @@ const endDate = displayDates[displayDates.length - 1];
     overflowX: "auto",
   }}
 >
-  {getDisplayDates().map((workDate, index) => {
-    const title =
+{getDisplayDates().map((workDate, index) => {
+
+const day = new Date(workDate).getDay();
+
+const title =
       viewMode === "3days"
         ? index === 0
           ? "今日"
@@ -319,7 +322,6 @@ const endDate = displayDates[displayDates.length - 1];
 
     return (
       <div key={workDate}>
-        const day = new Date(workDate).getDay();
 
 <div
   style={{
