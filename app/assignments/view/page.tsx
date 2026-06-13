@@ -289,9 +289,9 @@ const endDate = displayDates[displayDates.length - 1];
   style={{
     ...buttonStyle,
     backgroundColor:
-      viewMode === "day"
-        ? "#2563eb"
-        : "#fff",
+  viewMode === "day"
+    ? "#2563eb"
+    : "#fff",
     color:
       viewMode === "day"
         ? "#fff"
@@ -315,9 +315,9 @@ const endDate = displayDates[displayDates.length - 1];
     ...buttonStyle,
   
     backgroundColor:
-      viewMode === "3days"
-        ? "#2563eb"
-        : "#fff",
+  viewMode === "3days"
+    ? "#2563eb"
+    : "#fff",
   
     color:
       viewMode === "3days"
@@ -359,9 +359,9 @@ const endDate = displayDates[displayDates.length - 1];
     ...buttonStyle,
   
     backgroundColor:
-      viewMode === "3days"
-        ? "#2563eb"
-        : "#fff",
+  viewMode === "week"
+    ? "#2563eb"
+    : "#fff",
   
     color:
       viewMode === "3days"
