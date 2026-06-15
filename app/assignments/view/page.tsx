@@ -410,6 +410,7 @@ const endDate = displayDates[displayDates.length - 1];
       </div>
 
       <div
+  ref={pdfRef}
   style={{
     display: "grid",
     gridTemplateColumns:
