@@ -225,28 +225,186 @@ const endDate = displayDates[displayDates.length - 1];
     setDate(d.toISOString().slice(0, 10));
   };
 
-  const downloadPdf = async () => {
-    const html2canvas = (await import("html2canvas")).default;
-    const jsPDF = (await import("jspdf")).default;
+  const downloadPdf = () => {
+    const displayDates = getDisplayDates();
   
-    if (!pdfRef.current) return;
+    const html = `
+  <!doctype html>
+  <html>
+  <head>
+    <meta charset="utf-8" />
+    <title>番割</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+        padding: 16px;
+        color: #111;
+        font-size: 14px;
+      }
   
-    const canvas = await html2canvas(pdfRef.current, {
-      scale: 2,
-      backgroundColor: "#f5f6f8",
-    });
+      h1 {
+        font-size: 22px;
+        margin-bottom: 16px;
+      }
   
-    const imgData = canvas.toDataURL("image/png");
-    const pdf = new jsPDF("l", "mm", "a4");
+      .day {
+        page-break-after: always;
+        margin-bottom: 24px;
+      }
   
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
+      .day-title {
+        font-size: 18px;
+        font-weight: 900;
+        padding: 10px;
+        background: #f3f4f6;
+        border-radius: 8px;
+        margin-bottom: 12px;
+      }
   
-    const imgWidth = pageWidth;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      .card {
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        padding: 12px;
+        margin-bottom: 12px;
+      }
   
-    pdf.addImage(imgData, "PNG", 0, 0, imgWidth, Math.min(imgHeight, pageHeight));
-    pdf.save(`番割_${date}.pdf`);
+      .site {
+        font-size: 17px;
+        font-weight: 900;
+        margin-bottom: 4px;
+      }
+  
+      .small {
+        font-size: 13px;
+        margin: 3px 0;
+      }
+  
+      .work {
+        margin-top: 8px;
+        padding: 8px;
+        background: #ecfdf5;
+        border-radius: 8px;
+        font-weight: 800;
+      }
+  
+      .members {
+        margin-top: 8px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+  
+      .member {
+        padding: 5px 9px;
+        border-radius: 999px;
+        background: #fff7ed;
+        border: 1px solid #fed7aa;
+        font-weight: 800;
+      }
+  
+      @media print {
+        body {
+          padding: 10mm;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>番割</h1>
+  
+    ${displayDates
+      .map((workDate) => {
+        const dayAssignments = assignments.filter((assignment) => {
+          const members = getMembers(assignment.id, workDate);
+          const dailyInfo = getDailyInfo(assignment.id, workDate);
+  
+          return (
+            members.length > 0 ||
+            (dailyInfo?.planned_count ?? 0) > 0 ||
+            !!dailyInfo?.detail ||
+            !!dailyInfo?.vehicle_names?.length
+          );
+        });
+  
+        return `
+          <div class="day">
+            <div class="day-title">${workDate}</div>
+  
+            ${
+              dayAssignments.length === 0
+                ? `<div class="card">番割なし</div>`
+                : dayAssignments
+                    .map((assignment) => {
+                      const members = getMembers(assignment.id, workDate);
+                      const dailyInfo = getDailyInfo(assignment.id, workDate);
+  
+                      return `
+                        <div class="card">
+                          <div class="site">${assignment.site_name || "-"}</div>
+                          <div class="small">元請：${assignment.contractor_name || "-"}</div>
+                          <div class="small">集合：${assignment.meeting_time || "-"}</div>
+                          <div class="small">担当：${assignment.manager_name || "-"}</div>
+                          <div class="small">連絡先：${assignment.contact_phone || "-"}</div>
+                          <div class="small">住所：${assignment.address || "-"}</div>
+  
+                          ${
+                            dailyInfo?.detail
+                              ? `<div class="work">作業：${dailyInfo.detail}</div>`
+                              : ""
+                          }
+  
+                          ${
+                            dailyInfo?.vehicle_names?.length
+                              ? `<div class="small">車両：${dailyInfo.vehicle_names.join(" / ")}</div>`
+                              : ""
+                          }
+  
+                          <div class="small" style="font-weight:900;margin-top:10px;">
+                            人員 ${members.length}人
+                          </div>
+  
+                          <div class="members">
+                            ${members
+                              .map(
+                                (member) => `
+                                  <span class="member">
+                                    ${member.employee_name}
+                                    ${member.is_driver ? " 🚚" : ""}
+                                    ${member.is_operator ? " OP" : ""}
+                                    ${member.heavy_equipment ? ` ${member.heavy_equipment}` : ""}
+                                  </span>
+                                `
+                              )
+                              .join("")}
+                          </div>
+                        </div>
+                      `;
+                    })
+                    .join("")
+            }
+          </div>
+        `;
+      })
+      .join("")}
+  </body>
+  </html>
+  `;
+  
+    const printWindow = window.open("", "_blank");
+  
+    if (!printWindow) {
+      alert("ポップアップがブロックされています");
+      return;
+    }
+  
+    printWindow.document.open();
+    printWindow.document.write(html);
+    printWindow.document.close();
+  
+    printWindow.onload = () => {
+      printWindow.focus();
+      printWindow.print();
+    };
   };
 
   return (
