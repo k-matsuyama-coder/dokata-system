@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
 
@@ -44,6 +44,8 @@ export default function AssignmentViewPage() {
   const [siteMembers, setSiteMembers] = useState<SiteMember[]>([]);
   const [dailyInfos, setDailyInfos] = useState<DailyInfo[]>([]);
   const [viewMode, setViewMode] = useState<"day" | "3days" | "week">("day");
+
+  const pdfRef = useRef<HTMLDivElement>(null);
   
   const getDisplayDates = () => {
     if (viewMode === "3days") {
@@ -223,6 +225,30 @@ const endDate = displayDates[displayDates.length - 1];
     setDate(d.toISOString().slice(0, 10));
   };
 
+  const downloadPdf = async () => {
+    const html2canvas = (await import("html2canvas")).default;
+    const jsPDF = (await import("jspdf")).default;
+  
+    if (!pdfRef.current) return;
+  
+    const canvas = await html2canvas(pdfRef.current, {
+      scale: 2,
+      backgroundColor: "#f5f6f8",
+    });
+  
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF("l", "mm", "a4");
+  
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+  
+    const imgWidth = pageWidth;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+  
+    pdf.addImage(imgData, "PNG", 0, 0, imgWidth, Math.min(imgHeight, pageHeight));
+    pdf.save(`番割_${date}.pdf`);
+  };
+
   return (
     <div style={{ padding: 16, backgroundColor: "#f5f6f8", minHeight: "100vh" }}>
       <BackButton />
@@ -375,6 +401,10 @@ const endDate = displayDates[displayDates.length - 1];
   }}
 >
   週間
+</button>
+
+<button type="button" onClick={downloadPdf} style={buttonStyle}>
+  PDF
 </button>
 
       </div>
