@@ -482,15 +482,15 @@ const { data: assignmentData, error } = await supabase
   };
 
   const handleAddSite = async () => {
-    if (!siteName || !contractorName || !startDate || !endDate) {
-      alert("元請・現場名・工期を入力してください");
+    if (!siteName || !contractorName || !startDate) {
+      alert("元請・現場名・工期開始を入力してください");
       return;
     }
 
     const { error } = await supabase.from("assignments").insert({
       assignment_date: `${month}-01`,
       start_date: startDate,
-end_date: endDate,
+      end_date: endDate || null,
       contractor_name: contractorName,
       site_name: siteName,
       shift_type: shiftType,

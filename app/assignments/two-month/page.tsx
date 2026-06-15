@@ -555,8 +555,8 @@ const nextAssignments = [...sortedAssignments];
   };
 
   const handleAddSite = async () => {
-    if (!siteName || !contractorName || !startDate || !endDate) {
-      alert("元請・現場名・工期を入力してください");
+    if (!siteName || !contractorName || !startDate) {
+      alert("元請・現場名・工期開始を入力してください");
       return;
     }
   
@@ -575,7 +575,7 @@ const nextAssignments = [...sortedAssignments];
     end_time: shiftType === "night" ? "05:00" : "17:00",
     meeting_time: meetingTime,
     start_date: startDate,
-    end_date: endDate,
+    end_date: endDate || null,
   })
   .select("id")
   .single();
