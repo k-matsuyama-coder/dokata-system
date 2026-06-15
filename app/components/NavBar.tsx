@@ -120,7 +120,7 @@ gap: 12,
         position: "fixed",
         inset: 0,
         backgroundColor: "rgba(0,0,0,0.3)",
-        zIndex: 999,
+        zIndex: 1000,
       }}
     />
   )}

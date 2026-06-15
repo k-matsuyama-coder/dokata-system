@@ -1827,7 +1827,7 @@ border: copiedEmployeeNames.includes(member.employee_name)
     overflowY: "auto",
     border: "1px solid #ddd",
     borderRadius: 12,
-    backgroundColor: selectedDate ? "#f3f4f6" : "#fff",
+    backgroundColor: "#fff",
     padding: 8,
     zIndex: 1000,
     boxShadow: "0 6px 18px rgba(0,0,0,0.12)",
@@ -1945,15 +1945,10 @@ border: copiedEmployeeNames.includes(member.employee_name)
               padding: "8px 10px",
               borderRadius: 999,
               backgroundColor:
-  selectedEmployeeName === employee.name
-    ? "#dbeafe"
-    : selectedDate
-    ? "#e5e7eb"
-    : "#fff7ed",
-border: selectedDate
-  ? "1px solid #cbd5e1"
-  : "1px solid #fed7aa",
-color: selectedDate ? "#374151" : "#111",
+                selectedEmployeeName === employee.name
+                  ? "#dbeafe"
+                  : "#fff7ed",
+              border: "1px solid #fed7aa",
               cursor: "grab",
               fontWeight: 700,
               fontSize: 13,
