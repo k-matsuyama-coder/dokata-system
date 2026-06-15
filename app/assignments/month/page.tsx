@@ -1444,6 +1444,43 @@ width: "100%",
     (member) => member.work_date === date
   );
 
+  const plannedAll = dailyInfos
+  .filter((info) => info.work_date === date)
+  .reduce(
+    (sum, info) => sum + (info.planned_count ?? 0),
+    0
+  );
+
+const plannedFirst = dailyInfos
+  .filter((info) => {
+    if (info.work_date !== date) return false;
+
+    const assignment = assignments.find(
+      (a) => a.id === info.assignment_id
+    );
+
+    return assignment?.construction_type === "第一工事";
+  })
+  .reduce(
+    (sum, info) => sum + (info.planned_count ?? 0),
+    0
+  );
+
+const plannedSecond = dailyInfos
+  .filter((info) => {
+    if (info.work_date !== date) return false;
+
+    const assignment = assignments.find(
+      (a) => a.id === info.assignment_id
+    );
+
+    return assignment?.construction_type === "第二工事";
+  })
+  .reduce(
+    (sum, info) => sum + (info.planned_count ?? 0),
+    0
+  );
+
   const totalAll = membersOfDate.length;
 
   const totalFirst = membersOfDate.filter((member) => {
@@ -1475,9 +1512,9 @@ width: "100%",
           fontWeight: 800,
         }}
       >
-        <div>全 {totalAll}</div>
-        <div>一 {totalFirst}</div>
-        <div>二 {totalSecond}</div>
+        <div>全 {plannedAll}/{totalAll}</div>
+<div>一 {plannedFirst}/{totalFirst}</div>
+<div>二 {plannedSecond}/{totalSecond}</div>
       </div>
     </th>
   );
