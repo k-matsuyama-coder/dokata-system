@@ -822,6 +822,24 @@ setShowAddModal(false);
     );
   });
 
+  const totalAll = siteMembers.length;
+
+const totalFirst = siteMembers.filter((member) => {
+  const assignment = assignments.find(
+    (a) => a.id === member.assignment_id
+  );
+
+  return assignment?.construction_type === "第一工事";
+}).length;
+
+const totalSecond = siteMembers.filter((member) => {
+  const assignment = assignments.find(
+    (a) => a.id === member.assignment_id
+  );
+
+  return assignment?.construction_type === "第二工事";
+}).length;
+
   return (
     <div style={{ padding: 16 }}>
       <BackButton />
@@ -833,6 +851,30 @@ setShowAddModal(false);
   }}
 >
         <h1>月間番割表</h1>
+
+        <div
+  style={{
+    display: "flex",
+    gap: 12,
+    marginBottom: 16,
+    flexWrap: "wrap",
+  }}
+>
+  <div style={summaryCard}>
+    <div style={summaryTitle}>全合計</div>
+    <div style={summaryValue}>{totalAll}人</div>
+  </div>
+
+  <div style={summaryCard}>
+    <div style={summaryTitle}>第一工事</div>
+    <div style={summaryValue}>{totalFirst}人</div>
+  </div>
+
+  <div style={summaryCard}>
+    <div style={summaryTitle}>第二工事</div>
+    <div style={summaryValue}>{totalSecond}人</div>
+  </div>
+</div>
 
         <div
   style={{
@@ -2250,4 +2292,24 @@ boxSizing: "border-box" as const,
     backgroundColor: "#fef3c7",
     color: "#b45309",
     fontWeight: 700,
+  };
+
+  const summaryCard = {
+    backgroundColor: "#fff",
+    border: "1px solid #e5e7eb",
+    borderRadius: 12,
+    padding: "10px 16px",
+    minWidth: 120,
+    boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
+  };
+  
+  const summaryTitle = {
+    fontSize: 12,
+    color: "#666",
+    fontWeight: 700,
+  };
+  
+  const summaryValue = {
+    fontSize: 24,
+    fontWeight: 900,
   };
