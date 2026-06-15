@@ -225,28 +225,21 @@ const endDate = displayDates[displayDates.length - 1];
     setDate(d.toISOString().slice(0, 10));
   };
 
-  const downloadPdf = async () => {
+  const downloadImage = async () => {
     const html2canvas = (await import("html2canvas")).default;
-    const jsPDF = (await import("jspdf")).default;
   
     if (!pdfRef.current) return;
   
     const canvas = await html2canvas(pdfRef.current, {
-      scale: 2,
+      scale: 1.2,
       backgroundColor: "#f5f6f8",
+      useCORS: true,
     });
   
-    const imgData = canvas.toDataURL("image/png");
-    const pdf = new jsPDF("l", "mm", "a4");
-  
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
-  
-    const imgWidth = pageWidth;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-  
-    pdf.addImage(imgData, "PNG", 0, 0, imgWidth, Math.min(imgHeight, pageHeight));
-    pdf.save(`番割_${date}.pdf`);
+    const link = document.createElement("a");
+    link.download = `番割_${date}.jpg`;
+    link.href = canvas.toDataURL("image/jpeg", 0.8);
+    link.click();
   };
 
   return (
@@ -403,8 +396,8 @@ const endDate = displayDates[displayDates.length - 1];
   週間
 </button>
 
-<button type="button" onClick={downloadPdf} style={buttonStyle}>
-  PDF
+<button type="button" onClick={downloadImage} style={buttonStyle}>
+  画像保存
 </button>
 
       </div>
