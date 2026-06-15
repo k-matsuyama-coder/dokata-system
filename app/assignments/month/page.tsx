@@ -822,24 +822,6 @@ setShowAddModal(false);
     );
   });
 
-  const totalAll = siteMembers.length;
-
-const totalFirst = siteMembers.filter((member) => {
-  const assignment = assignments.find(
-    (a) => a.id === member.assignment_id
-  );
-
-  return assignment?.construction_type === "第一工事";
-}).length;
-
-const totalSecond = siteMembers.filter((member) => {
-  const assignment = assignments.find(
-    (a) => a.id === member.assignment_id
-  );
-
-  return assignment?.construction_type === "第二工事";
-}).length;
-
   return (
     <div style={{ padding: 16 }}>
       <BackButton />
@@ -851,30 +833,6 @@ const totalSecond = siteMembers.filter((member) => {
   }}
 >
         <h1>月間番割表</h1>
-
-        <div
-  style={{
-    display: "flex",
-    gap: 12,
-    marginBottom: 16,
-    flexWrap: "wrap",
-  }}
->
-  <div style={summaryCard}>
-    <div style={summaryTitle}>全合計</div>
-    <div style={summaryValue}>{totalAll}人</div>
-  </div>
-
-  <div style={summaryCard}>
-    <div style={summaryTitle}>第一工事</div>
-    <div style={summaryValue}>{totalFirst}人</div>
-  </div>
-
-  <div style={summaryCard}>
-    <div style={summaryTitle}>第二工事</div>
-    <div style={summaryValue}>{totalSecond}人</div>
-  </div>
-</div>
 
         <div
   style={{
@@ -1481,11 +1439,49 @@ width: "100%",
 <th style={{ ...th, ...stickyTh3 }}>担当者</th>
 <th style={th}>昼/夜</th>
 
-                {days.map((date) => (
-                  <th key={date} style={getDateHeaderStyle(date)}>
-                  {Number(date.slice(-2))}
-                </th>
-                ))}
+{days.map((date) => {
+  const membersOfDate = siteMembers.filter(
+    (member) => member.work_date === date
+  );
+
+  const totalAll = membersOfDate.length;
+
+  const totalFirst = membersOfDate.filter((member) => {
+    const assignment = assignments.find(
+      (a) => a.id === member.assignment_id
+    );
+
+    return assignment?.construction_type === "第一工事";
+  }).length;
+
+  const totalSecond = membersOfDate.filter((member) => {
+    const assignment = assignments.find(
+      (a) => a.id === member.assignment_id
+    );
+
+    return assignment?.construction_type === "第二工事";
+  }).length;
+
+  return (
+    <th key={date} style={getDateHeaderStyle(date)}>
+      <div>{Number(date.slice(-2))}</div>
+
+      <div
+        style={{
+          marginTop: 4,
+          fontSize: 10,
+          lineHeight: 1.4,
+          color: "#333",
+          fontWeight: 800,
+        }}
+      >
+        <div>全 {totalAll}</div>
+        <div>一 {totalFirst}</div>
+        <div>二 {totalSecond}</div>
+      </div>
+    </th>
+  );
+})}
               </tr>
             </thead>
 
@@ -2292,24 +2288,4 @@ boxSizing: "border-box" as const,
     backgroundColor: "#fef3c7",
     color: "#b45309",
     fontWeight: 700,
-  };
-
-  const summaryCard = {
-    backgroundColor: "#fff",
-    border: "1px solid #e5e7eb",
-    borderRadius: 12,
-    padding: "10px 16px",
-    minWidth: 120,
-    boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
-  };
-  
-  const summaryTitle = {
-    fontSize: 12,
-    color: "#666",
-    fontWeight: 700,
-  };
-  
-  const summaryValue = {
-    fontSize: 24,
-    fontWeight: 900,
   };
