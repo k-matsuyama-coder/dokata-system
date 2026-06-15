@@ -97,6 +97,7 @@ const [draggingAssignmentId, setDraggingAssignmentId] = useState<string | null>(
   const [selectedEmployeeName, setSelectedEmployeeName] = useState<string | null>(null);
 const [selectedSiteMemberId, setSelectedSiteMemberId] = useState<string | null>(null);
 const [selectedDate, setSelectedDate] = useState<string | null>(null);
+const [selectedShiftType, setSelectedShiftType] = useState<string | null>(null);
 const [copiedEmployeeNames, setCopiedEmployeeNames] = useState<string[]>([]);
 const [editingDetails, setEditingDetails] = useState<Record<string, string>>({});
 const [saveTimers, setSaveTimers] = useState<Record<string, NodeJS.Timeout>>({});
@@ -714,9 +715,20 @@ setShowAddModal(false);
     });
   };
 
-  const getUnassignedEmployeesByDate = (workDate: string) => {
+  const getUnassignedEmployeesByDate = (
+    workDate: string,
+    shiftType: string | null
+  ) => {
     const assignedNames = siteMembers
-      .filter((m) => m.work_date === workDate)
+      .filter((m) => {
+        if (m.work_date !== workDate) return false;
+  
+        const assignment = assignments.find(
+          (a) => a.id === m.assignment_id
+        );
+  
+        return (assignment?.shift_type ?? "day") === (shiftType ?? "day");
+      })
       .map((m) => m.employee_name);
   
     return employees.filter(
@@ -1545,6 +1557,7 @@ const isShort =
                         }}
                         onClick={() => {
                           setSelectedDate(date);
+                          setSelectedShiftType(assignment.shift_type ?? "day");
                         
                           if (selectedSiteMemberId) {
                             moveSiteMember(selectedSiteMemberId, assignment.id, date);
@@ -1838,7 +1851,9 @@ border: copiedEmployeeNames.includes(member.employee_name)
   </div>
 
   <div style={{ fontSize: 12, color: "#666", marginBottom: 10 }}>
-    {selectedDate || "日付未選択"}
+  {selectedDate
+  ? `${selectedDate} / ${selectedShiftType === "night" ? "夜" : "昼"}`
+  : "日付未選択"}
   </div>
 
   {copiedEmployeeNames.length > 0 && (
@@ -1899,7 +1914,7 @@ border: copiedEmployeeNames.includes(member.employee_name)
 <div style={{ display: "grid", gap: 10 }}>
   {Object.entries(
     (selectedDate
-      ? getUnassignedEmployeesByDate(selectedDate)
+      ? getUnassignedEmployeesByDate(selectedDate, selectedShiftType)
       : employees
     ).reduce((acc, employee) => {
       const company = employee.company_name || "未設定";
