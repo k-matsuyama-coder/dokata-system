@@ -29,6 +29,7 @@ type SiteMember = {
   is_driver: boolean | null;
   is_operator: boolean | null;
   heavy_equipment: string | null;
+  is_foreman: boolean | null;
 };
 
 type DailyInfo = {
@@ -300,7 +301,7 @@ const { data: assignmentData, error } = await supabase
 
     const { data: memberData, error: memberError } = await supabase
       .from("assignment_site_members")
-      .select("id, assignment_id, work_date, employee_name, is_driver, is_operator, heavy_equipment")
+      .select("id, assignment_id, work_date, employee_name, is_driver, is_operator, is_foreman, heavy_equipment")
       .in("assignment_id", assignmentIds)
       .gte("work_date", startDate)
       .lte("work_date", endDate);
@@ -545,10 +546,11 @@ setShowAddModal(false);
         work_date: workDate,
         employee_name: employeeName,
         is_driver: false,
-        is_operator: false,
-        heavy_equipment: "",
+is_operator: false,
+is_foreman: false,
+heavy_equipment: "",        
       })
-      .select("id, assignment_id, work_date, employee_name, is_driver, is_operator, heavy_equipment")
+      .select("id, assignment_id, work_date, employee_name, is_driver, is_operator, is_foreman, heavy_equipment")
       .single();
 
     if (error || !data) {
@@ -597,6 +599,28 @@ setShowAddModal(false);
 
     setSiteMembers((prev) =>
       prev.filter((m) => m.id !== id)
+    );
+  };
+
+  const toggleForeman = async (member: SiteMember) => {
+    const { error } = await supabase
+      .from("assignment_site_members")
+      .update({
+        is_foreman: !member.is_foreman,
+      })
+      .eq("id", member.id);
+  
+    if (error) {
+      alert("職長変更失敗: " + error.message);
+      return;
+    }
+  
+    setSiteMembers((prev) =>
+      prev.map((m) =>
+        m.id === member.id
+          ? { ...m, is_foreman: !member.is_foreman }
+          : m
+      )
     );
   };
 
@@ -1760,63 +1784,67 @@ const isShort =
     marginTop: 4,
   }}
 >
-{cellMembers.map((member) => (
-  <div
-    key={member.id}
-    draggable
-    onDragStart={() => setDraggingSiteMemberId(member.id)}
-    onDragEnd={() => setDraggingSiteMemberId(null)}
-    onClick={(e) => {
-      e.stopPropagation();
-      setCopiedEmployeeNames((prev) =>
-  prev.includes(member.employee_name)
-    ? prev.filter((name) => name !== member.employee_name)
-    : [...prev, member.employee_name]
-);
-      setSelectedSiteMemberId(null);
-      setSelectedEmployeeName(null);
-    }}
-    onDoubleClick={() => deleteSiteMember(member.id)}
-    style={{
-      padding: "2px 6px",
-      borderRadius: 6,
-      backgroundColor:
-  copiedEmployeeNames.includes(member.employee_name)
-    ? "#fef3c7"
-    : "#eef2ff",
-border: copiedEmployeeNames.includes(member.employee_name)
-  ? "2px solid #f59e0b"
-  : "1px solid #c7d2fe",
-      cursor: "grab",
-      fontWeight: 700,
-      fontSize: 11,
-      width: "fit-content",
-    }}
-  >
+{cellMembers
+  .sort((a, b) => Number(b.is_foreman) - Number(a.is_foreman))
+  .map((member) => (
     <div
-  style={{
-    display: "flex",
-    alignItems: "center",
-    gap: 4,
-    flexWrap: "wrap",
-  }}
->
-        {member.is_driver && (
-          <span style={tagBlue}>運転</span>
-        )}
-
-        {member.is_operator && (
-          <span style={tagPurple}>OP</span>
-        )}
-
-        {member.heavy_equipment && (
-          <span style={tagYellow}>{member.heavy_equipment}</span>
-        )}
+      key={member.id}
+      draggable
+      onDragStart={() => setDraggingSiteMemberId(member.id)}
+      onDragEnd={() => setDraggingSiteMemberId(null)}
+      onClick={(e) => {
+        e.stopPropagation();
+        setCopiedEmployeeNames((prev) =>
+          prev.includes(member.employee_name)
+            ? prev.filter((name) => name !== member.employee_name)
+            : [...prev, member.employee_name]
+        );
+        setSelectedSiteMemberId(null);
+        setSelectedEmployeeName(null);
+      }}
+      onDoubleClick={() => deleteSiteMember(member.id)}
+      style={{
+        padding: "2px 6px",
+        borderRadius: 6,
+        backgroundColor: member.is_foreman ? "#fef3c7" : "#eef2ff",
+        border: member.is_foreman ? "2px solid #f59e0b" : "1px solid #c7d2fe",
+        cursor: "grab",
+        fontWeight: 700,
+        fontSize: 11,
+        width: "fit-content",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
+        {member.is_foreman && <span style={tagYellow}>職長</span>}
+        {member.is_driver && <span style={tagBlue}>運転</span>}
+        {member.is_operator && <span style={tagPurple}>OP</span>}
+        {member.heavy_equipment && <span style={tagYellow}>{member.heavy_equipment}</span>}
       </div>
 
       <span>{member.employee_name}</span>
-  </div>
-))}
+
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          toggleForeman(member);
+        }}
+        style={{
+          marginTop: 3,
+          border: "none",
+          borderRadius: 6,
+          padding: "2px 6px",
+          backgroundColor: member.is_foreman ? "#f59e0b" : "#e5e7eb",
+          color: member.is_foreman ? "#fff" : "#111",
+          fontSize: 10,
+          fontWeight: 800,
+          cursor: "pointer",
+        }}
+      >
+        {member.is_foreman ? "職長解除" : "職長"}
+      </button>
+    </div>
+  ))}
 </div>
                         </div>
                       </td>
