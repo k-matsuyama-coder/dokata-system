@@ -536,9 +536,12 @@ setShowAddModal(false);
         m.work_date === workDate &&
         m.employee_name === employeeName
     );
-
+  
     if (exists) return;
-
+  
+    const cellMembers = getCellMembers(assignmentId, workDate);
+    const isFirstMember = cellMembers.length === 0;
+  
     const { data, error } = await supabase
       .from("assignment_site_members")
       .insert({
@@ -546,18 +549,18 @@ setShowAddModal(false);
         work_date: workDate,
         employee_name: employeeName,
         is_driver: false,
-is_operator: false,
-is_foreman: false,
-heavy_equipment: "",        
+        is_operator: false,
+        is_foreman: isFirstMember,
+        heavy_equipment: "",
       })
       .select("id, assignment_id, work_date, employee_name, is_driver, is_operator, is_foreman, heavy_equipment")
       .single();
-
+  
     if (error || !data) {
       alert("メンバー追加失敗: " + (error?.message || "取得失敗"));
       return;
     }
-
+  
     setSiteMembers((prev) => [...prev, data]);
     setDraggingEmployeeName(null);
   };
@@ -1784,7 +1787,7 @@ const isShort =
     marginTop: 4,
   }}
 >
-{cellMembers
+{[...cellMembers]
   .sort((a, b) => Number(b.is_foreman) - Number(a.is_foreman))
   .map((member) => (
     <div
@@ -1823,26 +1826,49 @@ const isShort =
 
       <span>{member.employee_name}</span>
 
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          toggleForeman(member);
-        }}
-        style={{
-          marginTop: 3,
-          border: "none",
-          borderRadius: 6,
-          padding: "2px 6px",
-          backgroundColor: member.is_foreman ? "#f59e0b" : "#e5e7eb",
-          color: member.is_foreman ? "#fff" : "#111",
-          fontSize: 10,
-          fontWeight: 800,
-          cursor: "pointer",
-        }}
-      >
-        {member.is_foreman ? "職長解除" : "職長"}
-      </button>
+      {member.is_foreman ? (
+  <button
+    type="button"
+    onClick={(e) => {
+      e.stopPropagation();
+      toggleForeman(member);
+    }}
+    style={{
+      marginTop: 3,
+      border: "none",
+      borderRadius: 6,
+      padding: "2px 6px",
+      backgroundColor: "#f59e0b",
+      color: "#fff",
+      fontSize: 10,
+      fontWeight: 800,
+      cursor: "pointer",
+    }}
+  >
+    職長解除
+  </button>
+) : !cellMembers.some((m) => m.is_foreman) ? (
+  <button
+    type="button"
+    onClick={(e) => {
+      e.stopPropagation();
+      toggleForeman(member);
+    }}
+    style={{
+      marginTop: 3,
+      border: "none",
+      borderRadius: 6,
+      padding: "2px 6px",
+      backgroundColor: "#e5e7eb",
+      color: "#111",
+      fontSize: 10,
+      fontWeight: 800,
+      cursor: "pointer",
+    }}
+  >
+    職長
+  </button>
+) : null}
     </div>
   ))}
 </div>
