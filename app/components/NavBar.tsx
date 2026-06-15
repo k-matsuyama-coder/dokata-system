@@ -46,7 +46,8 @@ export default function NavBar() {
         width: "100%",
         zIndex: 1000,
         display: "flex",
-        justifyContent: "space-between",
+        justifyContent: "flex-start",
+gap: 12,
         alignItems: "center",
         padding: "14px 20px",
         borderBottom: "1px solid #ddd",
@@ -55,7 +56,25 @@ export default function NavBar() {
         boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
       }}
     >
-      <a
+      <button
+  type="button"
+  onClick={(e) => {
+    e.stopPropagation();
+    setMenuOpen(!menuOpen);
+  }}
+  style={{
+    border: "1px solid #ddd",
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    padding: "8px 12px",
+    cursor: "pointer",
+    fontSize: 18,
+  }}
+>
+  ☰
+</button>
+
+<a
   href="/home"
   onClick={() => setMenuOpen(false)}
   style={{
@@ -71,6 +90,7 @@ export default function NavBar() {
 
 <div
   style={{
+    marginLeft: "auto",
     display: "flex",
     alignItems: "center",
     gap: 8,
@@ -89,24 +109,6 @@ export default function NavBar() {
     }}
   >
     📅
-  </button>
-
-  <button
-    type="button"
-    onClick={(e) => {
-      e.stopPropagation();
-      setMenuOpen(!menuOpen);
-    }}
-    style={{
-      border: "1px solid #ddd",
-      backgroundColor: "#fff",
-      borderRadius: 8,
-      padding: "8px 12px",
-      cursor: "pointer",
-      fontSize: 18,
-    }}
-  >
-    ☰
   </button>
 </div>
 
@@ -129,11 +131,11 @@ export default function NavBar() {
   style={{
     position: "fixed",
     top: 0,
-    right: menuOpen ? 0 : -260,
+    left: menuOpen ? 0 : -260,
     width: 250,
     height: "100vh",
     backgroundColor: "#fff",
-    borderLeft: "1px solid #ddd",
+    borderRight: "1px solid #ddd",
     padding: 20,
     display: "flex",
     flexDirection: "column",
@@ -259,18 +261,6 @@ fontWeight: pathname.startsWith("/assignments/month") ? 700 : 500,
             </button>
           </div>
           </>
-
-          <div
-  onMouseEnter={() => setMenuOpen(true)}
-  style={{
-    position: "fixed",
-    top: 0,
-    right: 0,
-    width: 15,
-    height: "100vh",
-    zIndex: 998,
-  }}
-/>
 
 <MyMonthlyScheduleModal
   open={showCalendarModal}
