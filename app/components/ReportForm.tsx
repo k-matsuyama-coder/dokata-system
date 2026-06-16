@@ -19,6 +19,7 @@ type Contractor = {
 };
 
 type Site = {
+  id: string;
   site_name: string;
   contractor_name: string;
   manager_name: string | null;
@@ -193,6 +194,10 @@ const [sites, setSites] = useState<Site[]>([]);
 const [showContractorSuggestions, setShowContractorSuggestions] = useState(false);
 const [showSiteSuggestions, setShowSiteSuggestions] = useState(false);
 const [isSubmitting, setIsSubmitting] = useState(false);
+const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(null);
+const [assignmentMembers, setAssignmentMembers] = useState<string[]>([]);
+const [checkedAssignmentMembers, setCheckedAssignmentMembers] = useState<string[]>([]);
+const [editMembersMode, setEditMembersMode] = useState(false);
 
 useEffect(() => {
   const fetchMasterData = async () => {
@@ -201,9 +206,11 @@ useEffect(() => {
       .select("name")
       .order("name", { ascending: true });
 
+      setContractors(contractorData ?? []);
+
     const { data: siteData } = await supabase
-      .from("assignments")
-      .select("site_name, contractor_name, manager_name")
+    .from("assignments")
+    .select("id, site_name, contractor_name, manager_name")
       .not("site_name", "is", null)
       .order("site_name", { ascending: true });
 
@@ -212,6 +219,7 @@ useEffect(() => {
           (siteData ?? []).map((s) => [
             `${s.contractor_name}-${s.site_name}`,
             {
+              id: s.id,
               site_name: s.site_name,
               contractor_name: s.contractor_name,
               manager_name: s.manager_name,
@@ -268,6 +276,38 @@ useEffect(() => {
   const removeMember = (name: string) => {
     setSelectedMembers(selectedMembers.filter((member) => member.name !== name));
   };
+
+  const fetchAssignmentMembers = async () => {
+    if (!selectedAssignmentId || !reportDate) return;
+  
+    const { data, error } = await supabase
+      .from("assignment_site_members")
+      .select("employee_name")
+      .eq("assignment_id", selectedAssignmentId)
+      .eq("work_date", reportDate);
+  
+    if (error) {
+      alert("番割メンバー取得失敗: " + error.message);
+      return;
+    }
+  
+    const names = (data ?? []).map((member) => member.employee_name);
+  
+    setAssignmentMembers(names);
+    setCheckedAssignmentMembers(names);
+    setSelectedMembers(
+      names.map((name) => ({
+        name,
+        labor: "1",
+        overtime: overtimeMinutes || "0",
+      }))
+    );
+    setEditMembersMode(false);
+  };
+
+  useEffect(() => {
+    fetchAssignmentMembers();
+  }, [selectedAssignmentId, reportDate]);
 
   const totalLabor = selectedMembers.reduce(
     (sum, member) => sum + Number(member.labor || 0),
@@ -464,6 +504,7 @@ useEffect(() => {
             onClick={() => {
               setSite(s.site_name);
               setContractorName(s.contractor_name);
+              setSelectedAssignmentId(s.id);
               setShowSiteSuggestions(false);
             }}
             style={{ padding: 8, cursor: "pointer" }}
@@ -975,39 +1016,104 @@ useEffect(() => {
 
       <div style={sectionStyle}>
   <p>メンバー</p>
-  <input
-    placeholder="メンバー名を入力"
-    value={memberInput}
-    onChange={(e) => setMemberInput(e.target.value)}
-    style={inputStyle}
-  />
 
-  {memberInput && filteredEmployees.length > 0 && (
+  {assignmentMembers.length > 0 && !editMembersMode && (
     <div
       style={{
-        border: "1px solid #ccc",
+        border: "1px solid #ddd",
         borderRadius: 8,
-        padding: 8,
-        marginTop: 8,
-        backgroundColor: "#fff",
+        padding: 12,
+        backgroundColor: "#fafafa",
+        marginBottom: 12,
       }}
     >
-      {filteredEmployees.slice(0, 5).map((employee) => (
-        <div
-          key={employee.name}
-          onMouseDown={(e) => {
-            e.preventDefault();
-            addMember(employee.name);
-          }}
-          style={{ padding: 8, cursor: "pointer" }}
-        >
-          {employee.name}
-        </div>
-      ))}
+      <div style={{ fontWeight: 800, marginBottom: 8 }}>
+        番割メンバー確認
+      </div>
+
+      <div style={{ display: "grid", gap: 8 }}>
+        {assignmentMembers.map((name) => (
+          <label key={name} style={{ fontWeight: 700 }}>
+            <input
+              type="checkbox"
+              checked={checkedAssignmentMembers.includes(name)}
+              onChange={(e) => {
+                const next = e.target.checked
+                  ? [...checkedAssignmentMembers, name]
+                  : checkedAssignmentMembers.filter((member) => member !== name);
+
+                setCheckedAssignmentMembers(next);
+
+                setSelectedMembers(
+                  next.map((memberName) => ({
+                    name: memberName,
+                    labor: "1",
+                    overtime: overtimeMinutes || "0",
+                  }))
+                );
+              }}
+              style={{ marginRight: 8 }}
+            />
+            {name}
+          </label>
+        ))}
+      </div>
+
+      <button
+        type="button"
+        onClick={() => setEditMembersMode(true)}
+        style={{
+          marginTop: 12,
+          padding: "10px 12px",
+          borderRadius: 8,
+          border: "1px solid #ccc",
+          backgroundColor: "#fff",
+          fontWeight: 700,
+          cursor: "pointer",
+        }}
+      >
+        メンバーを編集
+      </button>
     </div>
   )}
 
-{selectedMembers.length > 0 && (
+  {(editMembersMode || assignmentMembers.length === 0) && (
+    <>
+      <input
+        placeholder="メンバー名を入力"
+        value={memberInput}
+        onChange={(e) => setMemberInput(e.target.value)}
+        style={inputStyle}
+      />
+
+      {memberInput && filteredEmployees.length > 0 && (
+        <div
+          style={{
+            border: "1px solid #ccc",
+            borderRadius: 8,
+            padding: 8,
+            marginTop: 8,
+            backgroundColor: "#fff",
+          }}
+        >
+          {filteredEmployees.slice(0, 5).map((employee) => (
+            <div
+              key={employee.name}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                addMember(employee.name);
+              }}
+              style={{ padding: 8, cursor: "pointer" }}
+            >
+              {employee.name}
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  )}
+
+  {selectedMembers.length > 0 && (
     <div style={{ marginTop: 12 }}>
       <div
         style={{
@@ -1040,88 +1146,72 @@ useEffect(() => {
           <div>{member.name}</div>
 
           <div>
-            {editingLaborName === member.name ? (
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                {["0", "0.5", "1", "1.5"].map((val) => (
-                  <button
-                    key={val}
-                    type="button"
-                    onClick={() => {
-                      setSelectedMembers(
-                        selectedMembers.map((m) =>
-                          m.name === member.name ? { ...m, labor: val } : m
-                        )
-                      );
-                      setEditingLaborName(null);
-                    }}
-                    style={{
-                      padding: "8px 10px",
-                      borderRadius: 8,
-                      border:
-                        member.labor === val ? "2px solid #111" : "1px solid #ccc",
-                      backgroundColor: member.labor === val ? "#f3f3f3" : "#fff",
-                      cursor: "pointer",
-                      minWidth: 48,
-                      fontWeight: member.labor === val ? 700 : 500,
-                    }}
-                  >
-                    {val}
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setEditingLaborName(member.name)}
-                style={{
-                  width: "100%",
-                  padding: "10px 12px",
-                  borderRadius: 8,
-                  border: "1px solid #ccc",
-                  backgroundColor: "#fff",
-                  textAlign: "left",
-                  cursor: "pointer",
-                  fontSize: 16,
-                }}
-              >
-                {member.labor}
-              </button>
-            )}
-          </div>
+  {editingLaborName === member.name ? (
+    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+      {["0", "0.5", "1", "1.5"].map((val) => (
+        <button
+          key={val}
+          type="button"
+          onClick={() => {
+            setSelectedMembers(
+              selectedMembers.map((m) =>
+                m.name === member.name ? { ...m, labor: val } : m
+              )
+            );
+            setEditingLaborName(null);
+          }}
+          style={{
+            padding: "8px 10px",
+            borderRadius: 8,
+            border:
+              member.labor === val ? "2px solid #111" : "1px solid #ccc",
+            backgroundColor: member.labor === val ? "#f3f3f3" : "#fff",
+            cursor: "pointer",
+            minWidth: 48,
+            fontWeight: member.labor === val ? 700 : 500,
+          }}
+        >
+          {val}
+        </button>
+      ))}
+    </div>
+  ) : (
+    <button
+      type="button"
+      onClick={() => setEditingLaborName(member.name)}
+      style={{
+        width: "100%",
+        padding: "10px 12px",
+        borderRadius: 8,
+        border: "1px solid #ccc",
+        backgroundColor: "#fff",
+        textAlign: "left",
+        cursor: "pointer",
+        fontSize: 16,
+      }}
+    >
+      {member.labor}
+    </button>
+  )}
+</div>
 
           <select
-  value={member.overtime}
-  onChange={(e) => {
-    setSelectedMembers(
-      selectedMembers.map((m) =>
-        m.name === member.name ? { ...m, overtime: e.target.value } : m
-      )
-    );
-  }}
-  style={inputStyle}
->
-  <option value="0">0</option>
-  <option value="0.5">0.5</option>
-  <option value="1">1</option>
-  <option value="1.5">1.5</option>
-  <option value="2">2</option>
-  <option value="2.5">2.5</option>
-  <option value="3">3</option>
-  <option value="3.5">3.5</option>
-  <option value="4">4</option>
-  <option value="4.5">4.5</option>
-  <option value="5">5</option>
-  <option value="5.5">5.5</option>
-  <option value="6">6</option>
-  <option value="6.5">6.5</option>
-  <option value="7">7</option>
-  <option value="7.5">7.5</option>
-  <option value="8">8</option>
-  <option value="8.5">8.5</option>
-  <option value="9">9</option>
-  <option value="9.5">9.5</option>
-  <option value="10">10</option>
-</select>
+            value={member.overtime}
+            onChange={(e) => {
+              setSelectedMembers(
+                selectedMembers.map((m) =>
+                  m.name === member.name ? { ...m, overtime: e.target.value } : m
+                )
+              );
+            }}
+            style={inputStyle}
+          >
+            {["0", "0.5", "1", "1.5", "2", "2.5", "3", "3.5", "4", "4.5", "5", "5.5", "6", "6.5", "7", "7.5", "8", "8.5", "9", "9.5", "10"].map((value) => (
+              <option key={value} value={value}>
+                {value}
+              </option>
+            ))}
+          </select>
 
           <button
             type="button"
@@ -1158,7 +1248,7 @@ useEffect(() => {
       </div>
     </div>
   )}
-  </div>
+</div>
 
   <div style={sectionStyle}>
     <p>備考</p>
