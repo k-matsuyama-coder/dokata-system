@@ -325,9 +325,26 @@ export default function MyMonthlyScheduleModal({ open, onClose }: Props) {
       </div>
 
       <div>
-        <strong>住所：</strong>
-        {selectedAssignment.address || "-"}
-      </div>
+  <strong>住所：</strong>
+  {selectedAssignment.address ? (
+    <a
+      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+        selectedAssignment.address
+      )}`}
+      target="_blank"
+      rel="noreferrer"
+      style={{
+        color: "#2563eb",
+        textDecoration: "underline",
+        fontWeight: 700,
+      }}
+    >
+      {selectedAssignment.address}
+    </a>
+  ) : (
+    "-"
+  )}
+</div>
 
       <div>
         <strong>集合：</strong>

@@ -523,7 +523,27 @@ const title =
                   <div>集合：{assignment.meeting_time || "-"}</div>
                   <div>担当：{assignment.manager_name || "-"}</div>
                   <div>連絡先：{assignment.contact_phone || "-"}</div>
-                  <div>住所：{assignment.address || "-"}</div>
+                  <div>
+  住所：
+  {assignment.address ? (
+    <a
+      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+        assignment.address
+      )}`}
+      target="_blank"
+      rel="noreferrer"
+      style={{
+        color: "#2563eb",
+        fontWeight: 800,
+        textDecoration: "underline",
+      }}
+    >
+      {assignment.address}
+    </a>
+  ) : (
+    "-"
+  )}
+</div>
                 </div>
 
                 {dailyInfo?.detail && (
