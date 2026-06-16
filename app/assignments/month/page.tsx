@@ -95,6 +95,14 @@ const [draggingAssignmentId, setDraggingAssignmentId] = useState<string | null>(
 
   const [draggingEmployeeName, setDraggingEmployeeName] = useState<string | null>(null);
   const [draggingSiteMemberId, setDraggingSiteMemberId] = useState<string | null>(null);
+  const [draggingVehicleName, setDraggingVehicleName] = useState<string | null>(null);
+const [draggingVehicleFrom, setDraggingVehicleFrom] = useState<{
+  assignmentId: string;
+  workDate: string;
+  vehicleName: string;
+} | null>(null);
+
+const [copiedVehicleNames, setCopiedVehicleNames] = useState<string[]>([]);
   const [selectedEmployeeName, setSelectedEmployeeName] = useState<string | null>(null);
 const [selectedSiteMemberId, setSelectedSiteMemberId] = useState<string | null>(null);
 const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -109,13 +117,6 @@ const [vehicles, setVehicles] = useState<
     vehicle_type: string | null;
   }[]
 >([]);
-
-const [showVehicleModal, setShowVehicleModal] = useState(false);
-
-const [vehicleTarget, setVehicleTarget] = useState<{
-  assignmentId: string;
-  workDate: string;
-} | null>(null);
 
   const days = useMemo(() => {
     const [year, monthNum] = month.split("-").map(Number);
@@ -740,6 +741,51 @@ setShowAddModal(false);
   
       return [...prev, data];
     });
+  };
+
+  const addVehicleToCell = async (
+    vehicleName: string,
+    assignmentId: string,
+    workDate: string
+  ) => {
+    const existing = getDailyInfo(assignmentId, workDate);
+    const current = existing?.vehicle_names ?? [];
+  
+    if (current.includes(vehicleName)) return;
+  
+    await updateDailyInfo(
+      assignmentId,
+      workDate,
+      "vehicle_names",
+      [...current, vehicleName].join(",")
+    );
+  };
+  
+  const removeVehicleFromCell = async (
+    vehicleName: string,
+    assignmentId: string,
+    workDate: string
+  ) => {
+    const existing = getDailyInfo(assignmentId, workDate);
+    const current = existing?.vehicle_names ?? [];
+  
+    await updateDailyInfo(
+      assignmentId,
+      workDate,
+      "vehicle_names",
+      current.filter((name) => name !== vehicleName).join(",")
+    );
+  };
+  
+  const moveVehicleToCell = async (
+    vehicleName: string,
+    fromAssignmentId: string,
+    fromWorkDate: string,
+    toAssignmentId: string,
+    toWorkDate: string
+  ) => {
+    await removeVehicleFromCell(vehicleName, fromAssignmentId, fromWorkDate);
+    await addVehicleToCell(vehicleName, toAssignmentId, toWorkDate);
   };
 
   const getUnassignedEmployeesByDate = (
@@ -1652,9 +1698,27 @@ const isShort =
                             moveSiteMember(draggingSiteMemberId, assignment.id, date);
                             return;
                           }
-
+                        
                           if (draggingEmployeeName) {
                             addEmployeeToCell(draggingEmployeeName, assignment.id, date);
+                            return;
+                          }
+                        
+                          if (draggingVehicleFrom) {
+                            moveVehicleToCell(
+                              draggingVehicleFrom.vehicleName,
+                              draggingVehicleFrom.assignmentId,
+                              draggingVehicleFrom.workDate,
+                              assignment.id,
+                              date
+                            );
+                            setDraggingVehicleFrom(null);
+                            return;
+                          }
+                        
+                          if (draggingVehicleName) {
+                            addVehicleToCell(draggingVehicleName, assignment.id, date);
+                            setDraggingVehicleName(null);
                           }
                         }}
                         onClick={() => {
@@ -1679,6 +1743,14 @@ const isShort =
                             });
                           
                             setCopiedEmployeeNames([]);
+                          }
+
+                          if (copiedVehicleNames.length > 0) {
+                            copiedVehicleNames.forEach((name) => {
+                              addVehicleToCell(name, assignment.id, date);
+                            });
+                          
+                            setCopiedVehicleNames([]);
                           }
                         
                           }}
@@ -1790,69 +1862,60 @@ const isShort =
     fontSize: 11,
   }}
 >
-  <div
-    style={{
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: 4,
-    }}
-  >
-    <div
-      style={{
-        fontWeight: 700,
-        color: "#555",
-      }}
-    >
-      車両
-    </div>
-
-    <button
-      type="button"
-      onClick={() => {
-        setVehicleTarget({
-          assignmentId: assignment.id,
-          workDate: date,
-        });
-
-        setShowVehicleModal(true);
-      }}
-      style={{
-        border: "none",
-        backgroundColor: "#111",
-        color: "#fff",
-        borderRadius: 6,
-        padding: "2px 8px",
-        fontSize: 10,
-        cursor: "pointer",
-      }}
-    >
-      ＋選択
-    </button>
+  <div style={{ fontWeight: 800, color: "#555", marginBottom: 4 }}>
+    車両
   </div>
 
   {dailyInfo?.vehicle_names?.length ? (
-    <div style={{ display: "grid", gap: 2 }}>
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
       {dailyInfo.vehicle_names.map((name) => (
         <div
           key={name}
+          draggable
+          onDragStart={() =>
+            setDraggingVehicleFrom({
+              assignmentId: assignment.id,
+              workDate: date,
+              vehicleName: name,
+            })
+          }
+          onDragEnd={() => setDraggingVehicleFrom(null)}
+          onClick={(e) => {
+            e.stopPropagation();
+            setCopiedVehicleNames((prev) =>
+              prev.includes(name)
+                ? prev.filter((v) => v !== name)
+                : [...prev, name]
+            );
+          }}
+          onDoubleClick={(e) => {
+            e.stopPropagation();
+            removeVehicleFromCell(name, assignment.id, date);
+          }}
           style={{
-            padding: "2px 6px",
-            borderRadius: 6,
-            backgroundColor: "#e0f2fe",
+            padding: "3px 7px",
+            borderRadius: 999,
+            backgroundColor: copiedVehicleNames.includes(name)
+              ? "#fef3c7"
+              : "#e0f2fe",
+            border: copiedVehicleNames.includes(name)
+              ? "2px solid #f59e0b"
+              : "1px solid #bae6fd",
             color: "#0369a1",
-            fontWeight: 700,
+            fontWeight: 800,
+            cursor: "grab",
             width: "fit-content",
           }}
         >
-          {name}
+          🚚 {name}
         </div>
       ))}
     </div>
   ) : (
-    <div style={{ color: "#999" }}>未選択</div>
+    <div style={{ color: "#999" }}>未配置</div>
   )}
 </div>
+
 <div
   style={{
     display: "flex",
@@ -2018,6 +2081,40 @@ const isShort =
   </div>
 )}
 
+{copiedVehicleNames.length > 0 && (
+  <div
+    style={{
+      marginBottom: 10,
+      padding: 8,
+      borderRadius: 8,
+      backgroundColor: "#fef3c7",
+      color: "#92400e",
+      fontWeight: 700,
+      fontSize: 12,
+    }}
+  >
+    車両選択中：{copiedVehicleNames.length}台
+
+    <div style={{ marginTop: 4 }}>
+      {copiedVehicleNames.join("、")}
+    </div>
+
+    <button
+      type="button"
+      onClick={() => setCopiedVehicleNames([])}
+      style={{
+        marginLeft: 8,
+        border: "none",
+        background: "transparent",
+        cursor: "pointer",
+        fontWeight: 800,
+      }}
+    >
+      ×
+    </button>
+  </div>
+)}
+
   {selectedDate && (
   <button
     type="button"
@@ -2104,105 +2201,61 @@ const isShort =
       </div>
     </div>
   ))}
-</div>
-</div>
 
-        {showVehicleModal && vehicleTarget && (
+<div style={{ marginTop: 12 }}>
   <div
-    onClick={() => setShowVehicleModal(false)}
     style={{
-      position: "fixed",
-      inset: 0,
-      backgroundColor: "rgba(0,0,0,0.4)",
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-      zIndex: 99999,
+      fontWeight: 800,
+      backgroundColor: "#f3f4f6",
+      padding: "6px 8px",
+      borderRadius: 6,
+      marginBottom: 6,
     }}
   >
-    <div
-      onClick={(e) => e.stopPropagation()}
-      style={{
-        width: 320,
-        maxHeight: "70vh",
-        overflowY: "auto",
-        backgroundColor: "#fff",
-        borderRadius: 12,
-        padding: 16,
-        display: "grid",
-        gap: 8,
-      }}
-    >
-      <h3 style={{ margin: 0 }}>車両選択</h3>
+    車両
+  </div>
 
-      {vehicles.map((vehicle) => {
-        const info = getDailyInfo(
-          vehicleTarget.assignmentId,
-          vehicleTarget.workDate
-        );
-
-        const current = info?.vehicle_names ?? [];
-
-        const checked = current.includes(
-          vehicle.vehicle_name
-        );
-
-        return (
-          <label
-            key={vehicle.id}
-            style={{
-              display: "flex",
-              gap: 8,
-              alignItems: "center",
-              fontSize: 14,
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={checked}
-              onChange={(e) => {
-                const next = e.target.checked
-                  ? [...current, vehicle.vehicle_name]
-                  : current.filter(
-                      (v) =>
-                        v !== vehicle.vehicle_name
-                    );
-
-                    updateDailyInfo(
-                      vehicleTarget.assignmentId,
-                      vehicleTarget.workDate,
-                      "vehicle_names",
-                      next.join(",")
-                    );
-                    
-                    fetchData();
-              }}
-            />
-
-            {vehicle.vehicle_name}
-          </label>
-        );
-      })}
-
-      <button
-        type="button"
-        onClick={() => setShowVehicleModal(false)}
+  <div style={{ display: "grid", gap: 6 }}>
+    {vehicles.map((vehicle) => (
+      <div
+        key={vehicle.id}
+        draggable
+        onDragStart={() => setDraggingVehicleName(vehicle.vehicle_name)}
+        onDragEnd={() => setDraggingVehicleName(null)}
+        onClick={() => {
+          setSelectedEmployeeName(null);
+          setSelectedSiteMemberId(null);
+          setCopiedEmployeeNames([]);
+        
+          setCopiedVehicleNames((prev) =>
+            prev.includes(vehicle.vehicle_name)
+              ? prev.filter((name) => name !== vehicle.vehicle_name)
+              : [...prev, vehicle.vehicle_name]
+          );
+        }}
         style={{
-          marginTop: 8,
-          border: "none",
-          backgroundColor: "#111",
-          color: "#fff",
-          borderRadius: 8,
-          padding: 10,
-          fontWeight: 700,
-          cursor: "pointer",
+          padding: "8px 10px",
+          borderRadius: 999,
+          backgroundColor: copiedVehicleNames.includes(vehicle.vehicle_name)
+            ? "#fef3c7"
+            : "#e0f2fe",
+          border: copiedVehicleNames.includes(vehicle.vehicle_name)
+            ? "2px solid #f59e0b"
+            : "1px solid #bae6fd",
+          color: "#0369a1",
+          cursor: "grab",
+          fontWeight: 800,
+          fontSize: 13,
         }}
       >
-        閉じる
-      </button>
-    </div>
+        🚚 {vehicle.vehicle_name}
+      </div>
+    ))}
   </div>
-)}
+</div>
+
+</div>
+</div>
 
         <p style={{ color: "#666", fontSize: 13 }}>
           ※ メンバーを外す場合は、配置済みの名前をダブルクリックしてください。
