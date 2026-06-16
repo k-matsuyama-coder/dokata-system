@@ -2027,9 +2027,11 @@ const isShort =
     position: "fixed",
     right: 4,
     top: 90,
+    bottom: 10,
     width: 180,
-    maxHeight: "75vh",
+
     overflowY: "auto",
+
     border: "1px solid #ddd",
     borderRadius: 12,
     backgroundColor: "#fff",
