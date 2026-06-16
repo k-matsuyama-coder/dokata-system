@@ -526,28 +526,34 @@ const title =
                   <div>
   住所：
   {assignment.address ? (
-  <a
-    href={
-      assignment.address.startsWith("http")
-        ? assignment.address
-        : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-            assignment.address
-          )}`
-    }
-    target="_blank"
-    rel="noreferrer"
-    style={{
-      color: "#2563eb",
-      textDecoration: "underline",
-      fontWeight: 700,
-    }}
-  >
-    {assignment.address}
-  </a>
-) : (
-  "-"
-)}
+    <a
+      href={
+        assignment.address.startsWith("http")
+          ? assignment.address
+          : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+              assignment.address
+            )}`
+      }
+      target="_blank"
+      rel="noreferrer"
+      style={{
+        color: "#2563eb",
+        textDecoration: "underline",
+        fontWeight: 700,
+        fontSize: 12,
+        display: "block",
+        maxWidth: "100%",
+        overflowWrap: "anywhere",
+        wordBreak: "break-all",
+      }}
+    >
+      {assignment.address}
+    </a>
+  ) : (
+    "-"
+  )}
 </div>
+
                 </div>
 
                 {dailyInfo?.detail && (
