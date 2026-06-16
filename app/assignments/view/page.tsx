@@ -88,7 +88,7 @@ const endDate = displayDates[displayDates.length - 1];
         address,
         meeting_time,
         shift_type,
-        construction_type,
+        construction_type
       `)
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: true });
