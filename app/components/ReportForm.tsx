@@ -198,6 +198,7 @@ const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(
 const [assignmentMembers, setAssignmentMembers] = useState<string[]>([]);
 const [checkedAssignmentMembers, setCheckedAssignmentMembers] = useState<string[]>([]);
 const [editMembersMode, setEditMembersMode] = useState(false);
+const [membersConfirmed, setMembersConfirmed] = useState(false);
 
 useEffect(() => {
   const fetchMasterData = async () => {
@@ -294,14 +295,9 @@ useEffect(() => {
     const names = (data ?? []).map((member) => member.employee_name);
   
     setAssignmentMembers(names);
-    setCheckedAssignmentMembers(names);
-    setSelectedMembers(
-      names.map((name) => ({
-        name,
-        labor: "1",
-        overtime: overtimeMinutes || "0",
-      }))
-    );
+    setMembersConfirmed(false);
+setCheckedAssignmentMembers([]);
+setSelectedMembers([]);
     setEditMembersMode(false);
   };
 
@@ -351,6 +347,12 @@ useEffect(() => {
     if (!startTime) return "開始時間を選択してください";
     if (!endTime) return "終了時間を選択してください";
     if (selectedMembers.length === 0) return "メンバーを追加してください";
+    if (
+      assignmentMembers.length > 0 &&
+      !membersConfirmed
+    ) {
+      return "番割メンバーを確認してください";
+    }
   
     if (startTime === endTime) {
       return "開始時間と終了時間が同じです";
@@ -1031,6 +1033,34 @@ useEffect(() => {
         番割メンバー確認
       </div>
 
+      <button
+  type="button"
+  onClick={() => {
+    setCheckedAssignmentMembers(assignmentMembers);
+
+setSelectedMembers(
+  assignmentMembers.map((name) => ({
+    name,
+    labor: "1",
+    overtime: overtimeMinutes || "0",
+  }))
+);
+
+setMembersConfirmed(true);
+  }}
+  style={{
+    marginBottom: 10,
+    padding: "10px 12px",
+    borderRadius: 8,
+    border: "1px solid #ccc",
+    backgroundColor: "#fff",
+    fontWeight: 700,
+    cursor: "pointer",
+  }}
+>
+  全員確認
+</button>
+
       <div style={{ display: "grid", gap: 8 }}>
         {assignmentMembers.map((name) => (
           <label key={name} style={{ fontWeight: 700 }}>
@@ -1060,8 +1090,11 @@ useEffect(() => {
       </div>
 
       <button
-        type="button"
-        onClick={() => setEditMembersMode(true)}
+  type="button"
+  onClick={() => {
+    setEditMembersMode(true);
+    setMembersConfirmed(true);
+  }}
         style={{
           marginTop: 12,
           padding: "10px 12px",
