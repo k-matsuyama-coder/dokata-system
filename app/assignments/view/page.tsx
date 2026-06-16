@@ -540,14 +540,11 @@ const title =
         color: "#2563eb",
         textDecoration: "underline",
         fontWeight: 700,
-        fontSize: 12,
-        display: "block",
-        maxWidth: "100%",
-        overflowWrap: "anywhere",
-        wordBreak: "break-all",
       }}
     >
-      {assignment.address}
+      {assignment.address.startsWith("http")
+        ? "📍GoogleMap"
+        : assignment.address}
     </a>
   ) : (
     "-"
