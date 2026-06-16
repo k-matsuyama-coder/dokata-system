@@ -24,6 +24,7 @@ type SiteMember = {
   is_driver: boolean | null;
   is_operator: boolean | null;
   heavy_equipment: string | null;
+  is_foreman: boolean | null;
 };
 
 type DailyInfo = {
@@ -87,7 +88,7 @@ const endDate = displayDates[displayDates.length - 1];
         address,
         meeting_time,
         shift_type,
-        construction_type
+        construction_type,
       `)
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: true });
@@ -115,6 +116,7 @@ const endDate = displayDates[displayDates.length - 1];
         employee_name,
         is_driver,
         is_operator,
+        is_foreman,
         heavy_equipment
       `)
       .in("assignment_id", assignmentIds)
@@ -580,7 +582,9 @@ const title =
                   </div>
 
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                    {members.map((member) => (
+                  {[...members]
+  .sort((a, b) => Number(b.is_foreman) - Number(a.is_foreman))
+  .map((member) => (
                       <div
                         key={member.id}
                         style={{
@@ -591,8 +595,9 @@ const title =
                           fontWeight: 800,
                         }}
                       >
-                        {member.employee_name}
-                        {member.is_driver ? " 🚚" : ""}
+                        {member.is_foreman ? "👷職長 " : ""}
+{member.employee_name}
+{member.is_driver ? " 🚚" : ""}
                         {member.is_operator ? " OP" : ""}
                         {member.heavy_equipment
                           ? ` ${member.heavy_equipment}`
