@@ -526,23 +526,27 @@ const title =
                   <div>
   住所：
   {assignment.address ? (
-    <a
-      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-        assignment.address
-      )}`}
-      target="_blank"
-      rel="noreferrer"
-      style={{
-        color: "#2563eb",
-        fontWeight: 800,
-        textDecoration: "underline",
-      }}
-    >
-      {assignment.address}
-    </a>
-  ) : (
-    "-"
-  )}
+  <a
+    href={
+      assignment.address.startsWith("http")
+        ? assignment.address
+        : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+            assignment.address
+          )}`
+    }
+    target="_blank"
+    rel="noreferrer"
+    style={{
+      color: "#2563eb",
+      textDecoration: "underline",
+      fontWeight: 700,
+    }}
+  >
+    {assignment.address}
+  </a>
+) : (
+  "-"
+)}
 </div>
                 </div>
 
