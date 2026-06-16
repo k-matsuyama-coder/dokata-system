@@ -595,7 +595,7 @@ const title =
                           fontWeight: 800,
                         }}
                       >
-                        {member.is_foreman ? "👷職長 " : ""}
+                        {member.is_foreman ? "👷 " : ""}
 {member.employee_name}
 {member.is_driver ? " 🚚" : ""}
                         {member.is_operator ? " OP" : ""}
