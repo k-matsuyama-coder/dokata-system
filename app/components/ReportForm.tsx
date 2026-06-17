@@ -1033,34 +1033,6 @@ setSelectedMembers([]);
         番割メンバー確認
       </div>
 
-      <button
-  type="button"
-  onClick={() => {
-    setCheckedAssignmentMembers(assignmentMembers);
-
-setSelectedMembers(
-  assignmentMembers.map((name) => ({
-    name,
-    labor: "1",
-    overtime: overtimeMinutes || "0",
-  }))
-);
-
-setMembersConfirmed(true);
-  }}
-  style={{
-    marginBottom: 10,
-    padding: "10px 12px",
-    borderRadius: 8,
-    border: "1px solid #ccc",
-    backgroundColor: "#fff",
-    fontWeight: 700,
-    cursor: "pointer",
-  }}
->
-  全員確認
-</button>
-
       <div style={{ display: "grid", gap: 8 }}>
         {assignmentMembers.map((name) => (
           <label key={name} style={{ fontWeight: 700 }}>
@@ -1081,6 +1053,7 @@ setMembersConfirmed(true);
                     overtime: overtimeMinutes || "0",
                   }))
                 );
+                setMembersConfirmed(next.length === assignmentMembers.length);
               }}
               style={{ marginRight: 8 }}
             />
