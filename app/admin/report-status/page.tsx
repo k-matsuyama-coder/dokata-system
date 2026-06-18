@@ -188,20 +188,6 @@ export default function ReportStatusPage() {
   </button>
 </div>
 
-      <div style={{ marginBottom: 16 }}>
-        <input
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          style={{
-            padding: 10,
-            borderRadius: 8,
-            border: "1px solid #ccc",
-            fontSize: 16,
-          }}
-        />
-      </div>
-
       <div
         style={{
           overflowX: "auto",
