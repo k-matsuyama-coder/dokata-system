@@ -5,11 +5,23 @@ import { usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import MyMonthlyScheduleModal from "@/app/components/MyMonthlyScheduleModal";
 
+type Notification = {
+  id: string;
+  employee_name: string;
+  title: string;
+  message: string;
+  link_url: string | null;
+  is_read: boolean;
+};
+
 export default function NavBar() {
   const [role, setRole] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
   const [showCalendarModal, setShowCalendarModal] = useState(false);
+  const [employeeName, setEmployeeName] = useState("");
+const [notifications, setNotifications] = useState<Notification[]>([]);
+const [showNotifications, setShowNotifications] = useState(false);
 
   useEffect(() => {
     const fetchRole = async () => {
@@ -20,17 +32,52 @@ export default function NavBar() {
 
       const { data } = await supabase
         .from("employees")
-        .select("role")
+        .select("name, role")
         .eq("auth_user_id", user.id)
         .single();
 
-      if (data) {
-        setRole(data.role);
-      }
+        if (data) {
+          setRole(data.role);
+          setEmployeeName(data.name);
+        }
     };
 
     fetchRole();
   }, []);
+
+  useEffect(() => {
+    if (!employeeName) return;
+  
+    const fetchNotifications = async () => {
+      const { data } = await supabase
+        .from("notifications")
+        .select("id, employee_name, title, message, link_url, is_read")
+        .eq("employee_name", employeeName)
+        .eq("is_read", false)
+        .order("created_at", { ascending: false });
+  
+      setNotifications(data ?? []);
+    };
+  
+    fetchNotifications();
+  
+    const channel = supabase
+      .channel("notifications-realtime")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "notifications",
+        },
+        fetchNotifications
+      )
+      .subscribe();
+  
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [employeeName]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -110,6 +157,78 @@ gap: 12,
   >
     📅
   </button>
+
+  <div style={{ position: "relative" }}>
+  <button
+    type="button"
+    onClick={() => setShowNotifications(!showNotifications)}
+    style={{
+      border: "1px solid #ddd",
+      backgroundColor: "#fff",
+      borderRadius: 8,
+      padding: "8px 12px",
+      cursor: "pointer",
+      fontSize: 18,
+    }}
+  >
+    🔔
+  </button>
+
+  {notifications.length > 0 && (
+    <span
+      style={{
+        position: "absolute",
+        top: -4,
+        right: -4,
+        width: 12,
+        height: 12,
+        borderRadius: "50%",
+        backgroundColor: "red",
+      }}
+    />
+  )}
+
+  {showNotifications && (
+    <div
+      style={{
+        position: "absolute",
+        right: 0,
+        top: 44,
+        width: 280,
+        backgroundColor: "#fff",
+        border: "1px solid #ddd",
+        borderRadius: 12,
+        padding: 10,
+        boxShadow: "0 6px 18px rgba(0,0,0,0.15)",
+        zIndex: 2000,
+      }}
+    >
+      {notifications.length === 0 ? (
+        <div style={{ color: "#666", fontSize: 13 }}>
+          通知はありません
+        </div>
+      ) : (
+        notifications.map((notification) => (
+          <div
+            key={notification.id}
+            style={{
+              borderBottom: "1px solid #eee",
+              padding: "8px 0",
+            }}
+          >
+            <div style={{ fontWeight: 800 }}>
+              {notification.title}
+            </div>
+
+            <div style={{ fontSize: 13, color: "#555", marginTop: 4 }}>
+              {notification.message}
+            </div>
+          </div>
+        ))
+      )}
+    </div>
+  )}
+</div>
 </div>
 
         <>
