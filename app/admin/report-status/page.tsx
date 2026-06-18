@@ -12,10 +12,11 @@ type Assignment = {
 };
 
 type SiteMember = {
-  assignment_id: string;
-  work_date: string;
-  employee_name: string;
-};
+    assignment_id: string;
+    work_date: string;
+    employee_name: string;
+    is_foreman: boolean | null;
+  };
 
 type DailyReport = {
   id: string;
@@ -59,7 +60,7 @@ export default function ReportStatusPage() {
 
     const { data: memberData, error: memberError } = await supabase
       .from("assignment_site_members")
-      .select("assignment_id, work_date, employee_name")
+      .select("assignment_id, work_date, employee_name, is_foreman")
       .in("assignment_id", assignmentIds)
       .eq("work_date", date);
 
@@ -119,6 +120,34 @@ export default function ReportStatusPage() {
         return !row.report;
       });
   }, [assignments, siteMembers, reports, showUnsubmittedOnly]);
+
+  const sendNotificationToForeman = async (row: any) => {
+    const foreman = siteMembers.find(
+      (member) =>
+        member.assignment_id === row.assignment.id &&
+        member.is_foreman
+    );
+  
+    if (!foreman) {
+      alert("この現場に職長が設定されていません");
+      return;
+    }
+  
+    const { error } = await supabase.from("notifications").insert({
+      employee_name: foreman.employee_name,
+      title: "日報確認依頼",
+      message: `${date} ${row.assignment.site_name} の日報を確認してください`,
+      link_url: "/reports/new",
+      is_read: false,
+    });
+  
+    if (error) {
+      alert("通知送信失敗: " + error.message);
+      return;
+    }
+  
+    alert(`${foreman.employee_name} さんに通知しました`);
+  };
 
   return (
     <div style={{ padding: 16, backgroundColor: "#f5f6f8", minHeight: "100vh" }}>
@@ -238,6 +267,8 @@ export default function ReportStatusPage() {
               <th style={th}>日報人数</th>
               <th style={th}>差</th>
               <th style={th}>日報作成者</th>
+<th style={th}>通知</th>
+
             </tr>
           </thead>
 
@@ -286,13 +317,30 @@ export default function ReportStatusPage() {
                       : row.diff}
                   </td>
                   <td style={td}>{row.report?.worker_name || "-"}</td>
+                  <td style={td}>
+  <button
+    type="button"
+    onClick={() => sendNotificationToForeman(row)}
+    style={{
+      padding: "6px 10px",
+      border: "none",
+      borderRadius: 8,
+      backgroundColor: "#111",
+      color: "#fff",
+      fontWeight: 800,
+      cursor: "pointer",
+    }}
+  >
+    通知
+  </button>
+</td>
                 </tr>
               );
             })}
 
             {rows.length === 0 && (
               <tr>
-                <td style={td} colSpan={8}>
+                <td style={td} colSpan={9}>
                   この日の番割予定はありません。
                 </td>
               </tr>
