@@ -41,6 +41,13 @@ type DailyInfo = {
   vehicle_names: string[] | null;
 };
 
+type ShiftRequest = {
+  id: string;
+  employee_name: string;
+  request_date: string;
+  status: string;
+};
+
 type AssignmentFile = {
   id: string;
   assignment_id: string;
@@ -71,6 +78,7 @@ export default function MonthlyAssignmentsPage() {
   const [assignmentFiles, setAssignmentFiles] = useState<AssignmentFile[]>([]);
   const [siteMembers, setSiteMembers] = useState<SiteMember[]>([]);
   const [dailyInfos, setDailyInfos] = useState<DailyInfo[]>([]);
+  const [shiftRequests, setShiftRequests] = useState<ShiftRequest[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
 
   const [siteName, setSiteName] = useState("");
@@ -325,7 +333,20 @@ const { data: assignmentData, error } = await supabase
   }
 
     setSiteMembers(memberData ?? []);
-    setDailyInfos(dailyInfoData ?? []);
+
+    const { data: shiftRequestData, error: shiftRequestError } = await supabase
+  .from("shift_requests")
+  .select("id, employee_name, request_date, status")
+  .gte("request_date", startDate)
+  .lte("request_date", endDate);
+
+if (shiftRequestError) {
+  alert("休み希望取得失敗: " + shiftRequestError.message);
+  return;
+}
+
+setShiftRequests(shiftRequestData ?? []);
+setDailyInfos(dailyInfoData ?? []);
     
   };
 
@@ -788,6 +809,26 @@ setShowAddModal(false);
     await addVehicleToCell(vehicleName, toAssignmentId, toWorkDate);
   };
 
+  const isAssignedSameDateDifferentShift = (
+    employeeName: string,
+    workDate: string,
+    currentShiftType: string | null
+  ) => {
+    return siteMembers.some((member) => {
+      if (member.work_date !== workDate) return false;
+      if (member.employee_name !== employeeName) return false;
+  
+      const assignment = assignments.find(
+        (a) => a.id === member.assignment_id
+      );
+  
+      return (
+        (assignment?.shift_type ?? "day") !==
+        (currentShiftType ?? "day")
+      );
+    });
+  };
+
   const getUnassignedEmployeesByDate = (
     workDate: string,
     shiftType: string | null
@@ -804,8 +845,14 @@ setShowAddModal(false);
       })
       .map((m) => m.employee_name);
   
+      const holidayNames = shiftRequests
+      .filter((request) => request.request_date === workDate)
+      .map((request) => request.employee_name);
+    
     return employees.filter(
-      (employee) => !assignedNames.includes(employee.name)
+      (employee) =>
+        !assignedNames.includes(employee.name) &&
+        !holidayNames.includes(employee.name)
     );
   };
 
@@ -2171,6 +2218,15 @@ const isShort =
 
       <div style={{ display: "grid", gap: 6 }}>
         {members.map((employee) => (
+          const isSameDateOtherShift =
+          selectedDate &&
+          isAssignedSameDateDifferentShift(
+            employee.name,
+            selectedDate,
+            selectedShiftType
+          );
+
+          return (
           <div
             key={employee.name}
             draggable
@@ -2188,17 +2244,26 @@ const isShort =
               padding: "8px 10px",
               borderRadius: 999,
               backgroundColor:
-                selectedEmployeeName === employee.name
-                  ? "#dbeafe"
-                  : "#fff7ed",
-              border: "1px solid #fed7aa",
-              cursor: "grab",
+  selectedEmployeeName === employee.name
+    ? "#dbeafe"
+    : isSameDateOtherShift
+    ? "#fee2e2"
+    : "#fff7ed",
+
+border:
+  isSameDateOtherShift
+    ? "2px solid #ef4444"
+    : "1px solid #fed7aa",
+
+color:
+  isSameDateOtherShift ? "#b91c1c" : "#111",
               fontWeight: 700,
               fontSize: 13,
             }}
           >
             {employee.name}
           </div>
+          );
         ))}
       </div>
     </div>
