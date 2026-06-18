@@ -26,6 +26,7 @@ const menuGroups = [
     items: [
       { label: "日報管理", href: "/admin/reports", icon: "📝", desc: "日報の確認・管理" },
       { label: "日別日報確認", href: "/admin/reports/daily", icon: "📆", desc: "日付ごとの日報確認" },
+      { label: "日報送付確認", href: "/admin/report-status", icon: "✅", desc: "番割予定と日報提出状況を確認" },
     ],
   },
   {

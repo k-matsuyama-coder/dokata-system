@@ -431,6 +431,19 @@ setDailyInfos(dailyInfoData ?? []);
           fetchData();
         }
       )
+
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "shift_requests",
+        },
+        () => {
+          console.log("休み希望更新あり");
+          fetchData();
+        }
+      )
   
       .subscribe();
   
