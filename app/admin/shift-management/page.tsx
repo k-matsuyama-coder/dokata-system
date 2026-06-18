@@ -70,7 +70,11 @@ export default function ShiftManagementPage() {
       .order("company_name", { ascending: true })
       .order("name", { ascending: true });
 
-    setEmployees(allEmployees ?? []);
+      if (employeeData.role === "admin") {
+        setEmployees(allEmployees ?? []);
+      } else {
+        setEmployees([employeeData]);
+      }
 
     const startDate = `${month}-01`;
     const endDate = days[days.length - 1];
@@ -151,6 +155,39 @@ export default function ShiftManagementPage() {
       return;
     }
 
+    fetchData();
+  };
+
+  const addRequestForAdmin = async (
+    employeeName: string,
+    requestDate: string
+  ) => {
+    if (!isAdmin) return;
+  
+    const exists = requests.some(
+      (request) =>
+        request.employee_name === employeeName &&
+        request.request_date === requestDate
+    );
+  
+    if (exists) {
+      alert("すでに休み希望があります");
+      return;
+    }
+  
+    const { error } = await supabase.from("shift_requests").insert({
+      employee_name: employeeName,
+      request_date: requestDate,
+      request_type: "休み希望",
+      memo: null,
+      status: "希望",
+    });
+  
+    if (error) {
+      alert("登録失敗: " + error.message);
+      return;
+    }
+  
     fetchData();
   };
 
@@ -305,14 +342,20 @@ export default function ShiftManagementPage() {
 
                     return (
                       <td
-                        key={date}
-                        style={{
-                          ...td,
-                          textAlign: "center",
-                          backgroundColor:
-                            dayRequests.length > 0 ? "#fef3c7" : "#fff",
-                        }}
-                      >
+  key={date}
+  onClick={() => {
+    if (dayRequests.length === 0) {
+      addRequestForAdmin(employee.name, date);
+    }
+  }}
+  style={{
+    ...td,
+    textAlign: "center",
+    backgroundColor:
+      dayRequests.length > 0 ? "#fef3c7" : "#fff",
+    cursor: "pointer",
+  }}
+>
                         {dayRequests.map((request) => (
                           <div
                             key={request.id}
@@ -330,6 +373,25 @@ export default function ShiftManagementPage() {
                             >
                               休
                             </div>
+
+                            <button
+  type="button"
+  onClick={(e) => {
+    e.stopPropagation();
+    deleteRequest(request.id);
+  }}
+  style={{
+    border: "none",
+    borderRadius: 6,
+    backgroundColor: "#d11a2a",
+    color: "#fff",
+    padding: "2px 6px",
+    fontSize: 10,
+    cursor: "pointer",
+  }}
+>
+  削除
+</button>
 
                             {request.memo && (
                               <div style={{ fontSize: 10 }}>
