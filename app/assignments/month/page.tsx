@@ -394,6 +394,18 @@ setDailyInfos(dailyInfoData ?? []);
           fetchData();
         }
       )
+
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "shift_requests",
+        },
+        () => {
+          fetchData();
+        }
+      )
   
       .on(
         "postgres_changes",
@@ -2217,55 +2229,52 @@ const isShort =
       </div>
 
       <div style={{ display: "grid", gap: 6 }}>
-        {members.map((employee) => (
-          const isSameDateOtherShift =
-          selectedDate &&
-          isAssignedSameDateDifferentShift(
-            employee.name,
-            selectedDate,
-            selectedShiftType
-          );
+  {members.map((employee) => {
+    const isSameDateOtherShift =
+      selectedDate &&
+      isAssignedSameDateDifferentShift(
+        employee.name,
+        selectedDate,
+        selectedShiftType
+      );
 
-          return (
-          <div
-            key={employee.name}
-            draggable
-            onDragStart={() =>
-              setDraggingEmployeeName(employee.name)
-            }
-            onDragEnd={() =>
-              setDraggingEmployeeName(null)
-            }
-            onClick={() => {
-              setSelectedEmployeeName(employee.name);
-              setSelectedSiteMemberId(null);
-            }}
-            style={{
-              padding: "8px 10px",
-              borderRadius: 999,
-              backgroundColor:
-  selectedEmployeeName === employee.name
-    ? "#dbeafe"
-    : isSameDateOtherShift
-    ? "#fee2e2"
-    : "#fff7ed",
-
-border:
-  isSameDateOtherShift
-    ? "2px solid #ef4444"
-    : "1px solid #fed7aa",
-
-color:
-  isSameDateOtherShift ? "#b91c1c" : "#111",
-              fontWeight: 700,
-              fontSize: 13,
-            }}
-          >
-            {employee.name}
-          </div>
-          );
-        ))}
+    return (
+      <div
+        key={employee.name}
+        draggable
+        onDragStart={() =>
+          setDraggingEmployeeName(employee.name)
+        }
+        onDragEnd={() =>
+          setDraggingEmployeeName(null)
+        }
+        onClick={() => {
+          setSelectedEmployeeName(employee.name);
+          setSelectedSiteMemberId(null);
+        }}
+        style={{
+          padding: "8px 10px",
+          borderRadius: 999,
+          backgroundColor:
+            selectedEmployeeName === employee.name
+              ? "#dbeafe"
+              : isSameDateOtherShift
+              ? "#fee2e2"
+              : "#fff7ed",
+          border: isSameDateOtherShift
+            ? "2px solid #ef4444"
+            : "1px solid #fed7aa",
+          color: isSameDateOtherShift ? "#b91c1c" : "#111",
+          cursor: "grab",
+          fontWeight: 700,
+          fontSize: 13,
+        }}
+      >
+        {employee.name}
       </div>
+    );
+  })}
+</div>
     </div>
   ))}
 
