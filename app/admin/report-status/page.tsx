@@ -34,6 +34,7 @@ export default function ReportStatusPage() {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [siteMembers, setSiteMembers] = useState<SiteMember[]>([]);
   const [reports, setReports] = useState<DailyReport[]>([]);
+  const [showUnsubmittedOnly, setShowUnsubmittedOnly] = useState(false);
 
   const fetchData = async () => {
     const { data: assignmentData, error: assignmentError } = await supabase
@@ -111,8 +112,13 @@ export default function ReportStatusPage() {
           diff,
         };
       })
-      .filter(Boolean);
-  }, [assignments, siteMembers, reports]);
+      .filter(Boolean)
+      .filter((row: any) => {
+        if (!showUnsubmittedOnly) return true;
+
+        return !row.report;
+      });
+  }, [assignments, siteMembers, reports, showUnsubmittedOnly]);
 
   return (
     <div style={{ padding: 16, backgroundColor: "#f5f6f8", minHeight: "100vh" }}>
@@ -187,6 +193,24 @@ export default function ReportStatusPage() {
     今日
   </button>
 </div>
+
+<label
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    fontWeight: 700,
+    marginBottom: 16,
+    cursor: "pointer",
+  }}
+>
+  <input
+    type="checkbox"
+    checked={showUnsubmittedOnly}
+    onChange={(e) => setShowUnsubmittedOnly(e.target.checked)}
+  />
+  未送付のみ表示
+</label>
 
       <div
         style={{
