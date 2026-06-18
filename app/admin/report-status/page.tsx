@@ -120,6 +120,74 @@ export default function ReportStatusPage() {
 
       <h1>日報送付確認</h1>
 
+      <div
+  style={{
+    display: "flex",
+    gap: 8,
+    alignItems: "center",
+    marginBottom: 16,
+  }}
+>
+  <button
+    onClick={() => {
+      const d = new Date(date);
+      d.setDate(d.getDate() - 1);
+      setDate(d.toISOString().slice(0, 10));
+    }}
+    style={{
+      padding: "10px 14px",
+      borderRadius: 8,
+      border: "1px solid #ccc",
+      cursor: "pointer",
+    }}
+  >
+    ◀ 前日
+  </button>
+
+  <input
+    type="date"
+    value={date}
+    onChange={(e) => setDate(e.target.value)}
+    style={{
+      padding: 10,
+      borderRadius: 8,
+      border: "1px solid #ccc",
+      fontSize: 16,
+    }}
+  />
+
+  <button
+    onClick={() => {
+      const d = new Date(date);
+      d.setDate(d.getDate() + 1);
+      setDate(d.toISOString().slice(0, 10));
+    }}
+    style={{
+      padding: "10px 14px",
+      borderRadius: 8,
+      border: "1px solid #ccc",
+      cursor: "pointer",
+    }}
+  >
+    翌日 ▶
+  </button>
+
+  <button
+    onClick={() =>
+      setDate(new Date().toISOString().slice(0, 10))
+    }
+    style={{
+      padding: "10px 14px",
+      borderRadius: 8,
+      border: "1px solid #ccc",
+      cursor: "pointer",
+      fontWeight: 700,
+    }}
+  >
+    今日
+  </button>
+</div>
+
       <div style={{ marginBottom: 16 }}>
         <input
           type="date"
