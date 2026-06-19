@@ -164,7 +164,9 @@ export default function ReportStatusPage() {
         }),
       });
       
-      alert(`${foreman.employee_name} さんに通知しました`);
+      alert(
+        `${foreman.employee_name} さんに通知しました / Push送信数: ${pushResult.sentCount}`
+      );
   };
 
   const sendAllNotifications = async () => {

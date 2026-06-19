@@ -61,8 +61,9 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({
-      success: true,
-    });
+        success: true,
+        sentCount: subscriptions.length,
+      });
   } catch (error) {
     console.error(error);
 
