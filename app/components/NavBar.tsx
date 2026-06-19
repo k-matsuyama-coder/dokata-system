@@ -22,6 +22,7 @@ export default function NavBar() {
   const [employeeName, setEmployeeName] = useState("");
 const [notifications, setNotifications] = useState<Notification[]>([]);
 const [showNotifications, setShowNotifications] = useState(false);
+const [pushEnabled, setPushEnabled] = useState(false);
 
   useEffect(() => {
     const fetchRole = async () => {
@@ -97,6 +98,26 @@ const [showNotifications, setShowNotifications] = useState(false);
     if (notification.link_url) {
       window.location.href = notification.link_url;
     }
+  };
+
+  const enablePushNotifications = async () => {
+    if (!("serviceWorker" in navigator)) {
+      alert("この端末は通知未対応です");
+      return;
+    }
+  
+    const registration = await navigator.serviceWorker.register("/sw.js");
+  
+    const permission = await Notification.requestPermission();
+  
+    if (permission !== "granted") {
+      alert("通知が許可されませんでした");
+      return;
+    }
+  
+    alert("通知を許可しました");
+  
+    setPushEnabled(true);
   };
 
   const handleLogout = async () => {
@@ -177,6 +198,22 @@ gap: 12,
   >
     📅
   </button>
+
+  <button
+  type="button"
+  onClick={enablePushNotifications}
+  style={{
+    border: "1px solid #ddd",
+    backgroundColor: pushEnabled ? "#16a34a" : "#fff",
+    color: pushEnabled ? "#fff" : "#111",
+    borderRadius: 8,
+    padding: "8px 12px",
+    cursor: "pointer",
+    fontSize: 16,
+  }}
+>
+  📲
+</button>
 
   <div style={{ position: "relative" }}>
   <button
