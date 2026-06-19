@@ -2129,6 +2129,43 @@ const isShort =
     メンバー・車両を選ぶ
   </button>
 )}
+{isMobile && showMemberModal && (
+  <div
+    onClick={() => setShowMemberModal(false)}
+    style={{
+      position: "fixed",
+      inset: 0,
+      backgroundColor: "rgba(0,0,0,0.45)",
+      zIndex: 3000,
+      padding: 12,
+      display: "flex",
+      alignItems: "flex-end",
+    }}
+  >
+    <div
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        width: "100%",
+        maxHeight: "80vh",
+        overflowY: "auto",
+        backgroundColor: "#fff",
+        borderRadius: "16px 16px 0 0",
+        padding: 14,
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between" }}>
+        <strong>{selectedDate ? "未配置メンバー" : "全メンバー"}</strong>
+
+        <button
+          type="button"
+          onClick={() => setShowMemberModal(false)}
+        >
+          閉じる
+        </button>
+      </div>
+    </div>
+  </div>
+)}
         </div>
 
         {!isMobile && (
