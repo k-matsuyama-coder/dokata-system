@@ -1,37 +1,22 @@
 self.addEventListener("push", (event) => {
-    const data = event.data.json();
+    const data = event.data ? event.data.json() : {};
   
-    self.registration.showNotification(data.title, {
-      body: data.body,
-      icon: "/icon-192.png",
-      badge: "/icon-192.png",
-      data: {
-        url: data.url,
-      },
-    });
+    event.waitUntil(
+      self.registration.showNotification(data.title || "DOKATA-System", {
+        body: data.body || "通知があります",
+        icon: "/icon-192.png",
+        badge: "/icon-192.png",
+        data: {
+          url: data.url || "/home",
+        },
+      })
+    );
   });
   
   self.addEventListener("notificationclick", (event) => {
     event.notification.close();
   
-    const url = event.notification.data.url;
+    const url = event.notification.data?.url || "/home";
   
-    event.waitUntil(
-      clients.openWindow(url)
-    );
-  });
-
-  self.addEventListener("push", (event) => {
-    const data = event.data.json();
-  
-    event.waitUntil(
-      self.registration.showNotification(
-        data.title,
-        {
-          body: data.body,
-          icon: "/icon-192.png",
-          badge: "/icon-192.png",
-        }
-      )
-    );
+    event.waitUntil(clients.openWindow(url));
   });
