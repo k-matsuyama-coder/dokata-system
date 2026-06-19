@@ -133,13 +133,17 @@ const [pushEnabled, setPushEnabled] = useState(false);
     }
   
     const permission = await Notification.requestPermission();
-  
-    if (permission !== "granted") {
-      alert("通知が許可されませんでした");
-      return;
-    }
+
+alert("通知許可状態: " + permission);
+
+if (permission !== "granted") {
+  alert("通知が許可されませんでした");
+  return;
+}
   
     const registration = await navigator.serviceWorker.register("/sw.js");
+
+    alert("Service Worker登録OK");
   
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
@@ -149,6 +153,8 @@ const [pushEnabled, setPushEnabled] = useState(false);
     });
   
     const json = subscription.toJSON();
+
+    alert("Push登録OK");
   
     if (!json.endpoint || !json.keys?.p256dh || !json.keys?.auth) {
       alert("端末登録情報を取得できませんでした");
