@@ -79,6 +79,26 @@ const [showNotifications, setShowNotifications] = useState(false);
     };
   }, [employeeName]);
 
+  const markNotificationAsRead = async (notification: Notification) => {
+    const { error } = await supabase
+      .from("notifications")
+      .update({ is_read: true })
+      .eq("id", notification.id);
+  
+    if (error) {
+      alert("通知更新失敗: " + error.message);
+      return;
+    }
+  
+    setNotifications((prev) =>
+      prev.filter((item) => item.id !== notification.id)
+    );
+  
+    if (notification.link_url) {
+      window.location.href = notification.link_url;
+    }
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     window.location.href = "/login";
@@ -210,12 +230,14 @@ gap: 12,
       ) : (
         notifications.map((notification) => (
           <div
-            key={notification.id}
-            style={{
-              borderBottom: "1px solid #eee",
-              padding: "8px 0",
-            }}
-          >
+  key={notification.id}
+  onClick={() => markNotificationAsRead(notification)}
+  style={{
+    borderBottom: "1px solid #eee",
+    padding: "8px 0",
+    cursor: "pointer",
+  }}
+>
             <div style={{ fontWeight: 800 }}>
               {notification.title}
             </div>
