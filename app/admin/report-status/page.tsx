@@ -152,18 +152,6 @@ export default function ReportStatusPage() {
         return;
       }
       
-      await fetch("/api/send-push", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          employeeName: foreman.employee_name,
-          title: "日報確認依頼",
-          message: `${date} ${row.assignment.site_name} の日報を確認してください`,
-        }),
-      });
-      
       alert(
         `${foreman.employee_name} さんに通知しました / Push送信数: ${pushResult.sentCount}`
       );
