@@ -116,7 +116,7 @@ const [pushEnabled, setPushEnabled] = useState(false);
     return outputArray;
   };
   
-  const enablePushNotifications = async () => {const enablePushNotifications = async () => {
+  const enablePushNotifications = async () => {
     if (!employeeName) {
       alert("社員情報を取得できていません");
       return;
