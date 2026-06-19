@@ -2155,6 +2155,88 @@ const isShort =
     >
       <div style={{ display: "flex", justifyContent: "space-between" }}>
         <strong>{selectedDate ? "未配置メンバー" : "全メンバー"}</strong>
+        <div style={{ marginTop: 12, display: "grid", gap: 8 }}>
+  {(selectedDate
+    ? getUnassignedEmployeesByDate(
+        selectedDate,
+        selectedShiftType
+      )
+    : employees
+  ).map((employee) => (
+    <button
+      key={employee.name}
+      type="button"
+      onClick={() => {
+        setSelectedEmployeeName(employee.name);
+        setShowMemberModal(false);
+      }}
+      style={{
+        padding: 12,
+        borderRadius: 10,
+        border:
+          selectedEmployeeName === employee.name
+            ? "2px solid #2563eb"
+            : "1px solid #ddd",
+        backgroundColor:
+          selectedEmployeeName === employee.name
+            ? "#dbeafe"
+            : "#fff",
+        textAlign: "left",
+        fontWeight: 700,
+      }}
+    >
+      {employee.name}
+    </button>
+  ))}
+</div>
+<div style={{ marginTop: 18 }}>
+  <div
+    style={{
+      fontWeight: 800,
+      marginBottom: 8,
+      paddingTop: 12,
+      borderTop: "1px solid #ddd",
+    }}
+  >
+    車両
+  </div>
+
+  <div style={{ display: "grid", gap: 8 }}>
+    {vehicles.map((vehicle) => (
+      <button
+        key={vehicle.id}
+        type="button"
+        onClick={() => {
+          setSelectedEmployeeName(null);
+          setSelectedSiteMemberId(null);
+          setCopiedEmployeeNames([]);
+
+          setCopiedVehicleNames((prev) =>
+            prev.includes(vehicle.vehicle_name)
+              ? prev.filter((name) => name !== vehicle.vehicle_name)
+              : [...prev, vehicle.vehicle_name]
+          );
+
+          setShowMemberModal(false);
+        }}
+        style={{
+          padding: 12,
+          borderRadius: 10,
+          border: copiedVehicleNames.includes(vehicle.vehicle_name)
+            ? "2px solid #f59e0b"
+            : "1px solid #ddd",
+          backgroundColor: copiedVehicleNames.includes(vehicle.vehicle_name)
+            ? "#fef3c7"
+            : "#fff",
+          textAlign: "left",
+          fontWeight: 800,
+        }}
+      >
+        🚚 {vehicle.vehicle_name}
+      </button>
+    ))}
+  </div>
+</div>
 
         <button
           type="button"
