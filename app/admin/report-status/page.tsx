@@ -127,36 +127,6 @@ export default function ReportStatusPage() {
         member.assignment_id === row.assignment.id &&
         member.is_foreman
     );
-
-    const sendAllNotifications = async () => {
-        const unsubmittedRows = rows.filter(
-          (row: any) => !row.report
-        );
-      
-        let sentCount = 0;
-      
-        for (const row of unsubmittedRows) {
-          const foreman = siteMembers.find(
-            (member) =>
-              member.assignment_id === row.assignment.id &&
-              member.is_foreman
-          );
-      
-          if (!foreman) continue;
-      
-          await supabase.from("notifications").insert({
-            employee_name: foreman.employee_name,
-            title: "日報確認依頼",
-            message: `${date} ${row.assignment.site_name} の日報を提出してください`,
-            link_url: "/reports/new",
-            is_read: false,
-          });
-      
-          sentCount++;
-        }
-      
-        alert(`${sentCount}件の通知を送信しました`);
-      };
   
     if (!foreman) {
       alert("この現場に職長が設定されていません");
@@ -177,6 +147,36 @@ export default function ReportStatusPage() {
     }
   
     alert(`${foreman.employee_name} さんに通知しました`);
+  };
+
+  const sendAllNotifications = async () => {
+    const unsubmittedRows = rows.filter(
+      (row: any) => !row.report
+    );
+
+    let sentCount = 0;
+
+    for (const row of unsubmittedRows) {
+      const foreman = siteMembers.find(
+        (member) =>
+          member.assignment_id === row.assignment.id &&
+          member.is_foreman
+      );
+
+      if (!foreman) continue;
+
+      await supabase.from("notifications").insert({
+        employee_name: foreman.employee_name,
+        title: "日報確認依頼",
+        message: `${date} ${row.assignment.site_name} の日報を提出してください`,
+        link_url: "/reports/new",
+        is_read: false,
+      });
+
+      sentCount++;
+    }
+
+    alert(`${sentCount}件の通知を送信しました`);
   };
 
   return (
