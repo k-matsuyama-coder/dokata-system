@@ -139,10 +139,13 @@ export default function ReportStatusPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          employeeName: foreman.employee_name,
-          title: "日報確認依頼",
-          message: `${date} ${row.assignment.site_name} の日報を確認してください`,
-        }),
+            employeeName: foreman.employee_name,
+            title: "日報確認依頼",
+            message: `${date} ${row.assignment.site_name} の日報を提出してください`,
+            url: `/reports/new?date=${date}&site=${encodeURIComponent(
+              row.assignment.site_name ?? ""
+            )}`,
+          }),
       });
       
       const pushResult = await pushResponse.json();
@@ -187,10 +190,13 @@ export default function ReportStatusPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          employeeName: foreman.employee_name,
-          title: "日報確認依頼",
-          message: `${date} ${row.assignment.site_name} の日報を提出してください`,
-        }),
+            employeeName: foreman.employee_name,
+            title: "日報確認依頼",
+            message: `${date} ${row.assignment.site_name} の日報を確認してください`,
+            url: `/reports/new?date=${date}&site=${encodeURIComponent(
+              row.assignment.site_name ?? ""
+            )}`,
+          }),
       });
       
       sentCount++;

@@ -22,6 +22,7 @@ export async function POST(req: Request) {
     const employeeName = body.employeeName;
     const title = body.title;
     const message = body.message;
+    const url = body.url || "/reports/new";
 
     const { data: subscriptions } = await supabase
       .from("push_subscriptions")
@@ -48,6 +49,7 @@ export async function POST(req: Request) {
           JSON.stringify({
             title,
             body: message,
+            url,
           })
         );
     } catch (e: any) {
