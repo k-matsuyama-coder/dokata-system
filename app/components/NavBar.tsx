@@ -145,12 +145,33 @@ if (permission !== "granted") {
 
     alert("Service Worker登録OK");
   
-    const subscription = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(
-        process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!
-      ),
-    });
+    const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+
+if (!vapidPublicKey) {
+  alert("VAPID公開キーが設定されていません");
+  return;
+}
+
+const existingSubscription =
+  await registration.pushManager.getSubscription();
+
+if (existingSubscription) {
+  await existingSubscription.unsubscribe();
+}
+
+let subscription: PushSubscription;
+
+try {
+  subscription = await registration.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+  });
+} catch (error: any) {
+  alert("Push登録失敗: " + error.message);
+  return;
+}
+
+alert("Push登録OK");
   
     const json = subscription.toJSON();
 
