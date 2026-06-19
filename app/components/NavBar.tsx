@@ -174,6 +174,7 @@ const [pushEnabled, setPushEnabled] = useState(false);
   
     setPushEnabled(true);
     alert("この端末で通知を受け取れるようになりました");
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
