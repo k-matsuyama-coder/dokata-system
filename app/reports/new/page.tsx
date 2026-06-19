@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import ReportForm from "@/app/components/ReportForm";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 
 type Employee = {
@@ -49,7 +49,6 @@ export default function NewReportPage() {
 const [operatorName, setOperatorName] = useState("");
 
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   const copyPreviousReport = async (targetEmployeeName?: string) => {
     const nameForSearch = targetEmployeeName || employeeName;
