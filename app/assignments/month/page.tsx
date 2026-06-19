@@ -95,6 +95,7 @@ const [endDate, setEndDate] = useState("");
 const [contractors, setContractors] = useState<Contractor[]>([]);
 const [contractorContacts, setContractorContacts] = useState<ContractorContact[]>([]);
 const [showAddModal, setShowAddModal] = useState(false);
+const [showMemberModal, setShowMemberModal] = useState(false);
 const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
 const [constructionType, setConstructionType] = useState("第一工事");
 const [sortMode, setSortMode] = useState("manual");
@@ -963,7 +964,7 @@ setShowAddModal(false);
       <div
   style={{
     width: "100%",
-    paddingRight: 190,
+    paddingRight: isMobile ? 0 : 190,
   }}
 >
         <h1>月間番割表</h1>
@@ -1038,11 +1039,6 @@ setShowAddModal(false);
 >
   ＋ 現場追加
 </button>
-<div>
-
-  {isMobile ? "スマホ" : "PC"}
-
-</div>
 </div>
 
         {showAddModal && (
@@ -2111,17 +2107,38 @@ const isShort =
               ))}
             </tbody>
           </table>
+          {isMobile && (
+  <button
+    type="button"
+    onClick={() => setShowMemberModal(true)}
+    style={{
+      position: "fixed",
+      left: 16,
+      right: 16,
+      bottom: 16,
+      padding: 14,
+      borderRadius: 999,
+      border: "none",
+      backgroundColor: "#111",
+      color: "#fff",
+      fontWeight: 800,
+      fontSize: 16,
+      zIndex: 2000,
+    }}
+  >
+    メンバー・車両を選ぶ
+  </button>
+)}
         </div>
 
-        
-
-        <div
-  style={{
-    position: "fixed",
-    right: 4,
-    top: 90,
-    bottom: 10,
-    width: 180,
+        {!isMobile && (
+  <div
+    style={{
+      position: "fixed",
+      right: 4,
+      top: 90,
+      bottom: 10,
+      width: 180,
 
     overflowY: "auto",
 
@@ -2366,6 +2383,7 @@ const isShort =
 
 </div>
 </div>
+)}
 
         <p style={{ color: "#666", fontSize: 13 }}>
           ※ メンバーを外す場合は、配置済みの名前をダブルクリックしてください。
