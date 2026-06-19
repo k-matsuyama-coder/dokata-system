@@ -133,16 +133,22 @@ export default function ReportStatusPage() {
       return;
     }
   
-    const { error } = await supabase.from("notifications").insert({
-        employee_name: foreman.employee_name,
-        title: "日報確認依頼",
-        message: `${date} ${row.assignment.site_name} の日報を確認してください`,
-        link_url: "/reports/new",
-        is_read: false,
+    const pushResponse = await fetch("/api/send-push", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          employeeName: foreman.employee_name,
+          title: "日報確認依頼",
+          message: `${date} ${row.assignment.site_name} の日報を確認してください`,
+        }),
       });
       
-      if (error) {
-        alert("通知送信失敗: " + error.message);
+      const pushResult = await pushResponse.json();
+      
+      if (!pushResult.success) {
+        alert("プッシュ通知失敗: " + pushResult.message);
         return;
       }
       

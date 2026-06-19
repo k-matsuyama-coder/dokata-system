@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import webpush from "web-push";
 import { createClient } from "@supabase/supabase-js";
 
+export const runtime = "nodejs";
+
 webpush.setVapidDetails(
   "mailto:admin@dokata-system.com",
   process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
@@ -48,8 +50,13 @@ export async function POST(req: Request) {
             body: message,
           })
         );
-      } catch (e) {
-        console.error(e);
+    } catch (e: any) {
+        console.error("push送信失敗", e);
+      
+        return NextResponse.json({
+          success: false,
+          message: e.message,
+        });
       }
     }
 
