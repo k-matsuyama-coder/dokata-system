@@ -134,19 +134,31 @@ export default function ReportStatusPage() {
     }
   
     const { error } = await supabase.from("notifications").insert({
-      employee_name: foreman.employee_name,
-      title: "日報確認依頼",
-      message: `${date} ${row.assignment.site_name} の日報を確認してください`,
-      link_url: "/reports/new",
-      is_read: false,
-    });
-  
-    if (error) {
-      alert("通知送信失敗: " + error.message);
-      return;
-    }
-  
-    alert(`${foreman.employee_name} さんに通知しました`);
+        employee_name: foreman.employee_name,
+        title: "日報確認依頼",
+        message: `${date} ${row.assignment.site_name} の日報を確認してください`,
+        link_url: "/reports/new",
+        is_read: false,
+      });
+      
+      if (error) {
+        alert("通知送信失敗: " + error.message);
+        return;
+      }
+      
+      await fetch("/api/send-push", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          employeeName: foreman.employee_name,
+          title: "日報確認依頼",
+          message: `${date} ${row.assignment.site_name} の日報を確認してください`,
+        }),
+      });
+      
+      alert(`${foreman.employee_name} さんに通知しました`);
   };
 
   const sendAllNotifications = async () => {
@@ -172,7 +184,19 @@ export default function ReportStatusPage() {
         link_url: "/reports/new",
         is_read: false,
       });
-
+      
+      await fetch("/api/send-push", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          employeeName: foreman.employee_name,
+          title: "日報確認依頼",
+          message: `${date} ${row.assignment.site_name} の日報を提出してください`,
+        }),
+      });
+      
       sentCount++;
     }
 
