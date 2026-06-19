@@ -71,7 +71,9 @@ const [operatorName, setOperatorName] = useState("");
       return;
     }
 
-    const today = new Date().toISOString().slice(0, 10);
+    const today = new Intl.DateTimeFormat("sv-SE", {
+      timeZone: "Asia/Tokyo",
+    }).format(new Date());
     setReportDate(today);
 
     setSite(previousReport.site_name ?? "");
@@ -209,6 +211,17 @@ if (dateParam) {
   };
 
   const handleSubmit = async () => {
+    const { data: existingReport } = await supabase
+  .from("daily_reports")
+  .select("id")
+  .eq("worker_name", employeeName)
+  .eq("report_date", reportDate)
+  .maybeSingle();
+
+if (existingReport) {
+  alert("この日の日報は既に登録されています");
+  return;
+}
     const { data: userData } = await supabase.auth.getUser();
     const user = userData.user;
 
@@ -276,14 +289,21 @@ operator_name: operatorName,
       is_driver: selectedDrivers.includes(member.name),
     }));
 
-    const { error: membersError } = await supabase
-      .from("report_members")
-      .insert(reportMembersPayload);
-
-    if (membersError) {
-      alert("メンバー保存失敗: " + membersError.message);
-      return;
+    if (reportMembersPayload.length > 0) {
+      const { error: membersError } = await supabase
+        .from("report_members")
+        .insert(reportMembersPayload);
     }
+
+      if (membersError) {
+        await supabase
+          .from("daily_reports")
+          .delete()
+          .eq("id", reportData.id);
+      
+        alert("メンバー保存失敗: " + membersError.message);
+        return;
+      }
 
     toast.success("保存しました");
     router.replace("/home");
