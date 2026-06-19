@@ -100,13 +100,37 @@ const [pushEnabled, setPushEnabled] = useState(false);
     }
   };
 
+  const urlBase64ToUint8Array = (base64String: string) => {
+    const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding)
+      .replace(/-/g, "+")
+      .replace(/_/g, "/");
+  
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+  
+    for (let i = 0; i < rawData.length; i++) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+  
+    return outputArray;
+  };
+  
   const enablePushNotifications = async () => {
+    if (!employeeName) {
+      alert("社員情報を取得できていません");
+      return;
+    }
+  
     if (!("serviceWorker" in navigator)) {
       alert("この端末は通知未対応です");
       return;
     }
   
-    const registration = await navigator.serviceWorker.register("/sw.js");
+    if (!("PushManager" in window)) {
+      alert("この端末はプッシュ通知未対応です");
+      return;
+    }
   
     const permission = await Notification.requestPermission();
   
@@ -115,10 +139,41 @@ const [pushEnabled, setPushEnabled] = useState(false);
       return;
     }
   
-    alert("通知を許可しました");
+    const registration = await navigator.serviceWorker.register("/sw.js");
+  
+    const subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(
+        process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!
+      ),
+    });
+  
+    const json = subscription.toJSON();
+  
+    if (!json.endpoint || !json.keys?.p256dh || !json.keys?.auth) {
+      alert("端末登録情報を取得できませんでした");
+      return;
+    }
+  
+    const { error } = await supabase.from("push_subscriptions").upsert(
+      {
+        employee_name: employeeName,
+        endpoint: json.endpoint,
+        p256dh: json.keys.p256dh,
+        auth: json.keys.auth,
+      },
+      {
+        onConflict: "endpoint",
+      }
+    );
+  
+    if (error) {
+      alert("通知端末登録失敗: " + error.message);
+      return;
+    }
   
     setPushEnabled(true);
-  };
+    alert("この端末で通知を受け取れるようになりました");
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
