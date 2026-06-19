@@ -257,7 +257,10 @@ gap: 12,
 
   <button
   type="button"
-  onClick={enablePushNotifications}
+  onClick={() => {
+    alert("📲ボタンは押せています");
+    enablePushNotifications();
+  }}
   style={{
     border: "1px solid #ddd",
     backgroundColor: pushEnabled ? "#16a34a" : "#fff",
