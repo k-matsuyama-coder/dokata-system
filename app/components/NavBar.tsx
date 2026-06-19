@@ -116,7 +116,7 @@ const [pushEnabled, setPushEnabled] = useState(false);
     return outputArray;
   };
   
-  const enablePushNotifications = async () => {
+  const enablePushNotifications = async () => {const enablePushNotifications = async () => {
     if (!employeeName) {
       alert("社員情報を取得できていません");
       return;
@@ -133,66 +133,48 @@ const [pushEnabled, setPushEnabled] = useState(false);
     }
   
     const permission = await Notification.requestPermission();
-
-alert("通知許可状態: " + permission);
-
-if (permission !== "granted") {
-  alert("通知が許可されませんでした");
-  return;
-}
+  
+    if (permission !== "granted") {
+      alert("通知が許可されませんでした");
+      return;
+    }
   
     const registration = await navigator.serviceWorker.register("/sw.js");
-
-    alert("Service Worker登録OK");
   
     const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-
-if (!vapidPublicKey) {
-  alert("VAPID公開キーが設定されていません");
-  return;
-}
-
-const existingSubscription =
-  await registration.pushManager.getSubscription();
-
-if (existingSubscription) {
-  await existingSubscription.unsubscribe();
-}
-
-let subscription: PushSubscription;
-
-try {
-  subscription = await registration.pushManager.subscribe({
-    userVisibleOnly: true,
-    applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
-  });
-} catch (error: any) {
-  alert("Push登録失敗: " + error.message);
-  return;
-}
-
-alert("Push登録OK");
+  
+    if (!vapidPublicKey) {
+      alert("VAPID公開キーが設定されていません");
+      return;
+    }
+  
+    let subscription = await registration.pushManager.getSubscription();
+  
+    if (!subscription) {
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+      });
+    }
   
     const json = subscription.toJSON();
-
-    alert("Push登録OK");
   
     if (!json.endpoint || !json.keys?.p256dh || !json.keys?.auth) {
       alert("端末登録情報を取得できませんでした");
       return;
     }
   
-    const { error } = await supabase.from("push_subscriptions").upsert(
-      {
-        employee_name: employeeName,
-        endpoint: json.endpoint,
-        p256dh: json.keys.p256dh,
-        auth: json.keys.auth,
-      },
-      {
-        onConflict: "endpoint",
-      }
-    );
+    await supabase
+      .from("push_subscriptions")
+      .delete()
+      .eq("employee_name", employeeName);
+  
+    const { error } = await supabase.from("push_subscriptions").insert({
+      employee_name: employeeName,
+      endpoint: json.endpoint,
+      p256dh: json.keys.p256dh,
+      auth: json.keys.auth,
+    });
   
     if (error) {
       alert("通知端末登録失敗: " + error.message);
@@ -284,10 +266,7 @@ gap: 12,
 
   <button
   type="button"
-  onClick={() => {
-    alert("📲ボタンは押せています");
-    enablePushNotifications();
-  }}
+  onClick={enablePushNotifications}
   style={{
     border: "1px solid #ddd",
     backgroundColor: pushEnabled ? "#16a34a" : "#fff",
