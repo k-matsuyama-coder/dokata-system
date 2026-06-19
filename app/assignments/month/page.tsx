@@ -194,9 +194,12 @@ const getCellStyle = (
     plannedCount > 0 &&
     memberCount === plannedCount;
 
-  return {
-    ...cellTd,
-    backgroundColor:
+    return {
+      ...cellTd,
+      minWidth: isMobile ? 120 : 150,
+      height: isMobile ? 120 : 140,
+      padding: isMobile ? 4 : 6,
+      backgroundColor:
   shiftType === "night"
     ? "#e5e7eb"
     : isShort
@@ -958,13 +961,14 @@ setShowAddModal(false);
   });
 
   return (
-    <div style={{ padding: 16 }}>
+    <div style={{ padding: isMobile ? 8 : 16 }}>
       <BackButton />
 
       <div
   style={{
     width: "100%",
     paddingRight: isMobile ? 0 : 190,
+    paddingBottom: isMobile ? 110 : 0,
   }}
 >
         <h1>月間番割表</h1>
@@ -1561,17 +1565,32 @@ setShowAddModal(false);
   style={{
     borderCollapse: "separate",
     borderSpacing: 0,
-    minWidth: 1700,
-width: "100%",
+    minWidth: isMobile ? 950 : 1700,
+    width: "100%",
     backgroundColor: "#fff",
-    fontSize: 12,
+    fontSize: isMobile ? 10 : 12,
   }}
 >
             <thead>
               <tr>
-              <th style={{ ...th, ...stickyTh1 }}>元請</th>
-<th style={{ ...th, ...stickyTh2 }}>現場名</th>
-<th style={{ ...th, ...stickyTh3 }}>担当者</th>
+              {!isMobile && (
+  <th style={{ ...th, ...stickyTh1 }}>元請</th>
+)}
+
+<th
+  style={{
+    ...th,
+    ...stickyTh2,
+    left: isMobile ? 0 : 70,
+  }}
+>
+  現場名
+</th>
+
+{!isMobile && (
+  <th style={{ ...th, ...stickyTh3 }}>担当者</th>
+)}
+
 <th style={th}>昼/夜</th>
 
 {days.map((date) => {
@@ -1668,6 +1687,7 @@ const plannedSecond = dailyInfos
         : "#fff",
   }}
 >
+{!isMobile && (
 <td
   style={{
     ...td,
@@ -1678,9 +1698,11 @@ const plannedSecond = dailyInfos
 >
   {assignment.contractor_name || "-"}
 </td>
+)}
+
 
 <td
-  draggable={sortMode === "manual"}
+  draggable={!isMobile && sortMode === "manual"}
   onDragStart={() => setDraggingAssignmentId(assignment.id)}
   onDragEnd={() => setDraggingAssignmentId(null)}
   onDragOver={(e) => e.preventDefault()}
@@ -1695,8 +1717,9 @@ const plannedSecond = dailyInfos
   style={{
     ...td,
     ...stickyTd2,
+    left: isMobile ? 0 : 70,
     fontWeight: 800,
-    cursor: sortMode === "manual" ? "grab" : "default",
+    cursor: !isMobile && sortMode === "manual" ? "grab" : "pointer",
     backgroundColor:
       draggingAssignmentId === assignment.id
         ? "#dbeafe"
@@ -1724,9 +1747,9 @@ const plannedSecond = dailyInfos
             color: "#fff",
             border: "none",
             borderRadius: 6,
-            padding: "4px 8px",
+            padding: isMobile ? "6px 10px" : "4px 8px",
             cursor: "pointer",
-            fontSize: 12,
+            fontSize: isMobile ? 11 : 12,
           }}
         >
           削除
@@ -1734,6 +1757,7 @@ const plannedSecond = dailyInfos
       </div>
     </td>
 
+    {!isMobile && (
     <td
   style={{
     ...td,
@@ -1744,6 +1768,7 @@ const plannedSecond = dailyInfos
 >
   {assignment.manager_name || "-"}
 </td>
+)}
 
 <td
   style={{
@@ -1822,7 +1847,13 @@ const isShort =
                         
                           if (selectedEmployeeName) {
                             addEmployeeToCell(selectedEmployeeName, assignment.id, date);
+                          
                             setSelectedEmployeeName(null);
+                          
+                            if (isMobile) {
+                              setShowMemberModal(false);
+                            }
+                          
                             return;
                           }
                         
@@ -1840,6 +1871,10 @@ const isShort =
                             });
                           
                             setCopiedVehicleNames([]);
+
+                            if (isMobile) {
+                              setShowMemberModal(false);
+                            }
                           }
                         
                           }}
@@ -1853,7 +1888,7 @@ const isShort =
                         <div style={{ display: "grid", gap: 4 }}>
                         <div
   style={{
-    fontSize: 11,
+    fontSize: isMobile ? 10 : 11,
     fontWeight: 800,
     color: isShort
       ? "#d11a2a"
@@ -1890,7 +1925,7 @@ const isShort =
     padding: "4px 6px",
     border: "1px solid #d1d5db",
     borderRadius: 6,
-    fontSize: 11,
+    fontSize: isMobile ? 10 : 11,
     fontWeight: 700,
     backgroundColor: "#fff",
     boxSizing: "border-box",
@@ -1936,7 +1971,7 @@ const isShort =
     padding: "4px 6px",
     border: "1px solid #e5e7eb",
     borderRadius: 6,
-    fontSize: 11,
+    fontSize: isMobile ? 10 : 11,
     backgroundColor: "#fff",
     boxSizing: "border-box",
   }}
@@ -1948,7 +1983,7 @@ const isShort =
     padding: 6,
     borderRadius: 8,
     backgroundColor: "#f9fafb",
-    fontSize: 11,
+    fontSize: isMobile ? 10 : 11,
   }}
 >
   <div style={{ fontWeight: 800, color: "#555", marginBottom: 4 }}>
@@ -1960,7 +1995,7 @@ const isShort =
       {dailyInfo.vehicle_names.map((name) => (
         <div
           key={name}
-          draggable
+          draggable={!isMobile}
           onDragStart={() =>
             setDraggingVehicleFrom({
               assignmentId: assignment.id,
@@ -2019,7 +2054,7 @@ const isShort =
   .map((member) => (
     <div
       key={member.id}
-      draggable
+      draggable={!isMobile}
       onDragStart={() => setDraggingSiteMemberId(member.id)}
       onDragEnd={() => setDraggingSiteMemberId(null)}
       onClick={(e) => {
@@ -2107,6 +2142,30 @@ const isShort =
               ))}
             </tbody>
           </table>
+          {isMobile && (selectedEmployeeName || copiedVehicleNames.length > 0) && (
+  <div
+    style={{
+      position: "fixed",
+      left: 16,
+      right: 16,
+      bottom: 72,
+      padding: 10,
+      borderRadius: 12,
+      backgroundColor: "#fff",
+      border: "1px solid #ddd",
+      zIndex: 2000,
+      fontSize: 13,
+      fontWeight: 800,
+      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+    }}
+  >
+    {selectedEmployeeName && <>選択中：{selectedEmployeeName}</>}
+
+    {copiedVehicleNames.length > 0 && (
+      <div>車両選択中：{copiedVehicleNames.join("、")}</div>
+    )}
+  </div>
+)}
           {isMobile && (
   <button
     type="button"
@@ -2153,8 +2212,23 @@ const isShort =
         padding: 14,
       }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between" }}>
-        <strong>{selectedDate ? "未配置メンバー" : "全メンバー"}</strong>
+      <div style={{ display: "grid", gap: 12 }}>
+      <div
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+  }}
+>
+  <strong>{selectedDate ? "未配置メンバー" : "全メンバー"}</strong>
+
+  <button
+    type="button"
+    onClick={() => setShowMemberModal(false)}
+  >
+    閉じる
+  </button>
+</div>
         <div style={{ marginTop: 12, display: "grid", gap: 8 }}>
   {(selectedDate
     ? getUnassignedEmployeesByDate(
@@ -2237,13 +2311,6 @@ const isShort =
     ))}
   </div>
 </div>
-
-        <button
-          type="button"
-          onClick={() => setShowMemberModal(false)}
-        >
-          閉じる
-        </button>
       </div>
     </div>
   </div>
@@ -2411,7 +2478,7 @@ const isShort =
     return (
       <div
         key={employee.name}
-        draggable
+        draggable={!isMobile}
         onDragStart={() =>
           setDraggingEmployeeName(employee.name)
         }
@@ -2465,7 +2532,7 @@ const isShort =
     {vehicles.map((vehicle) => (
       <div
         key={vehicle.id}
-        draggable
+        draggable={!isMobile}
         onDragStart={() => setDraggingVehicleName(vehicle.vehicle_name)}
         onDragEnd={() => setDraggingVehicleName(null)}
         onClick={() => {
@@ -2557,8 +2624,8 @@ boxSizing: "border-box" as const,
     left: 70,
     zIndex: 40,
     backgroundColor: "#fff",
-    minWidth: 140,
-    width: 140,
+    minWidth: 120,
+    width: 120,
   };
   
   const stickyTd3 = {
@@ -2586,8 +2653,8 @@ boxSizing: "border-box" as const,
     top: 0,
     zIndex: 80,
     backgroundColor: "#f5f5f5",
-    minWidth: 140,
-    width: 140,
+    minWidth: 120,
+width: 120,
   };
   
   const stickyTh3 = {
