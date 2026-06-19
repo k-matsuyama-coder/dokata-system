@@ -496,18 +496,6 @@ fontWeight: pathname.startsWith("/assignments/month") ? 700 : 500,
           </div>
           </>
 
-          <div
-  onMouseEnter={() => setMenuOpen(true)}
-  style={{
-    position: "fixed",
-    top: 0,
-    left: 0,
-    width: 15,
-    height: "100vh",
-    zIndex: 998,
-  }}
-/>
-
 <MyMonthlyScheduleModal
   open={showCalendarModal}
   onClose={() => setShowCalendarModal(false)}
