@@ -126,6 +126,8 @@ const [vehicles, setVehicles] = useState<
   }[]
 >([]);
 
+const [isMobile, setIsMobile] = useState(false);
+
   const days = useMemo(() => {
     const [year, monthNum] = month.split("-").map(Number);
     const lastDay = new Date(year, monthNum, 0).getDate();
@@ -451,6 +453,20 @@ setDailyInfos(dailyInfoData ?? []);
       supabase.removeChannel(channel);
     };
   }, [month]);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+  
+    checkMobile();
+  
+    window.addEventListener("resize", checkMobile);
+  
+    return () => {
+      window.removeEventListener("resize", checkMobile);
+    };
+  }, []);
 
   const updateAssignment = async () => {
     if (!editingAssignment) return;
@@ -1022,6 +1038,11 @@ setShowAddModal(false);
 >
   ＋ 現場追加
 </button>
+<div>
+
+  {isMobile ? "スマホ" : "PC"}
+
+</div>
 </div>
 
         {showAddModal && (
