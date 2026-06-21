@@ -1716,7 +1716,20 @@ const plannedSecond = dailyInfos
 
   return (
     <th key={date} style={getDateHeaderStyle(date)}>
-      <div>{Number(date.slice(-2))}</div>
+  <div style={{ fontSize: 14, fontWeight: 800 }}>
+    {Number(date.slice(-2))}
+  </div>
+
+  <div
+    style={{
+      fontSize: 11,
+      marginTop: 2,
+    }}
+  >
+    {["日", "月", "火", "水", "木", "金", "土"][
+      new Date(date).getDay()
+    ]}
+  </div>
 
       <div
         style={{
