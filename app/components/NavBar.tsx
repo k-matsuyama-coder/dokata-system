@@ -52,14 +52,15 @@ setEmployeeName(employee.name);
 setOrganizationId(employee.organization_id);
 
 if (employee.organization_id) {
-  const { data: organization } = await supabase
+  const { data: organization, error } = await supabase
     .from("organizations")
-    .select("name")
+    .select("*")
     .eq("id", employee.organization_id)
     .single();
 
-    console.log("employee", employee);
-    console.log("organization", organization);
+  console.log("organization_id", employee.organization_id);
+  console.log("organization", organization);
+  console.log("error", error);
 
   setOrganizationName(organization?.name ?? "");
 }
