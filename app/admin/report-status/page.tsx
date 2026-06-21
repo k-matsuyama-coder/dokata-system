@@ -152,9 +152,8 @@ export default function ReportStatusPage() {
   
     return Array.from({ length: lastDay }, (_, i) => {
       const day = i + 1;
-      const dateString = new Date(year, month, day)
-        .toISOString()
-        .slice(0, 10);
+      const dateString =
+  `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
   
       const dayMembers = siteMembers.filter(
         (m) => m.work_date === dateString
@@ -375,6 +374,11 @@ export default function ReportStatusPage() {
       gap: 8,
     }}
   >
+
+{Array.from({ length: startOffset }).map((_, index) => (
+  <div key={`empty-${index}`} />
+))}
+
     {monthDays.map((day) => (
       <button
         key={day.dateString}
