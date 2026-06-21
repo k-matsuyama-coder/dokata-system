@@ -58,6 +58,9 @@ if (employee.organization_id) {
     .eq("id", employee.organization_id)
     .single();
 
+    console.log("employee", employee);
+    console.log("organization", organization);
+
   setOrganizationName(organization?.name ?? "");
 }
     };
