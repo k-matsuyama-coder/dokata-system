@@ -25,6 +25,7 @@ self.addEventListener("install", () => {
     event.notification.close();
   
     const url = event.notification.data?.url || "/home";
-  
-    event.waitUntil(clients.openWindow(url));
+const fullUrl = new URL(url, self.location.origin).href;
+
+event.waitUntil(clients.openWindow(fullUrl));
   });

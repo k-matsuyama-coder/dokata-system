@@ -323,6 +323,8 @@ operator_name: operatorName,
       .select("id")
       .single();
 
+      console.log("reportError", reportError);
+
       if (reportError || !reportData) {
         if (
           reportError?.message.includes("duplicate") ||
