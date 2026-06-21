@@ -258,12 +258,11 @@ gap: 12,
   }}
 >
   DOKATA-System
-</a>
-{organizationName && (
-  <span style={{ fontSize: 12, color: "#666" }}>
-    {organizationName}
-  </span>
-)}
+  </a>
+
+<span style={{ fontSize: 12, color: "red", fontWeight: 800 }}>
+  会社: {organizationName || "未取得"}
+</span>
 
 <div
   style={{
