@@ -261,6 +261,11 @@ gap: 12,
     gap: 8,
   }}
 >
+{organizationName && (
+  <span style={{ fontSize: 12, color: "#666" }}>
+    {organizationName}
+  </span>
+)}
   <button
     type="button"
     onClick={() => setShowCalendarModal(true)}
@@ -514,16 +519,6 @@ fontWeight: pathname.startsWith("/assignments/month") ? 700 : 500,
             >
               ログアウト
             </button>
-
-            {organizationName && (
-
-<span style={{ fontSize: 12, color: "#666" }}>
-
-  {organizationName}
-
-</span>
-
-)}
           </div>
           </>
 
