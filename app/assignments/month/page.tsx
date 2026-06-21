@@ -1802,7 +1802,13 @@ const plannedSecond = dailyInfos
         : "#fff",
   }}
 >
-      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+<div
+  style={{
+    display: "flex",
+    flexDirection: "column",
+    gap: 6,
+  }}
+>
       <span
   onClick={() => setEditingAssignment(assignment)}
   style={{
@@ -2698,8 +2704,8 @@ boxSizing: "border-box" as const,
     left: 70,
     zIndex: 40,
     backgroundColor: "#fff",
-    minWidth: 120,
-    width: 120,
+    minWidth: 180,
+width: 180,
   };
   
   const stickyTd3 = {
@@ -2707,8 +2713,8 @@ boxSizing: "border-box" as const,
     left: 210,
     zIndex: 40,
     backgroundColor: "#fff",
-    minWidth: 70,
-    width: 70,
+    minWidth: 60,
+width: 60,
   };
   
   const stickyTh1 = {
@@ -2727,8 +2733,8 @@ boxSizing: "border-box" as const,
     top: 0,
     zIndex: 80,
     backgroundColor: "#f5f5f5",
-    minWidth: 120,
-width: 120,
+    minWidth: 180,
+width: 180,
   };
   
   const stickyTh3 = {
@@ -2737,8 +2743,8 @@ width: 120,
     top: 0,
     zIndex: 80,
     backgroundColor: "#f5f5f5",
-    minWidth: 70,
-    width: 70,
+    minWidth: 60,
+width: 60,
   };
 
   const tagBlue = {
