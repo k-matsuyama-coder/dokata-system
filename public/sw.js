@@ -21,11 +21,23 @@ self.addEventListener("install", () => {
     );
   });
   
-  self.addEventListener("notificationclick", (event) => {
+  self.addEventListener("notificationclick", (event) => {self.addEventListener("notificationclick", (event) => {
     event.notification.close();
   
     const url = event.notification.data?.url || "/home";
-const fullUrl = new URL(url, self.location.origin).href;
-
-event.waitUntil(clients.openWindow(fullUrl));
+    const fullUrl = new URL(url, self.location.origin).href;
+  
+    event.waitUntil(
+      clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+        for (const client of clientList) {
+          if ("focus" in client) {
+            client.focus();
+            client.navigate(fullUrl);
+            return;
+          }
+        }
+  
+        return clients.openWindow(fullUrl);
+      })
+    );
   });

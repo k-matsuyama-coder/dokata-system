@@ -22,7 +22,7 @@ export async function POST(req: Request) {
     const employeeName = body.employeeName;
     const title = body.title;
     const message = body.message;
-    const url = body.url || "/reports/new";
+    const url = new URL(body.url || "/reports/new", req.url).href;
 
     const { data: subscriptions } = await supabase
       .from("push_subscriptions")
