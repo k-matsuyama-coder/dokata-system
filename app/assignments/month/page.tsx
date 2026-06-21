@@ -1915,7 +1915,7 @@ const isShort =
                             setDraggingVehicleName(null);
                           }
                         }}
-                        onClick={() => {
+                        onClick={(e) => {
                           setSelectedDate(date);
                           setSelectedShiftType(assignment.shift_type ?? "day");
                         
@@ -1942,7 +1942,9 @@ const isShort =
                               addEmployeeToCell(name, assignment.id, date);
                             });
                           
-                            setCopiedEmployeeNames([]);
+                            if (!e.shiftKey) {
+                              setCopiedEmployeeNames([]);
+                            }
                           }
 
                           if (copiedVehicleNames.length > 0) {
@@ -2710,7 +2712,7 @@ width: 180,
   
   const stickyTd3 = {
     position: "sticky" as const,
-    left: 210,
+    left: 250,
     zIndex: 40,
     backgroundColor: "#fff",
     minWidth: 60,
@@ -2739,7 +2741,7 @@ width: 180,
   
   const stickyTh3 = {
     position: "sticky" as const,
-    left: 210,
+    left: 250,
     top: 0,
     zIndex: 80,
     backgroundColor: "#f5f5f5",
