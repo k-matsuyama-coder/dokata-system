@@ -133,31 +133,33 @@ export default function ReportStatusPage() {
       return;
     }
   
+    const reportUrl = `/reports/new?assignment_id=${row.assignment.id}&date=${date}&site=${encodeURIComponent(
+      row.assignment.site_name ?? ""
+    )}`;
+  
     const pushResponse = await fetch("/api/send-push", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            employeeName: foreman.employee_name,
-            title: "日報確認依頼",
-            message: `${date} ${row.assignment.site_name} の日報を提出してください`,
-            url: `/reports/new?date=${date}&site=${encodeURIComponent(
-              row.assignment.site_name ?? ""
-            )}`,
-          }),
-      });
-      
-      const pushResult = await pushResponse.json();
-      
-      if (!pushResult.success) {
-        alert("プッシュ通知失敗: " + pushResult.message);
-        return;
-      }
-      
-      alert(
-        `${foreman.employee_name} さんに通知しました / Push送信数: ${pushResult.sentCount}`
-      );
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        employeeName: foreman.employee_name,
+        title: "日報確認依頼",
+        message: `${date} ${row.assignment.site_name} の日報を提出してください`,
+        url: reportUrl,
+      }),
+    });
+  
+    const pushResult = await pushResponse.json();
+  
+    if (!pushResult.success) {
+      alert("プッシュ通知失敗: " + pushResult.message);
+      return;
+    }
+  
+    alert(
+      `${foreman.employee_name} さんに通知しました / Push送信数: ${pushResult.sentCount}`
+    );
   };
 
   const sendAllNotifications = async () => {
@@ -176,11 +178,23 @@ export default function ReportStatusPage() {
 
       if (!foreman) continue;
 
+      const reportUrl = `/reports/new?assignment_id=${row.assignment.id}&date=${date}&site=${encodeURIComponent(
+        row.assignment.site_name ?? ""
+      )}`;
+
       await supabase.from("notifications").insert({
         employee_name: foreman.employee_name,
         title: "日報確認依頼",
         message: `${date} ${row.assignment.site_name} の日報を提出してください`,
-        link_url: "/reports/new",
+        link_url: reportUrl,
+        is_read: false,
+      });
+      
+      await supabase.from("notifications").insert({
+        employee_name: foreman.employee_name,
+        title: "日報確認依頼",
+        message: `${date} ${row.assignment.site_name} の日報を提出してください`,
+        link_url: reportUrl,
         is_read: false,
       });
       
@@ -193,9 +207,7 @@ export default function ReportStatusPage() {
             employeeName: foreman.employee_name,
             title: "日報確認依頼",
             message: `${date} ${row.assignment.site_name} の日報を確認してください`,
-            url: `/reports/new?date=${date}&site=${encodeURIComponent(
-              row.assignment.site_name ?? ""
-            )}`,
+            url: reportUrl,
           }),
       });
       

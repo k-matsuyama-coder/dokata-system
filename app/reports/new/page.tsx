@@ -185,7 +185,8 @@ const [operatorName, setOperatorName] = useState("");
 
       const params = new URLSearchParams(window.location.search);
 
-      const siteParam = params.get("site");
+      const assignmentIdParam = params.get("assignment_id");
+const siteParam = params.get("site");
 const dateParam = params.get("date");
 
 if (siteParam) {
@@ -194,6 +195,51 @@ if (siteParam) {
 
 if (dateParam) {
   setReportDate(dateParam);
+}
+
+if (assignmentIdParam && dateParam) {
+  const { data: assignment } = await supabase
+    .from("assignments")
+    .select("site_name, contractor_name, shift_type, start_time, end_time")
+    .eq("id", assignmentIdParam)
+    .single();
+
+  if (assignment) {
+    setSite(assignment.site_name ?? "");
+    setContractorName(assignment.contractor_name ?? "");
+    setShiftType(assignment.shift_type ?? "day");
+    setStartTime(assignment.start_time ?? "08:00");
+    setEndTime(assignment.end_time ?? "17:00");
+  }
+
+  const { data: assignmentMembers } = await supabase
+    .from("assignment_site_members")
+    .select("employee_name, is_driver, is_operator, heavy_equipment")
+    .eq("assignment_id", assignmentIdParam)
+    .eq("work_date", dateParam);
+
+  setSelectedMembers(
+    (assignmentMembers ?? []).map((member) => ({
+      name: member.employee_name,
+      labor: "1",
+      overtime: "0",
+    }))
+  );
+
+  setSelectedDrivers(
+    (assignmentMembers ?? [])
+      .filter((member) => member.is_driver)
+      .map((member) => member.employee_name)
+  );
+
+  const operator = (assignmentMembers ?? []).find(
+    (member) => member.is_operator
+  );
+
+  if (operator) {
+    setOperatorName(operator.employee_name);
+    setHeavyEquipment(operator.heavy_equipment ?? "");
+  }
 }
 
       if (params.get("copy") === "1") {
@@ -212,11 +258,21 @@ if (dateParam) {
 
   const handleSubmit = async () => {
     const { data: existingReport } = await supabase
+
+    console.log({
+      employeeName,
+      reportDate,
+      site,
+    });
+
   .from("daily_reports")
   .select("id")
   .eq("worker_name", employeeName)
   .eq("report_date", reportDate)
+  .eq("site_name", site)
   .maybeSingle();
+
+  console.log("existingReport", existingReport);
 
 if (existingReport) {
   alert("この日の日報は既に登録されています");
@@ -289,20 +345,24 @@ operator_name: operatorName,
       is_driver: selectedDrivers.includes(member.name),
     }));
 
-    if (reportMembersPayload.length > 0) {
-      const { error: membersError } = await supabase
-        .from("report_members")
-        .insert(reportMembersPayload);
-    }
+    let membersError = null;
 
-      if (membersError) {
-        await supabase
-          .from("daily_reports")
-          .delete()
-          .eq("id", reportData.id);
-      
-        alert("メンバー保存失敗: " + membersError.message);
-        return;
+if (reportMembersPayload.length > 0) {
+  const result = await supabase
+    .from("report_members")
+    .insert(reportMembersPayload);
+
+  membersError = result.error;
+}
+
+if (membersError) {
+  await supabase
+    .from("daily_reports")
+    .delete()
+    .eq("id", reportData.id);
+
+  alert("メンバー保存失敗: " + membersError.message);
+  return;
       }
 
     toast.success("保存しました");
