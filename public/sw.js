@@ -15,16 +15,16 @@ self.addEventListener("install", () => {
         icon: "/icon-192.png",
         badge: "/icon-192.png",
         data: {
-          url: data.url || "/home",
+          url: data.url || "/reports/new",
         },
       })
     );
   });
   
-  self.addEventListener("notificationclick", (event) => {self.addEventListener("notificationclick", (event) => {
+  self.addEventListener("notificationclick", (event) => {
     event.notification.close();
   
-    const url = event.notification.data?.url || "/home";
+    const url = event.notification.data?.url || "/reports/new";
     const fullUrl = new URL(url, self.location.origin).href;
   
     event.waitUntil(
