@@ -14,6 +14,12 @@ type Notification = {
   is_read: boolean;
 };
 
+type EmployeeWithOrg = {
+  name: string;
+  role: string | null;
+  organization_id: string | null;
+};
+
 export default function NavBar() {
   const [role, setRole] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -33,26 +39,27 @@ const [pushEnabled, setPushEnabled] = useState(false);
 
       if (!user) return;
 
-      const { data } = await supabase
+      const { data: employee } = await supabase
   .from("employees")
-  .select(`
-    name,
-    role,
-    organization_id,
-    organizations (
-      id,
-      name
-    )
-  `)
+  .select("name, role, organization_id")
   .eq("auth_user_id", user.id)
-  .single();
+  .single<EmployeeWithOrg>();
 
-  if (data) {
-    setRole(data.role);
-    setEmployeeName(data.name);
-    setOrganizationId(data.organization_id);
-    setOrganizationName(data.organizations?.name ?? "");
-  }
+if (!employee) return;
+
+setRole(employee.role);
+setEmployeeName(employee.name);
+setOrganizationId(employee.organization_id);
+
+if (employee.organization_id) {
+  const { data: organization } = await supabase
+    .from("organizations")
+    .select("name")
+    .eq("id", employee.organization_id)
+    .single();
+
+  setOrganizationName(organization?.name ?? "");
+}
     };
 
     fetchRole();
