@@ -32,6 +32,11 @@ export default function ReportStatusPage() {
     new Date().toISOString().slice(0, 10)
   );
 
+  const [calendarMonth, setCalendarMonth] = useState(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
+
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [siteMembers, setSiteMembers] = useState<SiteMember[]>([]);
   const [reports, setReports] = useState<DailyReport[]>([]);
@@ -62,7 +67,8 @@ export default function ReportStatusPage() {
       .from("assignment_site_members")
       .select("assignment_id, work_date, employee_name, is_foreman")
       .in("assignment_id", assignmentIds)
-      .eq("work_date", date);
+      .gte("work_date", startOfMonth)
+.lte("work_date", endOfMonth);
 
     if (memberError) {
       alert("番割メンバー取得失敗: " + memberError.message);
@@ -72,7 +78,8 @@ export default function ReportStatusPage() {
     const { data: reportData, error: reportError } = await supabase
       .from("daily_reports")
       .select("id, report_date, site_name, worker_name, worker_count, members")
-      .eq("report_date", date);
+      .gte("report_date", startOfMonth)
+.lte("report_date", endOfMonth);
 
     if (reportError) {
       alert("日報取得失敗: " + reportError.message);
@@ -86,7 +93,23 @@ export default function ReportStatusPage() {
 
   useEffect(() => {
     fetchData();
-  }, [date]);
+  }, [date, calendarMonth]);
+
+  const startOfMonth = new Date(
+    calendarMonth.getFullYear(),
+    calendarMonth.getMonth(),
+    1
+  )
+    .toISOString()
+    .slice(0, 10);
+  
+  const endOfMonth = new Date(
+    calendarMonth.getFullYear(),
+    calendarMonth.getMonth() + 1,
+    0
+  )
+    .toISOString()
+    .slice(0, 10);
 
   const rows = useMemo(() => {
     return assignments
@@ -120,6 +143,50 @@ export default function ReportStatusPage() {
         return !row.report;
       });
   }, [assignments, siteMembers, reports, showUnsubmittedOnly]);
+
+  const monthDays = useMemo(() => {
+    const year = calendarMonth.getFullYear();
+    const month = calendarMonth.getMonth();
+  
+    const lastDay = new Date(year, month + 1, 0).getDate();
+  
+    return Array.from({ length: lastDay }, (_, i) => {
+      const day = i + 1;
+      const dateString = new Date(year, month, day)
+        .toISOString()
+        .slice(0, 10);
+  
+      const dayMembers = siteMembers.filter(
+        (m) => m.work_date === dateString
+      );
+  
+      const totalSites = new Set(
+        dayMembers.map((m) => m.assignment_id)
+      ).size;
+  
+      const submittedSites = new Set(
+        reports
+          .filter((r) => r.report_date === dateString)
+          .map((r) => r.site_name)
+      ).size;
+  
+      let status = "green";
+  
+      if (submittedSites === 0 && totalSites > 0) {
+        status = "red";
+      } else if (submittedSites < totalSites) {
+        status = "yellow";
+      }
+  
+      return {
+        day,
+        dateString,
+        totalSites,
+        submittedSites,
+        status,
+      };
+    });
+  }, [calendarMonth, siteMembers, reports]);
 
   const sendNotificationToForeman = async (row: any) => {
     const foreman = siteMembers.find(
@@ -225,6 +292,126 @@ export default function ReportStatusPage() {
 
       <div
   style={{
+    background: "#fff",
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+    border: "1px solid #ddd",
+  }}
+>
+  <div
+    style={{
+      display: "flex",
+      justifyContent: "space-between",
+      marginBottom: 12,
+      alignItems: "center",
+    }}
+  >
+    <button
+      onClick={() =>
+        setCalendarMonth(
+          new Date(
+            calendarMonth.getFullYear(),
+            calendarMonth.getMonth() - 1,
+            1
+          )
+        )
+      }
+    >
+      ◀ 前月
+    </button>
+
+    <strong>
+      {calendarMonth.getFullYear()}年
+      {calendarMonth.getMonth() + 1}月
+    </strong>
+
+    <button
+      onClick={() =>
+        setCalendarMonth(
+          new Date(
+            calendarMonth.getFullYear(),
+            calendarMonth.getMonth() + 1,
+            1
+          )
+        )
+      }
+    >
+      翌月 ▶
+    </button>
+  </div>
+
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns: "repeat(7, 1fr)",
+      gap: 8,
+    }}
+  >
+    {monthDays.map((day) => (
+      <button
+        key={day.dateString}
+        onClick={() => {
+            setDate(day.dateString);
+          
+            setTimeout(() => {
+              document.getElementById("report-table")?.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+              });
+            }, 100);
+          }}
+        style={{
+          border: "1px solid #ddd",
+          borderRadius: 8,
+          padding: 8,
+          background:
+            day.status === "green"
+              ? "#dcfce7"
+              : day.status === "yellow"
+              ? "#fef9c3"
+              : "#fee2e2",
+          cursor: "pointer",
+          border:
+  day.dateString === date
+    ? "3px solid #2563eb"
+    : day.dateString === new Date().toISOString().slice(0, 10)
+    ? "2px solid #16a34a"
+    : "1px solid #ddd",
+        }}
+      >
+        <div style={{ fontWeight: 800 }}>
+          {day.day}
+        </div>
+
+        <div
+          style={{
+            fontSize: 12,
+            marginTop: 4,
+          }}
+        >
+          {day.submittedSites}/{day.totalSites}
+        </div>
+      </button>
+    ))}
+  </div>
+
+  <div
+    style={{
+      marginTop: 12,
+      display: "flex",
+      gap: 12,
+      fontSize: 13,
+    }}
+  >
+    <span>🟢 全提出</span>
+    <span>🟡 一部未提出</span>
+    <span>🔴 未提出あり</span>
+  </div>
+</div>
+
+      <div
+  style={{
     display: "flex",
     gap: 8,
     alignItems: "center",
@@ -326,10 +513,11 @@ export default function ReportStatusPage() {
   </button>
 </div>
 
-      <div
-        style={{
-          overflowX: "auto",
-          backgroundColor: "#fff",
+<div
+  id="report-table"
+  style={{
+    overflowX: "auto",
+    backgroundColor: "#fff",
           border: "1px solid #ddd",
           borderRadius: 12,
         }}
