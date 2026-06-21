@@ -264,10 +264,6 @@ gap: 12,
   DOKATA-System
   </a>
 
-<span style={{ fontSize: 12, color: "red", fontWeight: 800 }}>
-  会社: {organizationName || "未取得"}
-</span>
-
 <div
   style={{
     marginLeft: "auto",
