@@ -257,13 +257,13 @@ export default function MyMonthlyScheduleModal({ open, onClose }: Props) {
   <div
     key={assignment.id}
     onClick={() => setSelectedAssignment(assignment)}
-                      style={{
-                        padding: "4px 6px",
-                        borderRadius: 8,
-                        overflow: "hidden",
-wordBreak: "break-word",
-lineHeight: 1.35,
-                        backgroundColor:
+    style={{
+      padding: "4px 6px",
+      borderRadius: 8,
+      overflow: "hidden",
+      minWidth: 0,
+      wordBreak: "keep-all",
+      backgroundColor:
                           assignment.shift_type === "night"
                             ? "#374151"
                             : "#dcfce7",
@@ -274,11 +274,31 @@ lineHeight: 1.35,
                         cursor: "pointer",
                       }}
                     >
-                      <div>{assignment.site_name || "-"}</div>
-                      <div style={{ fontSize: 10, opacity: 0.8 }}>
-                        {assignment.contractor_name || "-"} /{" "}
-                        {assignment.shift_type === "night" ? "夜" : "昼"}
-                      </div>
+                      <div
+  style={{
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    fontSize: 10,
+    lineHeight: 1.2,
+  }}
+>
+  {assignment.site_name || "-"}
+</div>
+
+<div
+  style={{
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    fontSize: 9,
+    opacity: 0.8,
+    lineHeight: 1.2,
+  }}
+>
+  {assignment.contractor_name || "-"} /{" "}
+  {assignment.shift_type === "night" ? "夜" : "昼"}
+</div>
                     </div>
                   ))}
                 </div>
