@@ -252,6 +252,11 @@ gap: 12,
 >
   DOKATA-System
 </a>
+{organizationName && (
+  <span style={{ fontSize: 12, color: "#666" }}>
+    {organizationName}
+  </span>
+)}
 
 <div
   style={{
@@ -261,11 +266,6 @@ gap: 12,
     gap: 8,
   }}
 >
-{organizationName && (
-  <span style={{ fontSize: 12, color: "#666" }}>
-    {organizationName}
-  </span>
-)}
   <button
     type="button"
     onClick={() => setShowCalendarModal(true)}
