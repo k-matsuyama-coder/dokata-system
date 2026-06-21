@@ -143,13 +143,15 @@ export default function MyMonthlyScheduleModal({ open, onClose }: Props) {
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          width: "100%",
+          width: "calc(100vw - 24px)",
           maxWidth: 900,
           maxHeight: "90vh",
           overflowY: "auto",
+          overflowX: "hidden",
           backgroundColor: "#fff",
           borderRadius: 16,
-          padding: 16,
+          padding: 12,
+          boxSizing: "border-box",
         }}
       >
         <div
@@ -196,8 +198,9 @@ export default function MyMonthlyScheduleModal({ open, onClose }: Props) {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(7, 1fr)",
-            gap: 6,
+            gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
+            gap: 4,
+            width: "100%",
           }}
         >
           {["日", "月", "火", "水", "木", "金", "土"].map((d) => (
@@ -229,10 +232,11 @@ export default function MyMonthlyScheduleModal({ open, onClose }: Props) {
               <div
                 key={date}
                 style={{
-                  minHeight: 100,
+                  minHeight: 90,
+                  minWidth: 0,
                   border: "1px solid #ddd",
                   borderRadius: 10,
-                  padding: 8,
+                  padding: 6,
                   backgroundColor:
                     day === 0 ? "#fff7f7" : day === 6 ? "#f7fbff" : "#fff",
                 }}
@@ -256,6 +260,9 @@ export default function MyMonthlyScheduleModal({ open, onClose }: Props) {
                       style={{
                         padding: "4px 6px",
                         borderRadius: 8,
+                        overflow: "hidden",
+wordBreak: "break-word",
+lineHeight: 1.35,
                         backgroundColor:
                           assignment.shift_type === "night"
                             ? "#374151"
