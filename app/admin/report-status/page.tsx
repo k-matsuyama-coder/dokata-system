@@ -115,14 +115,18 @@ export default function ReportStatusPage() {
     return assignments
       .map((assignment) => {
         const members = siteMembers.filter(
-          (member) => member.assignment_id === assignment.id
-        );
+            (member) =>
+              member.assignment_id === assignment.id &&
+              member.work_date === date
+          );
 
         if (members.length === 0) return null;
 
         const report = reports.find(
-          (r) => r.site_name === assignment.site_name
-        );
+            (r) =>
+              r.site_name === assignment.site_name &&
+              r.report_date === date
+          );
 
         const assignmentCount = members.length;
         const reportCount = report?.worker_count ?? 0;
