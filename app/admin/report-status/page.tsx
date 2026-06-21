@@ -188,6 +188,14 @@ export default function ReportStatusPage() {
     });
   }, [calendarMonth, siteMembers, reports]);
 
+  const firstDay = new Date(
+    calendarMonth.getFullYear(),
+    calendarMonth.getMonth(),
+    1
+  );
+  
+  const startOffset = (firstDay.getDay() + 6) % 7;
+
   const sendNotificationToForeman = async (row: any) => {
     const foreman = siteMembers.find(
       (member) =>
@@ -340,6 +348,25 @@ export default function ReportStatusPage() {
       翌月 ▶
     </button>
   </div>
+
+  <div
+  style={{
+    display: "grid",
+    gridTemplateColumns: "repeat(7, 1fr)",
+    gap: 8,
+    marginBottom: 8,
+    fontWeight: 700,
+    textAlign: "center",
+  }}
+>
+  <div>月</div>
+  <div>火</div>
+  <div>水</div>
+  <div>木</div>
+  <div>金</div>
+  <div style={{ color: "#2563eb" }}>土</div>
+  <div style={{ color: "#dc2626" }}>日</div>
+</div>
 
   <div
     style={{
