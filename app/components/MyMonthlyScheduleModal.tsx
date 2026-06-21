@@ -258,49 +258,62 @@ export default function MyMonthlyScheduleModal({ open, onClose }: Props) {
     key={assignment.id}
     onClick={() => setSelectedAssignment(assignment)}
     style={{
-      padding: "4px 6px",
+      padding: "4px 5px",
       borderRadius: 8,
       overflow: "hidden",
       minWidth: 0,
-      wordBreak: "keep-all",
       backgroundColor:
-                          assignment.shift_type === "night"
-                            ? "#374151"
-                            : "#dcfce7",
-                        color:
-                          assignment.shift_type === "night" ? "#fff" : "#166534",
-                        fontSize: 12,
-                        fontWeight: 700,
-                        cursor: "pointer",
-                      }}
-                    >
-                      <div
-  style={{
-    whiteSpace: "nowrap",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    fontSize: 10,
-    lineHeight: 1.2,
-  }}
->
-  {assignment.site_name || "-"}
-</div>
+        assignment.shift_type === "night"
+          ? "#374151"
+          : "#dcfce7",
+      color:
+        assignment.shift_type === "night" ? "#fff" : "#166534",
+      fontWeight: 700,
+      cursor: "pointer",
+    }}
+  >
+    <div
+      style={{
+        whiteSpace: "normal",
+        overflow: "hidden",
+        display: "-webkit-box",
+        WebkitLineClamp: 2,
+        WebkitBoxOrient: "vertical",
+        fontSize: 10,
+        lineHeight: 1.25,
+      }}
+    >
+      {assignment.site_name || "-"}
+    </div>
 
-<div
+    <div
   style={{
     whiteSpace: "nowrap",
     overflow: "hidden",
     textOverflow: "ellipsis",
     fontSize: 9,
-    opacity: 0.8,
-    lineHeight: 1.2,
+    opacity: 0.85,
+    marginTop: 2,
   }}
 >
-  {assignment.contractor_name || "-"} /{" "}
-  {assignment.shift_type === "night" ? "夜" : "昼"}
+  {assignment.contractor_name || "-"}
 </div>
-                    </div>
-                  ))}
+
+<div
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    gap: 4,
+    fontSize: 9,
+    opacity: 0.9,
+    marginTop: 2,
+  }}
+>
+  <span>{assignment.meeting_time || "-"}</span>
+  <span>{assignment.shift_type === "night" ? "夜" : "昼"}</span>
+</div>
+  </div>
+))}
                 </div>
               </div>
             );
