@@ -598,7 +598,8 @@ setShowAddModal(false);
   const addEmployeeToCell = async (
     employeeName: string,
     assignmentId: string,
-    workDate: string
+    workDate: string,
+    autoForeman = true
   ) => {
     const exists = siteMembers.some(
       (m) =>
@@ -610,7 +611,7 @@ setShowAddModal(false);
     if (exists) return;
   
     const cellMembers = getCellMembers(assignmentId, workDate);
-    const isFirstMember = cellMembers.length === 0;
+    const isFirstMember = autoForeman && cellMembers.length === 0;
   
     const { data, error } = await supabase
       .from("assignment_site_members")
@@ -1938,8 +1939,10 @@ const isShort =
                           }
                         
                           if (copiedEmployeeNames.length > 0) {
+                            const isMultiPaste = copiedEmployeeNames.length > 1;
+                          
                             copiedEmployeeNames.forEach((name) => {
-                              addEmployeeToCell(name, assignment.id, date);
+                              addEmployeeToCell(name, assignment.id, date, !isMultiPaste);
                             });
                           
                             if (!e.shiftKey) {
