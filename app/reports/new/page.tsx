@@ -257,20 +257,19 @@ if (assignmentIdParam && dateParam) {
   };
 
   const handleSubmit = async () => {
-    const { data: existingReport } = await supabase
-
     console.log({
       employeeName,
       reportDate,
       site,
     });
-
-  .from("daily_reports")
-  .select("id")
-  .eq("worker_name", employeeName)
-  .eq("report_date", reportDate)
-  .eq("site_name", site)
-  .maybeSingle();
+    
+    const { data: existingReport } = await supabase
+      .from("daily_reports")
+      .select("id")
+      .eq("worker_name", employeeName)
+      .eq("report_date", reportDate)
+      .eq("site_name", site)
+      .maybeSingle();
 
   console.log("existingReport", existingReport);
 
