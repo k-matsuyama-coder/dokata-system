@@ -56,10 +56,16 @@ export default function MyMonthlyScheduleModal({ open, onClose }: Props) {
       if (!user) return;
 
       const { data: employee } = await supabase
-        .from("employees")
-        .select("name")
-        .eq("auth_user_id", user.id)
-        .single();
+  .from("employees")
+  .select(`
+    *,
+    organizations (
+      id,
+      name
+    )
+  `)
+  .eq("auth_user_id", user.id)
+  .single();
 
       if (!employee) return;
 
@@ -287,31 +293,18 @@ export default function MyMonthlyScheduleModal({ open, onClose }: Props) {
     </div>
 
     <div
-  style={{
-    whiteSpace: "nowrap",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    fontSize: 9,
-    opacity: 0.85,
-    marginTop: 2,
-  }}
->
-  {assignment.contractor_name || "-"}
-</div>
-
-<div
-  style={{
-    display: "flex",
-    justifyContent: "space-between",
-    gap: 4,
-    fontSize: 9,
-    opacity: 0.9,
-    marginTop: 2,
-  }}
->
-  <span>{assignment.meeting_time || "-"}</span>
-  <span>{assignment.shift_type === "night" ? "夜" : "昼"}</span>
-</div>
+      style={{
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        fontSize: 9,
+        opacity: 0.8,
+        marginTop: 2,
+      }}
+    >
+      {assignment.contractor_name || "-"} /{" "}
+      {assignment.shift_type === "night" ? "夜" : "昼"}
+    </div>
   </div>
 ))}
                 </div>

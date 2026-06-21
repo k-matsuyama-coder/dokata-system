@@ -20,6 +20,8 @@ export default function NavBar() {
   const pathname = usePathname();
   const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [employeeName, setEmployeeName] = useState("");
+  const [organizationId, setOrganizationId] = useState<string | null>(null);
+const [organizationName, setOrganizationName] = useState("");
 const [notifications, setNotifications] = useState<Notification[]>([]);
 const [showNotifications, setShowNotifications] = useState(false);
 const [pushEnabled, setPushEnabled] = useState(false);
@@ -32,15 +34,25 @@ const [pushEnabled, setPushEnabled] = useState(false);
       if (!user) return;
 
       const { data } = await supabase
-        .from("employees")
-        .select("name, role")
-        .eq("auth_user_id", user.id)
-        .single();
+  .from("employees")
+  .select(`
+    name,
+    role,
+    organization_id,
+    organizations (
+      id,
+      name
+    )
+  `)
+  .eq("auth_user_id", user.id)
+  .single();
 
-        if (data) {
-          setRole(data.role);
-          setEmployeeName(data.name);
-        }
+  if (data) {
+    setRole(data.role);
+    setEmployeeName(data.name);
+    setOrganizationId(data.organization_id);
+    setOrganizationName(data.organizations?.name ?? "");
+  }
     };
 
     fetchRole();
@@ -502,6 +514,16 @@ fontWeight: pathname.startsWith("/assignments/month") ? 700 : 500,
             >
               ログアウト
             </button>
+
+            {organizationName && (
+
+<span style={{ fontSize: 12, color: "#666" }}>
+
+  {organizationName}
+
+</span>
+
+)}
           </div>
           </>
 

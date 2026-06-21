@@ -341,10 +341,16 @@ setDailyInfos(dailyInfoData ?? []);
       }
 
       const { data: employee } = await supabase
-        .from("employees")
-        .select("role")
-        .eq("auth_user_id", user.id)
-        .single();
+  .from("employees")
+  .select(`
+    *,
+    organizations (
+      id,
+      name
+    )
+  `)
+  .eq("auth_user_id", user.id)
+  .single();
 
       if (!employee || employee.role !== "admin") {
         alert("管理者のみ閲覧できます");
