@@ -53,6 +53,7 @@ type AssignmentFile = {
   assignment_id: string;
   file_name: string;
   file_url: string;
+  file_path: string;
 };
 
 type Employee = {
@@ -268,51 +269,24 @@ const { data: assignmentData, error } = await supabase
 
     setAssignments(assignmentData ?? []);
 
-    const uploadFiles = async (
-      assignmentId: string,
-      files: FileList | null
-    ) => {
-      if (!files) return;
-    
-      for (const file of Array.from(files)) {
-        const filePath = `${assignmentId}/${Date.now()}_${file.name}`;
-    
-        const { error: uploadError } = await supabase.storage
-          .from("assignment-files")
-          .upload(filePath, file);
-    
-        if (uploadError) {
-          alert("アップロード失敗: " + uploadError.message);
-          return;
-        }
-    
-        const { data } = supabase.storage
-          .from("assignment-files")
-          .getPublicUrl(filePath);
-    
-        const { error: insertError } = await supabase
-          .from("assignment_files")
-          .insert({
-            assignment_id: assignmentId,
-            file_name: file.name,
-            file_url: data.publicUrl,
-          });
-    
-        if (insertError) {
-          alert("ファイル登録失敗: " + insertError.message);
-          return;
-        }
-      }
-    
-      fetchData();
-    };
-
     const assignmentIds = (assignmentData ?? []).map((a) => a.id);
 
     if (assignmentIds.length === 0) {
       setSiteMembers([]);
       return;
     }
+
+    const { data: fileData, error: fileError } = await supabase
+  .from("assignment_files")
+  .select("id, assignment_id, file_name, file_url, file_path")
+  .in("assignment_id", assignmentIds);
+
+if (fileError) {
+  alert("添付ファイル取得失敗: " + fileError.message);
+  return;
+}
+
+setAssignmentFiles(fileData ?? []);
 
     const { data: memberData, error: memberError } = await supabase
       .from("assignment_site_members")
@@ -539,6 +513,7 @@ setDailyInfos(dailyInfoData ?? []);
           assignment_id: assignmentId,
           file_name: file.name,
           file_url: data.publicUrl,
+          file_path: filePath,
         });
   
       if (insertError) {
@@ -548,6 +523,34 @@ setDailyInfos(dailyInfoData ?? []);
     }
   
     fetchData();
+  };
+
+  const deleteAssignmentFile = async (file: AssignmentFile) => {
+    const ok = window.confirm("このファイルを削除しますか？");
+    if (!ok) return;
+  
+    const { error: storageError } = await supabase.storage
+      .from("assignment-files")
+      .remove([file.file_path]);
+  
+    if (storageError) {
+      alert("ストレージ削除失敗: " + storageError.message);
+      return;
+    }
+  
+    const { error } = await supabase
+      .from("assignment_files")
+      .delete()
+      .eq("id", file.id);
+  
+    if (error) {
+      alert("ファイル削除失敗: " + error.message);
+      return;
+    }
+  
+    setAssignmentFiles((prev) =>
+      prev.filter((item) => item.id !== file.id)
+    );
   };
 
   const handleAddSite = async () => {
@@ -697,11 +700,41 @@ setShowAddModal(false);
   const deleteAssignment = async (id: string) => {
     const ok = window.confirm("この現場を削除しますか？");
     if (!ok) return;
+
+    const filesToDelete = assignmentFiles.filter(
+      (file) => file.assignment_id === id && file.file_path
+    );
+    
+    if (filesToDelete.length > 0) {
+      const { error: storageError } = await supabase.storage
+        .from("assignment-files")
+        .remove(filesToDelete.map((file) => file.file_path));
+    
+      if (storageError) {
+        alert("添付ファイル削除失敗: " + storageError.message);
+        return;
+      }
+    }
   
-    const { error } = await supabase
-      .from("assignments")
-      .delete()
-      .eq("id", id);
+    await supabase
+  .from("assignment_site_members")
+  .delete()
+  .eq("assignment_id", id);
+
+await supabase
+  .from("assignment_site_daily_infos")
+  .delete()
+  .eq("assignment_id", id);
+
+await supabase
+  .from("assignment_files")
+  .delete()
+  .eq("assignment_id", id);
+
+const { error } = await supabase
+  .from("assignments")
+  .delete()
+  .eq("id", id);
   
     if (error) {
       alert("現場削除失敗: " + error.message);
@@ -710,6 +743,9 @@ setShowAddModal(false);
   
     setAssignments((prev) => prev.filter((a) => a.id !== id));
     setSiteMembers((prev) => prev.filter((m) => m.assignment_id !== id));
+    setAssignmentFiles((prev) =>
+  prev.filter((file) => file.assignment_id !== id)
+);
   };
 
   const moveAssignmentRow = async (
@@ -1495,22 +1531,47 @@ setShowAddModal(false);
     {assignmentFiles
       .filter((file) => file.assignment_id === editingAssignment.id)
       .map((file) => (
-        <a
-          key={file.id}
-          href={file.file_url}
-          target="_blank"
-          rel="noreferrer"
-          style={{
-            padding: 8,
-            border: "1px solid #ddd",
-            borderRadius: 8,
-            color: "#111",
-            textDecoration: "none",
-            fontWeight: 700,
-          }}
-        >
-          📎 {file.file_name}
-        </a>
+        <div
+  key={file.id}
+  style={{
+    display: "flex",
+    gap: 8,
+    alignItems: "center",
+  }}
+>
+  <a
+    href={file.file_url}
+    target="_blank"
+    rel="noreferrer"
+    style={{
+      flex: 1,
+      padding: 8,
+      border: "1px solid #ddd",
+      borderRadius: 8,
+      color: "#111",
+      textDecoration: "none",
+      fontWeight: 700,
+    }}
+  >
+    📎 {file.file_name}
+  </a>
+
+  <button
+    type="button"
+    onClick={() => deleteAssignmentFile(file)}
+    style={{
+      border: "none",
+      backgroundColor: "#dc2626",
+      color: "#fff",
+      borderRadius: 6,
+      padding: "6px 10px",
+      cursor: "pointer",
+      fontWeight: 700,
+    }}
+  >
+    削除
+  </button>
+</div>
       ))}
   </div>
 </div>
@@ -1932,7 +1993,7 @@ const isShort =
   }}
 />
 
-<input
+<textarea
   value={
     editingDetails[`${assignment.id}_${date}`] ??
     dailyInfo?.detail ??
