@@ -2142,7 +2142,10 @@ const isShort =
 >
 {[...cellMembers]
   .sort((a, b) => Number(b.is_foreman) - Number(a.is_foreman))
-  .map((member) => (
+  .map((member) => {
+    const isCopied = copiedEmployeeNames.includes(member.employee_name);
+
+    return (
     <div
       key={member.id}
       draggable={!isMobile}
@@ -2162,8 +2165,17 @@ const isShort =
       style={{
         padding: "2px 6px",
         borderRadius: 6,
-        backgroundColor: member.is_foreman ? "#fef3c7" : "#eef2ff",
-        border: member.is_foreman ? "2px solid #f59e0b" : "1px solid #c7d2fe",
+        backgroundColor: isCopied
+          ? "#dbeafe"
+          : member.is_foreman
+          ? "#fef3c7"
+          : "#eef2ff",
+        border: isCopied
+          ? "2px solid #2563eb"
+          : member.is_foreman
+          ? "2px solid #f59e0b"
+          : "1px solid #c7d2fe",
+        color: isCopied ? "#1d4ed8" : "#111",
         cursor: "grab",
         fontWeight: 700,
         fontSize: 11,
@@ -2222,8 +2234,9 @@ const isShort =
     職長
   </button>
 ) : null}
-    </div>
-  ))}
+        </div>
+    );
+  })}
 </div>
                         </div>
                       </td>
