@@ -378,6 +378,18 @@ gap: 12,
 </div>
 </div>
 
+<div
+  onMouseEnter={() => setMenuOpen(true)}
+  style={{
+    position: "fixed",
+    top: 0,
+    left: 0,
+    width: 12,
+    height: "100vh",
+    zIndex: 999,
+  }}
+/>
+
         <>
   {menuOpen && (
     <div
@@ -406,7 +418,7 @@ gap: 12,
     display: "flex",
     flexDirection: "column",
     gap: 16,
-    transition: "right 0.25s ease",
+    transition: "left 0.25s ease",
     zIndex: 1000,
     boxShadow: "-2px 0 10px rgba(0,0,0,0.12)",
   }}
