@@ -141,10 +141,14 @@ const historyResult = await supabase
 
 console.log("履歴保存結果", historyResult);
 
-    const { data: admins } = await supabase
+const { data: admins, error: adminError } =
+await supabase
   .from("employees")
   .select("name")
   .eq("role", "admin");
+
+console.log("admins", admins);
+console.log("adminError", adminError);
 
 if (admins && admins.length > 0) {
   await supabase.from("notifications").insert(
