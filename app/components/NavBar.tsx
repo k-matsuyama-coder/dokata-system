@@ -320,18 +320,30 @@ gap: 12,
   </button>
 
   {notifications.length > 0 && (
-    <span
-      style={{
-        position: "absolute",
-        top: -4,
-        right: -4,
-        width: 12,
-        height: 12,
-        borderRadius: "50%",
-        backgroundColor: "red",
-      }}
-    />
-  )}
+  <span
+    style={{
+      position: "absolute",
+      top: -8,
+      right: -8,
+      minWidth: 20,
+      height: 20,
+      padding: "0 5px",
+      borderRadius: 999,
+      backgroundColor: "#ef4444",
+      color: "#fff",
+      fontSize: 11,
+      fontWeight: 800,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      lineHeight: 1,
+      border: "2px solid #fff",
+      boxSizing: "border-box",
+    }}
+  >
+    {notifications.length > 99 ? "99+" : notifications.length}
+  </span>
+)}
 
   {showNotifications && (
     <div
