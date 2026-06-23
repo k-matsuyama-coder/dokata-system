@@ -103,6 +103,27 @@ if (admins && admins.length > 0) {
   );
 }
 
+const pushResults = await Promise.all(
+    admins.map(async (admin) => {
+      const res = await fetch("/api/send-push", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          employeeName: admin.name,
+          title: "物品使用申請",
+          message: `${employeeName}さんが「${selectedItem?.item_name ?? "物品"}」の使用申請をしました`,
+          url: "/admin/items/requests",
+        }),
+      });
+  
+      return await res.json();
+    })
+  );
+  
+  console.log("物品Push送信結果", pushResults);
+
     alert("使用申請しました");
 
     setSelectedItemId("");
