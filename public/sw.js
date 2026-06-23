@@ -28,16 +28,6 @@ self.addEventListener("install", () => {
     const fullUrl = new URL(url, self.location.origin).href;
   
     event.waitUntil(
-      clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
-        for (const client of clientList) {
-          if ("focus" in client) {
-            client.focus();
-            client.navigate(fullUrl);
-            return;
-          }
-        }
-  
-        return clients.openWindow(fullUrl);
-      })
+      clients.openWindow(fullUrl)
     );
   });

@@ -150,6 +150,27 @@ if (admins && admins.length > 0) {
       is_read: false,
     }))
   );
+
+  const pushResults = await Promise.all(
+    admins.map(async (admin) => {
+      const res = await fetch("/api/send-push", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          employeeName: admin.name,
+          title: "物品返却申請",
+          message: `${employeeName}さんが物品の返却申請をしました`,
+          url: "/admin/items/requests",
+        }),
+      });
+
+      return await res.json();
+    })
+  );
+
+  console.log("物品返却Push送信結果", pushResults);
 }
 
     setUploadingId(null);
