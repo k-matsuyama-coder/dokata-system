@@ -169,6 +169,26 @@ const approveRequest = async (
     fetchItems();
   };
 
+  const deleteItem = async (item: Item) => {
+    const ok = window.confirm(
+      `「${item.item_name}」を削除しますか？`
+    );
+  
+    if (!ok) return;
+  
+    const { error } = await supabase
+      .from("items")
+      .delete()
+      .eq("id", item.id);
+  
+    if (error) {
+      alert("物品削除失敗: " + error.message);
+      return;
+    }
+  
+    fetchItems();
+  };
+
 return (
 <div style={{ padding: 16 }}>
 物品管理
@@ -343,6 +363,7 @@ return (
         <th>管理場所</th>
         <th>管理者</th>
         <th>状態</th>
+        <th>操作</th>
       </tr>
     </thead>
     <tbody>
@@ -356,6 +377,23 @@ return (
           <td>{item.location}</td>
           <td>{item.manager_name}</td>
           <td>{item.status}</td>
+          <td>
+  <button
+    type="button"
+    onClick={() => deleteItem(item)}
+    style={{
+      border: "none",
+      borderRadius: 6,
+      padding: "6px 10px",
+      backgroundColor: "#dc2626",
+      color: "#fff",
+      fontWeight: 800,
+      cursor: "pointer",
+    }}
+  >
+    削除
+  </button>
+</td>
         </tr>
       ))}
     </tbody>
