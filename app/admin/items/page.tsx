@@ -28,6 +28,7 @@ type ItemRequest = {
 export default function ItemsPage() {
 const [items, setItems] = useState<Item[]>([]);
 const [requests, setRequests] = useState<ItemRequest[]>([]);
+const [showAddModal, setShowAddModal] = useState(false);
 
 const [itemType, setItemType] = useState("");
 const [itemName, setItemName] = useState("");
@@ -59,32 +60,39 @@ fetchItems();
 }, []);
 
 const addItem = async () => {
-const { error } = await supabase
-.from("items")
-.insert({
-item_type: itemType,
-item_name: itemName,
-classification: classification,
-model_number: modelNumber,
-quantity: Number(quantity),
-location: location,
-manager_name: managerName,
-});
-
-if (error) {
-  alert(error.message);
-  return;
-}
-setItemType("");
-setItemName("");
-setClassification("");
-setModelNumber("");
-setQuantity("1");
-setLocation("");
-setManagerName("");
-fetchItems();
-
-};
+    if (!itemType || !itemName) {
+      alert("種別と品名を入力してください");
+      return;
+    }
+  
+    const { error } = await supabase.from("items").insert({
+      item_type: itemType,
+      item_name: itemName,
+      classification,
+      model_number: modelNumber,
+      quantity: Number(quantity || 1),
+      location,
+      manager_name: managerName,
+      status: "保管中",
+    });
+  
+    if (error) {
+      console.error("物品登録エラー:", error);
+      alert("物品登録失敗: " + error.message);
+      return;
+    }
+  
+    setItemType("");
+    setItemName("");
+    setClassification("");
+    setModelNumber("");
+    setQuantity("1");
+    setLocation("");
+    setManagerName("");
+    setShowAddModal(false);
+  
+    fetchItems();
+  };
 
 const approveRequest = async (
     requestId: string,
@@ -134,53 +142,142 @@ return (
 <div style={{ padding: 16 }}>
 物品管理
 
-  <div
+<div style={{ marginBottom: 20 }}>
+  <button
+    type="button"
+    onClick={() => setShowAddModal(true)}
     style={{
-      display: "grid",
-      gap: 8,
-      marginBottom: 20,
+      padding: "12px 16px",
+      border: "none",
+      borderRadius: 10,
+      backgroundColor: "#111",
+      color: "#fff",
+      fontWeight: 800,
+      cursor: "pointer",
     }}
   >
-    <input
-      placeholder="種別"
-      value={itemType}
-      onChange={(e) => setItemType(e.target.value)}
-    />
-    <input
-      placeholder="品名"
-      value={itemName}
-      onChange={(e) => setItemName(e.target.value)}
-    />
-    <input
-      placeholder="区分"
-      value={classification}
-      onChange={(e) => setClassification(e.target.value)}
-    />
-    <input
-      placeholder="型番/品番"
-      value={modelNumber}
-      onChange={(e) => setModelNumber(e.target.value)}
-    />
-    <input
-      type="number"
-      placeholder="個数"
-      value={quantity}
-      onChange={(e) => setQuantity(e.target.value)}
-    />
-    <input
-      placeholder="管理場所"
-      value={location}
-      onChange={(e) => setLocation(e.target.value)}
-    />
-    <input
-      placeholder="管理者"
-      value={managerName}
-      onChange={(e) => setManagerName(e.target.value)}
-    />
-    <button onClick={addItem}>
-      登録
-    </button>
+    ＋ 物品追加
+  </button>
+</div>
+
+{showAddModal && (
+  <div
+    onClick={() => setShowAddModal(false)}
+    style={{
+      position: "fixed",
+      inset: 0,
+      backgroundColor: "rgba(0,0,0,0.45)",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      zIndex: 9999,
+      padding: 16,
+    }}
+  >
+    <div
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        width: "100%",
+        maxWidth: 520,
+        backgroundColor: "#fff",
+        borderRadius: 16,
+        padding: 20,
+        display: "grid",
+        gap: 10,
+        maxHeight: "90vh",
+        overflowY: "auto",
+      }}
+    >
+      <h2 style={{ margin: 0 }}>物品追加</h2>
+
+      <input
+        placeholder="種別"
+        value={itemType}
+        onChange={(e) => setItemType(e.target.value)}
+        style={inputStyle}
+      />
+
+      <input
+        placeholder="品名"
+        value={itemName}
+        onChange={(e) => setItemName(e.target.value)}
+        style={inputStyle}
+      />
+
+      <input
+        placeholder="区分"
+        value={classification}
+        onChange={(e) => setClassification(e.target.value)}
+        style={inputStyle}
+      />
+
+      <input
+        placeholder="型番/品番"
+        value={modelNumber}
+        onChange={(e) => setModelNumber(e.target.value)}
+        style={inputStyle}
+      />
+
+      <input
+        type="number"
+        placeholder="個数"
+        value={quantity}
+        onChange={(e) => setQuantity(e.target.value)}
+        style={inputStyle}
+      />
+
+      <input
+        placeholder="管理場所"
+        value={location}
+        onChange={(e) => setLocation(e.target.value)}
+        style={inputStyle}
+      />
+
+      <input
+        placeholder="管理者"
+        value={managerName}
+        onChange={(e) => setManagerName(e.target.value)}
+        style={inputStyle}
+      />
+
+      <div style={{ display: "flex", gap: 8 }}>
+        <button
+          type="button"
+          onClick={() => setShowAddModal(false)}
+          style={{
+            flex: 1,
+            padding: 12,
+            borderRadius: 8,
+            border: "1px solid #ccc",
+            backgroundColor: "#fff",
+            fontWeight: 700,
+            cursor: "pointer",
+          }}
+        >
+          キャンセル
+        </button>
+
+        <button
+          type="button"
+          onClick={addItem}
+          style={{
+            flex: 1,
+            padding: 12,
+            border: "none",
+            borderRadius: 8,
+            backgroundColor: "#111",
+            color: "#fff",
+            fontWeight: 800,
+            cursor: "pointer",
+          }}
+        >
+          登録
+        </button>
+      </div>
+    </div>
   </div>
+)}
+
   <table
     style={{
       width: "100%",
