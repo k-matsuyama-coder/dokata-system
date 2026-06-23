@@ -34,6 +34,28 @@ type ItemRequest = {
     boxSizing: "border-box" as const,
   };
 
+  const itemTypes = [
+    "舗装道具",
+    "吊り道具",
+    "測量機器",
+    "安全用品",
+    "電動工具",
+    "発電機",
+    "切断機",
+    "転圧機",
+    "養生資材",
+    "車両備品",
+    "通信機器",
+    "事務用品",
+    "その他",
+  ];
+
+  const classifications = [
+    "購入",
+    "リース",
+    "レンタル",
+  ];
+
 export default function ItemsPage() {
 const [items, setItems] = useState<Item[]>([]);
 const [requests, setRequests] = useState<ItemRequest[]>([]);
@@ -199,12 +221,21 @@ return (
     >
       <h2 style={{ margin: 0 }}>物品追加</h2>
 
-      <input
-        placeholder="種別"
-        value={itemType}
-        onChange={(e) => setItemType(e.target.value)}
-        style={inputStyle}
-      />
+      <select
+  value={itemType}
+  onChange={(e) => setItemType(e.target.value)}
+  style={inputStyle}
+>
+  <option value="">
+    種別を選択
+  </option>
+
+  {itemTypes.map((type) => (
+    <option key={type} value={type}>
+      {type}
+    </option>
+  ))}
+</select>
 
       <input
         placeholder="品名"
@@ -213,12 +244,21 @@ return (
         style={inputStyle}
       />
 
-      <input
-        placeholder="区分"
-        value={classification}
-        onChange={(e) => setClassification(e.target.value)}
-        style={inputStyle}
-      />
+<select
+  value={classification}
+  onChange={(e) => setClassification(e.target.value)}
+  style={inputStyle}
+>
+  <option value="">
+    区分を選択
+  </option>
+
+  {classifications.map((item) => (
+    <option key={item} value={item}>
+      {item}
+    </option>
+  ))}
+</select>
 
       <input
         placeholder="型番/品番"
