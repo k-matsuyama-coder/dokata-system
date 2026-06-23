@@ -264,6 +264,49 @@ const totalOvertimeSum = dayOvertime + nightOvertime;
           前回コピー
         </a>
       </div>
+
+      <div
+  style={{
+    display: "grid",
+    gridTemplateColumns: "repeat(2, 1fr)",
+    gap: 12,
+    marginBottom: 20,
+  }}
+>
+  <a
+    href="/admin/items/request"
+    style={{
+      textDecoration: "none",
+      backgroundColor: "#fff",
+      color: "#111",
+      padding: 16,
+      borderRadius: 14,
+      fontWeight: 700,
+      textAlign: "center",
+      border: "1px solid #ddd",
+      boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+    }}
+  >
+    物品使用申請
+  </a>
+
+  <a
+    href="/admin/items/my-items"
+    style={{
+      textDecoration: "none",
+      backgroundColor: "#fff",
+      color: "#111",
+      padding: 16,
+      borderRadius: 14,
+      fontWeight: 700,
+      textAlign: "center",
+      border: "1px solid #ddd",
+      boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+    }}
+  >
+    貸出状況確認
+  </a>
+</div>
   
       <div
   style={{

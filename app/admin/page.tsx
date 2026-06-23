@@ -33,6 +33,9 @@ const menuGroups = [
     title: "その他",
     items: [
       { label: "車両管理", href: "/admin/vehicles", icon: "🚚", desc: "車両の登録・削除" },
+      { label: "物品管理", href: "/admin/items", icon: "📦", desc: "物品の登録・管理" },
+      { label: "物品申請確認", href: "/admin/items/requests", icon: "✅", desc: "使用申請・返却申請の確認" },
+      { label: "物品使用履歴", href: "/admin/items/history", icon: "📋", desc: "物品の使用履歴を確認" },
       { label: "分析", href: "/admin/analysis", icon: "📊", desc: "集計・分析" },
     ],
   },
