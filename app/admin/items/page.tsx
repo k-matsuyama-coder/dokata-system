@@ -1,7 +1,7 @@
-“use client”;
+"use client";
 
-import { useEffect, useState } from “react”;
-import { supabase } from “@/lib/supabase”;
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 type Item = {
 id: string;
@@ -29,13 +29,13 @@ export default function ItemsPage() {
 const [items, setItems] = useState<Item[]>([]);
 const [requests, setRequests] = useState<ItemRequest[]>([]);
 
-const [itemType, setItemType] = useState(””);
-const [itemName, setItemName] = useState(””);
-const [classification, setClassification] = useState(””);
-const [modelNumber, setModelNumber] = useState(””);
-const [quantity, setQuantity] = useState(“1”);
-const [location, setLocation] = useState(””);
-const [managerName, setManagerName] = useState(””);
+const [itemType, setItemType] = useState("");
+const [itemName, setItemName] = useState("");
+const [classification, setClassification] = useState("");
+const [modelNumber, setModelNumber] = useState("");
+const [quantity, setQuantity] = useState("1");
+const [location, setLocation] = useState("");
+const [managerName, setManagerName] = useState("");
 
 const fetchItems = async () => {
     const { data } = await supabase
@@ -60,7 +60,7 @@ fetchItems();
 
 const addItem = async () => {
 const { error } = await supabase
-.from(“items”)
+.from("items")
 .insert({
 item_type: itemType,
 item_name: itemName,
@@ -101,7 +101,7 @@ const approveRequest = async (
     await supabase
       .from("items")
       .update({
-        status: "borrowed",
+        status: "貸出中",
       })
       .eq("id", itemId);
   
@@ -123,7 +123,7 @@ const approveRequest = async (
     await supabase
       .from("items")
       .update({
-        status: "available",
+        status: "保管中",
       })
       .eq("id", itemId);
   
