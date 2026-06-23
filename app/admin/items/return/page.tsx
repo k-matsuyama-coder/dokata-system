@@ -127,13 +127,19 @@ export default function ItemReturnPage() {
       })
       .eq("id", itemId);
 
-    await supabase.from("item_histories").insert({
-      item_id: itemId,
-      request_id: requestId,
-      user_name: employeeName,
-      action_type: "return_requested",
-      photo_url: publicUrlData.publicUrl,
-    });
+      console.log("返却通知処理開始");
+
+const historyResult = await supabase
+  .from("item_histories")
+  .insert({
+    item_id: itemId,
+    request_id: requestId,
+    user_name: employeeName,
+    action_type: "return_requested",
+    photo_url: publicUrlData.publicUrl,
+  });
+
+console.log("履歴保存結果", historyResult);
 
     const { data: admins } = await supabase
   .from("employees")
