@@ -25,6 +25,15 @@ type ItemRequest = {
     return_photo_url: string | null;
   };
 
+  const inputStyle = {
+    width: "100%",
+    padding: 10,
+    border: "1px solid #ccc",
+    borderRadius: 8,
+    fontSize: 15,
+    boxSizing: "border-box" as const,
+  };
+
 export default function ItemsPage() {
 const [items, setItems] = useState<Item[]>([]);
 const [requests, setRequests] = useState<ItemRequest[]>([]);
