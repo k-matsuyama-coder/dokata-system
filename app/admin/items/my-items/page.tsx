@@ -123,23 +123,61 @@ export default function MyItemsPage() {
     }
 
     await supabase
-      .from("items")
-      .update({
-        status: "pending_return",
-      })
-      .eq("id", itemId);
+  .from("items")
+  .update({
+    status: "返却確認待ち",
+  })
+  .eq("id", itemId);
 
-    await supabase.from("item_histories").insert({
-      item_id: itemId,
-      request_id: requestId,
-      user_name: employeeName,
-      action_type: "return_requested",
-      photo_url: publicUrlData.publicUrl,
-    });
+await supabase.from("item_histories").insert({
+  item_id: itemId,
+  request_id: requestId,
+  user_name: employeeName,
+  action_type: "return_requested",
+  photo_url: publicUrlData.publicUrl,
+});
 
-    setUploadingId(null);
-    alert("返却申請を送信しました");
-    fetchData();
+const { data: admins } = await supabase
+  .from("employees")
+  .select("name")
+  .eq("role", "admin");
+
+if (admins && admins.length > 0) {
+  await supabase.from("notifications").insert(
+    admins.map((admin) => ({
+      employee_name: admin.name,
+      title: "物品返却申請",
+      message: `${employeeName}さんが物品の返却申請をしました`,
+      link_url: "/admin/items/requests",
+      is_read: false,
+    }))
+  );
+
+  const pushResults = await Promise.all(
+    admins.map(async (admin) => {
+      const res = await fetch("/api/send-push", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          employeeName: admin.name,
+          title: "物品返却申請",
+          message: `${employeeName}さんが物品の返却申請をしました`,
+          url: "/admin/items/requests",
+        }),
+      });
+
+      return await res.json();
+    })
+  );
+
+  console.log("物品返却Push送信結果", pushResults);
+}
+
+setUploadingId(null);
+alert("返却申請を送信しました");
+fetchData();
   };
 
   return (
