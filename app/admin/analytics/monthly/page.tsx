@@ -34,17 +34,31 @@ export default function MonthlyAnalyticsPage() {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
   });
+  const [viewMode, setViewMode] = useState<"monthly" | "yearly">("monthly");
+
+const [year, setYear] = useState(
+  String(new Date().getFullYear())
+);
   const [targetLabor, setTargetLabor] = useState("1000");
   const [requiredVehicles, setRequiredVehicles] = useState("0");
 
   useEffect(() => {
     const fetchReports = async () => {
-      const start = `${month}-01`;
-      const end = new Date(
-        Number(month.slice(0, 4)),
-        Number(month.slice(5, 7)),
-        0
-      )
+      let start = "";
+let end = "";
+
+if (viewMode === "monthly") {
+  start = `${month}-01`;
+
+  end = new Date(
+    Number(month.slice(0, 4)),
+    Number(month.slice(5, 7)),
+    0
+  )
+} else {
+  start = `${year}-01-01`;
+  end = `${year}-12-31`;
+}
         .toISOString()
         .slice(0, 10);
 
@@ -65,7 +79,7 @@ export default function MonthlyAnalyticsPage() {
     };
 
     fetchReports();
-  }, [month]);
+  }, [month, year, viewMode]);
 
   const createSummary = (key: "contractor_name" | "site_name") => {
     const map = new Map<string, Row>();
@@ -219,9 +233,61 @@ export default function MonthlyAnalyticsPage() {
 
       <h1>月次分析</h1>
 
+      <div
+  style={{
+    display: "flex",
+    gap: 8,
+    marginBottom: 12,
+  }}
+>
+  <button
+    onClick={() => setViewMode("monthly")}
+    style={{
+      padding: "8px 12px",
+      borderRadius: 8,
+      border: "1px solid #ccc",
+      background:
+        viewMode === "monthly" ? "#111" : "#fff",
+      color:
+        viewMode === "monthly" ? "#fff" : "#111",
+    }}
+  >
+    月次
+  </button>
+
+  <button
+    onClick={() => setViewMode("yearly")}
+    style={{
+      padding: "8px 12px",
+      borderRadius: 8,
+      border: "1px solid #ccc",
+      background:
+        viewMode === "yearly" ? "#111" : "#fff",
+      color:
+        viewMode === "yearly" ? "#fff" : "#111",
+    }}
+  >
+    年間
+  </button>
+</div>
+
       {/* 入力 */}
       <div style={{ display: "grid", gap: 12, marginBottom: 16 }}>
-        <input type="month" value={month} onChange={(e) => setMonth(e.target.value)} />
+      {viewMode === "monthly" ? (
+  <input
+    type="month"
+    value={month}
+    onChange={(e) => setMonth(e.target.value)}
+  />
+) : (
+  <input
+    type="number"
+    value={year}
+    onChange={(e) => setYear(e.target.value)}
+    min="2020"
+    max="2100"
+  />
+)}
         <input type="number" value={targetLabor} onChange={(e) => setTargetLabor(e.target.value)} placeholder="目標人工" />
         <input type="number" value={requiredVehicles} onChange={(e) => setRequiredVehicles(e.target.value)} placeholder="必要台数" />
       </div>

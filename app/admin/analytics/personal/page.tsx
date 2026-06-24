@@ -54,12 +54,29 @@ function PersonalAnalyticsContent() {
         .from("employees")
         .select("name")
         .order("name", { ascending: true });
-
+  
       setEmployees((data ?? []).map((item) => item.name));
+  
+      if (!queryName) {
+        const { data: userData } = await supabase.auth.getUser();
+        const user = userData.user;
+  
+        if (!user) return;
+  
+        const { data: employee } = await supabase
+          .from("employees")
+          .select("name")
+          .eq("auth_user_id", user.id)
+          .single();
+  
+        if (employee) {
+          setEmployeeName(employee.name);
+        }
+      }
     };
-
+  
     fetchEmployees();
-  }, []);
+  }, [queryName]);
 
   useEffect(() => {
     const fetchRows = async () => {
