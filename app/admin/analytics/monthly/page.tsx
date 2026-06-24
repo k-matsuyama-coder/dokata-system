@@ -59,8 +59,6 @@ if (viewMode === "monthly") {
   start = `${year}-01-01`;
   end = `${year}-12-31`;
 }
-        .toISOString()
-        .slice(0, 10);
 
       const { data, error } = await supabase
         .from("daily_reports")
