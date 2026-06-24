@@ -500,7 +500,7 @@ DOKATA-System
   onClick={() => setMenuOpen(false)}
   className="nav-link"
   style={{
-    color: pathname.startsWith("/adimn/analytics") ? "#0070f3" : "#333",
+    color: pathname.startsWith("/admin/analytics") ? "#0070f3" : "#333",
     fontWeight: pathname.startsWith("/admin/analytics") ? 700 : 500,
   }}
 >
@@ -527,8 +527,16 @@ fontWeight: pathname.startsWith("/assignments/month") ? 700 : 500,
                 onClick={() => setMenuOpen(false)}
                 className="nav-link"
                 style={{
-                  color: pathname.startsWith("/admin") ? "#0070f3" : "#333",
-                  fontWeight: pathname.startsWith("/admin") ? 700 : 500,
+                  color:
+  pathname.startsWith("/admin") &&
+  !pathname.startsWith("/admin/analytics")
+    ? "#0070f3"
+    : "#333",
+fontWeight:
+  pathname.startsWith("/admin") &&
+  !pathname.startsWith("/admin/analytics")
+    ? 700
+    : 500,
                 }}
               >
                 管理

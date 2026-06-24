@@ -42,16 +42,16 @@ export default function AdminAnalyticsPage() {
         <h2 style={{ marginTop: 0 }}>admin</h2>
 
         <a href="/admin/analytics/company" style={linkStyle}>
-          会社別集計
+          元請別集計
           <span style={{ display: "block", fontSize: 13, color: "#666", marginTop: 4 }}>
-            所属会社ごとの内訳
+            元請ごとの内訳
           </span>
         </a>
 
         <a href="/admin/analytics/contractor" style={linkStyle}>
-          元請別集計
+          所属別集計
           <span style={{ display: "block", fontSize: 13, color: "#666", marginTop: 4 }}>
-            元請ごとの内訳
+          所属会社ごとの内訳
           </span>
         </a>
 
