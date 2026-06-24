@@ -18,24 +18,28 @@ type MemberRow = {
 
 type AdminSummary = {
   todayReportCount: number;
-  todayAssignmentCount: number;
+  todayPlannedSiteCount: number;
+  todayWorkerCount: number;
+  monthlyPlannedLabor: number;
+  monthlyActualLabor: number;
+  monthlyTargetLabor: number;
   pendingItemRequests: number;
   returnItemRequests: number;
-  unreadNotifications: number;
-  monthlyLabor: number;
 };
 
 export default function HomePage() {
   const [employeeName, setEmployeeName] = useState("");
   const [role, setRole] = useState<string | null>(null);
-const [adminSummary, setAdminSummary] = useState<AdminSummary>({
-  todayReportCount: 0,
-  todayAssignmentCount: 0,
-  pendingItemRequests: 0,
-  returnItemRequests: 0,
-  unreadNotifications: 0,
-  monthlyLabor: 0,
-});
+  const [adminSummary, setAdminSummary] = useState<AdminSummary>({
+    todayReportCount: 0,
+    todayPlannedSiteCount: 0,
+    todayWorkerCount: 0,
+    monthlyPlannedLabor: 0,
+    monthlyActualLabor: 0,
+    monthlyTargetLabor: 0,
+    pendingItemRequests: 0,
+    returnItemRequests: 0,
+  });
   const [dayCount, setDayCount] = useState(0);
 const [nightCount, setNightCount] = useState(0);
 
@@ -91,15 +95,41 @@ if (loginEmployee?.must_change_password) {
       const monthStart = todayString.slice(0, 7) + "-01";
       
       if (employee.role === "admin") {
+        const monthEnd = new Date(
+          Number(todayString.slice(0, 4)),
+          Number(todayString.slice(5, 7)),
+          0
+        )
+          .toISOString()
+          .slice(0, 10);
+      
         const { data: todayReports } = await supabase
           .from("daily_reports")
-          .select("id, worker_count")
+          .select("id")
           .eq("report_date", todayString);
+      
+        const { data: todayAssignments } = await supabase
+          .from("assignments")
+          .select("id")
+          .lte("start_date", todayString)
+          .or(`end_date.gte.${todayString},end_date.is.null`);
       
         const { data: todayMembers } = await supabase
           .from("assignment_site_members")
           .select("id")
           .eq("work_date", todayString);
+      
+        const { data: monthlyDailyInfos } = await supabase
+          .from("assignment_site_daily_infos")
+          .select("planned_count, work_date")
+          .gte("work_date", monthStart)
+          .lte("work_date", monthEnd);
+      
+        const { data: monthlyReports } = await supabase
+          .from("daily_reports")
+          .select("worker_count")
+          .gte("report_date", monthStart)
+          .lte("report_date", monthEnd);
       
         const { data: pendingItems } = await supabase
           .from("item_requests")
@@ -111,28 +141,25 @@ if (loginEmployee?.must_change_password) {
           .select("id")
           .eq("status", "return_requested");
       
-        const { data: unreadNotifications } = await supabase
-          .from("notifications")
-          .select("id")
-          .eq("employee_name", employee.name)
-          .eq("is_read", false);
+        const monthlyPlannedLabor = (monthlyDailyInfos ?? []).reduce(
+          (sum, row) => sum + Number(row.planned_count ?? 0),
+          0
+        );
       
-        const { data: monthlyReports } = await supabase
-          .from("daily_reports")
-          .select("worker_count")
-          .gte("report_date", monthStart)
-          .lte("report_date", todayString);
+        const monthlyActualLabor = (monthlyReports ?? []).reduce(
+          (sum, report) => sum + Number(report.worker_count ?? 0),
+          0
+        );
       
         setAdminSummary({
           todayReportCount: todayReports?.length ?? 0,
-          todayAssignmentCount: todayMembers?.length ?? 0,
+          todayPlannedSiteCount: todayAssignments?.length ?? 0,
+          todayWorkerCount: todayMembers?.length ?? 0,
+          monthlyPlannedLabor,
+          monthlyActualLabor,
+          monthlyTargetLabor: monthlyPlannedLabor,
           pendingItemRequests: pendingItems?.length ?? 0,
           returnItemRequests: returnItems?.length ?? 0,
-          unreadNotifications: unreadNotifications?.length ?? 0,
-          monthlyLabor: (monthlyReports ?? []).reduce(
-            (sum, report) => sum + Number(report.worker_count ?? 0),
-            0
-          ),
         });
       }
 
@@ -292,7 +319,7 @@ const totalOvertimeSum = dayOvertime + nightOvertime;
         <p style={{ margin: "6px 0 0 0", color: "#555" }}>
           {employeeName} さん、お疲れさまです
           </p>
-          
+
           {role === "admin" && (
   <div
     style={{
@@ -304,35 +331,35 @@ const totalOvertimeSum = dayOvertime + nightOvertime;
     }}
   >
     <AdminCard
-      label="今日の日報"
-      value={`${adminSummary.todayReportCount}件`}
-      href="/admin/report-status"
-    />
-    <AdminCard
-      label="今日の番割人数"
-      value={`${adminSummary.todayAssignmentCount}人`}
-      href="/assignments/month"
-    />
-    <AdminCard
-      label="物品使用申請"
-      value={`${adminSummary.pendingItemRequests}件`}
-      href="/admin/items/requests"
-    />
-    <AdminCard
-      label="返却確認待ち"
-      value={`${adminSummary.returnItemRequests}件`}
-      href="/admin/items/requests"
-    />
-    <AdminCard
-      label="未読通知"
-      value={`${adminSummary.unreadNotifications}件`}
-      href="/home"
-    />
-    <AdminCard
-      label="今月人工"
-      value={`${adminSummary.monthlyLabor}`}
-      href="/admin/analytics/monthly"
-    />
+  label="今日の日報"
+  value={`${adminSummary.todayReportCount}/${adminSummary.todayPlannedSiteCount}`}
+  href="/admin/report-status"
+/>
+<AdminCard
+  label="今日の稼働人数"
+  value={`${adminSummary.todayWorkerCount}人`}
+  href="/assignments/month"
+/>
+<AdminCard
+  label="今月予定人工"
+  value={`${adminSummary.monthlyPlannedLabor}`}
+  href="/admin/analytics/monthly"
+/>
+<AdminCard
+  label="進捗人工/終着人工"
+  value={`${adminSummary.monthlyActualLabor}/${adminSummary.monthlyTargetLabor}`}
+  href="/admin/analytics/monthly"
+/>
+<AdminCard
+  label="物品使用申請"
+  value={`${adminSummary.pendingItemRequests}件`}
+  href="/admin/items/requests"
+/>
+<AdminCard
+  label="返却確認待ち"
+  value={`${adminSummary.returnItemRequests}件`}
+  href="/admin/items/requests"
+/>
   </div>
 )}
         
