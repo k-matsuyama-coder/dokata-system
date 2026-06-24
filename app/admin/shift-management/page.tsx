@@ -358,13 +358,19 @@ export default function ShiftManagementPage() {
 >
                         {dayRequests.map((request) => (
                           <div
-                            key={request.id}
-                            style={{
-                              display: "grid",
-                              gap: 4,
-                              justifyItems: "center",
-                            }}
-                          >
+                          key={request.id}
+                          onDoubleClick={(e) => {
+                            e.stopPropagation();
+                            deleteRequest(request.id);
+                          }}
+                          title="ダブルタップで削除"
+                          style={{
+                            display: "grid",
+                            gap: 4,
+                            justifyItems: "center",
+                            cursor: "pointer",
+                          }}
+                        >
                             <div
                               style={{
                                 fontWeight: 900,
@@ -373,25 +379,6 @@ export default function ShiftManagementPage() {
                             >
                               休
                             </div>
-
-                            <button
-  type="button"
-  onClick={(e) => {
-    e.stopPropagation();
-    deleteRequest(request.id);
-  }}
-  style={{
-    border: "none",
-    borderRadius: 6,
-    backgroundColor: "#d11a2a",
-    color: "#fff",
-    padding: "2px 6px",
-    fontSize: 10,
-    cursor: "pointer",
-  }}
->
-  削除
-</button>
 
                             {request.memo && (
                               <div style={{ fontSize: 10 }}>
@@ -476,35 +463,21 @@ export default function ShiftManagementPage() {
 
                 {myRequests.map((request) => (
                   <div
-                    key={request.id}
-                    style={{
-                      fontWeight: 800,
-                      color: "#b45309",
-                    }}
-                  >
+                  key={request.id}
+                  onDoubleClick={() => deleteRequest(request.id)}
+                  title="ダブルタップで削除"
+                  style={{
+                    fontWeight: 800,
+                    color: "#b45309",
+                    cursor: "pointer",
+                  }}
+                >
                     休み希望
                     {request.memo && (
                       <div style={{ fontSize: 12, color: "#555" }}>
                         {request.memo}
                       </div>
                     )}
-
-                    <button
-                      type="button"
-                      onClick={() => deleteRequest(request.id)}
-                      style={{
-                        marginTop: 6,
-                        border: "none",
-                        borderRadius: 6,
-                        backgroundColor: "#d11a2a",
-                        color: "#fff",
-                        padding: "4px 8px",
-                        fontSize: 12,
-                        cursor: "pointer",
-                      }}
-                    >
-                      削除
-                    </button>
                   </div>
                 ))}
               </div>
