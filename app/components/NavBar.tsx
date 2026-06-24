@@ -496,12 +496,12 @@ DOKATA-System
             </a>
 
             <a
-  href="/analytics"
+  href="/admin/analytics"
   onClick={() => setMenuOpen(false)}
   className="nav-link"
   style={{
-    color: pathname.startsWith("/analytics") ? "#0070f3" : "#333",
-    fontWeight: pathname.startsWith("/analytics") ? 700 : 500,
+    color: pathname.startsWith("/adimn/analytics") ? "#0070f3" : "#333",
+    fontWeight: pathname.startsWith("/admin/analytics") ? 700 : 500,
   }}
 >
   分析
