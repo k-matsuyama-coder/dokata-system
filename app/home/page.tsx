@@ -16,8 +16,26 @@ type MemberRow = {
   report_id: string;
 };
 
+type AdminSummary = {
+  todayReportCount: number;
+  todayAssignmentCount: number;
+  pendingItemRequests: number;
+  returnItemRequests: number;
+  unreadNotifications: number;
+  monthlyLabor: number;
+};
+
 export default function HomePage() {
   const [employeeName, setEmployeeName] = useState("");
+  const [role, setRole] = useState<string | null>(null);
+const [adminSummary, setAdminSummary] = useState<AdminSummary>({
+  todayReportCount: 0,
+  todayAssignmentCount: 0,
+  pendingItemRequests: 0,
+  returnItemRequests: 0,
+  unreadNotifications: 0,
+  monthlyLabor: 0,
+});
   const [dayCount, setDayCount] = useState(0);
 const [nightCount, setNightCount] = useState(0);
 
@@ -54,7 +72,7 @@ if (loginEmployee?.must_change_password) {
 
       const { data: employee, error: employeeError } = await supabase
         .from("employees")
-        .select("id, name")
+        .select("id, name, role")
         .eq("auth_user_id", user.id)
         .single();
 
@@ -64,6 +82,59 @@ if (loginEmployee?.must_change_password) {
       }
 
       setEmployeeName(employee.name);
+      setRole(employee.role);
+
+      const todayString = new Intl.DateTimeFormat("sv-SE", {
+        timeZone: "Asia/Tokyo",
+      }).format(new Date());
+      
+      const monthStart = todayString.slice(0, 7) + "-01";
+      
+      if (employee.role === "admin") {
+        const { data: todayReports } = await supabase
+          .from("daily_reports")
+          .select("id, worker_count")
+          .eq("report_date", todayString);
+      
+        const { data: todayMembers } = await supabase
+          .from("assignment_site_members")
+          .select("id")
+          .eq("work_date", todayString);
+      
+        const { data: pendingItems } = await supabase
+          .from("item_requests")
+          .select("id")
+          .eq("status", "pending");
+      
+        const { data: returnItems } = await supabase
+          .from("item_requests")
+          .select("id")
+          .eq("status", "return_requested");
+      
+        const { data: unreadNotifications } = await supabase
+          .from("notifications")
+          .select("id")
+          .eq("employee_name", employee.name)
+          .eq("is_read", false);
+      
+        const { data: monthlyReports } = await supabase
+          .from("daily_reports")
+          .select("worker_count")
+          .gte("report_date", monthStart)
+          .lte("report_date", todayString);
+      
+        setAdminSummary({
+          todayReportCount: todayReports?.length ?? 0,
+          todayAssignmentCount: todayMembers?.length ?? 0,
+          pendingItemRequests: pendingItems?.length ?? 0,
+          returnItemRequests: returnItems?.length ?? 0,
+          unreadNotifications: unreadNotifications?.length ?? 0,
+          monthlyLabor: (monthlyReports ?? []).reduce(
+            (sum, report) => sum + Number(report.worker_count ?? 0),
+            0
+          ),
+        });
+      }
 
       const { data: licenses, error: licenseError } = await supabase
         .from("licenses")
@@ -220,7 +291,51 @@ const totalOvertimeSum = dayOvertime + nightOvertime;
       <div style={{ marginBottom: 20 }}>
         <p style={{ margin: "6px 0 0 0", color: "#555" }}>
           {employeeName} さん、お疲れさまです
-        </p>
+          </p>
+          
+          {role === "admin" && (
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns: "repeat(2, 1fr)",
+      gap: 12,
+      marginTop: 16,
+      marginBottom: 20,
+    }}
+  >
+    <AdminCard
+      label="今日の日報"
+      value={`${adminSummary.todayReportCount}件`}
+      href="/admin/report-status"
+    />
+    <AdminCard
+      label="今日の番割人数"
+      value={`${adminSummary.todayAssignmentCount}人`}
+      href="/assignments/month"
+    />
+    <AdminCard
+      label="物品使用申請"
+      value={`${adminSummary.pendingItemRequests}件`}
+      href="/admin/items/requests"
+    />
+    <AdminCard
+      label="返却確認待ち"
+      value={`${adminSummary.returnItemRequests}件`}
+      href="/admin/items/requests"
+    />
+    <AdminCard
+      label="未読通知"
+      value={`${adminSummary.unreadNotifications}件`}
+      href="/home"
+    />
+    <AdminCard
+      label="今月人工"
+      value={`${adminSummary.monthlyLabor}`}
+      href="/admin/analytics/monthly"
+    />
+  </div>
+)}
+        
       </div>
   
       <div
@@ -458,5 +573,37 @@ const totalOvertimeSum = dayOvertime + nightOvertime;
         )}
       </div>
     </div>
+  );
+}
+
+function AdminCard({
+  label,
+  value,
+  href,
+}: {
+  label: string;
+  value: string;
+  href: string;
+}) {
+  return (
+    <a
+      href={href}
+      style={{
+        backgroundColor: "#fff",
+        border: "1px solid #ddd",
+        borderRadius: 16,
+        padding: 16,
+        textDecoration: "none",
+        color: "#111",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.04)",
+      }}
+    >
+      <div style={{ fontSize: 13, color: "#666", fontWeight: 700 }}>
+        {label}
+      </div>
+      <div style={{ marginTop: 8, fontSize: 24, fontWeight: 900 }}>
+        {value}
+      </div>
+    </a>
   );
 }

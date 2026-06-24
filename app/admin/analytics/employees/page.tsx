@@ -4,59 +4,50 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
 
-type Employee = {
-  name: string;
+type ReportMemberRow = {
+  employee_name: string;
+  labor: number | null;
+  overtime: number | null;
+  is_driver: boolean | null;
+  report_id: string;
+  daily_reports: {
+    report_date: string;
+    shift_type: string | null;
+  } | null;
 };
 
-type ReportMember = {
-  employee_name: string;
+type SummaryRow = {
+  name: string;
+  dayCount: number;
+  nightCount: number;
+  totalDays: number;
   labor: number;
   overtime: number;
-  is_driver: boolean;
-  report_id: string;
-  shift_type: string;
+  driveCount: number;
 };
 
 const getNextMonth = (ym: string) => {
-  if (!ym) return "";
-
   const [y, m] = ym.split("-").map(Number);
-  const next = new Date(y, m);
-  return next.toISOString().slice(0, 10);
+  return new Date(y, m, 1).toISOString().slice(0, 10);
 };
 
-export default function EmployeesPage() {
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [selectedName, setSelectedName] = useState("");
-  const [rows, setRows] = useState<ReportMember[]>([]);
+export default function EmployeesAnalyticsPage() {
+  const [yearMonth, setYearMonth] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  });
+
+  const [rows, setRows] = useState<ReportMemberRow[]>([]);
   const [loading, setLoading] = useState(false);
-  const [yearMonth, setYearMonth] = useState("");
 
-  // 社員一覧取得
   useEffect(() => {
-    const fetchEmployees = async () => {
-      const { data } = await supabase
-        .from("employees")
-        .select("name")
-        .order("name", { ascending: true });
-
-      if (data) setEmployees(data);
-    };
-
-    fetchEmployees();
-  }, []);
-
-  // 集計取得
-  useEffect(() => {
-    const fetchSummary = async () => {
-      if (!selectedName) {
-        setRows([]);
-        return;
-      }
-
+    const fetchRows = async () => {
       setLoading(true);
 
-      let query = supabase
+      const start = `${yearMonth}-01`;
+      const end = getNextMonth(yearMonth);
+
+      const { data, error } = await supabase
         .from("report_members")
         .select(`
           employee_name,
@@ -64,162 +55,213 @@ export default function EmployeesPage() {
           overtime,
           is_driver,
           report_id,
-          daily_reports!inner(
+          daily_reports!inner (
             report_date,
             shift_type
           )
         `)
-        .eq("employee_name", selectedName);
-
-      if (yearMonth) {
-        query = query
-          .gte("daily_reports.report_date", yearMonth + "-01")
-          .lt("daily_reports.report_date", getNextMonth(yearMonth));
-      }
-
-      const { data, error } = await query;
+        .gte("daily_reports.report_date", start)
+        .lt("daily_reports.report_date", end);
 
       if (error) {
-        alert("集計取得失敗: " + error.message);
+        alert("社員別集計取得失敗: " + error.message);
         setLoading(false);
         return;
       }
 
-      setRows(
-        (data ?? []).map((row: any) => ({
-          ...row,
-          shift_type: row.daily_reports?.shift_type || "day",
-        }))
-      );
-
+      setRows((data ?? []) as any);
       setLoading(false);
     };
 
-    fetchSummary();
-  }, [selectedName, yearMonth]);
+    fetchRows();
+  }, [yearMonth]);
 
-  // 集計ロジック
-  const summary = useMemo(() => {
-    let dayLabor = 0;
-    let nightLabor = 0;
-    let dayOvertime = 0;
-    let nightOvertime = 0;
+  const summaryRows = useMemo(() => {
+    const map = new Map<string, SummaryRow>();
 
     rows.forEach((row) => {
-      if (row.shift_type === "night") {
-        nightLabor += Number(row.labor || 0);
-        nightOvertime += Number(row.overtime || 0);
+      const name = row.employee_name || "未設定";
+      const shift = row.daily_reports?.shift_type ?? "day";
+
+      const current =
+        map.get(name) ??
+        {
+          name,
+          dayCount: 0,
+          nightCount: 0,
+          totalDays: 0,
+          labor: 0,
+          overtime: 0,
+          driveCount: 0,
+        };
+
+      if (shift === "night") {
+        current.nightCount += 1;
       } else {
-        dayLabor += Number(row.labor || 0);
-        dayOvertime += Number(row.overtime || 0);
+        current.dayCount += 1;
       }
+
+      current.totalDays += 1;
+      current.labor += Number(row.labor ?? 0);
+      current.overtime += Number(row.overtime ?? 0);
+
+      if (row.is_driver) {
+        current.driveCount += 1;
+      }
+
+      map.set(name, current);
     });
 
-    const driveCount = rows.filter((row) => row.is_driver).length;
-    const workDays = new Set(rows.map((row) => row.report_id)).size;
-
-    return {
-      dayLabor,
-      nightLabor,
-      dayOvertime,
-      nightOvertime,
-      driveCount,
-      workDays,
-    };
+    return Array.from(map.values()).sort(
+      (a, b) => b.totalDays - a.totalDays
+    );
   }, [rows]);
 
+  const totalWorkers = summaryRows.length;
+  const totalDays = summaryRows.reduce((sum, row) => sum + row.totalDays, 0);
+  const totalLabor = summaryRows.reduce((sum, row) => sum + row.labor, 0);
+  const totalOvertime = summaryRows.reduce((sum, row) => sum + row.overtime, 0);
+  const totalDriveCount = summaryRows.reduce(
+    (sum, row) => sum + row.driveCount,
+    0
+  );
+
   return (
-    <div style={{ maxWidth: 720, margin: "0 auto", padding: 16 }}>
-        <BackButton />
-      <h1 style={{ marginBottom: 20 }}>社員別集計一覧</h1>
-      
+    <div style={{ padding: 16, maxWidth: 1200, margin: "0 auto" }}>
+      <BackButton />
 
-      {/* 社員選択 */}
-      <div style={{ marginBottom: 20 }}>
-        <p style={{ marginBottom: 8 }}>社員選択</p>
-        <select
-          value={selectedName}
-          onChange={(e) => setSelectedName(e.target.value)}
-          style={{
-            width: "100%",
-            padding: 12,
-            fontSize: 16,
-            borderRadius: 8,
-            border: "1px solid #ccc",
-          }}
-        >
-          <option value="">選択してください</option>
-          {employees.map((emp) => (
-            <option key={emp.name} value={emp.name}>
-              {emp.name}
-            </option>
-          ))}
-        </select>
-      </div>
+      <h1>社員別集計一覧</h1>
 
-      {/* 月選択 */}
       <div style={{ marginBottom: 20 }}>
-        <p style={{ marginBottom: 8 }}>年月</p>
         <input
           type="month"
           value={yearMonth}
           onChange={(e) => setYearMonth(e.target.value)}
           style={{
-            width: "100%",
-            padding: 12,
-            fontSize: 16,
+            padding: 10,
             borderRadius: 8,
             border: "1px solid #ccc",
+            fontSize: 16,
           }}
         />
       </div>
 
-      {/* 表示 */}
-      {!selectedName ? (
-        <p>社員を選択してください</p>
-      ) : loading ? (
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+          gap: 12,
+          marginBottom: 20,
+        }}
+      >
+        <KpiCard label="対象人数" value={`${totalWorkers}人`} />
+        <KpiCard label="稼働合計" value={`${totalDays}日`} />
+        <KpiCard label="人工合計" value={`${totalLabor}`} />
+        <KpiCard label="残業合計" value={`${totalOvertime}h`} />
+        <KpiCard label="運転回数" value={`${totalDriveCount}回`} />
+      </div>
+
+      {loading ? (
         <p>読み込み中...</p>
       ) : (
-        <div
-          style={{
-            border: "1px solid #ddd",
-            borderRadius: 10,
-            padding: 16,
-            backgroundColor: "#fff",
-            display: "grid",
-            gap: 12,
-          }}
-        >
-          <p style={{ fontWeight: "bold", fontSize: 18 }}>
-            {selectedName}
-          </p>
-          <a
-  href={`/admin/analytics/personal?name=${encodeURIComponent(selectedName)}`}
-  style={{
-    display: "inline-block",
-    textDecoration: "none",
-    backgroundColor: "#111",
-    color: "#fff",
-    padding: "10px 14px",
-    borderRadius: 8,
-    fontSize: 14,
-    fontWeight: 600,
-    width: "fit-content",
-  }}
->
-  個人分析を見る
-</a>
+        <div style={{ overflowX: "auto" }}>
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "collapse",
+              backgroundColor: "#fff",
+              minWidth: 900,
+            }}
+          >
+            <thead>
+              <tr>
+                <th style={th}>社員名</th>
+                <th style={th}>稼働日数</th>
+                <th style={th}>昼</th>
+                <th style={th}>夜</th>
+                <th style={th}>人工</th>
+                <th style={th}>残業</th>
+                <th style={th}>運転回数</th>
+                <th style={th}>詳細</th>
+              </tr>
+            </thead>
 
-          <p>昼人工: {summary.dayLabor}</p>
-          <p>夜人工: {summary.nightLabor}</p>
+            <tbody>
+              {summaryRows.map((row) => (
+                <tr key={row.name}>
+                  <td style={{ ...td, fontWeight: 800 }}>{row.name}</td>
+                  <td style={td}>{row.totalDays}</td>
+                  <td style={td}>{row.dayCount}</td>
+                  <td style={td}>{row.nightCount}</td>
+                  <td style={td}>{row.labor}</td>
+                  <td style={td}>{row.overtime}h</td>
+                  <td style={td}>{row.driveCount}</td>
+                  <td style={td}>
+                    <a
+                      href={`/admin/analytics/personal?name=${encodeURIComponent(
+                        row.name
+                      )}&month=${yearMonth}`}
+                      style={{
+                        color: "#2563eb",
+                        fontWeight: 800,
+                      }}
+                    >
+                      個人分析
+                    </a>
+                  </td>
+                </tr>
+              ))}
 
-          <p>昼残業: {summary.dayOvertime}</p>
-          <p>夜残業: {summary.nightOvertime}</p>
-
-          <p>運転回数: {summary.driveCount}</p>
-          <p>稼働日数: {summary.workDays}</p>
+              {summaryRows.length === 0 && (
+                <tr>
+                  <td style={td} colSpan={8}>
+                    データがありません。
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
   );
 }
+
+function KpiCard({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div
+      style={{
+        backgroundColor: "#fff",
+        border: "1px solid #ddd",
+        borderRadius: 12,
+        padding: 16,
+      }}
+    >
+      <div style={{ color: "#666", fontSize: 13 }}>{label}</div>
+      <div style={{ fontWeight: 900, fontSize: 22, marginTop: 6 }}>
+        {value}
+      </div>
+    </div>
+  );
+}
+
+const th = {
+  border: "1px solid #ddd",
+  padding: 10,
+  backgroundColor: "#f3f4f6",
+  textAlign: "center" as const,
+  whiteSpace: "nowrap" as const,
+};
+
+const td = {
+  border: "1px solid #ddd",
+  padding: 10,
+  textAlign: "center" as const,
+  whiteSpace: "nowrap" as const,
+};

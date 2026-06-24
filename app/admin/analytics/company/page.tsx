@@ -131,7 +131,7 @@ export default function CompanyAnalyticsPage() {
     <div style={{ maxWidth: 1100, margin: "0 auto", padding: 16 }}>
       <BackButton />
 
-      <h1 style={{ marginBottom: 16 }}>会社別集計</h1>
+      <h1 style={{ marginBottom: 16 }}>元請別集計</h1>
 
       <div style={{ ...cardStyle, marginBottom: 16 }}>
         <p style={{ margin: "0 0 8px 0", fontWeight: 700 }}>対象月</p>
@@ -165,7 +165,7 @@ export default function CompanyAnalyticsPage() {
       </div>
 
       <div style={cardStyle}>
-        <h2 style={{ marginTop: 0 }}>所属会社ごとの内訳</h2>
+      <h2 style={{ marginTop: 0 }}>元請ごとの内訳</h2>
 
         <div style={{ overflowX: "auto" }}>
           <table
@@ -177,7 +177,7 @@ export default function CompanyAnalyticsPage() {
           >
             <thead>
               <tr>
-                <th style={th}>会社名</th>
+              <th style={th}>元請名</th>
                 <th style={th}>昼</th>
                 <th style={th}>夜</th>
                 <th style={th}>合計</th>
