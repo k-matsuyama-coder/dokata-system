@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
@@ -30,7 +30,7 @@ type DailyRow = {
   isDriver: boolean;
 };
 
-export default function PersonalAnalyticsPage() {
+function PersonalAnalyticsContent() {
   const searchParams = useSearchParams();
 
   const queryName = searchParams.get("name") ?? "";
@@ -461,3 +461,11 @@ const td = {
   textAlign: "center" as const,
   whiteSpace: "nowrap" as const,
 };
+
+export default function PersonalAnalyticsPage() {
+  return (
+    <Suspense fallback={<div style={{ padding: 16 }}>読み込み中...</div>}>
+      <PersonalAnalyticsContent />
+    </Suspense>
+  );
+}
