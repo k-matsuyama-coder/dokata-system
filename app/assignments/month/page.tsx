@@ -1051,14 +1051,6 @@ setSaveTimers((prev) => {
   });
 
   const visibleAssignments = sortedAssignments.filter((assignment) => {
-    const firstAssignments = visibleAssignments.filter(
-      (a) => a.construction_type === "第一工事"
-    );
-    
-    const secondAssignments = visibleAssignments.filter(
-      (a) => a.construction_type === "第二工事"
-    );
-
     if (showFinished) return true;
   
     if (!assignment.start_date || !assignment.end_date) {
@@ -1070,6 +1062,14 @@ setSaveTimers((prev) => {
       assignment.end_date >= todayString
     );
   });
+  
+  const firstAssignments = visibleAssignments.filter(
+    (a) => a.construction_type === "第一工事"
+  );
+  
+  const secondAssignments = visibleAssignments.filter(
+    (a) => a.construction_type === "第二工事"
+  );
 
   return (
     <div style={{ padding: isMobile ? 8 : 16 }}>
