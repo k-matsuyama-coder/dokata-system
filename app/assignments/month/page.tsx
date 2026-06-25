@@ -119,7 +119,9 @@ const [selectedDate, setSelectedDate] = useState<string | null>(null);
 const [selectedShiftType, setSelectedShiftType] = useState<string | null>(null);
 const [copiedEmployeeNames, setCopiedEmployeeNames] = useState<string[]>([]);
 const [editingDetails, setEditingDetails] = useState<Record<string, string>>({});
-const [saveTimers, setSaveTimers] = useState<Record<string, NodeJS.Timeout>>({});
+const [saveTimers, setSaveTimers] = useState<
+  Record<string, ReturnType<typeof setTimeout>>
+>({});
 const [vehicles, setVehicles] = useState<
   {
     id: string;
@@ -414,19 +416,6 @@ setDailyInfos(dailyInfoData ?? []);
         },
         () => {
           console.log("現場更新あり");
-          fetchData();
-        }
-      )
-
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "shift_requests",
-        },
-        () => {
-          console.log("休み希望更新あり");
           fetchData();
         }
       )
@@ -815,9 +804,11 @@ const { error } = await supabase
       assignment_id: assignmentId,
       work_date: workDate,
       planned_count:
-        field === "planned_count"
-          ? Number(value || 0)
-          : existing?.planned_count ?? null,
+  field === "planned_count"
+    ? value === ""
+      ? null
+      : Number(value)
+    : existing?.planned_count ?? null,
       detail:
         field === "detail"
           ? value
@@ -850,6 +841,18 @@ const { error } = await supabase
   
       return [...prev, data];
     });
+    const key = `${assignmentId}_${workDate}`;
+
+setEditingDetails((prev) => {
+  const next = { ...prev };
+  delete next[key];
+  return next;
+});
+setSaveTimers((prev) => {
+  const next = { ...prev };
+  delete next[key];
+  return next;
+});
   };
 
   const addVehicleToCell = async (
@@ -942,6 +945,12 @@ const { error } = await supabase
         !assignedNames.includes(employee.name) &&
         !holidayNames.includes(employee.name)
     );
+  };
+
+  const getAssignmentCount = (employeeName: string) => {
+    return siteMembers.filter(
+      (member) => member.employee_name === employeeName
+    ).length;
   };
 
   const inputStyle = {
@@ -2611,7 +2620,25 @@ const isShort =
           fontSize: 13,
         }}
       >
-        {employee.name}
+        <div
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+  }}
+>
+  <span>{employee.name}</span>
+
+  <span
+    style={{
+      fontSize: 11,
+      fontWeight: 800,
+      color: "#666",
+    }}
+  >
+    {getAssignmentCount(employee.name)}
+  </span>
+</div>
       </div>
     );
   })}
