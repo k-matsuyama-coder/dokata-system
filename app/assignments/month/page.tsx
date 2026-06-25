@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
 
@@ -1063,13 +1063,22 @@ setSaveTimers((prev) => {
     );
   });
   
-  const firstAssignments = visibleAssignments.filter(
-    (a) => a.construction_type === "第一工事"
-  );
-  
-  const secondAssignments = visibleAssignments.filter(
-    (a) => a.construction_type === "第二工事"
-  );
+  const groupedAssignments = [
+    {
+      label: "第一工事",
+      rows: visibleAssignments.filter(
+        (a) => a.construction_type === "第一工事"
+      ),
+      color: "#eef6ff",
+    },
+    {
+      label: "第二工事",
+      rows: visibleAssignments.filter(
+        (a) => a.construction_type === "第二工事"
+      ),
+      color: "#fff8e6",
+    },
+  ];
 
   return (
     <div style={{ padding: isMobile ? 8 : 16 }}>
@@ -1890,20 +1899,14 @@ const plannedSecond = dailyInfos
             </thead>
 
             <tbody>
-            {[
-  { label: "第一工事", rows: firstAssignments },
-  { label: "第二工事", rows: secondAssignments },
-].map((group) => (
-  <>
+            {groupedAssignments.map((group) => (
+  <Fragment key={group.label}>
   <tr>
   <td
   colSpan={days.length + (isMobile ? 2 : 4)}
   style={{
     ...td,
-    backgroundColor:
-  group.label === "第一工事"
-    ? "#eef6ff"
-    : "#fff8e6",
+    backgroundColor: group.color,
     color: "#111",
     fontWeight: 900,
     fontSize: 14,
@@ -2435,7 +2438,7 @@ const isShort =
                   })}
                 </tr>
                     ))}
-                    </>
+                    </Fragment>
                   ))}
             </tbody>
           </table>
