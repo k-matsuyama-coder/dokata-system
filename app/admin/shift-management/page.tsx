@@ -29,6 +29,9 @@ export default function ShiftManagementPage() {
   const [requests, setRequests] = useState<ShiftRequest[]>([]);
   const [selectedDate, setSelectedDate] = useState("");
   const [memo, setMemo] = useState("");
+  const [isDraggingShift, setIsDraggingShift] = useState(false);
+const [dragMode, setDragMode] = useState<"add" | "delete" | null>(null);
+const [dragCells, setDragCells] = useState<Set<string>>(new Set());
 
   const isAdmin = loginEmployee?.role === "admin";
 
@@ -104,6 +107,18 @@ export default function ShiftManagementPage() {
     fetchData();
   }, [month, days.length]);
 
+  useEffect(() => {
+    const handleMouseUp = () => {
+      finishShiftDrag();
+    };
+  
+    window.addEventListener("mouseup", handleMouseUp);
+  
+    return () => {
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isDraggingShift, dragMode, dragCells]);
+
   const addRequest = async () => {
     if (!loginEmployee) return;
 
@@ -155,6 +170,99 @@ export default function ShiftManagementPage() {
       return;
     }
 
+    fetchData();
+  };
+
+  const getCellKey = (employeeName: string, date: string) => {
+    return `${employeeName}__${date}`;
+  };
+  
+  const startShiftDrag = (
+    employeeName: string,
+    date: string,
+    hasRequest: boolean
+  ) => {
+    if (!isAdmin) return;
+  
+    setIsDraggingShift(true);
+    setDragMode(hasRequest ? "delete" : "add");
+    setDragCells(new Set([getCellKey(employeeName, date)]));
+  };
+  
+  const addDragCell = (employeeName: string, date: string) => {
+    if (!isDraggingShift) return;
+  
+    setDragCells((prev) => {
+      const next = new Set(prev);
+      next.add(getCellKey(employeeName, date));
+      return next;
+    });
+  };
+  
+  const finishShiftDrag = async () => {
+    if (!isDraggingShift || !dragMode) return;
+  
+    const cells = Array.from(dragCells).map((key) => {
+      const [employeeName, date] = key.split("__");
+      return { employeeName, date };
+    });
+  
+    if (dragMode === "add") {
+      const insertRows = cells
+        .filter(
+          (cell) =>
+            !requests.some(
+              (request) =>
+                request.employee_name === cell.employeeName &&
+                request.request_date === cell.date
+            )
+        )
+        .map((cell) => ({
+          employee_name: cell.employeeName,
+          request_date: cell.date,
+          request_type: "休み希望",
+          memo: null,
+          status: "希望",
+        }));
+  
+      if (insertRows.length > 0) {
+        const { error } = await supabase
+          .from("shift_requests")
+          .insert(insertRows);
+  
+        if (error) {
+          alert("一括登録失敗: " + error.message);
+        }
+      }
+    }
+  
+    if (dragMode === "delete") {
+      const deleteIds = requests
+        .filter((request) =>
+          cells.some(
+            (cell) =>
+              cell.employeeName === request.employee_name &&
+              cell.date === request.request_date
+          )
+        )
+        .map((request) => request.id);
+  
+      if (deleteIds.length > 0) {
+        const { error } = await supabase
+          .from("shift_requests")
+          .delete()
+          .in("id", deleteIds);
+  
+        if (error) {
+          alert("一括削除失敗: " + error.message);
+        }
+      }
+    }
+  
+    setIsDraggingShift(false);
+    setDragMode(null);
+    setDragCells(new Set());
+  
     fetchData();
   };
 
@@ -281,14 +389,15 @@ export default function ShiftManagementPage() {
           }}
         >
           <table
-            style={{
-              borderCollapse: "separate",
-              borderSpacing: 0,
-              minWidth: 1600,
-              width: "100%",
-              fontSize: 12,
-            }}
-          >
+  style={{
+    borderCollapse: "separate",
+    borderSpacing: 0,
+    minWidth: 1600,
+    width: "100%",
+    fontSize: 12,
+    userSelect: "none",
+  }}
+>
             <thead>
               <tr>
                 <th style={{ ...th, ...stickyNameTh }}>名前</th>
@@ -343,17 +452,25 @@ export default function ShiftManagementPage() {
                     return (
                       <td
   key={date}
-  onClick={() => {
-    if (dayRequests.length === 0) {
-      addRequestForAdmin(employee.name, date);
-    }
+  onMouseDown={(e) => {
+    e.preventDefault();
+    startShiftDrag(employee.name, date, dayRequests.length > 0);
+  }}
+  onMouseEnter={() => {
+    addDragCell(employee.name, date);
   }}
   style={{
     ...td,
     textAlign: "center",
-    backgroundColor:
-      dayRequests.length > 0 ? "#fef3c7" : "#fff",
+    backgroundColor: dragCells.has(getCellKey(employee.name, date))
+      ? dragMode === "delete"
+        ? "#fee2e2"
+        : "#dbeafe"
+      : dayRequests.length > 0
+      ? "#fef3c7"
+      : "#fff",
     cursor: "pointer",
+    userSelect: "none",
   }}
 >
                         {dayRequests.map((request) => (
