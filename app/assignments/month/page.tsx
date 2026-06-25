@@ -3,23 +3,16 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
-
-type Assignment = {
-  id: string;
-  assignment_date: string;
-  site_name: string | null;
-  contractor_name: string | null;
-  shift_type: string | null;
-  start_time: string | null;
-  end_time: string | null;
-  manager_name: string | null;
-contact_phone: string | null;
-address: string | null;
-meeting_time: string | null;
-construction_type: string | null;
-start_date: string | null;
-end_date: string | null;
-};
+import type {
+  Assignment,
+  SiteMember,
+  DailyInfo,
+  ShiftRequest,
+  AssignmentFile,
+  Employee,
+  Contractor,
+  ContractorContact,
+} from "./types";
 
 type SiteMember = {
   id: string;
@@ -315,6 +308,9 @@ const { data: assignmentData, error } = await supabase
 
     if (assignmentIds.length === 0) {
       setSiteMembers([]);
+      setDailyInfos([]);
+      setShiftRequests([]);
+      setAssignmentFiles([]);
       return;
     }
 
@@ -2053,6 +2049,13 @@ const isShort =
   plannedCount > 0 &&
   memberCount === plannedCount;
 
+  const baseCellStyle = getCellStyle(
+    date,
+    plannedCount,
+    memberCount,
+    assignment.shift_type
+  );
+
                     return (
                       <td
                         key={date}
@@ -2135,20 +2138,10 @@ const isShort =
                         
                           }}
                           style={{
-                            ...getCellStyle(
-                              date,
-                              plannedCount,
-                              memberCount,
-                              assignment.shift_type
-                            ),
+                            ...baseCellStyle,
                             backgroundColor: isOutOfPeriod
                               ? "#e5e7eb"
-                              : getCellStyle(
-                                  date,
-                                  plannedCount,
-                                  memberCount,
-                                  assignment.shift_type
-                                ).backgroundColor,
+                              : baseCellStyle.backgroundColor,
                             opacity: isOutOfPeriod ? 0.6 : 1,
                           }}
                       >
