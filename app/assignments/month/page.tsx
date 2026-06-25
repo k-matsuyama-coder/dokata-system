@@ -75,6 +75,14 @@ type ContractorContact = {
 
 export default function MonthlyAssignmentsPage() {
   const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
+  const [viewMode, setViewMode] = useState<"month" | "week">("month");
+
+const [weekStart, setWeekStart] = useState(() => {
+  const today = new Date();
+  const day = today.getDay();
+  today.setDate(today.getDate() - day);
+  return today;
+});
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [assignmentFiles, setAssignmentFiles] = useState<AssignmentFile[]>([]);
   const [siteMembers, setSiteMembers] = useState<SiteMember[]>([]);
@@ -85,8 +93,6 @@ export default function MonthlyAssignmentsPage() {
   const [siteName, setSiteName] = useState("");
   const [contractorName, setContractorName] = useState("");
   const [shiftType, setShiftType] = useState("day");
-  const [startTime, setStartTime] = useState("08:00");
-  const [endTime, setEndTime] = useState("17:00");
   const [managerName, setManagerName] = useState("");
 const [contactPhone, setContactPhone] = useState("");
 const [address, setAddress] = useState("");
@@ -132,15 +138,47 @@ const [vehicles, setVehicles] = useState<
 
 const [isMobile, setIsMobile] = useState(false);
 
-  const days = useMemo(() => {
-    const [year, monthNum] = month.split("-").map(Number);
-    const lastDay = new Date(year, monthNum, 0).getDate();
+const days = useMemo(() => {
+  if (viewMode === "week") {
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(weekStart);
+      d.setDate(d.getDate() + i);
 
-    return Array.from({ length: lastDay }, (_, i) => {
-      const day = i + 1;
-      return `${month}-${String(day).padStart(2, "0")}`;
+      return `${d.getFullYear()}-${String(
+        d.getMonth() + 1
+      ).padStart(2, "0")}-${String(
+        d.getDate()
+      ).padStart(2, "0")}`;
     });
-  }, [month]);
+  }
+
+  const [year, monthNum] = month.split("-").map(Number);
+
+  const firstDay = new Date(year, monthNum - 1, 1);
+  const lastDay = new Date(year, monthNum, 0);
+
+  const start = new Date(firstDay);
+  start.setDate(start.getDate() - 7);
+
+  const end = new Date(lastDay);
+  end.setDate(end.getDate() + 7);
+
+  const result: string[] = [];
+
+  const current = new Date(start);
+
+  while (current <= end) {
+    result.push(
+      `${current.getFullYear()}-${String(
+        current.getMonth() + 1
+      ).padStart(2, "0")}-${String(current.getDate()).padStart(2, "0")}`
+    );
+
+    current.setDate(current.getDate() + 1);
+  }
+
+  return result;
+}, [month, viewMode, weekStart]);
 
   const todayString = new Date().toISOString().slice(0, 10);
 
@@ -199,7 +237,9 @@ const getCellStyle = (
 
     return {
       ...cellTd,
-      minWidth: isMobile ? 120 : 150,
+      minWidth: viewMode === "week"
+        ? (isMobile ? 160 : 220)
+        : (isMobile ? 120 : 150),
       height: isMobile ? 120 : 140,
       padding: isMobile ? 4 : 6,
       backgroundColor:
@@ -220,7 +260,7 @@ const getCellStyle = (
 };
 
   const fetchData = async () => {
-    const startDate = `${month}-01`;
+    const startDate = days[0];
     const endDate = days[days.length - 1];
 
     const { data: employeeData } = await supabase
@@ -364,7 +404,7 @@ setDailyInfos(dailyInfoData ?? []);
     };
 
     checkAdmin();
-  }, [month, days.length]);
+  }, [month, viewMode, weekStart]);
 
   useEffect(() => {
     const channel = supabase
@@ -425,7 +465,7 @@ setDailyInfos(dailyInfoData ?? []);
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [month]);
+  }, [month, viewMode, weekStart]);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -440,6 +480,17 @@ setDailyInfos(dailyInfoData ?? []);
       window.removeEventListener("resize", checkMobile);
     };
   }, []);
+
+  useEffect(() => {
+    if (viewMode !== "week") return;
+  
+    const today = new Date();
+    const day = today.getDay();
+  
+    today.setDate(today.getDate() - day);
+  
+    setWeekStart(today);
+  }, [month]);
 
   const updateAssignment = async () => {
     if (!editingAssignment) return;
@@ -561,8 +612,8 @@ setDailyInfos(dailyInfoData ?? []);
       contractor_name: contractorName,
       site_name: siteName,
       shift_type: shiftType,
-      start_time: startTime,
-      end_time: endTime,
+      start_time: shiftType === "night" ? "20:00" : "08:00",
+end_time: shiftType === "night" ? "05:00" : "17:00",
       manager_name: managerName,
 contact_phone: contactPhone,
 address,
@@ -1000,6 +1051,14 @@ setSaveTimers((prev) => {
   });
 
   const visibleAssignments = sortedAssignments.filter((assignment) => {
+    const firstAssignments = visibleAssignments.filter(
+      (a) => a.construction_type === "第一工事"
+    );
+    
+    const secondAssignments = visibleAssignments.filter(
+      (a) => a.construction_type === "第二工事"
+    );
+
     if (showFinished) return true;
   
     if (!assignment.start_date || !assignment.end_date) {
@@ -1023,7 +1082,7 @@ setSaveTimers((prev) => {
     paddingBottom: isMobile ? 110 : 0,
   }}
 >
-        <h1>月間番割表</h1>
+<h1>{viewMode === "week" ? "週間番割表" : "月間番割表"}</h1>
 
         <div
   style={{
@@ -1047,6 +1106,68 @@ setSaveTimers((prev) => {
       height: 42,
     }}
   />
+
+<div style={{ display: "flex", gap: 8 }}>
+  <button
+    onClick={() => setViewMode("month")}
+    style={{
+      padding: "8px 14px",
+      background: viewMode === "month" ? "#2563eb" : "#fff",
+      color: viewMode === "month" ? "#fff" : "#000",
+      border: "1px solid #ccc",
+      borderRadius: 6,
+    }}
+  >
+    月間
+  </button>
+
+  <button
+    onClick={() => setViewMode("week")}
+    style={{
+      padding: "8px 14px",
+      background: viewMode === "week" ? "#2563eb" : "#fff",
+      color: viewMode === "week" ? "#fff" : "#000",
+      border: "1px solid #ccc",
+      borderRadius: 6,
+    }}
+  >
+    週間
+  </button>
+</div>
+
+{viewMode === "week" && (
+  <div style={{ display: "flex", gap: 8 }}>
+    <button
+      onClick={() => {
+        const d = new Date(weekStart);
+        d.setDate(d.getDate() - 7);
+        setWeekStart(d);
+      }}
+    >
+      ← 前週
+    </button>
+
+    <button
+      onClick={() => {
+        const d = new Date(weekStart);
+        d.setDate(d.getDate() + 7);
+        setWeekStart(d);
+      }}
+    >
+      次週 →
+    </button>
+    <button
+  onClick={() => {
+    const today = new Date();
+    const day = today.getDay();
+    today.setDate(today.getDate() - day);
+    setWeekStart(today);
+  }}
+>
+  今週
+</button>
+  </div>
+)}
 
 <select
   value={sortMode}
@@ -1642,7 +1763,9 @@ setSaveTimers((prev) => {
   style={{
     borderCollapse: "separate",
     borderSpacing: 0,
-    minWidth: isMobile ? 950 : 1700,
+    minWidth: viewMode === "week"
+  ? (isMobile ? 900 : 1200)
+  : (isMobile ? 950 : 1700),
     width: "100%",
     backgroundColor: "#fff",
     fontSize: isMobile ? 10 : 12,
@@ -1767,7 +1890,27 @@ const plannedSecond = dailyInfos
             </thead>
 
             <tbody>
-            {visibleAssignments.map((assignment) => (
+            {[
+  { label: "第一工事", rows: firstAssignments },
+  { label: "第二工事", rows: secondAssignments },
+].map((group) => (
+  <>
+  <tr>
+    <td
+      colSpan={days.length + (isMobile ? 2 : 4)}
+      style={{
+        ...td,
+        backgroundColor: "#111",
+        color: "#fff",
+        fontWeight: 900,
+        fontSize: 14,
+      }}
+    >
+      {group.label}
+    </td>
+  </tr>
+
+  {group.rows.map((assignment) => (
   <tr
   key={assignment.id}
   style={{
@@ -1816,6 +1959,8 @@ const plannedSecond = dailyInfos
         : assignment.shift_type === "night"
         ? "#e5e7eb"
         : "#fff",
+    minWidth: viewMode === "week" ? 260 : 180,
+    width: viewMode === "week" ? 260 : 180,
   }}
 >
 <div
@@ -1887,6 +2032,9 @@ const plannedSecond = dailyInfos
                   {days.map((date) => {
                     const cellMembers = getCellMembers(assignment.id, date);
                     const dailyInfo = getDailyInfo(assignment.id, date);
+                    const isOutOfPeriod =
+  (assignment.start_date && date < assignment.start_date) ||
+  (assignment.end_date && date > assignment.end_date);
                     const plannedCount = dailyInfo?.planned_count ?? null;
 const memberCount = cellMembers.length;
 const isShort =
@@ -1904,6 +2052,7 @@ const isShort =
                         key={date}
                         onDragOver={(e) => e.preventDefault()}
                         onDrop={() => {
+                          if (isOutOfPeriod) return;
                           if (draggingSiteMemberId) {
                             moveSiteMember(draggingSiteMemberId, assignment.id, date);
                             return;
@@ -1932,6 +2081,7 @@ const isShort =
                           }
                         }}
                         onClick={(e) => {
+                          if (isOutOfPeriod) return;
                           setSelectedDate(date);
                           setSelectedShiftType(assignment.shift_type ?? "day");
                         
@@ -1978,14 +2128,41 @@ const isShort =
                           }
                         
                           }}
-                          style={getCellStyle(
-                            date,
-                            plannedCount,
-                            memberCount,
-                            assignment.shift_type
-                          )}
+                          style={{
+                            ...getCellStyle(
+                              date,
+                              plannedCount,
+                              memberCount,
+                              assignment.shift_type
+                            ),
+                            backgroundColor: isOutOfPeriod
+                              ? "#e5e7eb"
+                              : getCellStyle(
+                                  date,
+                                  plannedCount,
+                                  memberCount,
+                                  assignment.shift_type
+                                ).backgroundColor,
+                            opacity: isOutOfPeriod ? 0.6 : 1,
+                          }}
                       >
                         <div style={{ display: "grid", gap: 4 }}>
+                        {isOutOfPeriod && (
+  <div
+    style={{
+      padding: "4px 6px",
+      borderRadius: 6,
+      backgroundColor: "#d1d5db",
+      color: "#374151",
+      textAlign: "center",
+      fontWeight: 800,
+      fontSize: 11,
+      marginBottom: 4,
+    }}
+  >
+    工期外
+  </div>
+)}
                         <div
   style={{
     fontSize: isMobile ? 10 : 11,
@@ -2020,6 +2197,7 @@ const isShort =
     )
   }
   placeholder="人"
+  disabled={isOutOfPeriod}
   style={{
     width: "100%",
     padding: "4px 6px",
@@ -2065,6 +2243,7 @@ const isShort =
       [key]: timer,
     }));
   }}
+  disabled={isOutOfPeriod}
   placeholder="詳細"
   style={{
     width: "100%",
@@ -2252,7 +2431,9 @@ const isShort =
                     );
                   })}
                 </tr>
-              ))}
+                    ))}
+                    </>
+                  ))}
             </tbody>
           </table>
           {isMobile && (selectedEmployeeName || copiedVehicleNames.length > 0) && (
