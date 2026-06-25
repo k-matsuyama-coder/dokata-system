@@ -1896,16 +1896,16 @@ const plannedSecond = dailyInfos
 ].map((group) => (
   <>
   <tr>
-    <td
-      colSpan={days.length + (isMobile ? 2 : 4)}
-      style={{
-        ...td,
-        backgroundColor: "#111",
-        color: "#fff",
-        fontWeight: 900,
-        fontSize: 14,
-      }}
-    >
+  <td
+  colSpan={days.length + (isMobile ? 2 : 4)}
+  style={{
+    ...td,
+    backgroundColor: "#e5e7eb",
+    color: "#111",
+    fontWeight: 900,
+    fontSize: 14,
+  }}
+>
       {group.label}
     </td>
   </tr>
