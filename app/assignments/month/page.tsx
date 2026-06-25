@@ -13,58 +13,20 @@ import type {
   Contractor,
   ContractorContact,
 } from "./types";
-
-type SiteMember = {
-  id: string;
-  assignment_id: string;
-  work_date: string;
-  employee_name: string;
-  is_driver: boolean | null;
-  is_operator: boolean | null;
-  heavy_equipment: string | null;
-  is_foreman: boolean | null;
-};
-
-type DailyInfo = {
-  id: string;
-  assignment_id: string;
-  work_date: string;
-  planned_count: number | null;
-  detail: string | null;
-  vehicle_names: string[] | null;
-};
-
-type ShiftRequest = {
-  id: string;
-  employee_name: string;
-  request_date: string;
-  status: string;
-};
-
-type AssignmentFile = {
-  id: string;
-  assignment_id: string;
-  file_name: string;
-  file_url: string;
-  file_path: string;
-};
-
-type Employee = {
-  name: string;
-  company_name: string | null;
-};
-
-type Contractor = {
-    id: string;
-    name: string;
-  };
-
-type ContractorContact = {
-    id: string;
-    contractor_id: string;
-    manager_name: string;
-    contact_phone: string | null;
-  };
+import {
+  th,
+  td,
+  cellTd,
+  stickyTd1,
+  stickyTd2,
+  stickyTd3,
+  stickyTh1,
+  stickyTh2,
+  stickyTh3,
+  tagBlue,
+  tagPurple,
+  tagYellow,
+} from "./styles";
 
 export default function MonthlyAssignmentsPage() {
   const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
@@ -2889,118 +2851,3 @@ const isShort =
     </div>
   );
 }
-
-const th = {
-  border: "1px solid #ddd",
-  padding: 4,
-  backgroundColor: "#f5f5f5",
-  whiteSpace: "nowrap" as const,
-  textAlign: "center" as const,
-  position: "sticky" as const,
-  top: 0,
-  zIndex: 50,
-  fontSize: 12,
-};
-
-  const td = {
-    border: "1px solid #ccc",
-    padding: 4,
-    whiteSpace: "nowrap" as const,
-    verticalAlign: "top" as const,
-    backgroundColor: "#fff",
-  };
-
-  const cellTd = {
-    border: "1px solid #e5e7eb",
-    padding: 6,
-    minWidth: 150,
-height: 140,
-boxSizing: "border-box" as const,
-    whiteSpace: "pre-wrap" as const,
-    verticalAlign: "top" as const,
-    backgroundColor: "#fcfcfc",
-  };
-
-  const stickyTd1 = {
-    position: "sticky" as const,
-    left: 0,
-    zIndex: 40,
-    backgroundColor: "#fff",
-    minWidth: 70,
-    width: 70,
-  };
-  
-  const stickyTd2 = {
-    position: "sticky" as const,
-    left: 70,
-    zIndex: 40,
-    backgroundColor: "#fff",
-    minWidth: 180,
-width: 180,
-  };
-  
-  const stickyTd3 = {
-    position: "sticky" as const,
-    left: 250,
-    zIndex: 40,
-    backgroundColor: "#fff",
-    minWidth: 60,
-width: 60,
-  };
-  
-  const stickyTh1 = {
-    position: "sticky" as const,
-    left: 0,
-    top: 0,
-    zIndex: 80,
-    backgroundColor: "#f5f5f5",
-    minWidth: 70,
-    width: 70,
-  };
-  
-  const stickyTh2 = {
-    position: "sticky" as const,
-    left: 70,
-    top: 0,
-    zIndex: 80,
-    backgroundColor: "#f5f5f5",
-    minWidth: 180,
-width: 180,
-  };
-  
-  const stickyTh3 = {
-    position: "sticky" as const,
-    left: 250,
-    top: 0,
-    zIndex: 80,
-    backgroundColor: "#f5f5f5",
-    minWidth: 60,
-width: 60,
-  };
-
-  const tagBlue = {
-    fontSize: 10,
-    padding: "1px 6px",
-    borderRadius: 999,
-    backgroundColor: "#dbeafe",
-    color: "#1d4ed8",
-    fontWeight: 700,
-  };
-  
-  const tagPurple = {
-    fontSize: 10,
-    padding: "1px 6px",
-    borderRadius: 999,
-    backgroundColor: "#ede9fe",
-    color: "#6d28d9",
-    fontWeight: 700,
-  };
-  
-  const tagYellow = {
-    fontSize: 10,
-    padding: "1px 6px",
-    borderRadius: 999,
-    backgroundColor: "#fef3c7",
-    color: "#b45309",
-    fontWeight: 700,
-  };
