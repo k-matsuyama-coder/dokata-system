@@ -27,17 +27,18 @@ import {
   tagPurple,
   tagYellow,
 } from "./styles";
+import {
+  getDayType,
+  getWeekStart,
+  toDateString,
+  isOutOfAssignmentPeriod,
+} from "./utils";
 
 export default function MonthlyAssignmentsPage() {
   const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [viewMode, setViewMode] = useState<"month" | "week">("month");
 
-const [weekStart, setWeekStart] = useState(() => {
-  const today = new Date();
-  const day = today.getDay();
-  today.setDate(today.getDate() - day);
-  return today;
-});
+  const [weekStart, setWeekStart] = useState(getWeekStart);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [assignmentFiles, setAssignmentFiles] = useState<AssignmentFile[]>([]);
   const [siteMembers, setSiteMembers] = useState<SiteMember[]>([]);
@@ -99,11 +100,7 @@ const days = useMemo(() => {
       const d = new Date(weekStart);
       d.setDate(d.getDate() + i);
 
-      return `${d.getFullYear()}-${String(
-        d.getMonth() + 1
-      ).padStart(2, "0")}-${String(
-        d.getDate()
-      ).padStart(2, "0")}`;
+      return toDateString(d);
     });
   }
 
@@ -123,11 +120,7 @@ const days = useMemo(() => {
   const current = new Date(start);
 
   while (current <= end) {
-    result.push(
-      `${current.getFullYear()}-${String(
-        current.getMonth() + 1
-      ).padStart(2, "0")}-${String(current.getDate()).padStart(2, "0")}`
-    );
+    result.push(toDateString(current));
 
     current.setDate(current.getDate() + 1);
   }
@@ -136,14 +129,6 @@ const days = useMemo(() => {
 }, [month, viewMode, weekStart]);
 
   const todayString = new Date().toISOString().slice(0, 10);
-
-const getDayType = (date: string) => {
-  const day = new Date(date).getDay();
-
-  if (day === 0) return "sunday";
-  if (day === 6) return "saturday";
-  return "weekday";
-};
 
 const getDateHeaderStyle = (date: string) => {
   const dayType = getDayType(date);
@@ -442,12 +427,7 @@ setDailyInfos(dailyInfoData ?? []);
   useEffect(() => {
     if (viewMode !== "week") return;
   
-    const today = new Date();
-    const day = today.getDay();
-  
-    today.setDate(today.getDate() - day);
-  
-    setWeekStart(today);
+    setWeekStart(getWeekStart());
   }, [month]);
 
   const updateAssignment = async () => {
@@ -1125,10 +1105,7 @@ setSaveTimers((prev) => {
     </button>
     <button
   onClick={() => {
-    const today = new Date();
-    const day = today.getDay();
-    today.setDate(today.getDate() - day);
-    setWeekStart(today);
+    setWeekStart(getWeekStart());
   }}
 >
   今週
@@ -1996,9 +1973,11 @@ const plannedSecond = dailyInfos
                   {days.map((date) => {
                     const cellMembers = getCellMembers(assignment.id, date);
                     const dailyInfo = getDailyInfo(assignment.id, date);
-                    const isOutOfPeriod =
-  (assignment.start_date && date < assignment.start_date) ||
-  (assignment.end_date && date > assignment.end_date);
+                    const isOutOfPeriod = isOutOfAssignmentPeriod(
+                      date,
+                      assignment.start_date,
+                      assignment.end_date
+                    );
                     const plannedCount = dailyInfo?.planned_count ?? null;
 const memberCount = cellMembers.length;
 const isShort =
