@@ -1900,7 +1900,10 @@ const plannedSecond = dailyInfos
   colSpan={days.length + (isMobile ? 2 : 4)}
   style={{
     ...td,
-    backgroundColor: "#e5e7eb",
+    backgroundColor:
+  group.label === "第一工事"
+    ? "#eef6ff"
+    : "#fff8e6",
     color: "#111",
     fontWeight: 900,
     fontSize: 14,
