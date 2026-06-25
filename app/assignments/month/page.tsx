@@ -13,6 +13,7 @@ import type {
   Contractor,
   ContractorContact,
 } from "./types";
+
 import {
   th,
   td,
@@ -27,12 +28,22 @@ import {
   tagPurple,
   tagYellow,
 } from "./styles";
+
 import {
   getDayType,
   getWeekStart,
   toDateString,
   isOutOfAssignmentPeriod,
 } from "./utils";
+
+import {
+  getEmployees,
+  getVehicles,
+  getContractors,
+  getContractorContacts,
+  getAssignments,
+  getAssignmentFiles,
+} from "./api";
 
 export default function MonthlyAssignmentsPage() {
   const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
@@ -202,54 +213,24 @@ const getCellStyle = (
   const fetchData = async () => {
     const startDate = days[0];
     const endDate = days[days.length - 1];
+    const employeeData = await getEmployees();
 
-    const { data: employeeData } = await supabase
-  .from("employees")
-  .select("name, company_name")
-  .order("company_name", { ascending: true })
-  .order("name", { ascending: true });
+setEmployees(employeeData);
+const vehicleData = await getVehicles();
 
-    setEmployees(employeeData ?? []);
+setVehicles(vehicleData);
 
-    const { data: vehicleData, error: vehicleError } = await supabase
-  .from("vehicles")
-  .select("id, vehicle_name, vehicle_type")
-  .order("vehicle_name", { ascending: true });
+const contractorData = await getContractors();
 
-if (vehicleError) {
-  alert("車両取得失敗: " + vehicleError.message);
-  return;
-}
+setContractors(contractorData);
 
-setVehicles(vehicleData ?? []);
+const contactData = await getContractorContacts();
 
-    const { data: contractorData } = await supabase
-  .from("contractors")
-  .select("id, name")
-  .order("name", { ascending: true });
+setContractorContacts(contactData);
 
-setContractors(contractorData ?? []);
+const assignmentData = await getAssignments();
 
-const { data: contactData } = await supabase
-  .from("contractor_contacts")
-  .select("id, contractor_id, manager_name, contact_phone");
-
-setContractorContacts(contactData ?? []);
-
-const { data: assignmentData, error } = await supabase
-  .from("assignments")
-  .select(
-    "id, assignment_date, site_name, contractor_name, construction_type, shift_type, start_time, end_time, manager_name, contact_phone, address, meeting_time, start_date, end_date"
-  )
-  .order("sort_order", { ascending: true })
-  .order("created_at", { ascending: true });
-
-    if (error) {
-      alert("現場取得失敗: " + error.message);
-      return;
-    }
-
-    setAssignments(assignmentData ?? []);
+setAssignments(assignmentData);
 
     const assignmentIds = (assignmentData ?? []).map((a) => a.id);
 
@@ -261,17 +242,9 @@ const { data: assignmentData, error } = await supabase
       return;
     }
 
-    const { data: fileData, error: fileError } = await supabase
-  .from("assignment_files")
-  .select("id, assignment_id, file_name, file_url, file_path")
-  .in("assignment_id", assignmentIds);
+    const fileData = await getAssignmentFiles(assignmentIds);
 
-if (fileError) {
-  alert("添付ファイル取得失敗: " + fileError.message);
-  return;
-}
-
-setAssignmentFiles(fileData ?? []);
+setAssignmentFiles(fileData);
 
     const { data: memberData, error: memberError } = await supabase
       .from("assignment_site_members")
