@@ -1264,7 +1264,7 @@ zIndex: 5000,
   deleteAssignmentFile={deleteAssignmentFile}
 />
 
-<MonthlyAssignmentsTable>
+
 <div
   style={{
     overflowX: "auto",
@@ -1936,7 +1936,6 @@ const isShort =
             </tbody>
           </table>
           </div>
-          </MonthlyAssignmentsTable>
           {isMobile && (selectedEmployeeName || copiedVehicleNames.length > 0) && (
   <div
     style={{
