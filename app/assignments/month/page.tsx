@@ -3,6 +3,7 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
+import AssignmentCell from "./components/AssignmentCell";
 import type {
   Assignment,
   SiteMember,
@@ -43,6 +44,9 @@ import {
   getContractorContacts,
   getAssignments,
   getAssignmentFiles,
+  getSiteMembers,
+  getDailyInfos,
+  getShiftRequests,
 } from "./api";
 
 export default function MonthlyAssignmentsPage() {
@@ -213,24 +217,25 @@ const getCellStyle = (
   const fetchData = async () => {
     const startDate = days[0];
     const endDate = days[days.length - 1];
-    const employeeData = await getEmployees();
-
-setEmployees(employeeData);
-const vehicleData = await getVehicles();
-
-setVehicles(vehicleData);
-
-const contractorData = await getContractors();
-
-setContractors(contractorData);
-
-const contactData = await getContractorContacts();
-
-setContractorContacts(contactData);
-
-const assignmentData = await getAssignments();
-
-setAssignments(assignmentData);
+    const [
+      employeeData,
+      vehicleData,
+      contractorData,
+      contactData,
+      assignmentData,
+    ] = await Promise.all([
+      getEmployees(),
+      getVehicles(),
+      getContractors(),
+      getContractorContacts(),
+      getAssignments(),
+    ]);
+    
+    setEmployees(employeeData);
+    setVehicles(vehicleData);
+    setContractors(contractorData);
+    setContractorContacts(contactData);
+    setAssignments(assignmentData);
 
     const assignmentIds = (assignmentData ?? []).map((a) => a.id);
 
@@ -242,49 +247,33 @@ setAssignments(assignmentData);
       return;
     }
 
-    const fileData = await getAssignmentFiles(assignmentIds);
-
-setAssignmentFiles(fileData);
-
-    const { data: memberData, error: memberError } = await supabase
-      .from("assignment_site_members")
-      .select("id, assignment_id, work_date, employee_name, is_driver, is_operator, is_foreman, heavy_equipment")
-      .in("assignment_id", assignmentIds)
-      .gte("work_date", startDate)
-      .lte("work_date", endDate);
-
-    if (memberError) {
-      alert("メンバー取得失敗: " + memberError.message);
-      return;
-    }
-
-    const { data: dailyInfoData, error: dailyInfoError } = await supabase
-  .from("assignment_site_daily_infos")
-  .select("id, assignment_id, work_date, planned_count, detail, vehicle_names")
-  .in("assignment_id", assignmentIds)
-  .gte("work_date", startDate)
-  .lte("work_date", endDate);
-
-  if (dailyInfoError) {
-    alert("日別情報取得失敗: " + dailyInfoError.message);
-    return;
-  }
-
-    setSiteMembers(memberData ?? []);
-
-    const { data: shiftRequestData, error: shiftRequestError } = await supabase
-  .from("shift_requests")
-  .select("id, employee_name, request_date, status")
-  .gte("request_date", startDate)
-  .lte("request_date", endDate);
-
-if (shiftRequestError) {
-  alert("休み希望取得失敗: " + shiftRequestError.message);
-  return;
-}
-
-setShiftRequests(shiftRequestData ?? []);
-setDailyInfos(dailyInfoData ?? []);
+    const [
+      fileData,
+      memberData,
+      dailyInfoData,
+      shiftRequestData,
+    ] = await Promise.all([
+      getAssignmentFiles(assignmentIds),
+      getSiteMembers(
+        assignmentIds,
+        startDate,
+        endDate
+      ),
+      getDailyInfos(
+        assignmentIds,
+        startDate,
+        endDate
+      ),
+      getShiftRequests(
+        startDate,
+        endDate
+      ),
+    ]);
+    
+    setAssignmentFiles(fileData);
+    setSiteMembers(memberData);
+    setDailyInfos(dailyInfoData);
+    setShiftRequests(shiftRequestData);
     
   };
 
@@ -740,18 +729,65 @@ const { error } = await supabase
     }
   };
 
+  const cellMembersMap = useMemo(() => {
+    const map = new Map<string, SiteMember[]>();
+  
+    siteMembers.forEach((member) => {
+      const key = `${member.assignment_id}_${member.work_date}`;
+  
+      if (!map.has(key)) {
+        map.set(key, []);
+      }
+  
+      map.get(key)!.push(member);
+    });
+  
+    return map;
+  }, [siteMembers]);
+
   const getCellMembers = (assignmentId: string, workDate: string) => {
-    return siteMembers.filter(
-      (m) => m.assignment_id === assignmentId && m.work_date === workDate
-    );
+    return cellMembersMap.get(`${assignmentId}_${workDate}`) ?? [];
   };
 
+  const dailyInfoMap = useMemo(() => {
+    const map = new Map<string, DailyInfo>();
+  
+    dailyInfos.forEach((info) => {
+      map.set(`${info.assignment_id}_${info.work_date}`, info);
+    });
+  
+    return map;
+  }, [dailyInfos]);
+
+  const dailySummaryMap = useMemo(() => {
+    const map = new Map<
+      string,
+      {
+        infos: DailyInfo[];
+        members: SiteMember[];
+      }
+    >();
+  
+    days.forEach((date) => {
+      map.set(date, {
+        infos: [],
+        members: [],
+      });
+    });
+  
+    dailyInfos.forEach((info) => {
+      map.get(info.work_date)?.infos.push(info);
+    });
+  
+    siteMembers.forEach((member) => {
+      map.get(member.work_date)?.members.push(member);
+    });
+  
+    return map;
+  }, [days, dailyInfos, siteMembers]);
+
   const getDailyInfo = (assignmentId: string, workDate: string) => {
-    return dailyInfos.find(
-      (info) =>
-        info.assignment_id === assignmentId &&
-        info.work_date === workDate
-    );
+    return dailyInfoMap.get(`${assignmentId}_${workDate}`);
   };
   
   const updateDailyInfo = async (
@@ -871,9 +907,7 @@ setSaveTimers((prev) => {
       if (member.work_date !== workDate) return false;
       if (member.employee_name !== employeeName) return false;
   
-      const assignment = assignments.find(
-        (a) => a.id === member.assignment_id
-      );
+      const assignment = assignmentMap.get(member.assignment_id);
   
       return (
         (assignment?.shift_type ?? "day") !==
@@ -886,34 +920,74 @@ setSaveTimers((prev) => {
     workDate: string,
     shiftType: string | null
   ) => {
-    const assignedNames = siteMembers
-      .filter((m) => {
-        if (m.work_date !== workDate) return false;
-  
-        const assignment = assignments.find(
-          (a) => a.id === m.assignment_id
-        );
-  
-        return (assignment?.shift_type ?? "day") === (shiftType ?? "day");
-      })
-      .map((m) => m.employee_name);
-  
-      const holidayNames = shiftRequests
-      .filter((request) => request.request_date === workDate)
-      .map((request) => request.employee_name);
-    
-    return employees.filter(
-      (employee) =>
-        !assignedNames.includes(employee.name) &&
-        !holidayNames.includes(employee.name)
+    return (
+      unassignedEmployeesMap.get(
+        `${workDate}_${shiftType ?? "day"}`
+      ) ?? []
     );
   };
 
-  const getAssignmentCount = (employeeName: string) => {
-    return siteMembers.filter(
-      (member) => member.employee_name === employeeName
-    ).length;
-  };
+  const assignmentMap = useMemo(() => {
+    return new Map(
+      assignments.map((assignment) => [
+        assignment.id,
+        assignment,
+      ])
+    );
+  }, [assignments]);
+
+  const assignmentCountMap = useMemo(() => {
+    const map = new Map<string, number>();
+  
+    siteMembers.forEach((member) => {
+      map.set(
+        member.employee_name,
+        (map.get(member.employee_name) ?? 0) + 1
+      );
+    });
+  
+    return map;
+  }, [siteMembers]);
+
+  const getAssignmentCount = (employeeName: string) =>
+  assignmentCountMap.get(employeeName) ?? 0;
+
+  const unassignedEmployeesMap = useMemo(() => {
+    const map = new Map<string, Employee[]>();
+  
+    days.forEach((date) => {
+      ["day", "night"].forEach((shift) => {
+        const assignedNames = new Set(
+          siteMembers
+            .filter((m) => {
+              if (m.work_date !== date) return false;
+  
+              const assignment = assignmentMap.get(m.assignment_id);
+  
+              return (assignment?.shift_type ?? "day") === shift;
+            })
+            .map((m) => m.employee_name)
+        );
+  
+        const holidayNames = new Set(
+          shiftRequests
+            .filter((r) => r.request_date === date)
+            .map((r) => r.employee_name)
+        );
+  
+        map.set(
+          `${date}_${shift}`,
+          employees.filter(
+            (employee) =>
+              !assignedNames.has(employee.name) &&
+              !holidayNames.has(employee.name)
+          )
+        );
+      });
+    });
+  
+    return map;
+  }, [days, employees, siteMembers, shiftRequests, assignmentMap]);
 
   const inputStyle = {
     width: "100%",
@@ -1711,24 +1785,19 @@ setSaveTimers((prev) => {
 <th style={th}>昼/夜</th>
 
 {days.map((date) => {
-  const membersOfDate = siteMembers.filter(
-    (member) => member.work_date === date
-  );
+  const summary = dailySummaryMap.get(date);
 
-  const plannedAll = dailyInfos
-  .filter((info) => info.work_date === date)
-  .reduce(
+  const infosOfDate = summary?.infos ?? [];
+  const membersOfDate = summary?.members ?? [];
+
+  const plannedAll = infosOfDate.reduce(
     (sum, info) => sum + (info.planned_count ?? 0),
     0
   );
 
-const plannedFirst = dailyInfos
+  const plannedFirst = infosOfDate
   .filter((info) => {
-    if (info.work_date !== date) return false;
-
-    const assignment = assignments.find(
-      (a) => a.id === info.assignment_id
-    );
+    const assignment = assignmentMap.get(info.assignment_id);
 
     return assignment?.construction_type === "第一工事";
   })
@@ -1737,13 +1806,9 @@ const plannedFirst = dailyInfos
     0
   );
 
-const plannedSecond = dailyInfos
+  const plannedSecond = infosOfDate
   .filter((info) => {
-    if (info.work_date !== date) return false;
-
-    const assignment = assignments.find(
-      (a) => a.id === info.assignment_id
-    );
+    const assignment = assignmentMap.get(info.assignment_id);
 
     return assignment?.construction_type === "第二工事";
   })
@@ -1755,17 +1820,13 @@ const plannedSecond = dailyInfos
   const totalAll = membersOfDate.length;
 
   const totalFirst = membersOfDate.filter((member) => {
-    const assignment = assignments.find(
-      (a) => a.id === member.assignment_id
-    );
+    const assignment = assignmentMap.get(member.assignment_id);
 
     return assignment?.construction_type === "第一工事";
   }).length;
 
   const totalSecond = membersOfDate.filter((member) => {
-    const assignment = assignments.find(
-      (a) => a.id === member.assignment_id
-    );
+    const assignment = assignmentMap.get(member.assignment_id);
 
     return assignment?.construction_type === "第二工事";
   }).length;
@@ -1971,8 +2032,8 @@ const isShort =
   );
 
                     return (
+                      <AssignmentCell key={date}>
                       <td
-                        key={date}
                         onDragOver={(e) => e.preventDefault()}
                         onDrop={() => {
                           if (isOutOfPeriod) return;
@@ -2341,6 +2402,7 @@ const isShort =
 </div>
                         </div>
                       </td>
+                      </AssignmentCell>
                     );
                   })}
                 </tr>
