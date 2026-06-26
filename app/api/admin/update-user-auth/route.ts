@@ -2,13 +2,20 @@ import { createClient } from "@supabase/supabase-js";
 
 export async function POST(req: Request) {
   try {
-    const { authUserId, email, password } = await req.json();
+    const { employeeId, authUserId, email, password } = await req.json();
 
-    if (!authUserId) {
-      return Response.json({ error: "authUserIdが必要です" }, { status: 400 });
+    if (!employeeId) {
+      return Response.json({ error: "employeeIdが必要です" }, { status: 400 });
     }
 
-    const supabase = createClient(
+    if (!email || !password) {
+      return Response.json(
+        { error: "メールアドレスとパスワードが必要です" },
+        { status: 400 }
+      );
+    }
+
+    const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
       {
@@ -19,41 +26,53 @@ export async function POST(req: Request) {
       }
     );
 
-    const updateData: {
-      email?: string;
-      password?: string;
-      email_confirm?: boolean;
-    } = {};
+    const cleanEmail = email.trim();
+    const cleanPassword = password.trim();
 
-    if (email) {
-      updateData.email = email;
-      updateData.email_confirm = true; // 重要
+    let finalAuthUserId = authUserId;
+
+    if (finalAuthUserId) {
+      const { error: updateError } =
+        await supabaseAdmin.auth.admin.updateUserById(finalAuthUserId, {
+          email: cleanEmail,
+          password: cleanPassword,
+          email_confirm: true,
+        });
+
+      if (updateError) {
+        return Response.json({ error: updateError.message }, { status: 500 });
+      }
+    } else {
+      const { data: createData, error: createError } =
+        await supabaseAdmin.auth.admin.createUser({
+          email: cleanEmail,
+          password: cleanPassword,
+          email_confirm: true,
+        });
+
+      if (createError) {
+        return Response.json({ error: createError.message }, { status: 500 });
+      }
+
+      finalAuthUserId = createData.user.id;
     }
 
-    if (password) {
-      updateData.password = password;
-    }
+    const { error: employeeError } = await supabaseAdmin
+      .from("employees")
+      .update({
+        email: cleanEmail,
+        auth_user_id: finalAuthUserId,
+      })
+      .eq("id", employeeId);
 
-    if (!email && !password) {
-      return Response.json({ success: true });
-    }
-
-    const { data, error } = await supabase.auth.admin.updateUserById(
-      authUserId,
-      updateData
-    );
-
-    if (error) {
-      return Response.json({ error: error.message }, { status: 500 });
+    if (employeeError) {
+      return Response.json({ error: employeeError.message }, { status: 500 });
     }
 
     return Response.json({
       success: true,
-      user: {
-        id: data.user.id,
-        email: data.user.email,
-        email_confirmed_at: data.user.email_confirmed_at,
-      },
+      authUserId: finalAuthUserId,
+      email: cleanEmail,
     });
   } catch (e) {
     console.error(e);
