@@ -3,9 +3,9 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
-import AssignmentCell from "./AssignmentCell";
-import AssignmentEditModal from "./AssignmentEditModal";
-import AddAssignmentModal from "./AddAssignmentModal";
+import AssignmentCell from "./components/AssignmentCell";
+import AssignmentEditModal from "./components/AssignmentEditModal";
+import AddAssignmentModal from "./components/AddAssignmentModal";
 
 import type {
   Assignment,
