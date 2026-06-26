@@ -1093,6 +1093,8 @@ setSaveTimers((prev) => {
     flexWrap: "nowrap",
     marginBottom: 16,
     overflowX: "auto",
+    position: "relative",
+zIndex: 5000,
   }}
 >
   <input
@@ -1210,7 +1212,14 @@ setSaveTimers((prev) => {
 
 <button
   type="button"
-  onClick={() => setShowAddModal(true)}
+  onClick={() => {
+    console.log("現場追加クリック");
+    setShowAddModal(true);
+  }}
+  style={{
+    position: "relative",
+    zIndex: 5000,
+  }}
 >
   ＋ 現場追加
 </button>
