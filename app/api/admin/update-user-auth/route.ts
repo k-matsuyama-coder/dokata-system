@@ -8,11 +8,8 @@ export async function POST(req: Request) {
       return Response.json({ error: "employeeIdが必要です" }, { status: 400 });
     }
 
-    if (!email || !password) {
-      return Response.json(
-        { error: "メールアドレスとパスワードが必要です" },
-        { status: 400 }
-      );
+    if (!email) {
+      return Response.json({ error: "メールアドレスが必要です" }, { status: 400 });
     }
 
     const supabaseAdmin = createClient(
@@ -27,22 +24,55 @@ export async function POST(req: Request) {
     );
 
     const cleanEmail = email.trim();
-    const cleanPassword = password.trim();
+    const cleanPassword = typeof password === "string" ? password.trim() : "";
 
-    let finalAuthUserId = authUserId;
+    let finalAuthUserId = authUserId || null;
+
+    if (!finalAuthUserId) {
+      const { data: listData, error: listError } =
+        await supabaseAdmin.auth.admin.listUsers();
+
+      if (listError) {
+        return Response.json({ error: listError.message }, { status: 500 });
+      }
+
+      const existingUser = listData.users.find(
+        (user) => user.email?.toLowerCase() === cleanEmail.toLowerCase()
+      );
+
+      if (existingUser) {
+        finalAuthUserId = existingUser.id;
+      }
+    }
 
     if (finalAuthUserId) {
+      const updateData: {
+        email?: string;
+        password?: string;
+        email_confirm?: boolean;
+      } = {
+        email: cleanEmail,
+        email_confirm: true,
+      };
+
+      if (cleanPassword) {
+        updateData.password = cleanPassword;
+      }
+
       const { error: updateError } =
-        await supabaseAdmin.auth.admin.updateUserById(finalAuthUserId, {
-          email: cleanEmail,
-          password: cleanPassword,
-          email_confirm: true,
-        });
+        await supabaseAdmin.auth.admin.updateUserById(finalAuthUserId, updateData);
 
       if (updateError) {
         return Response.json({ error: updateError.message }, { status: 500 });
       }
     } else {
+      if (!cleanPassword) {
+        return Response.json(
+          { error: "新規ログインアカウント作成にはパスワードが必要です" },
+          { status: 400 }
+        );
+      }
+
       const { data: createData, error: createError } =
         await supabaseAdmin.auth.admin.createUser({
           email: cleanEmail,
@@ -60,7 +90,6 @@ export async function POST(req: Request) {
     const { error: employeeError } = await supabaseAdmin
       .from("employees")
       .update({
-        email: cleanEmail,
         auth_user_id: finalAuthUserId,
       })
       .eq("id", employeeId);
