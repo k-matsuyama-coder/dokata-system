@@ -3,6 +3,10 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
+import AssignmentCell from "./AssignmentCell";
+import AssignmentEditModal from "./AssignmentEditModal";
+import AddAssignmentModal from "./AddAssignmentModal";
+
 import type {
   Assignment,
   SiteMember,
@@ -1208,535 +1212,44 @@ setSaveTimers((prev) => {
 </button>
 </div>
 
-        {showAddModal && (
-  <div
-    onClick={() => setShowAddModal(false)}
-    style={{
-      position: "fixed",
-      inset: 0,
-      backgroundColor: "rgba(0,0,0,0.45)",
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-      zIndex: 9999,
-      padding: 16,
-    }}
-  >
-    <div
-      onClick={(e) => e.stopPropagation()}
-      style={{
-        width: "100%",
-        maxWidth: 520,
-        backgroundColor: "#fff",
-        borderRadius: 16,
-        padding: 20,
-        display: "grid",
-        gap: 10,
-        maxHeight: "90vh",
-        overflowY: "auto",
-      }}
-    >
-      <h2 style={{ margin: 0 }}>現場追加</h2>
-
-      <div>
-        <input
-          list="contractors"
-          value={contractorName}
-          onChange={(e) => {
-            setContractorName(e.target.value);
-            setManagerName("");
-            setContactPhone("");
-          }}
-          placeholder="元請"
-          style={inputStyle}
-        />
-
-        <datalist id="contractors">
-          {contractors.map((contractor) => (
-            <option
-              key={contractor.id}
-              value={contractor.name}
-            />
-          ))}
-        </datalist>
-      </div>
-
-      <input
-        value={siteName}
-        onChange={(e) => setSiteName(e.target.value)}
-        placeholder="現場名"
-        style={inputStyle}
-      />
-
-<select
-  value={constructionType}
-  onChange={(e) => setConstructionType(e.target.value)}
-  style={inputStyle}
->
-  <option value="第一工事">第一工事</option>
-  <option value="第二工事">第二工事</option>
-</select>
-
-      <div>
-        <input
-          list="manager-list"
-          value={managerName}
-          onChange={(e) => {
-            const value = e.target.value;
-
-            setManagerName(value);
-
-            const contractor = contractors.find(
-              (c) => c.name === contractorName
-            );
-
-            if (!contractor) return;
-
-            const contact = contractorContacts.find(
-              (c) =>
-                c.contractor_id === contractor.id &&
-                c.manager_name === value
-            );
-
-            if (contact) {
-              setContactPhone(contact.contact_phone ?? "");
-            }
-          }}
-          placeholder="担当者"
-          style={inputStyle}
-        />
-
-        <datalist id="manager-list">
-          {contractorContacts
-            .filter((contact) => {
-              const contractor = contractors.find(
-                (c) => c.id === contact.contractor_id
-              );
-
-              return contractor?.name === contractorName;
-            })
-            .map((contact) => (
-              <option
-                key={contact.id}
-                value={contact.manager_name}
-              />
-            ))}
-        </datalist>
-      </div>
-
-      <input
-        value={contactPhone}
-        onChange={(e) => setContactPhone(e.target.value)}
-        placeholder="連絡先"
-        style={inputStyle}
-      />
-
-      <input
-        value={address}
-        onChange={(e) => setAddress(e.target.value)}
-        placeholder="住所"
-        style={inputStyle}
-      />
-
-      <div style={{ display: "flex", gap: 8 }}>
-  <div style={{ flex: 1 }}>
-    <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>
-      工期開始
-    </div>
-
-    <input
-      type="date"
-      value={startDate}
-      onChange={(e) => setStartDate(e.target.value)}
-      style={inputStyle}
-    />
-  </div>
-
-  <div style={{ flex: 1 }}>
-    <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>
-      工期終了
-    </div>
-
-    <input
-      type="date"
-      value={endDate}
-      onChange={(e) => setEndDate(e.target.value)}
-      style={inputStyle}
-    />
-  </div>
-</div>
-
-<div style={{ display: "flex", gap: 8 }}>
-  <button
-    type="button"
-    onClick={() => {
-      setShiftType("day");
-      setMeetingTime("08:00");
-    }}
-    style={{
-      flex: 1,
-      padding: 10,
-      borderRadius: 8,
-      border: shiftType === "day" ? "2px solid #111" : "1px solid #ccc",
-      backgroundColor: shiftType === "day" ? "#f3f3f3" : "#fff",
-      fontWeight: 700,
-      cursor: "pointer",
-    }}
-  >
-    昼
-  </button>
-
-  <button
-    type="button"
-    onClick={() => {
-      setShiftType("night");
-      setMeetingTime("20:00");
-    }}
-    style={{
-      flex: 1,
-      padding: 10,
-      borderRadius: 8,
-      border: shiftType === "night" ? "2px solid #111" : "1px solid #ccc",
-      backgroundColor: shiftType === "night" ? "#f3f3f3" : "#fff",
-      fontWeight: 700,
-      cursor: "pointer",
-    }}
-  >
-    夜
-  </button>
-</div>
-
-      <input
-        type="time"
-        value={meetingTime}
-        onChange={(e) => setMeetingTime(e.target.value)}
-        style={inputStyle}
-      />
-
-      <div style={{ display: "flex", gap: 8 }}>
-        <button
-          type="button"
-          onClick={() => setShowAddModal(false)}
-          style={{
-            flex: 1,
-            padding: 12,
-            borderRadius: 8,
-            border: "1px solid #ccc",
-            backgroundColor: "#fff",
-          }}
-        >
-          キャンセル
-        </button>
-
-        <button
-  type="button"
-  onClick={handleAddSite}
-          style={{
-            flex: 1,
-            padding: 12,
-            border: "none",
-            borderRadius: 8,
-            backgroundColor: "#111",
-            color: "#fff",
-            fontWeight: 700,
-          }}
-        >
-          追加
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
-{editingAssignment && (
-  <div
-    onClick={() => setEditingAssignment(null)}
-    style={{
-      position: "fixed",
-      inset: 0,
-      backgroundColor: "rgba(0,0,0,0.45)",
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-      zIndex: 99999,
-      padding: 16,
-    }}
-  >
-    <div
-      onClick={(e) => e.stopPropagation()}
-      style={{
-        width: "100%",
-        maxWidth: 520,
-        backgroundColor: "#fff",
-        borderRadius: 16,
-        padding: 20,
-        display: "grid",
-        gap: 10,
-      }}
-    >
-      <h2 style={{ margin: 0 }}>現場編集</h2>
-
-      <input
-        value={editingAssignment.contractor_name ?? ""}
-        onChange={(e) =>
-          setEditingAssignment({
-            ...editingAssignment,
-            contractor_name: e.target.value,
-          })
-        }
-        placeholder="元請"
-        style={inputStyle}
-      />
-
-      <input
-        value={editingAssignment.site_name ?? ""}
-        onChange={(e) =>
-          setEditingAssignment({
-            ...editingAssignment,
-            site_name: e.target.value,
-          })
-        }
-        placeholder="現場名"
-        style={inputStyle}
-      />
-
-      <select
-        value={editingAssignment.construction_type ?? "第一工事"}
-        onChange={(e) =>
-          setEditingAssignment({
-            ...editingAssignment,
-            construction_type: e.target.value,
-          })
-        }
-        style={inputStyle}
-      >
-        <option value="第一工事">第一工事</option>
-        <option value="第二工事">第二工事</option>
-      </select>
-
-      <input
-        value={editingAssignment.manager_name ?? ""}
-        onChange={(e) =>
-          setEditingAssignment({
-            ...editingAssignment,
-            manager_name: e.target.value,
-          })
-        }
-        placeholder="担当者"
-        style={inputStyle}
-      />
-
-      <input
-        value={editingAssignment.contact_phone ?? ""}
-        onChange={(e) =>
-          setEditingAssignment({
-            ...editingAssignment,
-            contact_phone: e.target.value,
-          })
-        }
-        placeholder="連絡先"
-        style={inputStyle}
-      />
-
-      <input
-        value={editingAssignment.address ?? ""}
-        onChange={(e) =>
-          setEditingAssignment({
-            ...editingAssignment,
-            address: e.target.value,
-          })
-        }
-        placeholder="住所"
-        style={inputStyle}
-      />
-
-      <div style={{ display: "flex", gap: 8 }}>
-        <input
-          type="date"
-          value={editingAssignment.start_date ?? ""}
-          onChange={(e) =>
-            setEditingAssignment({
-              ...editingAssignment,
-              start_date: e.target.value,
-            })
-          }
-          style={inputStyle}
-        />
-
-        <input
-          type="date"
-          value={editingAssignment.end_date ?? ""}
-          onChange={(e) =>
-            setEditingAssignment({
-              ...editingAssignment,
-              end_date: e.target.value,
-            })
-          }
-          style={inputStyle}
-        />
-      </div>
-
-      <div style={{ display: "flex", gap: 8 }}>
-  <button
-    type="button"
-    onClick={() =>
-      setEditingAssignment({
-        ...editingAssignment,
-        shift_type: "day",
-        meeting_time: "08:00",
-      })
-    }
-    style={{
-      flex: 1,
-      padding: 10,
-      borderRadius: 8,
-      border:
-        editingAssignment.shift_type === "day"
-          ? "2px solid #111"
-          : "1px solid #ccc",
-      backgroundColor:
-        editingAssignment.shift_type === "day" ? "#f3f3f3" : "#fff",
-      fontWeight: 700,
-    }}
-  >
-    昼
-  </button>
-
-  <button
-    type="button"
-    onClick={() =>
-      setEditingAssignment({
-        ...editingAssignment,
-        shift_type: "night",
-        meeting_time: "20:00",
-      })
-    }
-    style={{
-      flex: 1,
-      padding: 10,
-      borderRadius: 8,
-      border:
-        editingAssignment.shift_type === "night"
-          ? "2px solid #111"
-          : "1px solid #ccc",
-      backgroundColor:
-        editingAssignment.shift_type === "night" ? "#f3f3f3" : "#fff",
-      fontWeight: 700,
-    }}
-  >
-    夜
-  </button>
-</div>
-
-<input
-  type="time"
-  value={editingAssignment.meeting_time ?? "08:00"}
-  onChange={(e) =>
-    setEditingAssignment({
-      ...editingAssignment,
-      meeting_time: e.target.value,
-    })
-  }
-  style={inputStyle}
+<AddAssignmentModal
+  showAddModal={showAddModal}
+  setShowAddModal={setShowAddModal}
+  contractors={contractors}
+  contractorContacts={contractorContacts}
+  contractorName={contractorName}
+  setContractorName={setContractorName}
+  siteName={siteName}
+  setSiteName={setSiteName}
+  constructionType={constructionType}
+  setConstructionType={setConstructionType}
+  managerName={managerName}
+  setManagerName={setManagerName}
+  contactPhone={contactPhone}
+  setContactPhone={setContactPhone}
+  address={address}
+  setAddress={setAddress}
+  startDate={startDate}
+  setStartDate={setStartDate}
+  endDate={endDate}
+  setEndDate={setEndDate}
+  shiftType={shiftType}
+  setShiftType={setShiftType}
+  meetingTime={meetingTime}
+  setMeetingTime={setMeetingTime}
+  inputStyle={inputStyle}
+  handleAddSite={handleAddSite}
 />
 
-<div>
-  <div style={{ fontWeight: 800, marginBottom: 6 }}>
-    添付ファイル
-  </div>
-
-  <input
-    type="file"
-    multiple
-    onChange={(e) =>
-      uploadFiles(editingAssignment.id, e.target.files)
-    }
-    style={inputStyle}
-  />
-
-  <div style={{ display: "grid", gap: 6, marginTop: 8 }}>
-    {assignmentFiles
-      .filter((file) => file.assignment_id === editingAssignment.id)
-      .map((file) => (
-        <div
-  key={file.id}
-  style={{
-    display: "flex",
-    gap: 8,
-    alignItems: "center",
-  }}
->
-  <a
-    href={file.file_url}
-    target="_blank"
-    rel="noreferrer"
-    style={{
-      flex: 1,
-      padding: 8,
-      border: "1px solid #ddd",
-      borderRadius: 8,
-      color: "#111",
-      textDecoration: "none",
-      fontWeight: 700,
-    }}
-  >
-    📎 {file.file_name}
-  </a>
-
-  <button
-    type="button"
-    onClick={() => deleteAssignmentFile(file)}
-    style={{
-      border: "none",
-      backgroundColor: "#dc2626",
-      color: "#fff",
-      borderRadius: 6,
-      padding: "6px 10px",
-      cursor: "pointer",
-      fontWeight: 700,
-    }}
-  >
-    削除
-  </button>
-</div>
-      ))}
-  </div>
-</div>
-
-      <div style={{ display: "flex", gap: 8 }}>
-        <button
-          type="button"
-          onClick={() => setEditingAssignment(null)}
-          style={{
-            flex: 1,
-            padding: 12,
-            borderRadius: 8,
-            border: "1px solid #ccc",
-            backgroundColor: "#fff",
-          }}
-        >
-          キャンセル
-        </button>
-
-        <button
-          type="button"
-          onClick={updateAssignment}
-          style={{
-            flex: 1,
-            padding: 12,
-            border: "none",
-            borderRadius: 8,
-            backgroundColor: "#111",
-            color: "#fff",
-            fontWeight: 700,
-          }}
-        >
-          保存
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+<AssignmentEditModal
+  editingAssignment={editingAssignment}
+  setEditingAssignment={setEditingAssignment}
+  inputStyle={inputStyle}
+  assignmentFiles={assignmentFiles}
+  updateAssignment={updateAssignment}
+  uploadFiles={uploadFiles}
+  deleteAssignmentFile={deleteAssignmentFile}
+/>
 
 <div
   style={{
@@ -2031,7 +1544,7 @@ const isShort =
   );
 
   return (
-    <td
+    <AssignmentCell
       key={date}
                         onDragOver={(e) => e.preventDefault()}
                         onDrop={() => {
@@ -2400,7 +1913,7 @@ const isShort =
   })}
 </div>
                         </div>
-                      </td>
+                        </AssignmentCell>
                     );
                   })}
                 </tr>
