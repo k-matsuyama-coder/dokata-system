@@ -2116,7 +2116,6 @@ const isShort =
   </div>
 )}
 
-{/* 
         <MemberPanel
   isMobile={isMobile}
   selectedDate={selectedDate}
@@ -2137,7 +2136,6 @@ const isShort =
   setCopiedEmployeeNames={setCopiedEmployeeNames}
   setCopiedVehicleNames={setCopiedVehicleNames}
 />
-*/}
 
         <p style={{ color: "#666", fontSize: 13 }}>
           ※ メンバーを外す場合は、配置済みの名前をダブルクリックしてください。
