@@ -1219,6 +1219,12 @@ zIndex: 5000,
   style={{
     position: "relative",
     zIndex: 5000,
+    padding: "8px 14px",
+    borderRadius: 8,
+    border: "1px solid #ccc",
+    backgroundColor: "#fff",
+    fontWeight: 800,
+    cursor: "pointer",
   }}
 >
   ＋ 現場追加
