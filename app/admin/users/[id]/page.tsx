@@ -98,44 +98,46 @@ const [password, setPassword] = useState("");
   }, [id]);
 
   const handleUpdate = async () => {
-    const { error } = await supabase
-      .from("employees")
-      .update({
-        company_name: companyName,
-        role,
-      })
-      .eq("id", id);
-  
-    if (error) {
-      alert("更新失敗: " + error.message);
+  const { error } = await supabase
+    .from("employees")
+    .update({
+      company_name: companyName,
+      role,
+    })
+    .eq("id", id);
+
+  if (error) {
+    alert("更新失敗: " + error.message);
+    return;
+  }
+
+  if (email.trim() || password.trim()) {
+    const authRes = await fetch("/api/admin/update-user-auth", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        employeeId: id,
+        authUserId: authUserId || null,
+        email: email.trim(),
+        password: password.trim(),
+      }),
+    });
+
+    const authResult = await authRes.json();
+
+    if (!authRes.ok) {
+      alert(authResult.error || "ログイン情報更新失敗");
       return;
     }
-  
-    // auth_user_id がある社員だけログイン情報を更新
-    if (authUserId) {
-      const authRes = await fetch("/api/admin/update-user-auth", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          authUserId,
-          email,
-          password,
-        }),
-      });
-  
-      const authResult = await authRes.json();
-  
-      if (!authRes.ok) {
-        alert(authResult.error || "ログイン情報更新失敗");
-        return;
-      }
-    }
-  
-    alert("社員情報を更新しました");
-    window.location.href = "/admin/users";
-  };
+
+    setAuthUserId(authResult.authUserId);
+  }
+
+  alert("社員情報を更新しました");
+  window.location.href = "/admin/users";
+};
 
   return (
     <div style={{ padding: 20, maxWidth: 600, margin: "0 auto" }}>
@@ -189,51 +191,6 @@ const [password, setPassword] = useState("");
     style={{ width: "100%", padding: 10, boxSizing: "border-box" }}
     placeholder="メールアドレス"
   />
-  {!authUserId && (
-  <button
-    type="button"
-    onClick={async () => {
-      if (!email) {
-        alert("メールアドレスを入力してください");
-        return;
-      }
-
-      const res = await fetch("/api/admin/link-user-auth", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          employeeId: id,
-          email,
-        }),
-      });
-
-      const result = await res.json();
-
-      if (!res.ok) {
-        alert(result.error || "ログイン連携失敗");
-        return;
-      }
-
-      setAuthUserId(result.authUserId);
-      alert("ログインアカウントを連携しました");
-    }}
-    style={{
-      width: "100%",
-      padding: 10,
-      marginBottom: 16,
-      backgroundColor: "#fff",
-      color: "#111",
-      border: "1px solid #ccc",
-      borderRadius: 8,
-      cursor: "pointer",
-      fontWeight: 600,
-    }}
-  >
-    このメールでログイン連携する
-  </button>
-)}
 </div>
 
 
