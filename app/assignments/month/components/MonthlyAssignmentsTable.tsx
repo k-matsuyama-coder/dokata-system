@@ -1,11 +1,110 @@
-import React from "react";
+"use client";
+
+import type React from "react";
+import AssignmentDateHeader from "./AssignmentDateHeader";
+
+import type {
+  Assignment,
+  DailyInfo,
+  SiteMember,
+} from "../types";
+
+import {
+  th,
+  stickyTh1,
+  stickyTh2,
+  stickyTh3,
+} from "../styles";
+
+type DailySummary = {
+  infos: DailyInfo[];
+  members: SiteMember[];
+};
 
 type Props = {
+  isMobile: boolean;
+  viewMode: "month" | "week";
+  days: string[];
+  dailySummaryMap: Map<string, DailySummary>;
+  assignmentMap: Map<string, Assignment>;
+  getDateHeaderStyle: (date: string) => React.CSSProperties;
   children: React.ReactNode;
 };
 
-function MonthlyAssignmentsTable({ children }: Props) {
-  return <>{children}</>;
-}
+export default function MonthlyAssignmentsTable({
+  isMobile,
+  viewMode,
+  days,
+  dailySummaryMap,
+  assignmentMap,
+  getDateHeaderStyle,
+  children,
+}: Props) {
+  return (
+    <div
+      style={{
+        overflowX: "auto",
+        overflowY: "auto",
+        border: "1px solid #ddd",
+        borderRadius: 12,
+        backgroundColor: "#fff",
+        maxHeight: "78vh",
+        position: "relative",
+      }}
+    >
+      <table
+        style={{
+          borderCollapse: "separate",
+          borderSpacing: 0,
+          minWidth:
+            viewMode === "week"
+              ? isMobile
+                ? 900
+                : 1200
+              : isMobile
+              ? 950
+              : 1700,
+          width: "100%",
+          backgroundColor: "#fff",
+          fontSize: isMobile ? 10 : 12,
+        }}
+      >
+        <thead>
+          <tr>
+            {!isMobile && (
+              <th style={{ ...th, ...stickyTh1 }}>元請</th>
+            )}
 
-export default React.memo(MonthlyAssignmentsTable);
+            <th
+              style={{
+                ...th,
+                ...stickyTh2,
+                left: isMobile ? 0 : 70,
+              }}
+            >
+              現場名
+            </th>
+
+            {!isMobile && (
+              <th style={{ ...th, ...stickyTh3 }}>担当者</th>
+            )}
+
+            <th style={th}>昼/夜</th>
+
+            {days.map((date) => (
+              <AssignmentDateHeader
+                key={date}
+                date={date}
+                summary={dailySummaryMap.get(date)}
+                assignmentMap={assignmentMap}
+                getDateHeaderStyle={getDateHeaderStyle}
+              />
+            ))}
+          </tr>
+        </thead>
+
+        {children}
+      </table>
+    </div>
+  );
+}
