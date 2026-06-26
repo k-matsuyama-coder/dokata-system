@@ -3,7 +3,6 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
-import AssignmentCell from "./components/AssignmentCell";
 import type {
   Assignment,
   SiteMember,
@@ -2031,9 +2030,9 @@ const isShort =
     assignment.shift_type
   );
 
-                    return (
-                      <AssignmentCell key={date}>
-                      <td
+  return (
+    <td
+      key={date}
                         onDragOver={(e) => e.preventDefault()}
                         onDrop={() => {
                           if (isOutOfPeriod) return;
@@ -2402,7 +2401,6 @@ const isShort =
 </div>
                         </div>
                       </td>
-                      </AssignmentCell>
                     );
                   })}
                 </tr>
