@@ -46,15 +46,14 @@ const [nightCount, setNightCount] = useState(0);
 
 const [dayOvertime, setDayOvertime] = useState(0);
 const [nightOvertime, setNightOvertime] = useState(0);
-  const [totalVehicleCount, setTotalVehicleCount] = useState(0);
-  const [recentReports, setRecentReports] = useState<ReportRow[]>([]);
+const [totalVehicleCount, setTotalVehicleCount] = useState(0);
+const [recentReports, setRecentReports] = useState<ReportRow[]>([]);
+const [licenseName, setLicenseName] = useState("");
+const [licenseExpiryDate, setLicenseExpiryDate] = useState("");
+const [licenseStatus, setLicenseStatus] = useState<"expired" | "warning" | "ok" | "">("");
+const [licenseRemainingDays, setLicenseRemainingDays] = useState<number | null>(null);
 
-  const [licenseName, setLicenseName] = useState("");
-  const [licenseExpiryDate, setLicenseExpiryDate] = useState("");
-  const [licenseStatus, setLicenseStatus] = useState<"expired" | "warning" | "ok" | "">("");
-  const [licenseRemainingDays, setLicenseRemainingDays] = useState<number | null>(null);
-
-  useEffect(() => {
+useEffect(() => {
     const fetchHomeData = async () => {
       const { data: userData } = await supabase.auth.getUser();
       const user = userData.user;
@@ -301,6 +300,20 @@ setTotalVehicleCount(driverReportIds.size);
     };
 
     fetchHomeData();
+  }, []);
+
+  useEffect(() => {
+    const checkRole = async () => {
+      const { data: orgId } = await supabase.rpc("current_organization_id");
+      const { data: isAdmin } = await supabase.rpc("is_admin");
+      const { data: isSuperAdmin } = await supabase.rpc("is_super_admin");
+  
+      console.log("current_organization_id:", orgId);
+      console.log("is_admin:", isAdmin);
+      console.log("is_super_admin:", isSuperAdmin);
+    };
+  
+    checkRole();
   }, []);
 
   const totalDays = dayCount + nightCount;
