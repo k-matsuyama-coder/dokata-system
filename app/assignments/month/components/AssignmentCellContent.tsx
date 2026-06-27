@@ -1,6 +1,6 @@
 "use client";
 
-import type React from "react";
+import React from "react";
 
 import AssignmentDayCell from "./AssignmentDayCell";
 import AssignmentDetailTextarea from "./AssignmentDetailTextarea";
@@ -68,7 +68,7 @@ type Props = {
   toggleForeman: (member: SiteMember) => void;
 };
 
-export default function AssignmentCellContent({
+function AssignmentCellContent({
   isMobile,
   assignment,
   date,
@@ -149,3 +149,4 @@ export default function AssignmentCellContent({
     </div>
   );
 }
+export default React.memo(AssignmentCellContent);

@@ -1,10 +1,13 @@
 "use client";
 
-import type React from "react";
+import React from "react";
 
 import AssignmentRow from "./AssignmentRow";
 import AssignmentCell from "./AssignmentCell";
 import AssignmentCellContent from "./AssignmentCellContent";
+import { useMonthlyAssignmentContext } from "../contexts/monthlyAssignmentContext";
+import { useMonthlyAssignmentSelectionContext } from "../contexts/monthlyAssignmentSelectionContext";
+import { useMonthlyAssignmentActionContext } from "../contexts/monthlyAssignmentActionContext";
 
 import type {
   Assignment,
@@ -28,146 +31,62 @@ type DraggingVehicleFrom = {
 };
 
 type Props = {
-  assignment: Assignment;
-  days: string[];
-  isMobile: boolean;
-  viewMode: "month" | "week";
-  sortMode: string;
-  draggingAssignmentId: string | null;
-  draggingSiteMemberId: string | null;
-  draggingEmployeeName: string | null;
-  draggingVehicleName: string | null;
-  draggingVehicleFrom: DraggingVehicleFrom | null;
-  selectedSiteMemberId: string | null;
-  selectedEmployeeName: string | null;
-  copiedEmployeeNames: string[];
-  copiedVehicleNames: string[];
-  editingDetails: Record<string, string>;
-  saveTimers: Record<string, ReturnType<typeof setTimeout>>;
+    assignment: Assignment;
+  };
 
-  getCellMembers: (assignmentId: string, workDate: string) => SiteMember[];
-  getDailyInfo: (assignmentId: string, workDate: string) => DailyInfo | undefined;
-  getCellStyle: (
-    date: string,
-    plannedCount: number | null | undefined,
-    memberCount: number,
-    shiftType: string | null
-  ) => React.CSSProperties;
-
-  setDraggingAssignmentId: (id: string | null) => void;
-  setDraggingSiteMemberId: (id: string | null) => void;
-  setDraggingEmployeeName: (name: string | null) => void;
-  setDraggingVehicleName: (name: string | null) => void;
-  setDraggingVehicleFrom: React.Dispatch<
-    React.SetStateAction<DraggingVehicleFrom | null>
-  >;
-  setSelectedDate: (date: string | null) => void;
-  setSelectedShiftType: (shiftType: string | null) => void;
-  setSelectedSiteMemberId: (id: string | null) => void;
-  setSelectedEmployeeName: (name: string | null) => void;
-  setShowMemberModal: (value: boolean) => void;
-  setCopiedEmployeeNames: React.Dispatch<React.SetStateAction<string[]>>;
-  setCopiedVehicleNames: React.Dispatch<React.SetStateAction<string[]>>;
-  setEditingDetails: React.Dispatch<
-    React.SetStateAction<Record<string, string>>
-  >;
-  setSaveTimers: React.Dispatch<
-    React.SetStateAction<Record<string, ReturnType<typeof setTimeout>>>
-  >;
-  setEditingAssignment: (assignment: Assignment | null) => void;
-
-  moveAssignmentRow: (
-    fromAssignmentId: string,
-    toAssignmentId: string
-  ) => void;
-  deleteAssignment: (id: string) => void;
-  moveSiteMember: (
-    siteMemberId: string,
-    assignmentId: string,
-    workDate: string
-  ) => void;
-  addEmployeeToCell: (
-    employeeName: string,
-    assignmentId: string,
-    workDate: string,
-    autoForeman?: boolean
-  ) => void;
-  moveVehicleToCell: (
-    vehicleName: string,
-    fromAssignmentId: string,
-    fromWorkDate: string,
-    toAssignmentId: string,
-    toWorkDate: string
-  ) => void;
-  addVehicleToCell: (
-    vehicleName: string,
-    assignmentId: string,
-    workDate: string
-  ) => void;
-  removeVehicleFromCell: (
-    vehicleName: string,
-    assignmentId: string,
-    workDate: string
-  ) => void;
-  updateDailyInfo: (
-    assignmentId: string,
-    workDate: string,
-    field: "planned_count" | "detail" | "vehicle_names",
-    value: string
-  ) => void;
-  deleteSiteMember: (id: string) => void;
-  toggleForeman: (member: SiteMember) => void;
-};
-
-export default function AssignmentRowContent({
-  assignment,
-  days,
-  isMobile,
-  viewMode,
-  sortMode,
-  draggingAssignmentId,
-  draggingSiteMemberId,
-  draggingEmployeeName,
-  draggingVehicleName,
-  draggingVehicleFrom,
-  selectedSiteMemberId,
-  selectedEmployeeName,
-  copiedEmployeeNames,
-  copiedVehicleNames,
-  editingDetails,
-  saveTimers,
-
-  getCellMembers,
-  getDailyInfo,
-  getCellStyle,
-
-  setDraggingAssignmentId,
-  setDraggingSiteMemberId,
-  setDraggingEmployeeName,
-  setDraggingVehicleName,
-  setDraggingVehicleFrom,
-  setSelectedDate,
-  setSelectedShiftType,
-  setSelectedSiteMemberId,
-  setSelectedEmployeeName,
-  setShowMemberModal,
-  setCopiedEmployeeNames,
-  setCopiedVehicleNames,
-  setEditingDetails,
-  setSaveTimers,
-  setEditingAssignment,
-
-  moveAssignmentRow,
-  deleteAssignment,
-  moveSiteMember,
-  addEmployeeToCell,
-  moveVehicleToCell,
-  addVehicleToCell,
-  removeVehicleFromCell,
-  updateDailyInfo,
-  deleteSiteMember,
-  toggleForeman,
-}: Props) {
+  function AssignmentRowContent({
+    assignment,
+  }: Props) {
+    const {
+        days,
+        isMobile,
+        viewMode,
+        sortMode,
+        editingDetails,
+        saveTimers,
+        getCellMembers,
+        getDailyInfo,
+        getCellStyle,
+        setShowMemberModal,
+        setEditingDetails,
+        setSaveTimers,
+        setEditingAssignment,
+      } = useMonthlyAssignmentContext();
+      
+      const {
+        moveAssignmentRow,
+        deleteAssignment,
+        moveSiteMember,
+        addEmployeeToCell,
+        moveVehicleToCell,
+        addVehicleToCell,
+        removeVehicleFromCell,
+        updateDailyInfo,
+        deleteSiteMember,
+        toggleForeman,
+      } = useMonthlyAssignmentActionContext();
+      
+      const {
+        draggingAssignmentId,
+        setDraggingAssignmentId,
+        draggingSiteMemberId,
+        setDraggingSiteMemberId,
+        draggingEmployeeName,
+        draggingVehicleName,
+        draggingVehicleFrom,
+        setDraggingVehicleFrom,
+        selectedSiteMemberId,
+        setSelectedSiteMemberId,
+        selectedEmployeeName,
+        setSelectedEmployeeName,
+        setSelectedDate,
+        setSelectedShiftType,
+        copiedEmployeeNames,
+        setCopiedEmployeeNames,
+        copiedVehicleNames,
+        setCopiedVehicleNames,
+        setDraggingVehicleName,
+      } = useMonthlyAssignmentSelectionContext();
   return (
     <AssignmentRow
       style={{
@@ -178,17 +97,23 @@ export default function AssignmentRowContent({
       }}
     >
       {!isMobile && (
-        <td
-          style={{
-            ...td,
-            ...stickyTd1,
-            backgroundColor:
-              assignment.shift_type === "night" ? "#e5e7eb" : "#fff",
-          }}
-        >
-          {assignment.contractor_name || "-"}
-        </td>
-      )}
+  <td
+    style={{
+      ...td,
+      ...stickyTd1,
+      backgroundColor:
+        assignment.shift_type === "night" ? "#e5e7eb" : "#fff",
+      fontSize: 15,
+      fontWeight: 700,
+      textAlign: "center",
+      verticalAlign: "middle",
+      padding: "10px 8px",
+      lineHeight: 1.4,
+    }}
+  >
+    {assignment.contractor_name || "-"}
+  </td>
+)}
 
       <td
         draggable={!isMobile && sortMode === "manual"}
@@ -217,13 +142,19 @@ export default function AssignmentRowContent({
               : "#fff",
           minWidth: viewMode === "week" ? 260 : 180,
           width: viewMode === "week" ? 260 : 180,
+          textAlign: "center",
+          verticalAlign: "middle",
+          padding: "10px 8px",
         }}
       >
         <div
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: 6,
+            justifyContent: "center",
+            alignItems: "center",
+            gap: 8,
+            minHeight: 80,
           }}
         >
           <span
@@ -231,52 +162,54 @@ export default function AssignmentRowContent({
             style={{
               cursor: "pointer",
               textDecoration: "underline",
+              fontSize: 17,
+              fontWeight: 900,
+              lineHeight: 1.4,
+              textAlign: "center",
             }}
           >
             {assignment.site_name || "-"}
           </span>
-
-          <button
-            type="button"
-            onClick={() => deleteAssignment(assignment.id)}
-            style={{
-              backgroundColor: "#d11a2a",
-              color: "#fff",
-              border: "none",
-              borderRadius: 6,
-              padding: isMobile ? "6px 10px" : "4px 8px",
-              cursor: "pointer",
-              fontSize: isMobile ? 11 : 12,
-            }}
-          >
-            削除
-          </button>
         </div>
       </td>
 
       {!isMobile && (
-        <td
-          style={{
-            ...td,
-            ...stickyTd3,
-            backgroundColor:
-              assignment.shift_type === "night" ? "#e5e7eb" : "#fff",
-          }}
-        >
-          {assignment.manager_name || "-"}
-        </td>
-      )}
+  <td
+    style={{
+      ...td,
+      ...stickyTd3,
+      backgroundColor:
+        assignment.shift_type === "night" ? "#e5e7eb" : "#fff",
+      fontSize: 15,
+      fontWeight: 700,
+      textAlign: "center",
+      verticalAlign: "middle",
+      padding: "10px 8px",
+      lineHeight: 1.4,
+    }}
+  >
+    {assignment.manager_name || "-"}
+  </td>
+)}
 
-      <td
-        style={{
-          ...td,
-          fontWeight: 800,
-          color: assignment.shift_type === "night" ? "#fff" : "#111",
-          backgroundColor:
-            assignment.shift_type === "night" ? "#374151" : "#f3f4f6",
-          textAlign: "center",
-        }}
-      >
+<td
+  style={{
+    ...td,
+    position: "sticky",
+    left: isMobile ? 0 : 310, // ←重要
+    zIndex: 15,
+
+    fontWeight: 800,
+    color: assignment.shift_type === "night" ? "#fff" : "#111",
+    backgroundColor:
+      assignment.shift_type === "night"
+        ? "#374151"
+        : "#f3f4f6",
+
+    textAlign: "center",
+    verticalAlign: "middle",
+  }}
+>
         {assignment.shift_type === "night" ? "夜" : "昼"}
       </td>
 
@@ -446,3 +379,4 @@ export default function AssignmentRowContent({
     </AssignmentRow>
   );
 }
+export default React.memo(AssignmentRowContent);

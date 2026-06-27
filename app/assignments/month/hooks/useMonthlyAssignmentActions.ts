@@ -1,4 +1,5 @@
 import type { Dispatch, SetStateAction } from "react";
+import type React from "react";
 
 import { updateAssignmentAction } from "../actions/updateAssignment";
 import { handleAddSiteAction } from "../actions/handleAddSite";
@@ -53,6 +54,11 @@ type Props = {
   setAssignments: Dispatch<SetStateAction<Assignment[]>>;
   setSiteMembers: Dispatch<SetStateAction<any[]>>;
 
+  addFiles: FileList | null;
+setAddFiles: React.Dispatch<
+  React.SetStateAction<FileList | null>
+>;
+
   setShowAddModal: Dispatch<SetStateAction<boolean>>;
 
   fetchData: () => Promise<void>;
@@ -99,6 +105,9 @@ export function useMonthlyAssignmentActions({
 
   setAssignments,
   setSiteMembers,
+
+  addFiles,
+setAddFiles,
 
   setShowAddModal,
 
@@ -155,7 +164,7 @@ export function useMonthlyAssignmentActions({
   };
 
   const handleAddSite = async () => {
-    const { error } = await handleAddSiteAction({
+    const { data, error } = await handleAddSiteAction({
       month,
       siteName,
       contractorName,
@@ -174,6 +183,17 @@ export function useMonthlyAssignmentActions({
       return;
     }
 
+    if (data?.id && addFiles && addFiles.length > 0) {
+      const { error: uploadError } = await uploadFilesAction(
+        data.id,
+        addFiles
+      );
+    
+      if (uploadError) {
+        alert("現場は追加されましたが、ファイルアップロードに失敗しました: " + uploadError.message);
+      }
+    }
+
     setSiteName("");
     setContractorName("");
     setManagerName("");
@@ -184,6 +204,7 @@ export function useMonthlyAssignmentActions({
     setMeetingTime("08:00");
     setStartDate("");
     setEndDate("");
+    setAddFiles(null);
     setShowAddModal(false);
 
     fetchData();

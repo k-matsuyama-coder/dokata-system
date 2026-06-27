@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import ReportForm from "@/app/components/ReportForm";
+import ReportForm from "@/app/components/reports/ReportForm";
 
 type Employee = {
   name: string;

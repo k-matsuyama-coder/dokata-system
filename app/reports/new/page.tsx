@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import ReportForm from "@/app/components/ReportForm";
+import ReportForm from "@/app/components/reports/ReportForm";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 

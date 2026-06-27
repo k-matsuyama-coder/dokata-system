@@ -10,7 +10,6 @@ import AssignmentToolbar from "./components/AssignmentToolbar";
 import AssignmentDateHeader from "./components/AssignmentDateHeader";
 import { useResponsive } from "./hooks/useResponsive";
 import MobileMemberModal from "./components/MobileMemberModal";
-import { moveAssignmentRowAction } from "./actions/moveAssignmentRow";
 import AssignmentGroups from "./components/AssignmentGroups";
 import { useMonthlyAssignmentCalendar } from "./hooks/useMonthlyAssignmentCalendar";
 import { useMonthlyAssignmentData } from "./hooks/useMonthlyAssignmentData";
@@ -25,6 +24,17 @@ import { useGroupedAssignments } from "./hooks/useGroupedAssignments";
 import { useMonthlyAssignmentSelection } from "./hooks/useMonthlyAssignmentSelection";
 import { useMonthlyAssignmentUI } from "./hooks/useMonthlyAssignmentUI";
 import { useAddAssignmentForm } from "./hooks/useAddAssignmentForm";
+import { useMonthlyAssignmentRows } from "./hooks/useMonthlyAssignmentRows";
+import type { MonthlyAssignmentContextValue } from "./contexts/monthlyAssignmentContext";
+import { MonthlyAssignmentContext } from "./contexts/monthlyAssignmentContext";
+import {
+  MonthlyAssignmentSelectionContext,
+  type MonthlyAssignmentSelectionContextValue,
+} from "./contexts/monthlyAssignmentSelectionContext";
+import {
+  MonthlyAssignmentActionContext,
+  type MonthlyAssignmentActionContextValue,
+} from "./contexts/monthlyAssignmentActionContext";
 
 import type { Assignment } from "./types";
 import { td } from "./styles";
@@ -57,6 +67,8 @@ export default function MonthlyAssignmentsPage() {
     setEndDate,
     constructionType,
     setConstructionType,
+    addFiles,
+    setAddFiles,
   } = useAddAssignmentForm();
 
 const {
@@ -190,6 +202,9 @@ const {
   constructionType,
   setConstructionType,
 
+  addFiles,
+  setAddFiles,
+
   editingAssignment,
   setEditingAssignment,
 
@@ -224,23 +239,11 @@ useMonthlyAssignmentRealtime({
     setWeekStart(getWeekStart());
   }, [month]);
 
-  const moveAssignmentRow = async (
-    fromAssignmentId: string,
-    toAssignmentId: string
-  ) => {
-    const { nextAssignments, error } = await moveAssignmentRowAction({
-      assignments,
-      fromAssignmentId,
-      toAssignmentId,
-    });
-  
-    setAssignments(nextAssignments);
-  
-    if (error) {
-      alert("並び替え保存失敗: " + error.message);
-      fetchData();
-    }
-  };
+  const { moveAssignmentRow } = useMonthlyAssignmentRows({
+    assignments,
+    setAssignments,
+    fetchData,
+  });
 
   const {
     getDailyInfo,
@@ -295,6 +298,111 @@ useMonthlyAssignmentRealtime({
     todayString,
   });
 
+  const assignmentContextValue: MonthlyAssignmentContextValue = {
+    days,
+    isMobile,
+    viewMode,
+    sortMode,
+  
+    draggingAssignmentId,
+    draggingSiteMemberId,
+    draggingEmployeeName,
+    draggingVehicleName,
+    draggingVehicleFrom,
+  
+    selectedSiteMemberId,
+    selectedEmployeeName,
+  
+    copiedEmployeeNames,
+    copiedVehicleNames,
+  
+    editingDetails,
+    saveTimers,
+  
+    getCellMembers,
+    getDailyInfo,
+    getCellStyle,
+  
+    setDraggingAssignmentId,
+    setDraggingSiteMemberId,
+    setDraggingEmployeeName,
+    setDraggingVehicleName,
+    setDraggingVehicleFrom,
+  
+    setSelectedDate,
+    setSelectedShiftType,
+    setSelectedSiteMemberId,
+    setSelectedEmployeeName,
+    setShowMemberModal,
+  
+    setCopiedEmployeeNames,
+    setCopiedVehicleNames,
+  
+    setEditingDetails,
+    setSaveTimers,
+  
+    setEditingAssignment,
+  
+    moveAssignmentRow,
+    deleteAssignment,
+    moveSiteMember,
+    addEmployeeToCell,
+    moveVehicleToCell,
+    addVehicleToCell,
+    removeVehicleFromCell,
+    updateDailyInfo,
+    deleteSiteMember,
+    toggleForeman,
+  };
+
+  const selectionContextValue: MonthlyAssignmentSelectionContextValue = {
+    draggingAssignmentId,
+    setDraggingAssignmentId,
+  
+    draggingSiteMemberId,
+    setDraggingSiteMemberId,
+  
+    draggingEmployeeName,
+    setDraggingEmployeeName,
+  
+    draggingVehicleName,
+    setDraggingVehicleName,
+  
+    draggingVehicleFrom,
+    setDraggingVehicleFrom,
+  
+    selectedSiteMemberId,
+    setSelectedSiteMemberId,
+  
+    selectedEmployeeName,
+    setSelectedEmployeeName,
+  
+    selectedDate,
+    setSelectedDate,
+  
+    selectedShiftType,
+    setSelectedShiftType,
+  
+    copiedEmployeeNames,
+    setCopiedEmployeeNames,
+  
+    copiedVehicleNames,
+    setCopiedVehicleNames,
+  };
+
+  const actionContextValue: MonthlyAssignmentActionContextValue = {
+    moveAssignmentRow,
+    deleteAssignment,
+    moveSiteMember,
+    addEmployeeToCell,
+    moveVehicleToCell,
+    addVehicleToCell,
+    removeVehicleFromCell,
+    updateDailyInfo,
+    deleteSiteMember,
+    toggleForeman,
+  };
+
   return (
     <div style={{ padding: isMobile ? 8 : 16 }}>
       <BackButton />
@@ -346,6 +454,8 @@ useMonthlyAssignmentRealtime({
   setShiftType={setShiftType}
   meetingTime={meetingTime}
   setMeetingTime={setMeetingTime}
+  addFiles={addFiles}
+  setAddFiles={setAddFiles}
   inputStyle={inputStyle}
   handleAddSite={handleAddSite}
 />
@@ -358,67 +468,29 @@ useMonthlyAssignmentRealtime({
   updateAssignment={updateAssignment}
   uploadFiles={uploadFiles}
   deleteAssignmentFile={deleteAssignmentFile}
+  deleteAssignment={deleteAssignment}
 />
 
 
-<MonthlyAssignmentsTable
-  isMobile={isMobile}
-  viewMode={viewMode}
-  days={days}
-  dailySummaryMap={dailySummaryMap}
-  assignmentMap={assignmentMap}
-  getDateHeaderStyle={getDateHeaderStyle}
->
+<MonthlyAssignmentContext.Provider value={assignmentContextValue}>
+  <MonthlyAssignmentSelectionContext.Provider value={selectionContextValue}>
+    <MonthlyAssignmentActionContext.Provider value={actionContextValue}>
+      <MonthlyAssignmentsTable
+        isMobile={isMobile}
+        viewMode={viewMode}
+        days={days}
+        dailySummaryMap={dailySummaryMap}
+        assignmentMap={assignmentMap}
+        getDateHeaderStyle={getDateHeaderStyle}
+      >
+        <tbody>
+          <AssignmentGroups groupedAssignments={groupedAssignments} />
+        </tbody>
+      </MonthlyAssignmentsTable>
+    </MonthlyAssignmentActionContext.Provider>
+  </MonthlyAssignmentSelectionContext.Provider>
+</MonthlyAssignmentContext.Provider>
 
-<tbody>
-  <AssignmentGroups
-    groupedAssignments={groupedAssignments}
-    days={days}
-    isMobile={isMobile}
-    viewMode={viewMode}
-    sortMode={sortMode}
-    draggingAssignmentId={draggingAssignmentId}
-    draggingSiteMemberId={draggingSiteMemberId}
-    draggingEmployeeName={draggingEmployeeName}
-    draggingVehicleName={draggingVehicleName}
-    draggingVehicleFrom={draggingVehicleFrom}
-    selectedSiteMemberId={selectedSiteMemberId}
-    selectedEmployeeName={selectedEmployeeName}
-    copiedEmployeeNames={copiedEmployeeNames}
-    copiedVehicleNames={copiedVehicleNames}
-    editingDetails={editingDetails}
-    saveTimers={saveTimers}
-    getCellMembers={getCellMembers}
-    getDailyInfo={getDailyInfo}
-    getCellStyle={getCellStyle}
-    setDraggingAssignmentId={setDraggingAssignmentId}
-    setDraggingSiteMemberId={setDraggingSiteMemberId}
-    setDraggingEmployeeName={setDraggingEmployeeName}
-    setDraggingVehicleName={setDraggingVehicleName}
-    setDraggingVehicleFrom={setDraggingVehicleFrom}
-    setSelectedDate={setSelectedDate}
-    setSelectedShiftType={setSelectedShiftType}
-    setSelectedSiteMemberId={setSelectedSiteMemberId}
-    setSelectedEmployeeName={setSelectedEmployeeName}
-    setShowMemberModal={setShowMemberModal}
-    setCopiedEmployeeNames={setCopiedEmployeeNames}
-    setCopiedVehicleNames={setCopiedVehicleNames}
-    setEditingDetails={setEditingDetails}
-    setSaveTimers={setSaveTimers}
-    setEditingAssignment={setEditingAssignment}
-    moveAssignmentRow={moveAssignmentRow}
-    deleteAssignment={deleteAssignment}
-    moveSiteMember={moveSiteMember}
-    addEmployeeToCell={addEmployeeToCell}
-    moveVehicleToCell={moveVehicleToCell}
-    addVehicleToCell={addVehicleToCell}
-    removeVehicleFromCell={removeVehicleFromCell}
-    updateDailyInfo={updateDailyInfo}
-    deleteSiteMember={deleteSiteMember}
-    toggleForeman={toggleForeman}
-  />
-</tbody>
-</MonthlyAssignmentsTable>
           {isMobile && (selectedEmployeeName || copiedVehicleNames.length > 0) && (
   <div
     style={{

@@ -173,13 +173,15 @@ export default function ReportStatusPage() {
           .map((r) => r.site_name)
       ).size;
   
-      let status = "green";
-  
-      if (submittedSites === 0 && totalSites > 0) {
-        status = "red";
-      } else if (submittedSites < totalSites) {
-        status = "yellow";
-      }
+      let status: "green" | "red" | "gray" = "gray";
+
+if (totalSites === 0) {
+  status = "gray";
+} else if (submittedSites === totalSites) {
+  status = "green";
+} else {
+  status = "red";
+}
   
       return {
         day,
@@ -401,11 +403,11 @@ export default function ReportStatusPage() {
           borderRadius: 8,
           padding: 8,
           background:
-            day.status === "green"
-              ? "#dcfce7"
-              : day.status === "yellow"
-              ? "#fef9c3"
-              : "#fee2e2",
+          day.status === "green"
+            ? "#dcfce7"
+            : day.status === "red"
+            ? "#fee2e2"
+            : "#e5e7eb",
           cursor: "pointer",
           border:
   day.dateString === date
@@ -440,8 +442,8 @@ export default function ReportStatusPage() {
     }}
   >
     <span>🟢 全提出</span>
-    <span>🟡 一部未提出</span>
-    <span>🔴 未提出あり</span>
+<span>🔴 未提出あり</span>
+<span>⚪ 現場なし</span>
   </div>
 </div>
 

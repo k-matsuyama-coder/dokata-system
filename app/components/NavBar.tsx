@@ -220,7 +220,7 @@ if (employee.organization_id) {
         top: 0,
         left: 0,
         width: "100%",
-        zIndex: 1000,
+        zIndex: 50000,
         display: "flex",
         justifyContent: "flex-start",
 gap: 12,
@@ -410,7 +410,7 @@ gap: 12,
         position: "fixed",
         inset: 0,
         backgroundColor: "rgba(0,0,0,0.3)",
-        zIndex: 1000,
+        zIndex: 50001,
       }}
     />
   )}
@@ -431,7 +431,7 @@ gap: 12,
     flexDirection: "column",
     gap: 16,
     transition: "left 0.25s ease",
-    zIndex: 1000,
+    zIndex: 50002,
     boxShadow: "-2px 0 10px rgba(0,0,0,0.12)",
   }}
 >

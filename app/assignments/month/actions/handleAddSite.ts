@@ -29,13 +29,16 @@ export async function handleAddSiteAction({
 }: Props) {
   if (!siteName || !contractorName || !startDate) {
     return {
+      data: null,
       error: {
         message: "元請・現場名・工期開始を入力してください",
       },
     };
   }
 
-  const { error } = await supabase.from("assignments").insert({
+  const { data, error } = await supabase
+  .from("assignments")
+  .insert({
     assignment_date: `${month}-01`,
     start_date: startDate,
     end_date: endDate || null,
@@ -49,7 +52,45 @@ export async function handleAddSiteAction({
     address,
     meeting_time: meetingTime,
     construction_type: constructionType,
-  });
+  })
+  .select("id")
+  .single();
 
-  return { error };
+if (error || !data) {
+  return { data, error };
+}
+
+if (contractorName && managerName && contactPhone) {
+  const { data: contractor } = await supabase
+    .from("contractors")
+    .select("id")
+    .eq("name", contractorName)
+    .maybeSingle();
+
+  if (contractor?.id) {
+    const { data: existingContact } = await supabase
+      .from("contractor_contacts")
+      .select("id, contact_phone")
+      .eq("contractor_id", contractor.id)
+      .eq("manager_name", managerName)
+      .maybeSingle();
+
+    if (!existingContact) {
+      await supabase.from("contractor_contacts").insert({
+        contractor_id: contractor.id,
+        manager_name: managerName,
+        contact_phone: contactPhone,
+      });
+    } else if (!existingContact.contact_phone) {
+      await supabase
+        .from("contractor_contacts")
+        .update({
+          contact_phone: contactPhone,
+        })
+        .eq("id", existingContact.id);
+    }
+  }
+}
+
+return { data, error: null };
 }

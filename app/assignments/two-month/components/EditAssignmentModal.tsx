@@ -1,5 +1,25 @@
 import React, { useState } from "react";
-import type { Assignment, AssignmentFile } from "../types";
+
+type AssignmentFile = {
+  id: string;
+  assignment_id: string;
+  file_name: string;
+  file_url: string;
+};
+
+type Assignment = {
+  id: string;
+  site_name: string | null;
+  contractor_name: string | null;
+  construction_type: string | null;
+  manager_name: string | null;
+  contact_phone: string | null;
+  address: string | null;
+  meeting_time: string | null;
+  shift_type: string | null;
+  start_date: string | null;
+  end_date: string | null;
+};
 
 type Props = {
   editingAssignment: Assignment | null;
@@ -12,7 +32,7 @@ type Props = {
   deleteAssignment: (id: string) => void;
 };
 
-export default function AssignmentEditModal({
+export default function EditTwoMonthAssignmentModal({
   editingAssignment,
   setEditingAssignment,
   inputStyle,

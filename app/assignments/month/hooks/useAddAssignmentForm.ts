@@ -12,6 +12,7 @@ export function useAddAssignmentForm() {
   const [endDate, setEndDate] = useState("");
   const [constructionType, setConstructionType] =
     useState("第一工事");
+  const [addFiles, setAddFiles] = useState<FileList | null>(null);
 
   return {
     siteName,
@@ -43,5 +44,8 @@ export function useAddAssignmentForm() {
 
     constructionType,
     setConstructionType,
+
+    addFiles,
+    setAddFiles,
   };
 }

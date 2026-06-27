@@ -1,5 +1,16 @@
 import React, { useState } from "react";
-import type { Contractor, ContractorContact } from "../types";
+
+type Contractor = {
+  id: string;
+  name: string;
+};
+
+type ContractorContact = {
+  id: string;
+  contractor_id: string;
+  manager_name: string;
+  contact_phone: string | null;
+};
 
 type Props = {
   showAddModal: boolean;
@@ -34,7 +45,7 @@ setAddFiles: React.Dispatch<
   handleAddSite: () => void;
 };
 
-export default function AddAssignmentModal({
+export default function AddTwoMonthAssignmentModal({
   showAddModal,
   setShowAddModal,
   contractors,
@@ -64,13 +75,13 @@ setAddFiles,
   inputStyle,
   handleAddSite,
 }: Props) {
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
+    const [previewImage, setPreviewImage] = useState<string | null>(null);
+  
+    if (!showAddModal) return null;
 
-  if (!showAddModal) return null;
-
-  return (
-    <>
-      <div
+    return (
+        <>
+          <div
     onClick={() => {
       setAddFiles(null);
       setShowAddModal(false);
@@ -317,15 +328,15 @@ setAddFiles,
             src={URL.createObjectURL(file)}
             alt={file.name}
             onClick={() => setPreviewImage(URL.createObjectURL(file))}
-              style={{
-                width: 56,
-                height: 56,
-                objectFit: "cover",
-                borderRadius: 6,
-                border: "1px solid #ddd",
-                cursor: "zoom-in",
-              }}
-            />
+            style={{
+              width: 56,
+              height: 56,
+              objectFit: "cover",
+              borderRadius: 6,
+              border: "1px solid #ddd",
+              cursor: "zoom-in",
+            }}
+          />
           ) : (
             <div
               style={{
@@ -432,57 +443,57 @@ setAddFiles,
     </div>
 
 {previewImage && (
-  <div
-    onClick={(e) => {
-      e.stopPropagation();
-      setPreviewImage(null);
-    }}
-    style={{
-      position: "fixed",
-      inset: 0,
-      backgroundColor: "rgba(0,0,0,0.75)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      zIndex: 100000,
-      padding: 20,
-    }}
-  >
-    <button
-      type="button"
-      onClick={() => setPreviewImage(null)}
+    <div
+      onClick={(e) => {
+        e.stopPropagation();
+        setPreviewImage(null);
+      }}
       style={{
-        position: "absolute",
-        top: 20,
-        right: 20,
-        border: "none",
-        backgroundColor: "#fff",
-        color: "#111",
-        borderRadius: 999,
-        width: 40,
-        height: 40,
-        fontSize: 22,
-        fontWeight: 900,
-        cursor: "pointer",
+        position: "fixed",
+        inset: 0,
+        backgroundColor: "rgba(0,0,0,0.75)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 100000,
+        padding: 20,
       }}
     >
-      ×
-    </button>
-
-    <img
-      src={previewImage}
-      alt="preview"
-      onClick={(e) => e.stopPropagation()}
-      style={{
-        maxWidth: "95vw",
-        maxHeight: "90vh",
-        objectFit: "contain",
-        borderRadius: 12,
-        backgroundColor: "#fff",
-      }}
-    />
-  </div>
-)}
+      <button
+        type="button"
+        onClick={() => setPreviewImage(null)}
+        style={{
+          position: "absolute",
+          top: 20,
+          right: 20,
+          border: "none",
+          backgroundColor: "#fff",
+          color: "#111",
+          borderRadius: 999,
+          width: 40,
+          height: 40,
+          fontSize: 22,
+          fontWeight: 900,
+          cursor: "pointer",
+        }}
+      >
+        ×
+      </button>
+  
+      <img
+        src={previewImage}
+        alt="preview"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          maxWidth: "95vw",
+          maxHeight: "90vh",
+          objectFit: "contain",
+          borderRadius: 12,
+          backgroundColor: "#fff",
+        }}
+      />
+    </div>
+  )}
 
 </>
   );
