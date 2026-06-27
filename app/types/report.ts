@@ -17,4 +17,5 @@ export type Employee = {
     site_name: string;
     contractor_name: string;
     manager_name: string | null;
+    is_my_assignment?: boolean;
   };

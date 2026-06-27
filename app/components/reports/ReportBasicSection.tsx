@@ -10,6 +10,7 @@ type Site = {
   site_name: string;
   contractor_name: string;
   manager_name: string | null;
+  is_my_assignment?: boolean;
 };
 
 type Props = {
@@ -86,17 +87,22 @@ export default function ReportBasicSection({
       </div>
 
       <div style={sectionStyle}>
-        <p>元請</p>
-        <input
-          value={contractorName}
-          onChange={(e) => {
-            setContractorName(e.target.value);
-            setShowContractorSuggestions(true);
-          }}
-          onFocus={() => setShowContractorSuggestions(true)}
-          style={inputStyle}
-          placeholder="元請会社名を入力"
-        />
+      <p>元請</p>
+
+<div
+  style={{
+    padding: 12,
+    borderRadius: 8,
+    background: "#f5f5f5",
+    border: "1px solid #ddd",
+    color: contractorName ? "#111" : "#999",
+    minHeight: 48,
+    display: "flex",
+    alignItems: "center",
+  }}
+>
+  {contractorName || "現場を選択してください"}
+</div>
 
         {showContractorSuggestions && contractorName && (
           <div
@@ -137,7 +143,7 @@ export default function ReportBasicSection({
           }}
           onFocus={() => setShowSiteSuggestions(true)}
           style={inputStyle}
-          placeholder="現場名を入力"
+          placeholder="現場を選択してください"
         />
 
         {showSiteSuggestions && (
@@ -151,9 +157,14 @@ export default function ReportBasicSection({
             }}
           >
             {sites
-              .filter((s) => !site || s.site_name.includes(site))
-              .slice(0, 5)
-              .map((s) => (
+  .filter((s) => !site || s.site_name.includes(site))
+  .sort((a, b) => {
+    if (a.is_my_assignment && !b.is_my_assignment) return -1;
+    if (!a.is_my_assignment && b.is_my_assignment) return 1;
+    return a.site_name.localeCompare(b.site_name);
+  })
+  .slice(0, 5)
+  .map((s) => (
                 <div
                   key={`${s.contractor_name}-${s.site_name}`}
                   onClick={() => {
@@ -164,7 +175,10 @@ export default function ReportBasicSection({
                   }}
                   style={{ padding: 8, cursor: "pointer" }}
                 >
-                  <div style={{ fontWeight: 600 }}>{s.site_name}</div>
+                  <div style={{ fontWeight: 600 }}>
+  {s.is_my_assignment ? "★ " : ""}
+  {s.site_name}
+</div>
                   <div style={{ fontSize: 13, color: "#666" }}>
                     元請: {s.contractor_name}
                     {s.manager_name ? ` / 担当: ${s.manager_name}` : ""}

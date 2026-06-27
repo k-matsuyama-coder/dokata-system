@@ -195,7 +195,10 @@ const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(
 const [checkedAssignmentMembers, setCheckedAssignmentMembers] = useState<string[]>([]);
 const [editMembersMode, setEditMembersMode] = useState(false);
 const [membersConfirmed, setMembersConfirmed] = useState(false);
-const { contractors, sites } = useReportMasterData();
+const { contractors, sites } = useReportMasterData({
+  employeeName,
+  reportDate,
+});
 
   const inputStyle = {
     width: "100%",
