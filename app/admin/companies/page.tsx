@@ -13,29 +13,32 @@ type Company = {
 export default function CompaniesPage() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [name, setName] = useState("");
+  const [loginOrganizationId, setLoginOrganizationId] = useState<string | null>(null);
 
   const fetchCompanies = async () => {
     const { data: userData } = await supabase.auth.getUser();
-  
+
     if (!userData.user) {
       window.location.href = "/login";
       return;
     }
-  
+
     const { data: employee } = await supabase
       .from("employees")
-      .select("role")
-      .eq("id", userData.user.id)
+      .select("role, organization_id")
+      .eq("auth_user_id", userData.user.id)
       .single();
-  
-    if (!employee || !hasRole(employee.role, "super_admin")) {
+
+    if (!employee || !hasRole(employee.role, "admin")) {
       window.location.href = "/home";
       return;
     }
-  
+
+    setLoginOrganizationId(employee.organization_id ?? null);
+
     const { data } = await supabase
       .from("companies")
-      .select("*")
+      .select("id, name")
       .order("created_at", { ascending: false });
 
     setCompanies(data ?? []);
@@ -48,7 +51,15 @@ export default function CompaniesPage() {
   const handleAdd = async () => {
     if (!name) return alert("会社名を入力");
 
-    const { error } = await supabase.from("companies").insert({ name });
+    if (!loginOrganizationId) {
+      alert("契約会社情報が取得できません");
+      return;
+    }
+
+    const { error } = await supabase.from("companies").insert({
+      name,
+      organization_id: loginOrganizationId,
+    });
 
     if (error) {
       alert(error.message);
@@ -91,23 +102,26 @@ export default function CompaniesPage() {
             padding: 12,
             marginBottom: 8,
             borderRadius: 8,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
           }}
         >
-          {c.name}
+          <span>{c.name}</span>
 
           <button
-                onClick={() => handleDelete(c.id)}
-                style={{
-                  backgroundColor: "#d11a2a",
-                  color: "#fff",
-                  border: "none",
-                  padding: "8px 12px",
-                  borderRadius: 8,
-                  cursor: "pointer",
-                }}
-              >
-                削除
-              </button>
+            onClick={() => handleDelete(c.id)}
+            style={{
+              backgroundColor: "#d11a2a",
+              color: "#fff",
+              border: "none",
+              padding: "8px 12px",
+              borderRadius: 8,
+              cursor: "pointer",
+            }}
+          >
+            削除
+          </button>
         </div>
       ))}
     </div>
