@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
+import { hasRole } from "../../types/auth";
 
 type Report = {
   id: string;
@@ -16,6 +17,24 @@ export default function ReportsAdminPage() {
 
   useEffect(() => {
     const fetchReports = async () => {
+      const { data: userData } = await supabase.auth.getUser();
+  
+      if (!userData.user) {
+        window.location.href = "/login";
+        return;
+      }
+  
+      const { data: employee } = await supabase
+        .from("employees")
+        .select("role")
+        .eq("auth_user_id", userData.user.id)
+        .single();
+  
+      if (!employee || !hasRole(employee.role, "admin")) {
+        window.location.href = "/home";
+        return;
+      }
+  
       const { data } = await supabase
         .from("daily_reports")
         .select("id, report_date, worker_name, site_name")
@@ -186,6 +205,23 @@ export default function ReportsAdminPage() {
                 <p style={{ margin: 0 }}>{r.report_date}</p>
                 <p style={{ margin: 0 }}>{r.worker_name}</p>
                 <p style={{ margin: 0 }}>{r.site_name}</p>
+
+                <a
+  href={`/reports/${r.id}/edit`}
+  style={{
+    display: "inline-block",
+    marginTop: 8,
+    textDecoration: "none",
+    backgroundColor: "#111",
+    color: "#fff",
+    padding: "8px 12px",
+    borderRadius: 8,
+    fontSize: 14,
+    fontWeight: 600,
+  }}
+>
+  編集
+</a>
               </div>
             ))}
           </div>

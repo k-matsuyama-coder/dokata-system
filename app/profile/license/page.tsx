@@ -42,6 +42,11 @@ export default function LicensePage() {
       return;
     }
 
+    if (!licenseName || !issueDate || !expiryDate) {
+      alert("免許名・取得日・有効期限を入力してください");
+      return;
+    }
+
     const { data: employee } = await supabase
       .from("employees")
       .select("id")
@@ -81,6 +86,12 @@ export default function LicensePage() {
     }
 
     alert("保存成功");
+
+    setLicenseName("");
+setIssueDate("");
+setExpiryDate("");
+setFrontFile(null);
+setBackFile(null);
   };
 
   return (

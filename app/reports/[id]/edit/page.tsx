@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import ReportForm from "@/app/components/reports/ReportForm";
+import { hasRole } from "@/app/types/auth";
 
 type Employee = {
   name: string;
@@ -66,8 +67,8 @@ export default function EditReportPage() {
         .eq("auth_user_id", user.id)
         .single();
 
-      const admin = employee?.role === "admin";
-      setIsAdmin(admin);
+        const admin = hasRole(employee?.role ?? "", "admin");
+        setIsAdmin(admin);
 
       if (employee) {
         setEmployeeName(employee.name);

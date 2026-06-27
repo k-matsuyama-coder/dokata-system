@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { hasRole } from "@/app/types/auth";
 
 type ReportRow = {
   id: string;
@@ -94,7 +95,7 @@ if (loginEmployee?.must_change_password) {
       
       const monthStart = todayString.slice(0, 7) + "-01";
       
-      if (employee.role === "admin") {
+      if (hasRole(employee.role, "admin")) {
         const monthEnd = new Date(
           Number(todayString.slice(0, 4)),
           Number(todayString.slice(5, 7)),
@@ -300,6 +301,17 @@ setTotalVehicleCount(driverReportIds.size);
     };
 
     fetchHomeData();
+
+    useEffect(() => {
+      const checkOrg = async () => {
+        const { data, error } = await supabase.rpc("current_organization_id");
+    
+        console.log("organization_id:", data);
+        console.log("organization_error:", error);
+      };
+    
+      checkOrg();
+    }, []);
   }, []);
 
   const totalDays = dayCount + nightCount;
@@ -320,7 +332,7 @@ const totalOvertimeSum = dayOvertime + nightOvertime;
           {employeeName} さん、お疲れさまです
           </p>
 
-          {role === "admin" && (
+          {hasRole(role ?? "", "admin") && (
   <div
     style={{
       display: "grid",

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
+import { hasRole } from "@/app/types/auth";
 
 type Company = {
   id: string;
@@ -14,6 +15,24 @@ export default function CompaniesPage() {
   const [name, setName] = useState("");
 
   const fetchCompanies = async () => {
+    const { data: userData } = await supabase.auth.getUser();
+  
+    if (!userData.user) {
+      window.location.href = "/login";
+      return;
+    }
+  
+    const { data: employee } = await supabase
+      .from("employees")
+      .select("role")
+      .eq("id", userData.user.id)
+      .single();
+  
+    if (!employee || !hasRole(employee.role, "super_admin")) {
+      window.location.href = "/home";
+      return;
+    }
+  
     const { data } = await supabase
       .from("companies")
       .select("*")
@@ -77,7 +96,7 @@ export default function CompaniesPage() {
           {c.name}
 
           <button
-                onClick={() => handleDelete(contractor.id)}
+                onClick={() => handleDelete(c.id)}
                 style={{
                   backgroundColor: "#d11a2a",
                   color: "#fff",

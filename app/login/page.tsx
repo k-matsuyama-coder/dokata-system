@@ -50,15 +50,15 @@ export default function LoginPage() {
         return;
       }
 
-      if (employee?.must_change_password) {
-        window.location.href = "/profile/password";
-        return;
-      }
-
       window.location.href = "/home";
       return;
     }
 
+    if (employee.must_change_password) {
+      window.location.href = "/change-password";
+      return;
+    }
+    
     window.location.href = "/home";
   };
 

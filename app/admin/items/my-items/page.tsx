@@ -140,7 +140,7 @@ await supabase.from("item_histories").insert({
 const { data: admins } = await supabase
   .from("employees")
   .select("name")
-  .eq("role", "admin");
+  .in("role", ["admin", "super_admin"]);
 
 if (admins && admins.length > 0) {
   await supabase.from("notifications").insert(

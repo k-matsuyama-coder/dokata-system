@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { hasRole } from "../../types/auth";
 
 type Item = {
 id: string;
@@ -70,7 +71,25 @@ const [location, setLocation] = useState("");
 const [managerName, setManagerName] = useState("");
 
 const fetchItems = async () => {
-    const { data } = await supabase
+  const { data: userData } = await supabase.auth.getUser();
+
+  if (!userData.user) {
+    window.location.href = "/login";
+    return;
+  }
+
+  const { data: employee } = await supabase
+    .from("employees")
+    .select("role")
+    .eq("id", userData.user.id)
+    .single();
+
+  if (!employee || !hasRole(employee.role, "admin")) {
+    window.location.href = "/home";
+    return;
+  }
+
+  const { data } = await supabase
       .from("items")
       .select("*")
       .order("item_name");

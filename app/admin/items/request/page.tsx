@@ -86,10 +86,10 @@ export default function ItemRequestPage() {
 
       const selectedItem = items.find((item) => item.id === selectedItemId);
 
-const { data: admins } = await supabase
-  .from("employees")
-  .select("name")
-  .eq("role", "admin");
+      const { data: admins } = await supabase
+      .from("employees")
+      .select("name")
+      .in("role", ["admin", "super_admin"]);
 
 if (admins && admins.length > 0) {
   await supabase.from("notifications").insert(
@@ -104,7 +104,7 @@ if (admins && admins.length > 0) {
 }
 
 const pushResults = await Promise.all(
-    admins.map(async (admin) => {
+  (admins ?? []).map(async (admin) => {
       const res = await fetch("/api/send-push", {
         method: "POST",
         headers: {

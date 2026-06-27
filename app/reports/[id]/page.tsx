@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
+import { hasRole } from "@/app/types/auth";
 
 type ReportDetail = {
   id: string;
@@ -40,18 +41,45 @@ export default function ReportDetailPage() {
 
   useEffect(() => {
     const fetchReport = async () => {
-      const { data, error } = await supabase
+      const { data: userData } = await supabase.auth.getUser();
+      const user = userData.user;
+    
+      if (!user) {
+        window.location.href = "/login";
+        return;
+      }
+    
+      const { data: employee } = await supabase
+  .from("employees")
+  .select("role")
+  .eq("auth_user_id", user.id)
+  .single();
+
+if (!employee) {
+  alert("社員情報が見つかりません");
+  window.location.href = "/home";
+  return;
+}
+
+const isAdmin = hasRole(employee.role, "admin");
+    
+      let query = supabase
         .from("daily_reports")
         .select("*")
-        .eq("id", id)
-        .single();
-
+        .eq("id", id);
+    
+      if (!isAdmin) {
+        query = query.eq("user_id", user.id);
+      }
+    
+      const { data, error } = await query.single();
+    
       if (error) {
         alert("日報取得失敗: " + error.message);
         setLoading(false);
         return;
       }
-
+    
       setReport(data);
       setLoading(false);
     };

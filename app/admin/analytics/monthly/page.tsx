@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
+import { hasRole } from "../../../types/auth";
 
 type Report = {
   report_date: string;
@@ -44,8 +45,26 @@ const [year, setYear] = useState(
 
   useEffect(() => {
     const fetchReports = async () => {
+      const { data: userData } = await supabase.auth.getUser();
+  
+      if (!userData.user) {
+        window.location.href = "/login";
+        return;
+      }
+  
+      const { data: employee } = await supabase
+        .from("employees")
+        .select("role")
+        .eq("id", userData.user.id)
+        .single();
+  
+      if (!employee || !hasRole(employee.role, "admin")) {
+        window.location.href = "/home";
+        return;
+      }
+  
       let start = "";
-let end = "";
+      let end = "";
 
 if (viewMode === "monthly") {
   start = `${month}-01`;

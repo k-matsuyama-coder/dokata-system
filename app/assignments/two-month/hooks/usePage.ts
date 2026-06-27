@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { fetchTwoMonthData } from "../api";
+import { supabase } from "@/lib/supabase";
+import { hasRole } from "../../../types/auth";
 
 import type {
   Assignment,
@@ -87,6 +89,25 @@ export function useTwoMonthPage() {
 
   const fetchData = async () => {
     try {
+      const { data: userData } = await supabase.auth.getUser();
+  
+      if (!userData.user) {
+        window.location.href = "/login";
+        return;
+      }
+  
+      const { data: employee } = await supabase
+        .from("employees")
+        .select("role")
+        .eq("auth_user_id", userData.user.id)
+        .single();
+  
+      if (!employee || !hasRole(employee.role, "admin")) {
+        alert("管理者のみ閲覧できます");
+        window.location.href = "/home";
+        return;
+      }
+  
       const result = await fetchTwoMonthData(days);
   
       setEmployees(result.employees);

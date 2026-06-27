@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import BackButton from "@/app/components/BackButton";
+import { supabase } from "@/lib/supabase";
+import { hasRole } from "../types/auth";
 
 const menuGroups = [
   {
@@ -44,21 +46,42 @@ const menuGroups = [
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState("配置");
   const [isMobile, setIsMobile] = useState(false);
+  const [loginRole, setLoginRole] = useState<string | null>(null);
 
   useEffect(() => {
+    const checkAuth = async () => {
+      const { data: userData } = await supabase.auth.getUser();
+  
+      if (!userData.user) {
+        window.location.href = "/login";
+        return;
+      }
+  
+      const { data: employee } = await supabase
+        .from("employees")
+        .select("role")
+        .eq("auth_user_id", userData.user.id)
+        .single();
+  
+      setLoginRole(employee?.role ?? null);
+  
+      if (!employee || !hasRole(employee.role, "admin")) {
+        window.location.href = "/home";
+        return;
+      }
+    };
+  
+    checkAuth();
+  
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
-
+  
     checkMobile();
-
+  
     window.addEventListener("resize", checkMobile);
-
-    return () =>
-      window.removeEventListener(
-        "resize",
-        checkMobile
-      );
+  
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   return (
@@ -98,7 +121,13 @@ export default function AdminPage() {
                 </div>
 
                 <div style={{ display: "grid", gap: 6 }}>
-                  {group.items.map((item) => (
+                {group.items
+  .filter((item) =>
+    item.href === "/admin/companies"
+      ? hasRole(loginRole ?? "", "super_admin")
+      : true
+  )
+  .map((item) => (
                     <Link
                       key={item.href}
                       href={item.href}
@@ -183,7 +212,13 @@ export default function AdminPage() {
                   gap: 14,
                 }}
               >
-                {group.items.map((item) => (
+                {group.items
+  .filter((item) =>
+    item.href === "/admin/companies"
+      ? hasRole(loginRole ?? "", "super_admin")
+      : true
+  )
+  .map((item) => (
                   <Link
                     key={item.href}
                     href={item.href}

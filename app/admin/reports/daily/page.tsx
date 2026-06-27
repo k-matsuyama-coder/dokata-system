@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
+import { isAdminRole } from "../../../types/auth";
 
 type Report = {
   id: string;
@@ -61,7 +62,7 @@ const allChecked =
         .eq("auth_user_id", user.id)
         .single();
 
-      if (!employee || employee.role !== "admin") {
+      if (!employee || !hasRole(employee.role, "admin")) {
         alert("管理者のみ閲覧できます");
         window.location.href = "/home";
         return;

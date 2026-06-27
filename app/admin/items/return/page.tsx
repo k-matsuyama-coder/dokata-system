@@ -141,11 +141,11 @@ const historyResult = await supabase
 
 console.log("履歴保存結果", historyResult);
 
-const { data: admins, error: adminError } =
+const { data: admins, error: adminError } = 
 await supabase
   .from("employees")
   .select("name")
-  .eq("role", "admin");
+  .in("role", ["admin", "super_admin"]);
 
 console.log("admins", admins);
 console.log("adminError", adminError);

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
+import { hasRole } from "../../../types/auth";
 
 type Company = {
   id: string;
@@ -21,6 +22,7 @@ export default function UserDetailPage() {
   const [authUserId, setAuthUserId] = useState("");
 const [email, setEmail] = useState("");
 const [password, setPassword] = useState("");
+const [loginRole, setLoginRole] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -38,11 +40,13 @@ const [password, setPassword] = useState("");
         .eq("auth_user_id", user.id)
         .single();
 
-      if (!me || me.role !== "admin") {
-        alert("管理者のみ閲覧できます");
-        window.location.href = "/home";
-        return;
-      }
+        setLoginRole(me?.role ?? null);
+
+        if (!me || !hasRole(me.role, "admin")) {
+          alert("管理者のみ閲覧できます");
+          window.location.href = "/home";
+          return;
+        }
 
       const { data: employee, error: employeeError } = await supabase
         .from("employees")
@@ -62,15 +66,24 @@ const [password, setPassword] = useState("");
       setAuthUserId(employee.auth_user_id ?? "");
 
       if (employee.auth_user_id) {
-        const res = await fetch("/api/admin/get-user-auth", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            authUserId: employee.auth_user_id,
-          }),
-        });
+        const { data: sessionData } = await supabase.auth.getSession();
+const token = sessionData.session?.access_token;
+
+if (!token) {
+  alert("ログイン情報がありません");
+  return;
+}
+
+const res = await fetch("/api/admin/get-user-auth", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+  },
+  body: JSON.stringify({
+    authUserId: employee.auth_user_id,
+  }),
+});
       
         const result = await res.json();
       
@@ -98,6 +111,11 @@ const [password, setPassword] = useState("");
   }, [id]);
 
   const handleUpdate = async () => {
+    if (role === "super_admin" && !hasRole(loginRole ?? "", "super_admin")) {
+      alert("super_admin 権限は super_admin のみ設定できます");
+      return;
+    }
+
   const { error } = await supabase
     .from("employees")
     .update({
@@ -112,18 +130,21 @@ const [password, setPassword] = useState("");
   }
 
   if (email.trim() || password.trim()) {
-    const authRes = await fetch("/api/admin/update-user-auth", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        employeeId: id,
-        authUserId: authUserId || null,
-        email: email.trim(),
-        password: password.trim(),
-      }),
-    });
+    const { data: sessionData } = await supabase.auth.getSession();
+
+const authRes = await fetch("/api/admin/update-user-auth", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${sessionData.session?.access_token}`,
+  },
+  body: JSON.stringify({
+    employeeId: id,
+    authUserId,
+    email: email.trim(),
+    password: password.trim(),
+  }),
+});
 
     const authResult = await authRes.json();
 
@@ -162,7 +183,15 @@ const [password, setPassword] = useState("");
           style={{ width: "100%", padding: 10, boxSizing: "border-box" }}
         >
           <option value="worker">worker</option>
-          <option value="admin">admin</option>
+<option value="admin">admin</option>
+
+{role === "super_admin" ? (
+  <option value="super_admin">super_admin</option>
+) : (
+  hasRole(loginRole ?? "", "super_admin") && (
+    <option value="super_admin">super_admin</option>
+  )
+)}
         </select>
       </div>
 

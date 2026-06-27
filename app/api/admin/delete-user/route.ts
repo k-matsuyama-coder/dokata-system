@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { hasRole } from "@/app/types/auth";
 
 export async function POST(req: Request) {
   try {
@@ -44,18 +45,28 @@ export async function POST(req: Request) {
       .eq("auth_user_id", userData.user.id)
       .single();
 
-    if (!adminEmployee || adminEmployee.role !== "admin") {
-      return Response.json({ error: "管理者のみ実行できます" }, { status: 403 });
-    }
+      if (!adminEmployee || !hasRole(adminEmployee.role, "admin")) {
+        return Response.json({ error: "管理者のみ実行できます" }, { status: 403 });
+      }
 
     const { data: employee, error: employeeFetchError } = await supabaseAdmin
       .from("employees")
-      .select("id, auth_user_id, name")
+      .select("id, auth_user_id, name, role")
       .eq("id", employeeId)
       .single();
 
     if (employeeFetchError || !employee) {
       return Response.json({ error: "社員が見つかりません" }, { status: 404 });
+    }
+
+    if (
+      employee.role === "super_admin" &&
+      !hasRole(adminEmployee.role, "super_admin")
+    ) {
+      return Response.json(
+        { error: "super_admin は super_admin のみ削除できます" },
+        { status: 403 }
+      );
     }
 
     if (employee.auth_user_id) {

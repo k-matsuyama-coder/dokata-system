@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
+import { hasRole } from "../../types/auth";
 
 type Assignment = {
   id: string;
@@ -43,6 +44,24 @@ export default function ReportStatusPage() {
   const [showUnsubmittedOnly, setShowUnsubmittedOnly] = useState(false);
 
   const fetchData = async () => {
+    const { data: userData } = await supabase.auth.getUser();
+  
+    if (!userData.user) {
+      window.location.href = "/login";
+      return;
+    }
+  
+    const { data: employee } = await supabase
+      .from("employees")
+      .select("role")
+      .eq("id", userData.user.id)
+      .single();
+  
+    if (!employee || !hasRole(employee.role, "admin")) {
+      window.location.href = "/home";
+      return;
+    }
+  
     const { data: assignmentData, error: assignmentError } = await supabase
       .from("assignments")
       .select("id, site_name, contractor_name, shift_type")
@@ -261,14 +280,6 @@ if (totalSites === 0) {
       const reportUrl = `/reports/new?assignment_id=${row.assignment.id}&date=${date}&site=${encodeURIComponent(
         row.assignment.site_name ?? ""
       )}`;
-
-      await supabase.from("notifications").insert({
-        employee_name: foreman.employee_name,
-        title: "日報確認依頼",
-        message: `${date} ${row.assignment.site_name} の日報を提出してください`,
-        link_url: reportUrl,
-        is_read: false,
-      });
       
       await supabase.from("notifications").insert({
         employee_name: foreman.employee_name,

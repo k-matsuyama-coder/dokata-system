@@ -1,7 +1,39 @@
 import { createClient } from "@supabase/supabase-js";
+import { hasRole } from "@/app/types/auth";
 
 export async function POST(req: Request) {
   try {
+    const token = req.headers
+      .get("authorization")
+      ?.replace("Bearer ", "");
+
+    if (!token) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const authClient = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
+    const {
+      data: { user },
+    } = await authClient.auth.getUser(token);
+
+    if (!user) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { data: loginEmployee } = await authClient
+      .from("employees")
+      .select("role")
+      .eq("auth_user_id", user.id)
+      .single();
+
+    if (!loginEmployee || !hasRole(loginEmployee.role, "admin")) {
+      return Response.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const body = await req.json();
     const { lastName, firstName, email, role, companyName } = body;
 
@@ -11,7 +43,14 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-    
+
+    if (role === "super_admin" && !hasRole(loginEmployee.role, "super_admin")) {
+      return Response.json(
+        { error: "super_admin 権限は super_admin のみ設定できます" },
+        { status: 403 }
+      );
+    }
+
     const password = Math.random().toString(36).slice(-8);
     const fullName = [lastName, firstName].filter(Boolean).join(" ");
 
@@ -30,10 +69,10 @@ export async function POST(req: Request) {
       return Response.json({ error: error.message }, { status: 500 });
     }
 
-    const user = data.user;
+    const createdUser = data.user;
 
     const { error: employeeError } = await supabase.from("employees").insert({
-      auth_user_id: user.id,
+      auth_user_id: createdUser.id,
       name: fullName,
       role: role || "worker",
       company_name: companyName || "",

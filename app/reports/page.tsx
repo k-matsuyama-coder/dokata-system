@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import ReportSummaryCard from "@/app/components/ReportSummaryCard";
+import { hasRole } from "@/app/types/auth";
 
 type Report = {
   id: string;

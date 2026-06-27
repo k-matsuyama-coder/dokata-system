@@ -210,7 +210,7 @@ const showQualificationSuggestions =
 
         <div style={{ marginTop: 16 }}>
           <a
-            href="/profile/password"
+            href="/change-password"
             style={{
               display: "inline-block",
               textDecoration: "none",

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import MyMonthlyScheduleModal from "@/app/components/MyMonthlyScheduleModal";
+import { hasRole } from "@/app/types/auth";
 
 type Notification = {
   id: string;
@@ -507,7 +508,7 @@ DOKATA-System
   分析
 </a>
 
-{role === "admin" && (
+{hasRole(role ?? "", "admin") && (
   <a
     href="/assignments/month"
     onClick={() => setMenuOpen(false)}
@@ -521,9 +522,9 @@ fontWeight: pathname.startsWith("/assignments/month") ? 700 : 500,
   </a>
 )}
 
-            {role === "admin" && (
-              <a
-                href="/admin"
+{hasRole(role ?? "", "admin") && (
+  <a
+    href="/admin"
                 onClick={() => setMenuOpen(false)}
                 className="nav-link"
                 style={{

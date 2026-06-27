@@ -24,6 +24,16 @@ export async function POST(req: Request) {
     const message = body.message;
     const url = new URL(body.url || "/reports/new", req.url).href;
 
+    if (!employeeName || !title || !message) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "必要な情報が不足しています",
+        },
+        { status: 400 }
+      );
+    }
+
     const { data: subscriptions } = await supabase
       .from("push_subscriptions")
       .select("*")

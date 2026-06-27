@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { hasRole } from "@/app/types/auth";
 
 type ItemRequest = {
   id: string;
@@ -24,6 +25,24 @@ export default function ItemRequestsAdminPage() {
   const [requests, setRequests] = useState<ItemRequest[]>([]);
 
   const fetchRequests = async () => {
+    const { data: userData } = await supabase.auth.getUser();
+  
+    if (!userData.user) {
+      window.location.href = "/login";
+      return;
+    }
+  
+    const { data: employee } = await supabase
+      .from("employees")
+      .select("role")
+      .eq("id", userData.user.id)
+      .single();
+  
+    if (!employee || !hasRole(employee.role, "admin")) {
+      window.location.href = "/home";
+      return;
+    }
+  
     const { data, error } = await supabase
       .from("item_requests")
       .select(`

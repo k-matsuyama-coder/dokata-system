@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
+import { hasRole } from "../../../types/auth";
 
 export default function NewUserPage() {
   const [lastName, setLastName] = useState("");
@@ -11,11 +12,32 @@ export default function NewUserPage() {
   const [createdPassword, setCreatedPassword] = useState("");
   const [role, setRole] = useState("worker");
   const [companyName, setCompanyName] = useState("");
+  const [loginRole, setLoginRole] = useState<string | null>(null);
   const [companies, setCompanies] = useState<{ id: string; name: string }[]>([]);
 
   // ✅ ここに置く（重要）
   useEffect(() => {
     const fetchCompanies = async () => {
+      const { data: userData } = await supabase.auth.getUser();
+  
+      if (!userData.user) {
+        window.location.href = "/login";
+        return;
+      }
+  
+      const { data: employee } = await supabase
+        .from("employees")
+        .select("role")
+        .eq("auth_user_id", userData.user.id)
+        .single();
+  
+      setLoginRole(employee?.role ?? null);
+  
+      if (!employee || !hasRole(employee.role, "admin")) {
+        window.location.href = "/home";
+        return;
+      }
+  
       const { data, error } = await supabase
         .from("companies")
         .select("id, name")
@@ -33,6 +55,11 @@ export default function NewUserPage() {
   }, []);
 
   const handleCreate = async () => {
+    if (role === "super_admin" && !hasRole(loginRole ?? "", "super_admin")) {
+      alert("super_admin 権限は super_admin のみ設定できます");
+      return;
+    }
+
     if (!firstName || !email) {
       alert("名前とメールアドレスを入力してください");
       return;
@@ -60,6 +87,11 @@ export default function NewUserPage() {
     }
 
     setCreatedPassword(result.password);
+    setLastName("");
+setFirstName("");
+setEmail("");
+setRole("worker");
+setCompanyName("");
     alert("社員作成成功");
   };
 
@@ -88,7 +120,11 @@ export default function NewUserPage() {
       <p>権限</p>
       <select value={role} onChange={(e) => setRole(e.target.value)} style={inputStyle}>
         <option value="worker">worker</option>
-        <option value="admin">admin</option>
+<option value="admin">admin</option>
+
+{hasRole(loginRole ?? "", "super_admin") && (
+  <option value="super_admin">super_admin</option>
+)}
       </select>
 
       <p>所属会社</p>

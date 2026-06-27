@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { hasRole } from "../../../types/auth";
 
 type Props = {
   month: string;
@@ -36,11 +37,11 @@ export function useMonthlyAssignmentAdmin({
         .eq("auth_user_id", user.id)
         .single();
 
-      if (!employee || employee.role !== "admin") {
-        alert("管理者のみ閲覧できます");
-        window.location.href = "/home";
-        return;
-      }
+        if (!employee || !hasRole(employee.role, "admin")) {
+          alert("管理者のみ閲覧できます");
+          window.location.href = "/home";
+          return;
+        }
 
       await fetchData();
     };

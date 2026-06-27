@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
+import { hasRole } from "@/app/types/auth";
 
 type ReportMember = {
   employee_name: string;
@@ -34,6 +35,18 @@ export default function ReportsSummaryPage() {
         window.location.href = "/login";
         return;
       }
+
+      const { data: employee } = await supabase
+  .from("employees")
+  .select("role")
+  .eq("auth_user_id", user.id)
+  .single();
+
+if (!employee || !hasRole(employee.role, "admin")) {
+  alert("管理者のみ閲覧できます");
+  window.location.href = "/home";
+  return;
+}
 
       const { data, error } = await supabase
         .from("report_members")

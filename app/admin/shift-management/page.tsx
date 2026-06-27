@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
+import { hasRole } from "../../types/auth";
 
 type Employee = {
   name: string;
@@ -33,7 +34,7 @@ export default function ShiftManagementPage() {
 const [dragMode, setDragMode] = useState<"add" | "delete" | null>(null);
 const [dragCells, setDragCells] = useState<Set<string>>(new Set());
 
-  const isAdmin = loginEmployee?.role === "admin";
+const isAdmin = hasRole(loginEmployee?.role ?? "", "admin");
 
   const days = useMemo(() => {
     const [year, monthNum] = month.split("-").map(Number);
@@ -73,7 +74,7 @@ const [dragCells, setDragCells] = useState<Set<string>>(new Set());
       .order("company_name", { ascending: true })
       .order("name", { ascending: true });
 
-      if (employeeData.role === "admin") {
+      if (hasRole(employeeData.role ?? "", "admin")) {
         setEmployees(allEmployees ?? []);
       } else {
         setEmployees([employeeData]);
@@ -89,9 +90,9 @@ const [dragCells, setDragCells] = useState<Set<string>>(new Set());
       .lte("request_date", endDate)
       .order("request_date", { ascending: true });
 
-    if (employeeData.role !== "admin") {
-      query = query.eq("employee_name", employeeData.name);
-    }
+      if (!hasRole(employeeData.role ?? "", "admin")) {
+        query = query.eq("employee_name", employeeData.name);
+      }
 
     const { data: requestData, error: requestError } = await query;
 

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
+import { hasRole } from "../../types/auth";
 
 type Employee = {
   id: string;
@@ -35,15 +36,15 @@ const [sortType, setSortType] = useState("created_desc");
         .eq("auth_user_id", user.id)
         .single();
 
-      if (!me || me.role !== "admin") {
-        alert("管理者のみ閲覧できます");
-        window.location.href = "/home";
-        return;
-      }
+        if (!me || !hasRole(me.role, "admin")) {
+          alert("管理者のみ閲覧できます");
+          window.location.href = "/home";
+          return;
+        }
 
       const { data, error } = await supabase
         .from("employees")
-        .select("id, auth_user_id, name, role, company_name")
+        .select("id, auth_user_id, name, role, company_name, must_change_password")
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -104,45 +105,45 @@ const [sortType, setSortType] = useState("created_desc");
       {}
     );
 
-  const handleDelete = async (employee: Employee) => {
-    const ok = window.confirm(
-      `${employee.name} を完全削除しますか？\nログインアカウントも削除されます。`
-    );
-  
-    if (!ok) return;
-  
-    const { data: sessionData } = await supabase.auth.getSession();
-    const token = sessionData.session?.access_token;
-  
-    if (!token) {
-      alert("ログイン情報がありません");
-      return;
-    }
-  
-    const res = await fetch("/api/admin/delete-user", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        employeeId: employee.id,
-      }),
-    });
-  
-    const result = await res.json();
-  
-    if (!res.ok) {
-      alert(result.error || "削除失敗");
-      return;
-    }
-  
-    setEmployees((prev) =>
-      prev.filter((item) => item.id !== employee.id)
-    );
-  
-    alert("完全削除しました");
-  };
+    const handleDelete = async (employee: Employee) => {
+      const ok = window.confirm(
+        `${employee.name} を完全削除しますか？\nログインアカウントも削除されます。`
+      );
+    
+      if (!ok) return;
+    
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+    
+      if (!token) {
+        alert("ログイン情報がありません");
+        return;
+      }
+    
+      const res = await fetch("/api/admin/delete-user", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          employeeId: employee.id,
+        }),
+      });
+    
+      const result = await res.json();
+    
+      if (!res.ok) {
+        alert(result.error || "削除失敗");
+        return;
+      }
+    
+      setEmployees((prev) =>
+        prev.filter((item) => item.id !== employee.id)
+      );
+    
+      alert("完全削除しました");
+    };
 
   return (
     <div style={{ maxWidth: 800, margin: "0 auto", padding: 16 }}>

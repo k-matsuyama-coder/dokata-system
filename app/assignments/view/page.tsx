@@ -385,14 +385,14 @@ const endDate = displayDates[displayDates.length - 1];
     : "#fff",
   
     color:
-      viewMode === "3days"
-        ? "#fff"
-        : "#111",
-  
-    border:
-      viewMode === "3days"
-        ? "1px solid #2563eb"
-        : "1px solid #d1d5db",
+  viewMode === "week"
+    ? "#fff"
+    : "#111",
+
+border:
+  viewMode === "week"
+    ? "1px solid #2563eb"
+    : "1px solid #d1d5db",
   }}
 >
   週間
