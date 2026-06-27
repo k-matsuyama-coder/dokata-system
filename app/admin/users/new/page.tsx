@@ -65,10 +65,20 @@ export default function NewUserPage() {
       return;
     }
 
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    
+    if (!session) {
+      alert("ログイン情報がありません。再ログインしてください");
+      return;
+    }
+
     const res = await fetch("/api/admin/create-user", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
       },
       body: JSON.stringify({
         lastName,

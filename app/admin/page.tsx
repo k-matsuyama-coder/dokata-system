@@ -41,6 +41,18 @@ const menuGroups = [
       { label: "分析", href: "/admin/analysis", icon: "📊", desc: "集計・分析" },
     ],
   },
+  {
+    title: "Super Admin",
+    items: [
+      {
+        label: "会社管理",
+        href: "/super-admin/organizations",
+        icon: "🏢",
+        desc: "会社追加・初期管理者作成",
+        superAdminOnly: true,
+      },
+    ],
+  },
 ];
 
 export default function AdminPage() {
@@ -121,30 +133,32 @@ export default function AdminPage() {
                 </div>
 
                 <div style={{ display: "grid", gap: 6 }}>
-                {group.items
-  .filter((item) =>
-    item.href === "/admin/companies"
-      ? hasRole(loginRole ?? "", "super_admin")
-      : true
-  )
-  .map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      style={{
-                        color: "#fff",
-                        textDecoration: "none",
-                        padding: "9px 10px",
-                        borderRadius: 8,
-                        backgroundColor: "rgba(255,255,255,0.06)",
-                        fontSize: 14,
-                        fontWeight: 700,
-                      }}
-                    >
-                      {item.icon} {item.label}
-                    </Link>
-                  ))}
-                </div>
+  {group.items
+    .filter((item: any) =>
+      item.superAdminOnly
+        ? hasRole(loginRole ?? "", "super_admin")
+        : item.href === "/admin/companies"
+        ? hasRole(loginRole ?? "", "super_admin")
+        : true
+    )
+    .map((item) => (
+      <Link
+        key={item.href}
+        href={item.href}
+        style={{
+          color: "#fff",
+          textDecoration: "none",
+          padding: "9px 10px",
+          borderRadius: 8,
+          backgroundColor: "rgba(255,255,255,0.06)",
+          fontSize: 14,
+          fontWeight: 700,
+        }}
+      >
+        {item.icon} {item.label}
+      </Link>
+    ))}
+</div>
               </div>
             ))}
           </div>
@@ -213,11 +227,13 @@ export default function AdminPage() {
                 }}
               >
                 {group.items
-  .filter((item) =>
-    item.href === "/admin/companies"
-      ? hasRole(loginRole ?? "", "super_admin")
-      : true
-  )
+  .filter((item: any) =>
+  item.superAdminOnly
+    ? hasRole(loginRole ?? "", "super_admin")
+    : item.href === "/admin/companies"
+    ? hasRole(loginRole ?? "", "super_admin")
+    : true
+)
   .map((item) => (
                   <Link
                     key={item.href}
