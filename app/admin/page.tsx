@@ -135,12 +135,10 @@ export default function AdminPage() {
                 <div style={{ display: "grid", gap: 6 }}>
   {group.items
     .filter((item: any) =>
-      item.superAdminOnly
-        ? hasRole(loginRole ?? "", "super_admin")
-        : item.href === "/admin/companies"
-        ? hasRole(loginRole ?? "", "super_admin")
-        : true
-    )
+    item.superAdminOnly
+      ? hasRole(loginRole ?? "", "super_admin")
+      : true
+  )
     .map((item) => (
       <Link
         key={item.href}
@@ -229,8 +227,6 @@ export default function AdminPage() {
                 {group.items
   .filter((item: any) =>
   item.superAdminOnly
-    ? hasRole(loginRole ?? "", "super_admin")
-    : item.href === "/admin/companies"
     ? hasRole(loginRole ?? "", "super_admin")
     : true
 )

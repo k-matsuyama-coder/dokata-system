@@ -31,7 +31,7 @@ export async function POST(req: Request) {
     
     const { data: loginEmployee, error: loginEmployeeError } = await supabase
       .from("employees")
-      .select("role")
+      .select("role, organization_id")
       .eq("auth_user_id", user.id)
       .single();
     
@@ -84,6 +84,7 @@ export async function POST(req: Request) {
       role: role || "worker",
       company_name: companyName || "",
       must_change_password: true,
+      organization_id: loginEmployee.organization_id,
     });
 
     if (employeeError) {
