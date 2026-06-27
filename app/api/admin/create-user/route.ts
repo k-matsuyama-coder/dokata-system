@@ -24,11 +24,23 @@ export async function POST(req: Request) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { data: loginEmployee } = await authClient
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    
+    const { data: loginEmployee, error: loginEmployeeError } = await supabase
       .from("employees")
       .select("role")
       .eq("auth_user_id", user.id)
       .single();
+    
+    if (loginEmployeeError) {
+      return Response.json(
+        { error: "社員情報取得失敗: " + loginEmployeeError.message },
+        { status: 500 }
+      );
+    }
 
     if (!loginEmployee || !hasRole(loginEmployee.role, "admin")) {
       return Response.json({ error: "Forbidden" }, { status: 403 });
@@ -53,11 +65,6 @@ export async function POST(req: Request) {
 
     const password = Math.random().toString(36).slice(-8);
     const fullName = [lastName, firstName].filter(Boolean).join(" ");
-
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
 
     const { data, error } = await supabase.auth.admin.createUser({
       email,
