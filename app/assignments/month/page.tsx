@@ -1,365 +1,222 @@
 "use client";
 
-import { Fragment, useEffect, useMemo, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { useEffect, useState } from "react";
 import BackButton from "@/app/components/BackButton";
-import AssignmentCell from "./components/AssignmentCell";
 import AssignmentEditModal from "./components/AssignmentEditModal";
 import AddAssignmentModal from "./components/AddAssignmentModal";
 import MemberPanel from "./components/MemberPanel";
-import AssignmentRow from "./components/AssignmentRow";
 import MonthlyAssignmentsTable from "./components/MonthlyAssignmentsTable";
-import AssignmentDayCell from "./components/AssignmentDayCell";
 import AssignmentToolbar from "./components/AssignmentToolbar";
 import AssignmentDateHeader from "./components/AssignmentDateHeader";
 import { useResponsive } from "./hooks/useResponsive";
 import MobileMemberModal from "./components/MobileMemberModal";
-import { updateAssignmentAction } from "./actions/updateAssignment";
-import { handleAddSiteAction } from "./actions/handleAddSite";
-import { deleteAssignmentAction } from "./actions/deleteAssignment";
-import { uploadFilesAction } from "./actions/uploadFiles";
-import { deleteAssignmentFileAction } from "./actions/deleteAssignmentFile";
-import { toggleForemanAction } from "./actions/toggleForeman";
-import { deleteSiteMemberAction } from "./actions/deleteSiteMember";
-import { moveSiteMemberAction } from "./actions/moveSiteMember";
-import { addEmployeeToCellAction } from "./actions/addEmployeeToCell";
-import { updateDailyInfoAction } from "./actions/updateDailyInfo";
-import { fetchMonthlyAssignmentsAction } from "./actions/fetchMonthlyAssignments";
+import { moveAssignmentRowAction } from "./actions/moveAssignmentRow";
+import AssignmentGroups from "./components/AssignmentGroups";
+import { useMonthlyAssignmentCalendar } from "./hooks/useMonthlyAssignmentCalendar";
+import { useMonthlyAssignmentData } from "./hooks/useMonthlyAssignmentData";
+import { useMonthlyAssignmentAdmin } from "./hooks/useMonthlyAssignmentAdmin";
+import { useMonthlyAssignmentRealtime } from "./hooks/useMonthlyAssignmentRealtime";
+import { useMonthlyAssignmentActions } from "./hooks/useMonthlyAssignmentActions";
+import { useMonthlyAssignmentMembers } from "./hooks/useMonthlyAssignmentMembers";
+import { useMonthlyAssignmentVehicles } from "./hooks/useMonthlyAssignmentVehicles";
+import { useMonthlyAssignmentDailyInfo } from "./hooks/useMonthlyAssignmentDailyInfo";
+import { useMonthlyAssignmentComputed } from "./hooks/useMonthlyAssignmentComputed";
+import { useGroupedAssignments } from "./hooks/useGroupedAssignments";
+import { useMonthlyAssignmentSelection } from "./hooks/useMonthlyAssignmentSelection";
+import { useMonthlyAssignmentUI } from "./hooks/useMonthlyAssignmentUI";
+import { useAddAssignmentForm } from "./hooks/useAddAssignmentForm";
 
-import type {
-  Assignment,
-  SiteMember,
-  DailyInfo,
-  ShiftRequest,
-  AssignmentFile,
-  Employee,
-  Contractor,
-  ContractorContact,
-} from "./types";
-
-import {
-  th,
-  td,
-  cellTd,
-  stickyTd1,
-  stickyTd2,
-  stickyTd3,
-  stickyTh1,
-  stickyTh2,
-  stickyTh3,
-  tagBlue,
-  tagPurple,
-  tagYellow,
-} from "./styles";
-
-import {
-  getDayType,
-  getWeekStart,
-  toDateString,
-  isOutOfAssignmentPeriod,
-} from "./utils";
-
-import {
-  getEmployees,
-  getVehicles,
-  getContractors,
-  getContractorContacts,
-  getAssignments,
-  getAssignmentFiles,
-  getSiteMembers,
-  getDailyInfos,
-  getShiftRequests,
-} from "./api";
+import type { Assignment } from "./types";
+import { td } from "./styles";
+import { getWeekStart } from "./utils";
 
 export default function MonthlyAssignmentsPage() {
   const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [viewMode, setViewMode] = useState<"month" | "week">("month");
 
   const [weekStart, setWeekStart] = useState(getWeekStart);
-  const [assignments, setAssignments] = useState<Assignment[]>([]);
-  const [assignmentFiles, setAssignmentFiles] = useState<AssignmentFile[]>([]);
-  const [siteMembers, setSiteMembers] = useState<SiteMember[]>([]);
-  const [dailyInfos, setDailyInfos] = useState<DailyInfo[]>([]);
-  const [shiftRequests, setShiftRequests] = useState<ShiftRequest[]>([]);
-  const [employees, setEmployees] = useState<Employee[]>([]);
-
-  const [siteName, setSiteName] = useState("");
-  const [contractorName, setContractorName] = useState("");
-  const [shiftType, setShiftType] = useState("day");
-  const [managerName, setManagerName] = useState("");
-const [contactPhone, setContactPhone] = useState("");
-const [address, setAddress] = useState("");
-const [meetingTime, setMeetingTime] = useState("08:00");
-const [startDate, setStartDate] = useState("");
-const [endDate, setEndDate] = useState("");
-const [contractors, setContractors] = useState<Contractor[]>([]);
-const [contractorContacts, setContractorContacts] = useState<ContractorContact[]>([]);
-const [showAddModal, setShowAddModal] = useState(false);
-const [showMemberModal, setShowMemberModal] = useState(false);
-const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
-const [constructionType, setConstructionType] = useState("第一工事");
-const [sortMode, setSortMode] = useState("manual");
-const [showFinished, setShowFinished] = useState(false);
-const [draggingAssignmentId, setDraggingAssignmentId] = useState<string | null>(null);
-
-  const [draggingEmployeeName, setDraggingEmployeeName] = useState<string | null>(null);
-  const [draggingSiteMemberId, setDraggingSiteMemberId] = useState<string | null>(null);
-  const [draggingVehicleName, setDraggingVehicleName] = useState<string | null>(null);
-const [draggingVehicleFrom, setDraggingVehicleFrom] = useState<{
-  assignmentId: string;
-  workDate: string;
-  vehicleName: string;
-} | null>(null);
-
-const [copiedVehicleNames, setCopiedVehicleNames] = useState<string[]>([]);
-  const [selectedEmployeeName, setSelectedEmployeeName] = useState<string | null>(null);
-const [selectedSiteMemberId, setSelectedSiteMemberId] = useState<string | null>(null);
-const [selectedDate, setSelectedDate] = useState<string | null>(null);
-const [selectedShiftType, setSelectedShiftType] = useState<string | null>(null);
-const [copiedEmployeeNames, setCopiedEmployeeNames] = useState<string[]>([]);
-const [editingDetails, setEditingDetails] = useState<Record<string, string>>({});
-const [saveTimers, setSaveTimers] = useState<
-  Record<string, ReturnType<typeof setTimeout>>
->({});
-const [vehicles, setVehicles] = useState<
-  {
-    id: string;
-    vehicle_name: string;
-    vehicle_type: string | null;
-  }[]
->([]);
-
-const { isMobile } = useResponsive();
-
-const days = useMemo(() => {
-  if (viewMode === "week") {
-    return Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(weekStart);
-      d.setDate(d.getDate() + i);
-
-      return toDateString(d);
-    });
-  }
-
-  const [year, monthNum] = month.split("-").map(Number);
-
-  const firstDay = new Date(year, monthNum - 1, 1);
-  const lastDay = new Date(year, monthNum, 0);
-
-  const start = new Date(firstDay);
-  start.setDate(start.getDate() - 7);
-
-  const end = new Date(lastDay);
-  end.setDate(end.getDate() + 7);
-
-  const result: string[] = [];
-
-  const current = new Date(start);
-
-  while (current <= end) {
-    result.push(toDateString(current));
-
-    current.setDate(current.getDate() + 1);
-  }
-
-  return result;
-}, [month, viewMode, weekStart]);
-
-  const todayString = new Date().toISOString().slice(0, 10);
-
-const getDateHeaderStyle = (date: string) => {
-  const dayType = getDayType(date);
-  const isToday = date === todayString;
-
-  return {
-    ...th,
-    boxShadow: "0 2px 4px rgba(0,0,0,0.08)",
-    backgroundColor: isToday
-      ? "#fff3cd"
-      : dayType === "sunday"
-      ? "#ffe5e5"
-      : dayType === "saturday"
-      ? "#e5f0ff"
-      : "#f5f5f5",
-    color:
-      dayType === "sunday"
-        ? "#d11a2a"
-        : dayType === "saturday"
-        ? "#0a66c2"
-        : "#111",
-    fontWeight: 800,
-  };
-};
-
-const getCellStyle = (
-  date: string,
-  plannedCount: number | null | undefined,
-  memberCount: number,
-  shiftType: string | null
-) => {
-  const dayType = getDayType(date);
-  const isToday = date === todayString;
-
-  const isShort =
-    plannedCount !== null &&
-    plannedCount !== undefined &&
-    plannedCount > 0 &&
-    memberCount < plannedCount;
-
-  const isPerfect =
-    plannedCount !== null &&
-    plannedCount !== undefined &&
-    plannedCount > 0 &&
-    memberCount === plannedCount;
-
-    return {
-      ...cellTd,
-      minWidth: viewMode === "week"
-        ? (isMobile ? 160 : 220)
-        : (isMobile ? 120 : 150),
-      height: isMobile ? 120 : 140,
-      padding: isMobile ? 4 : 6,
-      backgroundColor:
-  shiftType === "night"
-    ? "#e5e7eb"
-    : isShort
-    ? "#ffe5e5"
-    : isPerfect
-    ? "#e8f7e8"
-    : isToday
-    ? "#fffdf0"
-    : dayType === "sunday"
-    ? "#fff7f7"
-    : dayType === "saturday"
-    ? "#f7fbff"
-    : "#fcfcfc",
-  };
-};
-
-const fetchData = async () => {
-  const startDate = days[0];
-  const endDate = days[days.length - 1];
 
   const {
-    employeeData,
-    vehicleData,
-    contractorData,
-    contactData,
-    assignmentData,
-    fileData,
-    memberData,
-    dailyInfoData,
-    shiftRequestData,
-  } = await fetchMonthlyAssignmentsAction({
+    siteName,
+    setSiteName,
+    contractorName,
+    setContractorName,
+    shiftType,
+    setShiftType,
+    managerName,
+    setManagerName,
+    contactPhone,
+    setContactPhone,
+    address,
+    setAddress,
+    meetingTime,
+    setMeetingTime,
     startDate,
+    setStartDate,
     endDate,
-  });
+    setEndDate,
+    constructionType,
+    setConstructionType,
+  } = useAddAssignmentForm();
 
-  setEmployees(employeeData);
-  setVehicles(vehicleData);
-  setContractors(contractorData);
-  setContractorContacts(contactData);
-  setAssignments(assignmentData);
-  setAssignmentFiles(fileData);
-  setSiteMembers(memberData);
-  setDailyInfos(dailyInfoData);
-  setShiftRequests(shiftRequestData);
-};
+const {
+  showAddModal,
+  setShowAddModal,
 
-  useEffect(() => {
-    const checkAdmin = async () => {
-      const { data: userData } = await supabase.auth.getUser();
-      const user = userData.user;
+  showMemberModal,
+  setShowMemberModal,
 
-      if (!user) {
-        window.location.href = "/login";
-        return;
-      }
+  editingAssignment,
+  setEditingAssignment,
 
-      const { data: employee } = await supabase
-  .from("employees")
-  .select(`
-    *,
-    organizations (
-      id,
-      name
-    )
-  `)
-  .eq("auth_user_id", user.id)
-  .single();
+  sortMode,
+  setSortMode,
 
-      if (!employee || employee.role !== "admin") {
-        alert("管理者のみ閲覧できます");
-        window.location.href = "/home";
-        return;
-      }
+  showFinished,
+  setShowFinished,
+} = useMonthlyAssignmentUI();
 
-      fetchData();
-    };
+const {
+  draggingAssignmentId,
+  setDraggingAssignmentId,
+  draggingEmployeeName,
+  setDraggingEmployeeName,
+  draggingSiteMemberId,
+  setDraggingSiteMemberId,
+  draggingVehicleName,
+  setDraggingVehicleName,
+  draggingVehicleFrom,
+  setDraggingVehicleFrom,
 
-    checkAdmin();
-  }, [month, viewMode, weekStart]);
+  copiedVehicleNames,
+  setCopiedVehicleNames,
+  copiedEmployeeNames,
+  setCopiedEmployeeNames,
 
-  useEffect(() => {
-    const channel = supabase
-      .channel("monthly-assignments-realtime")
-  
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "assignment_site_members",
-        },
-        () => {
-          console.log("メンバー配置更新あり");
-          fetchData();
-        }
-      )
+  selectedEmployeeName,
+  setSelectedEmployeeName,
+  selectedSiteMemberId,
+  setSelectedSiteMemberId,
+  selectedDate,
+  setSelectedDate,
+  selectedShiftType,
+  setSelectedShiftType,
+} = useMonthlyAssignmentSelection();
 
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "shift_requests",
-        },
-        () => {
-          fetchData();
-        }
-      )
-  
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "assignment_site_daily_infos",
-        },
-        () => {
-          fetchData();
-        }
-      )
+const { isMobile } = useResponsive();
+const {
+  days,
+  todayString,
+  getDateHeaderStyle,
+  getCellStyle,
+} = useMonthlyAssignmentCalendar({
+  month,
+  viewMode,
+  weekStart,
+  isMobile,
+});
 
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "assignments",
-        },
-        () => {
-          console.log("現場更新あり");
-          fetchData();
-        }
-      )
-  
-      .subscribe();
-  
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [month, viewMode, weekStart]);
+const {
+  assignments,
+  setAssignments,
+  assignmentFiles,
+  setAssignmentFiles,
+  siteMembers,
+  setSiteMembers,
+  dailyInfos,
+  setDailyInfos,
+  shiftRequests,
+  employees,
+  vehicles,
+  contractors,
+  contractorContacts,
+  fetchData,
+} = useMonthlyAssignmentData({
+  days,
+});
+
+const {
+  assignmentMap,
+  getCellMembers,
+  dailySummaryMap,
+  getAssignmentCount,
+  getUnassignedEmployeesByDate,
+  isAssignedSameDateDifferentShift,
+} = useMonthlyAssignmentComputed({
+  days,
+  assignments,
+  siteMembers,
+  dailyInfos,
+  employees,
+  shiftRequests,
+});
+
+const {
+  updateAssignment,
+  uploadFiles,
+  deleteAssignmentFile,
+  handleAddSite,
+  deleteAssignment,
+} = useMonthlyAssignmentActions({
+  month,
+
+  siteName,
+  setSiteName,
+
+  contractorName,
+  setContractorName,
+
+  shiftType,
+  setShiftType,
+
+  managerName,
+  setManagerName,
+
+  contactPhone,
+  setContactPhone,
+
+  address,
+  setAddress,
+
+  meetingTime,
+  setMeetingTime,
+
+  startDate,
+  setStartDate,
+
+  endDate,
+  setEndDate,
+
+  constructionType,
+  setConstructionType,
+
+  editingAssignment,
+  setEditingAssignment,
+
+  assignmentFiles,
+  setAssignmentFiles,
+
+  setAssignments,
+  setSiteMembers,
+
+  setShowAddModal,
+
+  fetchData,
+});
+
+useMonthlyAssignmentAdmin({
+  month,
+  viewMode,
+  weekStart,
+  fetchData,
+});
+
+useMonthlyAssignmentRealtime({
+  month,
+  viewMode,
+  weekStart,
+  fetchData,
+});
 
   useEffect(() => {
     if (viewMode !== "week") return;
@@ -367,485 +224,59 @@ const fetchData = async () => {
     setWeekStart(getWeekStart());
   }, [month]);
 
-  const updateAssignment = async () => {
-    const { error } = await updateAssignmentAction({
-      editingAssignment,
-    });
-  
-    if (error) {
-      alert("現場更新失敗: " + error.message);
-      return;
-    }
-  
-    setEditingAssignment(null);
-    fetchData();
-  };
-
-  const uploadFiles = async (
-    assignmentId: string,
-    files: FileList | null
-  ) => {
-    const { error } = await uploadFilesAction(
-      assignmentId,
-      files
-    );
-  
-    if (error) {
-      alert("アップロード失敗: " + error.message);
-      return;
-    }
-  
-    fetchData();
-  };
-
-  const deleteAssignmentFile = async (file: AssignmentFile) => {
-    const ok = window.confirm("このファイルを削除しますか？");
-  
-    if (!ok) return;
-  
-    const { error } = await deleteAssignmentFileAction({
-      file,
-    });
-  
-    if (error) {
-      alert("ファイル削除失敗: " + error.message);
-      return;
-    }
-  
-    setAssignmentFiles((prev) =>
-      prev.filter((item) => item.id !== file.id)
-    );
-  };
-
-  const handleAddSite = async () => {
-    const { error } = await handleAddSiteAction({
-      month,
-      siteName,
-      contractorName,
-      startDate,
-      endDate,
-      shiftType,
-      managerName,
-      contactPhone,
-      address,
-      meetingTime,
-      constructionType,
-    });
-  
-    if (error) {
-      alert("現場追加失敗: " + error.message);
-      return;
-    }
-  
-    setSiteName("");
-    setContractorName("");
-    setManagerName("");
-    setContactPhone("");
-    setAddress("");
-    setShiftType("day");
-    setConstructionType("第一工事");
-    setMeetingTime("08:00");
-    setStartDate("");
-    setEndDate("");
-    setShowAddModal(false);
-  
-    fetchData();
-  };
-
-  const addEmployeeToCell = async (
-    employeeName: string,
-    assignmentId: string,
-    workDate: string,
-    autoForeman = true
-  ) => {
-    const exists = siteMembers.some(
-      (m) =>
-        m.assignment_id === assignmentId &&
-        m.work_date === workDate &&
-        m.employee_name === employeeName
-    );
-  
-    if (exists) return;
-  
-    const cellMembers = getCellMembers(assignmentId, workDate);
-    const isFirstMember = autoForeman && cellMembers.length === 0;
-  
-    const { data, error } = await addEmployeeToCellAction({
-      employeeName,
-      assignmentId,
-      workDate,
-      isFirstMember,
-    });
-  
-    if (error || !data) {
-      alert("メンバー追加失敗: " + (error?.message || "取得失敗"));
-      return;
-    }
-  
-    setSiteMembers((prev) => [...prev, data]);
-    setDraggingEmployeeName(null);
-  };
-
-  const moveSiteMember = async (
-    siteMemberId: string,
-    assignmentId: string,
-    workDate: string
-  ) => {
-    const { error } = await moveSiteMemberAction({
-      siteMemberId,
-      assignmentId,
-      workDate,
-    });
-  
-    if (error) {
-      alert("移動失敗: " + error.message);
-      return;
-    }
-  
-    setDraggingSiteMemberId(null);
-    setSelectedSiteMemberId(null);
-  
-    fetchData();
-  };
-
-  const deleteSiteMember = async (id: string) => {
-    const { error } = await deleteSiteMemberAction(id);
-  
-    if (error) {
-      alert("削除失敗: " + error.message);
-      return;
-    }
-  
-    setSiteMembers((prev) =>
-      prev.filter((m) => m.id !== id)
-    );
-  };
-
-  const toggleForeman = async (member: SiteMember) => {
-    const { error } = await toggleForemanAction({
-      member,
-    });
-  
-    if (error) {
-      alert("職長変更失敗: " + error.message);
-      return;
-    }
-  
-    setSiteMembers((prev) =>
-      prev.map((m) =>
-        m.id === member.id
-          ? { ...m, is_foreman: !member.is_foreman }
-          : m
-      )
-    );
-  };
-
-  const deleteAssignment = async (id: string) => {
-    const ok = window.confirm("この現場を削除しますか？");
-  
-    if (!ok) return;
-  
-    const { error } = await deleteAssignmentAction({
-      assignmentId: id,
-      assignmentFiles,
-    });
-  
-    if (error) {
-      alert("現場削除失敗: " + error.message);
-      return;
-    }
-  
-    setAssignments((prev) =>
-      prev.filter((a) => a.id !== id)
-    );
-  
-    setSiteMembers((prev) =>
-      prev.filter((m) => m.assignment_id !== id)
-    );
-  
-    setAssignmentFiles((prev) =>
-      prev.filter((f) => f.assignment_id !== id)
-    );
-  };
-
   const moveAssignmentRow = async (
     fromAssignmentId: string,
     toAssignmentId: string
   ) => {
-    if (fromAssignmentId === toAssignmentId) return;
-  
-    const fromIndex = assignments.findIndex((a) => a.id === fromAssignmentId);
-    const toIndex = assignments.findIndex((a) => a.id === toAssignmentId);
-  
-    if (fromIndex === -1 || toIndex === -1) return;
-  
-    const nextAssignments = [...assignments];
-    const [moved] = nextAssignments.splice(fromIndex, 1);
-    nextAssignments.splice(toIndex, 0, moved);
+    const { nextAssignments, error } = await moveAssignmentRowAction({
+      assignments,
+      fromAssignmentId,
+      toAssignmentId,
+    });
   
     setAssignments(nextAssignments);
   
-    const updates = nextAssignments.map((assignment, index) =>
-      supabase
-        .from("assignments")
-        .update({ sort_order: index })
-        .eq("id", assignment.id)
-    );
-  
-    const results = await Promise.all(updates);
-  
-    const failed = results.find((result) => result.error);
-  
-    if (failed?.error) {
-      alert("並び替え保存失敗: " + failed.error.message);
+    if (error) {
+      alert("並び替え保存失敗: " + error.message);
       fetchData();
     }
   };
 
-  const cellMembersMap = useMemo(() => {
-    const map = new Map<string, SiteMember[]>();
-  
-    siteMembers.forEach((member) => {
-      const key = `${member.assignment_id}_${member.work_date}`;
-  
-      if (!map.has(key)) {
-        map.set(key, []);
-      }
-  
-      map.get(key)!.push(member);
-    });
-  
-    return map;
-  }, [siteMembers]);
+  const {
+    getDailyInfo,
+    updateDailyInfo,
+    editingDetails,
+    setEditingDetails,
+    saveTimers,
+    setSaveTimers,
+  } = useMonthlyAssignmentDailyInfo({
+    dailyInfos,
+    setDailyInfos,
+  });
 
-  const getCellMembers = (assignmentId: string, workDate: string) => {
-    return cellMembersMap.get(`${assignmentId}_${workDate}`) ?? [];
-  };
+  const {
+    addEmployeeToCell,
+    moveSiteMember,
+    deleteSiteMember,
+    toggleForeman,
+  } = useMonthlyAssignmentMembers({
+    siteMembers,
+    setSiteMembers,
+    getCellMembers,
+    setDraggingEmployeeName,
+    setDraggingSiteMemberId,
+    setSelectedSiteMemberId,
+    fetchData,
+  });
 
-  const dailyInfoMap = useMemo(() => {
-    const map = new Map<string, DailyInfo>();
-  
-    dailyInfos.forEach((info) => {
-      map.set(`${info.assignment_id}_${info.work_date}`, info);
-    });
-  
-    return map;
-  }, [dailyInfos]);
-
-  const dailySummaryMap = useMemo(() => {
-    const map = new Map<
-      string,
-      {
-        infos: DailyInfo[];
-        members: SiteMember[];
-      }
-    >();
-  
-    days.forEach((date) => {
-      map.set(date, {
-        infos: [],
-        members: [],
-      });
-    });
-  
-    dailyInfos.forEach((info) => {
-      map.get(info.work_date)?.infos.push(info);
-    });
-  
-    siteMembers.forEach((member) => {
-      map.get(member.work_date)?.members.push(member);
-    });
-  
-    return map;
-  }, [days, dailyInfos, siteMembers]);
-
-  const getDailyInfo = (assignmentId: string, workDate: string) => {
-    return dailyInfoMap.get(`${assignmentId}_${workDate}`);
-  };
-  
-  const updateDailyInfo = async (
-    assignmentId: string,
-    workDate: string,
-    field: "planned_count" | "detail" | "vehicle_names",
-    value: string
-  ) => {
-    const existing = getDailyInfo(assignmentId, workDate);
-  
-    const { data, error } = await updateDailyInfoAction({
-      assignmentId,
-      workDate,
-      field,
-      value,
-      existing,
-    });
-  
-    if (error || !data) {
-      alert("更新失敗: " + (error?.message || "取得失敗"));
-      return;
-    }
-  
-    setDailyInfos((prev) => {
-      const exists = prev.some((info) => info.id === data.id);
-  
-      if (exists) {
-        return prev.map((info) =>
-          info.id === data.id ? data : info
-        );
-      }
-  
-      return [...prev, data];
-    });
-  
-    const key = `${assignmentId}_${workDate}`;
-  
-    setEditingDetails((prev) => {
-      const next = { ...prev };
-      delete next[key];
-      return next;
-    });
-  
-    setSaveTimers((prev) => {
-      const next = { ...prev };
-      delete next[key];
-      return next;
-    });
-  };
-
-  const addVehicleToCell = async (
-    vehicleName: string,
-    assignmentId: string,
-    workDate: string
-  ) => {
-    const existing = getDailyInfo(assignmentId, workDate);
-    const current = existing?.vehicle_names ?? [];
-  
-    if (current.includes(vehicleName)) return;
-  
-    await updateDailyInfo(
-      assignmentId,
-      workDate,
-      "vehicle_names",
-      [...current, vehicleName].join(",")
-    );
-  };
-  
-  const removeVehicleFromCell = async (
-    vehicleName: string,
-    assignmentId: string,
-    workDate: string
-  ) => {
-    const existing = getDailyInfo(assignmentId, workDate);
-    const current = existing?.vehicle_names ?? [];
-  
-    await updateDailyInfo(
-      assignmentId,
-      workDate,
-      "vehicle_names",
-      current.filter((name) => name !== vehicleName).join(",")
-    );
-  };
-  
-  const moveVehicleToCell = async (
-    vehicleName: string,
-    fromAssignmentId: string,
-    fromWorkDate: string,
-    toAssignmentId: string,
-    toWorkDate: string
-  ) => {
-    await removeVehicleFromCell(vehicleName, fromAssignmentId, fromWorkDate);
-    await addVehicleToCell(vehicleName, toAssignmentId, toWorkDate);
-  };
-
-  const isAssignedSameDateDifferentShift = (
-    employeeName: string,
-    workDate: string,
-    currentShiftType: string | null
-  ) => {
-    return siteMembers.some((member) => {
-      if (member.work_date !== workDate) return false;
-      if (member.employee_name !== employeeName) return false;
-  
-      const assignment = assignmentMap.get(member.assignment_id);
-  
-      return (
-        (assignment?.shift_type ?? "day") !==
-        (currentShiftType ?? "day")
-      );
-    });
-  };
-
-  const getUnassignedEmployeesByDate = (
-    workDate: string,
-    shiftType: string | null
-  ) => {
-    return (
-      unassignedEmployeesMap.get(
-        `${workDate}_${shiftType ?? "day"}`
-      ) ?? []
-    );
-  };
-
-  const assignmentMap = useMemo(() => {
-    return new Map(
-      assignments.map((assignment) => [
-        assignment.id,
-        assignment,
-      ])
-    );
-  }, [assignments]);
-
-  const assignmentCountMap = useMemo(() => {
-    const map = new Map<string, number>();
-  
-    siteMembers.forEach((member) => {
-      map.set(
-        member.employee_name,
-        (map.get(member.employee_name) ?? 0) + 1
-      );
-    });
-  
-    return map;
-  }, [siteMembers]);
-
-  const getAssignmentCount = (employeeName: string) =>
-  assignmentCountMap.get(employeeName) ?? 0;
-
-  const unassignedEmployeesMap = useMemo(() => {
-    const map = new Map<string, Employee[]>();
-  
-    days.forEach((date) => {
-      ["day", "night"].forEach((shift) => {
-        const assignedNames = new Set(
-          siteMembers
-            .filter((m) => {
-              if (m.work_date !== date) return false;
-  
-              const assignment = assignmentMap.get(m.assignment_id);
-  
-              return (assignment?.shift_type ?? "day") === shift;
-            })
-            .map((m) => m.employee_name)
-        );
-  
-        const holidayNames = new Set(
-          shiftRequests
-            .filter((r) => r.request_date === date)
-            .map((r) => r.employee_name)
-        );
-  
-        map.set(
-          `${date}_${shift}`,
-          employees.filter(
-            (employee) =>
-              !assignedNames.has(employee.name) &&
-              !holidayNames.has(employee.name)
-          )
-        );
-      });
-    });
-  
-    return map;
-  }, [days, employees, siteMembers, shiftRequests, assignmentMap]);
+  const {
+    addVehicleToCell,
+    removeVehicleFromCell,
+    moveVehicleToCell,
+  } = useMonthlyAssignmentVehicles({
+    getDailyInfo,
+    updateDailyInfo,
+  });
 
   const inputStyle = {
     width: "100%",
@@ -856,72 +287,13 @@ const fetchData = async () => {
     boxSizing: "border-box" as const,
   };
 
-  const sortedAssignments = [...assignments].sort((a, b) => {
-    switch (sortMode) {
-      case "site":
-        return (a.site_name || "").localeCompare(
-          b.site_name || "",
-          "ja"
-        );
-  
-      case "contractor":
-        return (a.contractor_name || "").localeCompare(
-          b.contractor_name || "",
-          "ja"
-        );
-  
-      case "manager":
-        return (a.manager_name || "").localeCompare(
-          b.manager_name || "",
-          "ja"
-        );
-  
-      case "construction":
-        return (a.construction_type || "").localeCompare(
-          b.construction_type || "",
-          "ja"
-        );
-  
-      case "shift":
-        return (a.shift_type || "").localeCompare(
-          b.shift_type || "",
-          "ja"
-        );
-  
-      default:
-        return 0;
-    }
+  const groupedAssignments = useGroupedAssignments({
+    assignments,
+    sortMode,
+    showFinished,
+    days,
+    todayString,
   });
-
-  const visibleAssignments = sortedAssignments.filter((assignment) => {
-    if (showFinished) return true;
-  
-    if (!assignment.start_date || !assignment.end_date) {
-      return true;
-    }
-  
-    return (
-      assignment.start_date <= days[days.length - 1] &&
-      assignment.end_date >= todayString
-    );
-  });
-  
-  const groupedAssignments = [
-    {
-      label: "第一工事",
-      rows: visibleAssignments.filter(
-        (a) => a.construction_type === "第一工事"
-      ),
-      color: "#eef6ff",
-    },
-    {
-      label: "第二工事",
-      rows: visibleAssignments.filter(
-        (a) => a.construction_type === "第二工事"
-      ),
-      color: "#fff8e6",
-    },
-  ];
 
   return (
     <div style={{ padding: isMobile ? 8 : 16 }}>
@@ -998,547 +370,54 @@ const fetchData = async () => {
   getDateHeaderStyle={getDateHeaderStyle}
 >
 
-            <tbody>
-            {groupedAssignments.map((group) => (
-  <Fragment key={group.label}>
-  <tr>
-  <td
-  colSpan={days.length + (isMobile ? 2 : 4)}
-  style={{
-    ...td,
-    backgroundColor: group.color,
-    color: "#111",
-    fontWeight: 900,
-    fontSize: 14,
-  }}
->
-      {group.label}
-    </td>
-  </tr>
-
-  {group.rows.map((assignment) => (
-  <AssignmentRow
-  key={assignment.id}
-  style={{
-    backgroundColor:
-      assignment.shift_type === "night"
-        ? "#f3f4f6"
-        : "#fff",
-  }}
->
-{!isMobile && (
-<td
-  style={{
-    ...td,
-    ...stickyTd1,
-    backgroundColor:
-      assignment.shift_type === "night" ? "#e5e7eb" : "#fff",
-  }}
->
-  {assignment.contractor_name || "-"}
-</td>
-)}
-
-
-<td
-  draggable={!isMobile && sortMode === "manual"}
-  onDragStart={() => setDraggingAssignmentId(assignment.id)}
-  onDragEnd={() => setDraggingAssignmentId(null)}
-  onDragOver={(e) => e.preventDefault()}
-  onDrop={() => {
-    if (!draggingAssignmentId) return;
-
-    moveAssignmentRow(
-      draggingAssignmentId,
-      assignment.id
-    );
-  }}
-  style={{
-    ...td,
-    ...stickyTd2,
-    left: isMobile ? 0 : 70,
-    fontWeight: 800,
-    cursor: !isMobile && sortMode === "manual" ? "grab" : "pointer",
-    backgroundColor:
-      draggingAssignmentId === assignment.id
-        ? "#dbeafe"
-        : assignment.shift_type === "night"
-        ? "#e5e7eb"
-        : "#fff",
-    minWidth: viewMode === "week" ? 260 : 180,
-    width: viewMode === "week" ? 260 : 180,
-  }}
->
-<div
-  style={{
-    display: "flex",
-    flexDirection: "column",
-    gap: 6,
-  }}
->
-      <span
-  onClick={() => setEditingAssignment(assignment)}
-  style={{
-    cursor: "pointer",
-    textDecoration: "underline",
-  }}
->
-  {assignment.site_name || "-"}
-</span>
-
-        <button
-          type="button"
-          onClick={() => deleteAssignment(assignment.id)}
-          style={{
-            backgroundColor: "#d11a2a",
-            color: "#fff",
-            border: "none",
-            borderRadius: 6,
-            padding: isMobile ? "6px 10px" : "4px 8px",
-            cursor: "pointer",
-            fontSize: isMobile ? 11 : 12,
-          }}
-        >
-          削除
-        </button>
-      </div>
-    </td>
-
-    {!isMobile && (
-    <td
-  style={{
-    ...td,
-    ...stickyTd3,
-    backgroundColor:
-      assignment.shift_type === "night" ? "#e5e7eb" : "#fff",
-  }}
->
-  {assignment.manager_name || "-"}
-</td>
-)}
-
-<td
-  style={{
-    ...td,
-    fontWeight: 800,
-    color:
-      assignment.shift_type === "night"
-        ? "#fff"
-        : "#111",
-    backgroundColor:
-      assignment.shift_type === "night"
-        ? "#374151"
-        : "#f3f4f6",
-    textAlign: "center",
-  }}
->
-  {assignment.shift_type === "night" ? "夜" : "昼"}
-</td>
-
-                  {days.map((date) => {
-                    const cellMembers = getCellMembers(assignment.id, date);
-                    const dailyInfo = getDailyInfo(assignment.id, date);
-                    const isOutOfPeriod = isOutOfAssignmentPeriod(
-                      date,
-                      assignment.start_date,
-                      assignment.end_date
-                    );
-                    const plannedCount = dailyInfo?.planned_count ?? null;
-const memberCount = cellMembers.length;
-const isShort =
-  plannedCount !== null &&
-  plannedCount > 0 &&
-  memberCount < plannedCount;
-
-  const isPerfect =
-  plannedCount !== null &&
-  plannedCount > 0 &&
-  memberCount === plannedCount;
-
-  const baseCellStyle = getCellStyle(
-    date,
-    plannedCount,
-    memberCount,
-    assignment.shift_type
-  );
-
-  return (
-  <AssignmentCell
-                        onDragOver={(e) => e.preventDefault()}
-                        onDrop={() => {
-                          if (isOutOfPeriod) return;
-                          if (draggingSiteMemberId) {
-                            moveSiteMember(draggingSiteMemberId, assignment.id, date);
-                            return;
-                          }
-                        
-                          if (draggingEmployeeName) {
-                            addEmployeeToCell(draggingEmployeeName, assignment.id, date);
-                            return;
-                          }
-                        
-                          if (draggingVehicleFrom) {
-                            moveVehicleToCell(
-                              draggingVehicleFrom.vehicleName,
-                              draggingVehicleFrom.assignmentId,
-                              draggingVehicleFrom.workDate,
-                              assignment.id,
-                              date
-                            );
-                            setDraggingVehicleFrom(null);
-                            return;
-                          }
-                        
-                          if (draggingVehicleName) {
-                            addVehicleToCell(draggingVehicleName, assignment.id, date);
-                            setDraggingVehicleName(null);
-                          }
-                        }}
-                        onClick={(e) => {
-                          if (isOutOfPeriod) return;
-                          setSelectedDate(date);
-                          setSelectedShiftType(assignment.shift_type ?? "day");
-                        
-                          if (selectedSiteMemberId) {
-                            moveSiteMember(selectedSiteMemberId, assignment.id, date);
-                            setSelectedSiteMemberId(null);
-                            return;
-                          }
-                        
-                          if (selectedEmployeeName) {
-                            addEmployeeToCell(selectedEmployeeName, assignment.id, date);
-                          
-                            setSelectedEmployeeName(null);
-                          
-                            if (isMobile) {
-                              setShowMemberModal(false);
-                            }
-                          
-                            return;
-                          }
-                        
-                          if (copiedEmployeeNames.length > 0) {
-                            const isMultiPaste = copiedEmployeeNames.length > 1;
-                          
-                            copiedEmployeeNames.forEach((name) => {
-                              addEmployeeToCell(name, assignment.id, date, !isMultiPaste);
-                            });
-                          
-                            if (!e.shiftKey) {
-                              setCopiedEmployeeNames([]);
-                            }
-                          }
-
-                          if (copiedVehicleNames.length > 0) {
-                            copiedVehicleNames.forEach((name) => {
-                              addVehicleToCell(name, assignment.id, date);
-                            });
-                          
-                            setCopiedVehicleNames([]);
-
-                            if (isMobile) {
-                              setShowMemberModal(false);
-                            }
-                          }
-                        
-                          }}
-                          style={{
-                            ...baseCellStyle,
-                            backgroundColor: isOutOfPeriod
-                              ? "#e5e7eb"
-                              : baseCellStyle.backgroundColor,
-                            opacity: isOutOfPeriod ? 0.6 : 1,
-                          }}
-                      >
-                        <div style={{ display: "grid", gap: 4 }}>
-                        {isOutOfPeriod && (
-  <div
-    style={{
-      padding: "4px 6px",
-      borderRadius: 6,
-      backgroundColor: "#d1d5db",
-      color: "#374151",
-      textAlign: "center",
-      fontWeight: 800,
-      fontSize: 11,
-      marginBottom: 4,
-    }}
-  >
-    工期外
-  </div>
-)}
-                        <div
-  style={{
-    fontSize: isMobile ? 10 : 11,
-    fontWeight: 800,
-    color: isShort
-      ? "#d11a2a"
-      : isPerfect
-      ? "#16a34a"
-      : "#555",
-    display: "grid",
-    gap: 2,
-    lineHeight: 1.4,
-  }}
->
-<div>
-    予定人数：{plannedCount ?? "-"}
-  </div>
-  <div>
-    人数：{plannedCount ? `${memberCount}/${plannedCount}` : memberCount}
-  </div>  
-</div>
-
-<input
-  type="number"
-  value={dailyInfo?.planned_count ?? ""}
-  onChange={(e) =>
-    updateDailyInfo(
-      assignment.id,
-      date,
-      "planned_count",
-      e.target.value
-    )
-  }
-  placeholder="人"
-  disabled={isOutOfPeriod}
-  style={{
-    width: "100%",
-    padding: "4px 6px",
-    border: "1px solid #d1d5db",
-    borderRadius: 6,
-    fontSize: isMobile ? 10 : 11,
-    fontWeight: 700,
-    backgroundColor: "#fff",
-    boxSizing: "border-box",
-  }}
-/>
-
-<textarea
-  value={
-    editingDetails[`${assignment.id}_${date}`] ??
-    dailyInfo?.detail ??
-    ""
-  }
-  onChange={(e) => {
-    const key = `${assignment.id}_${date}`;
-    const value = e.target.value;
-
-    setEditingDetails((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
-
-    if (saveTimers[key]) {
-      clearTimeout(saveTimers[key]);
-    }
-
-    const timer = setTimeout(() => {
-      updateDailyInfo(
-        assignment.id,
-        date,
-        "detail",
-        value
-      );
-    }, 500);
-
-    setSaveTimers((prev) => ({
-      ...prev,
-      [key]: timer,
-    }));
-  }}
-  disabled={isOutOfPeriod}
-  placeholder="詳細"
-  style={{
-    width: "100%",
-    padding: "4px 6px",
-    border: "1px solid #e5e7eb",
-    borderRadius: 6,
-    fontSize: isMobile ? 10 : 11,
-    backgroundColor: "#fff",
-    boxSizing: "border-box",
-  }}
-/>
-
-<div
-  style={{
-    marginTop: 0,
-    padding: 6,
-    borderRadius: 8,
-    backgroundColor: "#f9fafb",
-    fontSize: isMobile ? 10 : 11,
-  }}
->
-  <div style={{ fontWeight: 800, color: "#555", marginBottom: 4 }}>
-    車両
-  </div>
-
-  {dailyInfo?.vehicle_names?.length ? (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-      {dailyInfo.vehicle_names.map((name) => (
-        <div
-          key={name}
-          draggable={!isMobile}
-          onDragStart={() =>
-            setDraggingVehicleFrom({
-              assignmentId: assignment.id,
-              workDate: date,
-              vehicleName: name,
-            })
-          }
-          onDragEnd={() => setDraggingVehicleFrom(null)}
-          onClick={(e) => {
-            e.stopPropagation();
-            setCopiedVehicleNames((prev) =>
-              prev.includes(name)
-                ? prev.filter((v) => v !== name)
-                : [...prev, name]
-            );
-          }}
-          onDoubleClick={(e) => {
-            e.stopPropagation();
-            removeVehicleFromCell(name, assignment.id, date);
-          }}
-          style={{
-            padding: "3px 7px",
-            borderRadius: 999,
-            backgroundColor: copiedVehicleNames.includes(name)
-              ? "#fef3c7"
-              : "#e0f2fe",
-            border: copiedVehicleNames.includes(name)
-              ? "2px solid #f59e0b"
-              : "1px solid #bae6fd",
-            color: "#0369a1",
-            fontWeight: 800,
-            cursor: "grab",
-            width: "fit-content",
-          }}
-        >
-          🚚 {name}
-        </div>
-      ))}
-    </div>
-  ) : (
-    <div style={{ color: "#999" }}>未配置</div>
-  )}
-</div>
-
-<div
-  style={{
-    display: "flex",
-    flexWrap: "wrap",
-    gap: 4,
-    alignItems: "center",
-    marginTop: 4,
-  }}
->
-{[...cellMembers]
-  .sort((a, b) => Number(b.is_foreman) - Number(a.is_foreman))
-  .map((member) => {
-    const isCopied = copiedEmployeeNames.includes(member.employee_name);
-
-    return (
-    <div
-      key={member.id}
-      draggable={!isMobile}
-      onDragStart={() => setDraggingSiteMemberId(member.id)}
-      onDragEnd={() => setDraggingSiteMemberId(null)}
-      onClick={(e) => {
-        e.stopPropagation();
-        setCopiedEmployeeNames((prev) =>
-          prev.includes(member.employee_name)
-            ? prev.filter((name) => name !== member.employee_name)
-            : [...prev, member.employee_name]
-        );
-        setSelectedSiteMemberId(null);
-        setSelectedEmployeeName(null);
-      }}
-      onDoubleClick={() => deleteSiteMember(member.id)}
-      style={{
-        padding: "2px 6px",
-        borderRadius: 6,
-        backgroundColor: isCopied
-          ? "#dbeafe"
-          : member.is_foreman
-          ? "#fef3c7"
-          : "#eef2ff",
-        border: isCopied
-          ? "2px solid #2563eb"
-          : member.is_foreman
-          ? "2px solid #f59e0b"
-          : "1px solid #c7d2fe",
-        color: isCopied ? "#1d4ed8" : "#111",
-        cursor: "grab",
-        fontWeight: 700,
-        fontSize: 11,
-        width: "fit-content",
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
-        {member.is_foreman && <span style={tagYellow}>職長</span>}
-        {member.is_driver && <span style={tagBlue}>運転</span>}
-        {member.is_operator && <span style={tagPurple}>OP</span>}
-        {member.heavy_equipment && <span style={tagYellow}>{member.heavy_equipment}</span>}
-      </div>
-
-      <span>{member.employee_name}</span>
-
-      {member.is_foreman ? (
-  <button
-    type="button"
-    onClick={(e) => {
-      e.stopPropagation();
-      toggleForeman(member);
-    }}
-    style={{
-      marginTop: 3,
-      border: "none",
-      borderRadius: 6,
-      padding: "2px 6px",
-      backgroundColor: "#f59e0b",
-      color: "#fff",
-      fontSize: 10,
-      fontWeight: 800,
-      cursor: "pointer",
-    }}
-  >
-    職長解除
-  </button>
-) : !cellMembers.some((m) => m.is_foreman) ? (
-  <button
-    type="button"
-    onClick={(e) => {
-      e.stopPropagation();
-      toggleForeman(member);
-    }}
-    style={{
-      marginTop: 3,
-      border: "none",
-      borderRadius: 6,
-      padding: "2px 6px",
-      backgroundColor: "#e5e7eb",
-      color: "#111",
-      fontSize: 10,
-      fontWeight: 800,
-      cursor: "pointer",
-    }}
-  >
-    職長
-  </button>
-) : null}
-        </div>
-    );
-  })}
-</div>
-                        </div>
-                        </AssignmentCell>
-                    );
-                  })}
-                </AssignmentRow>
-                    ))}
-                    </Fragment>
-                  ))}
-            </tbody>
+<tbody>
+  <AssignmentGroups
+    groupedAssignments={groupedAssignments}
+    days={days}
+    isMobile={isMobile}
+    viewMode={viewMode}
+    sortMode={sortMode}
+    draggingAssignmentId={draggingAssignmentId}
+    draggingSiteMemberId={draggingSiteMemberId}
+    draggingEmployeeName={draggingEmployeeName}
+    draggingVehicleName={draggingVehicleName}
+    draggingVehicleFrom={draggingVehicleFrom}
+    selectedSiteMemberId={selectedSiteMemberId}
+    selectedEmployeeName={selectedEmployeeName}
+    copiedEmployeeNames={copiedEmployeeNames}
+    copiedVehicleNames={copiedVehicleNames}
+    editingDetails={editingDetails}
+    saveTimers={saveTimers}
+    getCellMembers={getCellMembers}
+    getDailyInfo={getDailyInfo}
+    getCellStyle={getCellStyle}
+    setDraggingAssignmentId={setDraggingAssignmentId}
+    setDraggingSiteMemberId={setDraggingSiteMemberId}
+    setDraggingEmployeeName={setDraggingEmployeeName}
+    setDraggingVehicleName={setDraggingVehicleName}
+    setDraggingVehicleFrom={setDraggingVehicleFrom}
+    setSelectedDate={setSelectedDate}
+    setSelectedShiftType={setSelectedShiftType}
+    setSelectedSiteMemberId={setSelectedSiteMemberId}
+    setSelectedEmployeeName={setSelectedEmployeeName}
+    setShowMemberModal={setShowMemberModal}
+    setCopiedEmployeeNames={setCopiedEmployeeNames}
+    setCopiedVehicleNames={setCopiedVehicleNames}
+    setEditingDetails={setEditingDetails}
+    setSaveTimers={setSaveTimers}
+    setEditingAssignment={setEditingAssignment}
+    moveAssignmentRow={moveAssignmentRow}
+    deleteAssignment={deleteAssignment}
+    moveSiteMember={moveSiteMember}
+    addEmployeeToCell={addEmployeeToCell}
+    moveVehicleToCell={moveVehicleToCell}
+    addVehicleToCell={addVehicleToCell}
+    removeVehicleFromCell={removeVehicleFromCell}
+    updateDailyInfo={updateDailyInfo}
+    deleteSiteMember={deleteSiteMember}
+    toggleForeman={toggleForeman}
+  />
+</tbody>
 </MonthlyAssignmentsTable>
           {isMobile && (selectedEmployeeName || copiedVehicleNames.length > 0) && (
   <div
