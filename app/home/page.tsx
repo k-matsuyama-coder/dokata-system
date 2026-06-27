@@ -301,17 +301,6 @@ setTotalVehicleCount(driverReportIds.size);
     };
 
     fetchHomeData();
-
-    useEffect(() => {
-      const checkOrg = async () => {
-        const { data, error } = await supabase.rpc("current_organization_id");
-    
-        console.log("organization_id:", data);
-        console.log("organization_error:", error);
-      };
-    
-      checkOrg();
-    }, []);
   }, []);
 
   const totalDays = dayCount + nightCount;
