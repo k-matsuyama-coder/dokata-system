@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import BackButton from "@/app/components/BackButton";
 
 type Organization = {
   id: string;
@@ -75,7 +74,6 @@ export default function SuperAdminPage() {
           boxSizing: "border-box",
         }}
       >
-        <BackButton />
         <p>読み込み中...</p>
       </div>
     );
