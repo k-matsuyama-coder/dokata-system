@@ -89,7 +89,6 @@ export default function SuperAdminPage() {
         boxSizing: "border-box",
       }}
     >
-      <BackButton />
 
       <div style={{ marginBottom: 16 }}>
         <div style={{ fontSize: isMobile ? 13 : 14, color: "#666" }}>
