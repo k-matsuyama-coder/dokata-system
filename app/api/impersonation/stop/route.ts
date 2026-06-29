@@ -1,5 +1,4 @@
 import { createClient } from "@supabase/supabase-js";
-import { hasRole } from "@/app/types/auth";
 
 export async function POST(req: Request) {
   try {
@@ -18,9 +17,10 @@ export async function POST(req: Request) {
 
     const {
       data: { user },
+      error: userError,
     } = await authClient.auth.getUser(token);
 
-    if (!user) {
+    if (userError || !user) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -29,13 +29,13 @@ export async function POST(req: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    const { data: employee } = await supabaseAdmin
-      .from("employees")
-      .select("id, role")
+    const { data: superAdminUser } = await supabaseAdmin
+      .from("super_admin_users")
+      .select("id")
       .eq("auth_user_id", user.id)
-      .single();
+      .maybeSingle();
 
-    if (!employee || !hasRole(employee.role, "super_admin")) {
+    if (!superAdminUser) {
       return Response.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -45,7 +45,7 @@ export async function POST(req: Request) {
         is_active: false,
         ended_at: new Date().toISOString(),
       })
-      .eq("super_admin_employee_id", employee.id)
+      .eq("super_admin_auth_user_id", user.id)
       .eq("is_active", true);
 
     if (error) {

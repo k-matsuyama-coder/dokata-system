@@ -22,7 +22,6 @@ export default function UserDetailPage() {
   const [authUserId, setAuthUserId] = useState("");
 const [email, setEmail] = useState("");
 const [password, setPassword] = useState("");
-const [loginRole, setLoginRole] = useState<string | null>(null);
 const getCurrentOrganization = async () => {
   const { data: sessionData } = await supabase.auth.getSession();
   const token = sessionData.session?.access_token;
@@ -66,8 +65,6 @@ if (!currentOrganizationId) {
         .eq("auth_user_id", user.id)
         .single();
 
-        setLoginRole(me?.role ?? null);
-
         if (!me || !hasRole(me.role, "admin")) {
           alert("管理者のみ閲覧できます");
           window.location.href = "/home";
@@ -88,7 +85,7 @@ if (!currentOrganizationId) {
       }
 
       setName(employee.name ?? "");
-      setRole(employee.role ?? "worker");
+      setRole(employee.role === "super_admin" ? "admin" : employee.role ?? "worker");
       setCompanyName(employee.company_name ?? "");
       setAuthUserId(employee.auth_user_id ?? "");
 
@@ -145,11 +142,6 @@ if (!currentOrganizationId) {
   alert("会社情報が取得できません");
   return;
 }
-
-    if (role === "super_admin" && !hasRole(loginRole ?? "", "super_admin")) {
-      alert("super_admin 権限は super_admin のみ設定できます");
-      return;
-    }
 
   const { error } = await supabase
     .from("employees")
@@ -214,21 +206,13 @@ const authRes = await fetch("/api/admin/update-user-auth", {
       <div style={{ marginBottom: 16 }}>
         <p>権限</p>
         <select
-          value={role}
-          onChange={(e) => setRole(e.target.value)}
-          style={{ width: "100%", padding: 10, boxSizing: "border-box" }}
-        >
-          <option value="worker">worker</option>
-<option value="admin">admin</option>
-
-{role === "super_admin" ? (
-  <option value="super_admin">super_admin</option>
-) : (
-  hasRole(loginRole ?? "", "super_admin") && (
-    <option value="super_admin">super_admin</option>
-  )
-)}
-        </select>
+  value={role}
+  onChange={(e) => setRole(e.target.value)}
+  style={{ width: "100%", padding: 10, boxSizing: "border-box" }}
+>
+  <option value="worker">worker</option>
+  <option value="admin">admin</option>
+</select>
       </div>
 
       <div style={{ marginBottom: 16 }}>

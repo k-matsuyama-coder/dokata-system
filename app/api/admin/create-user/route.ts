@@ -63,10 +63,10 @@ export async function POST(req: Request) {
       );
     }
 
-    if (role === "super_admin" && !hasRole(loginEmployee.role, "super_admin")) {
+    if (role && !["worker", "admin"].includes(role)) {
       return Response.json(
-        { error: "super_admin 権限は super_admin のみ設定できます" },
-        { status: 403 }
+        { error: "不正な権限です" },
+        { status: 400 }
       );
     }
 

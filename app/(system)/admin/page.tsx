@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import BackButton from "@/app/components/BackButton";
 import { supabase } from "@/lib/supabase";
-import { hasRole } from "@/app/types/auth";
 
 const menuGroups = [
   {
@@ -41,24 +40,11 @@ const menuGroups = [
       { label: "分析", href: "/admin/analysis", icon: "📊", desc: "集計・分析" },
     ],
   },
-  {
-    title: "Super Admin",
-    items: [
-      {
-        label: "会社管理",
-        href: "/super-admin/organizations",
-        icon: "🏢",
-        desc: "会社追加・初期管理者作成",
-        superAdminOnly: true,
-      },
-    ],
-  },
 ];
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState("配置");
   const [isMobile, setIsMobile] = useState(false);
-  const [loginRole, setLoginRole] = useState<string | null>(null);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -74,8 +60,6 @@ export default function AdminPage() {
         .select("role")
         .eq("auth_user_id", userData.user.id)
         .single();
-  
-      setLoginRole(employee?.role ?? null);
   
       if (!employee || !hasRole(employee.role, "admin")) {
         window.location.href = "/home";
@@ -140,13 +124,7 @@ export default function AdminPage() {
                 </div>
 
                 <div style={{ display: "grid", gap: 6 }}>
-  {group.items
-    .filter((item: any) =>
-    item.superAdminOnly
-      ? hasRole(loginRole ?? "", "super_admin")
-      : true
-  )
-    .map((item) => (
+　　{group.items.map((item) => (
       <Link
         key={item.href}
         href={item.href}
@@ -243,13 +221,7 @@ export default function AdminPage() {
                   gap: 14,
                 }}
               >
-                {group.items
-  .filter((item: any) =>
-  item.superAdminOnly
-    ? hasRole(loginRole ?? "", "super_admin")
-    : true
-)
-  .map((item) => (
+                {group.items.map((item) => (
                   <Link
                     key={item.href}
                     href={item.href}

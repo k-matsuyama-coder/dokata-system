@@ -4,7 +4,7 @@ import { supabaseAdmin } from "@/app/api/_lib/supabaseAdmin";
 
 export async function GET(req: Request) {
   try {
-    const { employee, error } = await requireSuperAdmin(req);
+    const { superAdminUser, error } = await requireSuperAdmin(req);
 
     if (error === "Unauthorized") {
       return unauthorized();
@@ -14,9 +14,9 @@ export async function GET(req: Request) {
       return forbidden();
     }
 
-    if (!employee) {
-      return forbidden();
-    }
+    if (!superAdminUser) {
+        return forbidden();
+      }
 
     const { data: session, error: sessionError } = await supabaseAdmin
       .from("impersonation_sessions")
@@ -28,7 +28,7 @@ export async function GET(req: Request) {
           name
         )
       `)
-      .eq("super_admin_employee_id", employee.id)
+      .eq("super_admin_auth_user_id", superAdminUser.auth_user_id)
       .eq("is_active", true)
       .gt("expires_at", new Date().toISOString())
       .order("started_at", { ascending: false })

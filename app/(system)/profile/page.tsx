@@ -68,9 +68,40 @@ export default function ProfilePage() {
   const [certSignedUrls, setCertSignedUrls] = useState<
   Record<string, { front: string; back: string }>
   >({});
+  const [impersonating, setImpersonating] = useState(false);
+const [checkingImpersonation, setCheckingImpersonation] = useState(true);
 
   useEffect(() => {
     const fetchProfile = async () => {
+      const { data: sessionData } = await supabase.auth.getSession();
+const token = sessionData.session?.access_token;
+
+if (!token) {
+  setCheckingImpersonation(false);
+  return;
+}
+
+const res = await fetch("/api/current-organization", {
+  headers: {
+    Authorization: `Bearer ${token}`,
+  },
+});
+
+const result = await res.json();
+
+if (!res.ok) {
+  setCheckingImpersonation(false);
+  alert("会社情報が取得できません");
+  return;
+}
+
+if (result.impersonating) {
+  setImpersonating(true);
+  setCheckingImpersonation(false);
+  return;
+}
+
+setCheckingImpersonation(false);
       const { data: userData } = await supabase.auth.getUser();
       const user = userData.user;
 
@@ -185,6 +216,35 @@ const showQualificationSuggestions =
   searchKeyword.length > 0 &&
   !qualificationOptions.includes(searchKeyword) &&
   filteredQualificationOptions.length > 0;
+
+  if (checkingImpersonation) {
+    return (
+      <div style={{ padding: 16, maxWidth: 720, margin: "0 auto" }}>
+        <p>確認中...</p>
+      </div>
+    );
+  }
+  
+  if (impersonating) {
+    return (
+      <div style={{ padding: 16, maxWidth: 720, margin: "0 auto" }}>
+        <h1>個人詳細</h1>
+  
+        <div
+          style={{
+            backgroundColor: "#fff3cd",
+            border: "1px solid #ffe08a",
+            borderRadius: 12,
+            padding: 16,
+            color: "#7a5200",
+            fontWeight: 800,
+          }}
+        >
+          代理ログイン中のため、個人情報・免許・資格情報は表示できません。
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div

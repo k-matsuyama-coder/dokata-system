@@ -58,29 +58,16 @@ export async function POST(req: Request) {
     }
 
     const organizationId = adminEmployee.organization_id;
-    const isSuperAdmin = hasRole(adminEmployee.role, "super_admin");
 
-    const employeeQuery = supabaseAdmin
-      .from("employees")
-      .select("id, auth_user_id, name, role, organization_id")
-      .eq("id", employeeId);
-
-    if (!isSuperAdmin) {
-      employeeQuery.eq("organization_id", organizationId);
-    }
-
-    const { data: employee, error: employeeFetchError } =
-      await employeeQuery.single();
+    const { data: employee, error: employeeFetchError } = await supabaseAdmin
+  .from("employees")
+  .select("id, auth_user_id, name, role, organization_id")
+  .eq("id", employeeId)
+  .eq("organization_id", organizationId)
+  .single();
 
     if (employeeFetchError || !employee) {
       return Response.json({ error: "社員が見つかりません" }, { status: 404 });
-    }
-
-    if (employee.role === "super_admin" && !isSuperAdmin) {
-      return Response.json(
-        { error: "super_admin は super_admin のみ削除できます" },
-        { status: 403 }
-      );
     }
 
     if (employee.auth_user_id) {
@@ -95,16 +82,11 @@ export async function POST(req: Request) {
       }
     }
 
-    const deleteQuery = supabaseAdmin
-      .from("employees")
-      .delete()
-      .eq("id", employeeId);
-
-    if (!isSuperAdmin) {
-      deleteQuery.eq("organization_id", organizationId);
-    }
-
-    const { error: employeeDeleteError } = await deleteQuery;
+    const { error: employeeDeleteError } = await supabaseAdmin
+  .from("employees")
+  .delete()
+  .eq("id", employeeId)
+  .eq("organization_id", organizationId);
 
     if (employeeDeleteError) {
       return Response.json(

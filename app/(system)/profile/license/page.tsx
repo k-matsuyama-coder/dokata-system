@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
 
@@ -10,6 +10,8 @@ export default function LicensePage() {
   const [expiryDate, setExpiryDate] = useState("");
   const [frontFile, setFrontFile] = useState<File | null>(null);
   const [backFile, setBackFile] = useState<File | null>(null);
+  const [impersonating, setImpersonating] = useState(false);
+const [checkingImpersonation, setCheckingImpersonation] = useState(true);
 
   const uploadFile = async (
     file: File,
@@ -33,14 +35,73 @@ export default function LicensePage() {
     return filePath;
   };
 
-  const handleSubmit = async () => {
-    const { data: userData } = await supabase.auth.getUser();
-    const user = userData.user;
+  useEffect(() => {
+    const checkImpersonation = async () => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+  
+      if (!token) {
+        setCheckingImpersonation(false);
+        return;
+      }
+  
+      const res = await fetch("/api/current-organization", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+  
+      const result = await res.json();
 
-    if (!user) {
-      alert("ログインしてください");
+if (!res.ok) {
+  alert("会社情報が取得できません");
+  setCheckingImpersonation(false);
+  return;
+}
+
+setImpersonating(Boolean(result.impersonating));
+setCheckingImpersonation(false);
+    };
+  
+    checkImpersonation();
+  }, []);
+
+  const handleSubmit = async () => {
+    if (impersonating) {
+      alert("代理ログイン中は免許情報を登録できません");
       return;
     }
+  
+    const { data: userData } = await supabase.auth.getUser();
+const user = userData.user;
+
+if (!user) {
+  alert("ログインしてください");
+  return;
+}
+
+const { data: sessionData } = await supabase.auth.getSession();
+const token = sessionData.session?.access_token;
+
+if (!token) {
+  alert("ログイン情報が取得できません");
+  return;
+}
+
+const res = await fetch("/api/current-organization", {
+  headers: {
+    Authorization: `Bearer ${token}`,
+  },
+});
+
+const result = await res.json();
+
+if (!res.ok || !result.organizationId) {
+  alert("会社情報が取得できません");
+  return;
+}
+
+const currentOrganizationId = result.organizationId as string;
 
     if (!licenseName || !issueDate || !expiryDate) {
       alert("免許名・取得日・有効期限を入力してください");
@@ -50,6 +111,7 @@ export default function LicensePage() {
     const { data: employee } = await supabase
       .from("employees")
       .select("id")
+      .eq("organization_id", currentOrganizationId)
       .eq("auth_user_id", user.id)
       .single();
 
@@ -93,6 +155,37 @@ setExpiryDate("");
 setFrontFile(null);
 setBackFile(null);
   };
+
+  if (checkingImpersonation) {
+    return (
+      <div style={{ padding: 20, maxWidth: 500, margin: "0 auto" }}>
+        <BackButton />
+        <p>確認中...</p>
+      </div>
+    );
+  }
+  
+  if (impersonating) {
+    return (
+      <div style={{ padding: 20, maxWidth: 500, margin: "0 auto" }}>
+        <BackButton />
+        <h1>免許登録</h1>
+  
+        <div
+          style={{
+            backgroundColor: "#fff3cd",
+            border: "1px solid #ffe08a",
+            borderRadius: 12,
+            padding: 16,
+            color: "#7a5200",
+            fontWeight: 800,
+          }}
+        >
+          代理ログイン中のため、個人の免許情報は表示・登録できません。
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ padding: 20, maxWidth: 500, margin: "0 auto" }}>

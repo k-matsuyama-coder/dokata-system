@@ -1,5 +1,4 @@
 import { createClient } from "@supabase/supabase-js";
-import { hasRole } from "@/app/types/auth";
 
 export async function POST(req: Request) {
   try {
@@ -38,18 +37,18 @@ export async function POST(req: Request) {
       }
     );
 
-    const { data: loginEmployee } = await supabaseAdmin
-      .from("employees")
-      .select("role")
-      .eq("auth_user_id", userData.user.id)
-      .single();
+    const { data: superAdminUser } = await supabaseAdmin
+  .from("super_admin_users")
+  .select("id")
+  .eq("auth_user_id", userData.user.id)
+  .maybeSingle();
 
-    if (!loginEmployee || !hasRole(loginEmployee.role, "super_admin")) {
-      return Response.json(
-        { error: "super_adminのみ実行できます" },
-        { status: 403 }
-      );
-    }
+if (!superAdminUser) {
+  return Response.json(
+    { error: "Super Adminのみ実行できます" },
+    { status: 403 }
+  );
+}
 
     const body = await req.json();
     const { organizationName, adminLastName, adminFirstName, adminEmail } = body;

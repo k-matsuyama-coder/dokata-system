@@ -52,6 +52,7 @@ const [licenseName, setLicenseName] = useState("");
 const [licenseExpiryDate, setLicenseExpiryDate] = useState("");
 const [licenseStatus, setLicenseStatus] = useState<"expired" | "warning" | "ok" | "">("");
 const [licenseRemainingDays, setLicenseRemainingDays] = useState<number | null>(null);
+const [impersonating, setImpersonating] = useState(false);
 
 const getCurrentOrganization = async () => {
   const { data: sessionData } = await supabase.auth.getSession();
@@ -74,8 +75,12 @@ const getCurrentOrganization = async () => {
     console.error(result.error || "organization取得失敗");
     return null;
   }
+  setImpersonating(Boolean(result.impersonating));
 
-  return result.organizationId as string | null;
+  return {
+    organizationId: result.organizationId as string | null,
+    impersonating: Boolean(result.impersonating),
+  };
 };
 
 
@@ -89,9 +94,22 @@ useEffect(() => {
         return;
       }
 
-      const { data: loginEmployee } = await supabase
+const currentOrganization = await getCurrentOrganization();
+
+if (!currentOrganization?.organizationId) {
+  alert("会社情報が取得できません");
+  return;
+}
+
+const currentOrganizationId = currentOrganization.organizationId;
+const isImpersonating = currentOrganization.impersonating;
+
+setImpersonating(isImpersonating);
+
+const { data: loginEmployee } = await supabase
   .from("employees")
   .select("must_change_password")
+  .eq("organization_id", currentOrganizationId)
   .eq("auth_user_id", user.id)
   .single();
 
@@ -101,33 +119,27 @@ if (loginEmployee?.must_change_password) {
 }
 
 const { data: employee, error: employeeError } = await supabase
-.from("employees")
-.select(`
-  id,
-  name,
-  role,
-  organization_id,
-  organizations (
-    status
-  )
-`)
-.eq("auth_user_id", user.id)
-.single();
+  .from("employees")
+  .select(`
+    id,
+    name,
+    role,
+    organization_id,
+    organizations (
+      status
+    )
+  `)
+  .eq("organization_id", currentOrganizationId)
+  .eq("auth_user_id", user.id)
+  .single();
 
 if (employeeError || !employee) {
-console.error("社員情報取得失敗:", employeeError?.message);
-return;
+  console.error("社員情報取得失敗:", employeeError?.message);
+  return;
 }
 
 setEmployeeName(employee.name?.trim() || user.email || "ユーザー");
 setRole(employee.role);
-
-const currentOrganizationId = await getCurrentOrganization();
-
-if (!currentOrganizationId) {
-  alert("会社情報が取得できません");
-  return;
-}
 
 const organizationStatus = Array.isArray(employee.organizations)
 ? employee.organizations[0]?.status
@@ -188,14 +200,16 @@ return;
           .gte("report_date", monthStart)
           .lte("report_date", monthEnd);
       
-        const { data: pendingItems } = await supabase
+          const { data: pendingItems } = await supabase
           .from("item_requests")
           .select("id")
+          .eq("organization_id", currentOrganizationId)
           .eq("status", "pending");
-      
+        
         const { data: returnItems } = await supabase
           .from("item_requests")
           .select("id")
+          .eq("organization_id", currentOrganizationId)
           .eq("status", "return_requested");
       
         const monthlyPlannedLabor = (monthlyDailyInfos ?? []).reduce(
@@ -220,6 +234,7 @@ return;
         });
       }
 
+      if (!isImpersonating) {
       const { data: licenses, error: licenseError } = await supabase
         .from("licenses")
         .select("license_name, expiry_date")
@@ -254,6 +269,7 @@ return;
           }
         }
       }
+    }
 
       const today = new Date();
 
@@ -358,20 +374,6 @@ setTotalVehicleCount(driverReportIds.size);
     };
 
     fetchHomeData();
-  }, []);
-
-  useEffect(() => {
-    const checkRole = async () => {
-      const { data: orgId } = await supabase.rpc("current_organization_id");
-      const { data: isAdmin } = await supabase.rpc("is_admin");
-      const { data: isSuperAdmin } = await supabase.rpc("is_super_admin");
-  
-      console.log("current_organization_id:", orgId);
-      console.log("is_admin:", isAdmin);
-      console.log("is_super_admin:", isSuperAdmin);
-    };
-  
-    checkRole();
   }, []);
 
   const totalDays = dayCount + nightCount;
@@ -586,92 +588,108 @@ const totalOvertimeSum = dayOvertime + nightOvertime;
   </div>
 </div>
   
-      <div
-        style={{
-          backgroundColor: "#fff",
-          borderRadius: 18,
-          padding: 18,
-          border: "1px solid #e5e5e5",
-          boxShadow: "0 6px 18px rgba(0,0,0,0.05)",
-        }}
-      >
+{!impersonating && (
         <div
           style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 12,
+            backgroundColor: "#fff",
+            borderRadius: 18,
+            padding: 18,
+            border: "1px solid #e5e5e5",
+            boxShadow: "0 6px 18px rgba(0,0,0,0.05)",
           }}
         >
-          <h2 style={{ margin: 0, fontSize: 20 }}>免許情報</h2>
-  
-          <span
+          <div
             style={{
-              fontSize: 13,
-              fontWeight: 700,
-              padding: "6px 10px",
-              borderRadius: 999,
-              backgroundColor:
-                licenseStatus === "expired"
-                  ? "#ffe5e5"
-                  : licenseStatus === "warning"
-                  ? "#fff3cd"
-                  : "#e8f5e9",
-              color:
-                licenseStatus === "expired"
-                  ? "red"
-                  : licenseStatus === "warning"
-                  ? "#b26a00"
-                  : "green",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 12,
             }}
           >
-            {licenseStatus === "expired"
-              ? "期限切れ"
-              : licenseStatus === "warning"
-              ? "期限注意"
-              : licenseStatus === "ok"
-              ? "有効"
-              : "未登録"}
-          </span>
+            <h2 style={{ margin: 0, fontSize: 20 }}>免許情報</h2>
+
+            <span
+              style={{
+                fontSize: 13,
+                fontWeight: 700,
+                padding: "6px 10px",
+                borderRadius: 999,
+                backgroundColor:
+                  licenseStatus === "expired"
+                    ? "#ffe5e5"
+                    : licenseStatus === "warning"
+                    ? "#fff3cd"
+                    : "#e8f5e9",
+                color:
+                  licenseStatus === "expired"
+                    ? "red"
+                    : licenseStatus === "warning"
+                    ? "#b26a00"
+                    : "green",
+              }}
+            >
+              {licenseStatus === "expired"
+                ? "期限切れ"
+                : licenseStatus === "warning"
+                ? "期限注意"
+                : licenseStatus === "ok"
+                ? "有効"
+                : "未登録"}
+            </span>
+          </div>
+
+          {licenseName ? (
+            <>
+              <p style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>
+                {licenseName}
+              </p>
+              <p style={{ margin: "8px 0 0 0", color: "#555" }}>
+                期限: {licenseExpiryDate || "-"}
+              </p>
+
+              {licenseStatus === "expired" && (
+                <p
+                  style={{
+                    margin: "10px 0 0 0",
+                    color: "red",
+                    fontWeight: 700,
+                  }}
+                >
+                  ⚠️ 免許期限が切れています
+                </p>
+              )}
+
+              {licenseStatus === "warning" && (
+                <p
+                  style={{
+                    margin: "10px 0 0 0",
+                    color: "#b26a00",
+                    fontWeight: 700,
+                  }}
+                >
+                  ⚠️ 免許期限が近づいています（あと{licenseRemainingDays}日）
+                </p>
+              )}
+
+              {licenseStatus === "ok" && (
+                <p
+                  style={{
+                    margin: "10px 0 0 0",
+                    color: "green",
+                    fontWeight: 700,
+                  }}
+                >
+                  ✅ 免許は有効です
+                </p>
+              )}
+            </>
+          ) : (
+            <p style={{ margin: 0, color: "#666" }}>
+              免許は登録されていません
+            </p>
+          )}
         </div>
-  
-        {licenseName ? (
-          <>
-            <p style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>
-              {licenseName}
-            </p>
-            <p style={{ margin: "8px 0 0 0", color: "#555" }}>
-              期限: {licenseExpiryDate || "-"}
-            </p>
-  
-            {licenseStatus === "expired" && (
-              <p style={{ margin: "10px 0 0 0", color: "red", fontWeight: 700 }}>
-                ⚠️ 免許期限が切れています
-              </p>
-            )}
-  
-            {licenseStatus === "warning" && (
-              <p
-                style={{
-                  margin: "10px 0 0 0",
-                  color: "#b26a00",
-                  fontWeight: 700,
-                }}
-              >
-                ⚠️ 免許期限が近づいています（あと{licenseRemainingDays}日）
-              </p>
-            )}
-  
-            {licenseStatus === "ok" && (
-              <p style={{ margin: "10px 0 0 0", color: "green", fontWeight: 700 }}>
-                ✅ 免許は有効です
-              </p>
-            )}
-          </>
-        ) : (
-          <p style={{ margin: 0, color: "#666" }}>免許は登録されていません</p>
-        )}
-      </div>
+      )}
     </div>
   );
 }

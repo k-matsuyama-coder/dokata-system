@@ -12,7 +12,6 @@ export default function NewUserPage() {
   const [createdPassword, setCreatedPassword] = useState("");
   const [role, setRole] = useState("worker");
   const [companyName, setCompanyName] = useState("");
-  const [loginRole, setLoginRole] = useState<string | null>(null);
   const [companies, setCompanies] = useState<{ id: string; name: string }[]>([]);
   const getCurrentOrganization = async () => {
     const { data: sessionData } = await supabase.auth.getSession();
@@ -56,8 +55,6 @@ if (!currentOrganizationId) {
         .eq("auth_user_id", userData.user.id)
         .single();
   
-      setLoginRole(employee?.role ?? null);
-  
       if (!employee || !hasRole(employee.role, "admin")) {
         window.location.href = "/home";
         return;
@@ -81,10 +78,6 @@ if (!currentOrganizationId) {
   }, []);
 
   const handleCreate = async () => {
-    if (role === "super_admin" && !hasRole(loginRole ?? "", "super_admin")) {
-      alert("super_admin 権限は super_admin のみ設定できます");
-      return;
-    }
 
     if (!firstName || !email) {
       alert("名前とメールアドレスを入力してください");
@@ -155,13 +148,9 @@ setCompanyName("");
 
       <p>権限</p>
       <select value={role} onChange={(e) => setRole(e.target.value)} style={inputStyle}>
-        <option value="worker">worker</option>
-<option value="admin">admin</option>
-
-{hasRole(loginRole ?? "", "super_admin") && (
-  <option value="super_admin">super_admin</option>
-)}
-      </select>
+  <option value="worker">worker</option>
+  <option value="admin">admin</option>
+</select>
 
       <p>所属会社</p>
       <select value={companyName} onChange={(e) => setCompanyName(e.target.value)} style={inputStyle}>

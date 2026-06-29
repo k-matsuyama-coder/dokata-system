@@ -25,6 +25,25 @@ export default function ItemReturnPage() {
   const [requests, setRequests] = useState<ItemRequest[]>([]);
   const [uploadingId, setUploadingId] = useState<string | null>(null);
 
+  const getCurrentOrganization = async () => {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token;
+  
+    if (!token) return null;
+  
+    const res = await fetch("/api/current-organization", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  
+    const result = await res.json();
+  
+    if (!res.ok) return null;
+  
+    return result.organizationId as string | null;
+  };
+
   const fetchData = async () => {
     const { data: userData } = await supabase.auth.getUser();
     const user = userData.user;
@@ -34,11 +53,19 @@ export default function ItemReturnPage() {
       return;
     }
 
-    const { data: employee } = await supabase
-      .from("employees")
-      .select("name")
-      .eq("auth_user_id", user.id)
-      .single();
+    const currentOrganizationId = await getCurrentOrganization();
+
+if (!currentOrganizationId) {
+  alert("会社情報が取得できません");
+  return;
+}
+
+const { data: employee } = await supabase
+.from("employees")
+.select("name")
+.eq("organization_id", currentOrganizationId)
+.eq("auth_user_id", user.id)
+.single();
 
     if (!employee) return;
 
@@ -61,6 +88,7 @@ export default function ItemReturnPage() {
           location
         )
       `)
+      .eq("organization_id", currentOrganizationId)
       .eq("user_name", employee.name)
       .eq("status", "approved")
       .order("start_date", { ascending: false });
@@ -86,6 +114,14 @@ export default function ItemReturnPage() {
       alert("返却写真を選択してください");
       return;
     }
+
+    const currentOrganizationId = await getCurrentOrganization();
+
+if (!currentOrganizationId) {
+  alert("会社情報が取得できません");
+  setUploadingId(null);
+  return;
+}
 
     setUploadingId(requestId);
 
@@ -113,6 +149,7 @@ export default function ItemReturnPage() {
         return_photo_path: filePath,
         return_requested_at: new Date().toISOString(),
       })
+      .eq("organization_id", currentOrganizationId)
       .eq("id", requestId);
 
     if (requestError) {
@@ -126,6 +163,7 @@ export default function ItemReturnPage() {
       .update({
         status: "pending_return",
       })
+      .eq("organization_id", currentOrganizationId)
       .eq("id", itemId);
 
       console.log("返却通知処理開始");
@@ -133,6 +171,7 @@ export default function ItemReturnPage() {
 const historyResult = await supabase
   .from("item_histories")
   .insert({
+    organization_id: currentOrganizationId,
     item_id: itemId,
     request_id: requestId,
     user_name: employeeName,
@@ -142,11 +181,11 @@ const historyResult = await supabase
 
 console.log("履歴保存結果", historyResult);
 
-const { data: admins, error: adminError } = 
-await supabase
+const { data: admins, error: adminError } = await supabase
   .from("employees")
   .select("name")
-  .in("role", ["admin", "super_admin"]);
+  .eq("organization_id", currentOrganizationId)
+  .eq("role", "admin");
 
 console.log("admins", admins);
 console.log("adminError", adminError);
@@ -154,6 +193,7 @@ console.log("adminError", adminError);
 if (admins && admins.length > 0) {
   await supabase.from("notifications").insert(
     admins.map((admin) => ({
+      organization_id: currentOrganizationId,
       employee_name: admin.name,
       title: "物品返却申請",
       message: `${employeeName}さんが物品の返却申請をしました`,

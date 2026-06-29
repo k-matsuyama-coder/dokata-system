@@ -12,58 +12,47 @@ export default function LoginPage() {
       email,
       password,
     });
-
+  
     if (error) {
       alert("ログイン失敗: " + error.message);
       return;
     }
-
+  
     const user = data.user;
-
+  
     if (!user) {
       alert("ユーザー情報が取得できません");
       return;
     }
-
-    const { data: employee } = await supabase
-  .from("employees")
-  .select("id, role, must_change_password")
-  .eq("auth_user_id", user.id)
-  .maybeSingle();
-
-    if (!employee) {
-      const defaultName =
-        user.email?.split("@")[0] || "未登録";
-
-      const { error: insertError } = await supabase
-        .from("employees")
-        .insert([
-          {
-            name: defaultName,
-            role: "worker",
-            auth_user_id: user.id,
-          },
-        ]);
-
-      if (insertError) {
-        alert("社員自動登録失敗: " + insertError.message);
-        return;
-      }
-
-      window.location.href = "/home";
+  
+    const { data: superAdminUser } = await supabase
+      .from("super_admin_users")
+      .select("id")
+      .eq("auth_user_id", user.id)
+      .maybeSingle();
+  
+    if (superAdminUser) {
+      window.location.href = "/super-admin";
       return;
     }
-
+  
+    const { data: employee } = await supabase
+      .from("employees")
+      .select("id, role, must_change_password")
+      .eq("auth_user_id", user.id)
+      .maybeSingle();
+  
+    if (!employee) {
+      alert("社員情報がありません。管理者に確認してください。");
+      await supabase.auth.signOut();
+      return;
+    }
+  
     if (employee.must_change_password) {
       window.location.href = "/change-password";
       return;
     }
-    
-    if (employee.role === "super_admin") {
-      window.location.href = "/super-admin";
-      return;
-    }
-    
+  
     window.location.href = "/home";
   };
 

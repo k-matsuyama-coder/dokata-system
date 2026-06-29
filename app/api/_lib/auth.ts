@@ -1,12 +1,11 @@
 import { createClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "./supabaseAdmin";
 
-export type ApiEmployee = {
+export type ApiSuperAdminUser = {
   id: string;
+  auth_user_id: string;
   name: string | null;
-  role: string | null;
-  auth_user_id: string | null;
-  organization_id: string | null;
+  email: string | null;
 };
 
 export async function getBearerUser(req: Request) {
@@ -37,22 +36,22 @@ export async function requireSuperAdmin(req: Request) {
   const { user, error } = await getBearerUser(req);
 
   if (error || !user) {
-    return { employee: null, error: "Unauthorized" };
+    return { superAdminUser: null, user: null, error: "Unauthorized" };
   }
 
-  const { data: employee, error: employeeError } = await supabaseAdmin
-    .from("employees")
-    .select("id, name, role, auth_user_id, organization_id")
+  const { data: superAdminUser, error: superAdminError } = await supabaseAdmin
+    .from("super_admin_users")
+    .select("id, auth_user_id, name, email")
     .eq("auth_user_id", user.id)
-    .single();
+    .maybeSingle();
 
-  if (employeeError || !employee) {
-    return { employee: null, error: "Employee not found" };
+  if (superAdminError || !superAdminUser) {
+    return { superAdminUser: null, user, error: "Forbidden" };
   }
 
-  if (employee.role !== "super_admin") {
-    return { employee: null, error: "Forbidden" };
-  }
-
-  return { employee: employee as ApiEmployee, error: null };
+  return {
+    superAdminUser: superAdminUser as ApiSuperAdminUser,
+    user,
+    error: null,
+  };
 }

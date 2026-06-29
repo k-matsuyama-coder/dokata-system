@@ -180,7 +180,7 @@ const { data: admins } = await supabase
   .from("employees")
   .select("name")
   .eq("organization_id", currentOrganizationId)
-  .in("role", ["admin", "super_admin"]);
+  .eq("role", "admin");
 
 if (admins && admins.length > 0) {
   await supabase.from("notifications").insert(

@@ -1,20 +1,36 @@
-import { requireSuperAdmin } from "@/app/api/_lib/auth";
+import { createClient } from "@supabase/supabase-js";
 import { forbidden, ok, serverError, unauthorized } from "@/app/api/_lib/response";
 import { supabaseAdmin } from "@/app/api/_lib/supabaseAdmin";
 
 export async function POST(req: Request) {
   try {
-    const { employee, error } = await requireSuperAdmin(req);
+    const token = req.headers.get("authorization")?.replace("Bearer ", "");
 
-    if (error === "Unauthorized") {
+    if (!token) {
       return unauthorized();
     }
 
-    if (error === "Forbidden") {
-      return forbidden();
+    const authClient = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
+    const {
+      data: { user },
+      error: userError,
+    } = await authClient.auth.getUser(token);
+
+    if (userError || !user) {
+      return unauthorized();
     }
 
-    if (!employee) {
+    const { data: superAdminUser } = await supabaseAdmin
+      .from("super_admin_users")
+      .select("id")
+      .eq("auth_user_id", user.id)
+      .maybeSingle();
+
+    if (!superAdminUser) {
       return forbidden();
     }
 
@@ -24,7 +40,7 @@ export async function POST(req: Request) {
         is_active: false,
         ended_at: new Date().toISOString(),
       })
-      .eq("super_admin_employee_id", employee.id)
+      .eq("super_admin_auth_user_id", user.id)
       .eq("is_active", true);
 
     if (updateError) {

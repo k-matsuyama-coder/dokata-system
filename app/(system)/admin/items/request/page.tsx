@@ -126,7 +126,7 @@ if (!currentOrganizationId) {
   .from("employees")
   .select("name")
   .eq("organization_id", currentOrganizationId)
-  .in("role", ["admin", "super_admin"]);
+  .eq("role", "admin");
 
 if (admins && admins.length > 0) {
   await supabase.from("notifications").insert(
@@ -151,8 +151,8 @@ const pushResults = await Promise.all(
         body: JSON.stringify({
           organizationId: currentOrganizationId,
           employeeName: admin.name,
-          title: "物品返却申請",
-          message: `${employeeName}さんが物品の返却申請をしました`,
+          title: "物品使用申請",
+message: `${employeeName}さんが「${selectedItem?.item_name ?? "物品"}」の使用申請をしました`,
           url: "/admin/items/requests",
         }),
       });
@@ -181,7 +181,7 @@ const pushResults = await Promise.all(
       }}
     >
       <BackButton />
-      
+
       <h1>使用申請</h1>
 
       <div

@@ -1,9 +1,8 @@
-export type UserRole = "worker" | "admin" | "super_admin";
+export type UserRole = "worker" | "admin";
 
 const ROLE_LEVEL: Record<UserRole, number> = {
   worker: 1,
   admin: 2,
-  super_admin: 3,
 };
 
 export const hasRole = (
@@ -12,18 +11,16 @@ export const hasRole = (
 ) => {
   if (!currentRole) return false;
 
-  const currentLevel = ROLE_LEVEL[currentRole as UserRole];
-  const requiredLevel = ROLE_LEVEL[requiredRole];
+  if (currentRole !== "worker" && currentRole !== "admin") {
+    return false;
+  }
 
-  if (!currentLevel) return false;
+  const currentLevel = ROLE_LEVEL[currentRole];
+  const requiredLevel = ROLE_LEVEL[requiredRole];
 
   return currentLevel >= requiredLevel;
 };
 
 export const isAdminRole = (role?: string | null) => {
   return hasRole(role, "admin");
-};
-
-export const isSuperAdminRole = (role?: string | null) => {
-  return hasRole(role, "super_admin");
 };
