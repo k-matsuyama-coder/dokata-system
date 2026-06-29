@@ -99,7 +99,8 @@ export default function Header() {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          padding: "0 24px",
+          padding: "0 12px",
+boxSizing: "border-box",
         }}
       >
         <h2
@@ -122,6 +123,7 @@ export default function Header() {
             padding: "10px 18px",
             cursor: "pointer",
             fontWeight: 800,
+            whiteSpace: "nowrap",
           }}
         >
           ログアウト
@@ -133,10 +135,12 @@ export default function Header() {
           style={{
             backgroundColor: "#fff3cd",
             borderTop: "1px solid #ffe08a",
-            padding: "10px 24px",
+            padding: "10px 12px",
             display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
+justifyContent: "space-between",
+alignItems: "center",
+gap: 8,
+flexWrap: "wrap",
             color: "#7a5200",
             fontWeight: 800,
           }}
@@ -157,6 +161,7 @@ export default function Header() {
               padding: "8px 12px",
               fontWeight: 800,
               cursor: "pointer",
+              whiteSpace: "nowrap",
             }}
           >
             解除

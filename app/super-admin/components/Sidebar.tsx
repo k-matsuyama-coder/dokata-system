@@ -64,30 +64,40 @@ export default function Sidebar() {
         }
 
         @media (max-width: 768px) {
-          .super-sidebar {
-            width: 100%;
-            min-height: auto;
-            padding: 10px;
+            .super-sidebar {
+              width: 100%;
+              min-height: auto;
+              padding: 10px;
+              background: #fff;
+              color: #111;
+              border-bottom: 1px solid #ddd;
+            }
+          
+            .super-sidebar h2 {
+              display: none;
+            }
+          
+            .super-menu {
+              display: flex;
+              gap: 8px;
+              margin-top: 0;
+              overflow-x: auto;
+              white-space: nowrap;
+            }
+          
+            .super-menu a {
+              flex-shrink: 0;
+              padding: 10px 12px;
+              font-size: 13px;
+              color: #111;
+              background: #f3f4f6;
+            }
+          
+            .super-menu a.active {
+              background: #2d7ef7;
+              color: #fff;
+            }
           }
-
-          .super-sidebar h2 {
-            display: none;
-          }
-
-          .super-menu {
-            display: flex;
-            gap: 8px;
-            margin-top: 0;
-            overflow-x: auto;
-            white-space: nowrap;
-          }
-
-          .super-menu a {
-            flex-shrink: 0;
-            padding: 10px 12px;
-            font-size: 13px;
-          }
-        }
       `}</style>
     </>
   );
