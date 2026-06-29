@@ -26,10 +26,6 @@ export default function NavBar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
 
-if (pathname.startsWith("/super-admin")) {
-  return null;
-}
-
   const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [employeeName, setEmployeeName] = useState("");
   const [organizationId, setOrganizationId] = useState<string | null>(null);
@@ -277,6 +273,10 @@ if (employee.organization_id) {
     await supabase.auth.signOut();
     window.location.href = "/login";
   };
+
+  if (pathname.startsWith("/super-admin")) {
+    return null;
+  }
 
   return (
     <header
@@ -526,6 +526,9 @@ DOKATA-System
       fontWeight: 800,
       cursor: "pointer",
       textAlign: "left",
+      width: "100%",
+whiteSpace: "nowrap",
+boxSizing: "border-box",
     }}
   >
     ← SuperAdminへ戻る
