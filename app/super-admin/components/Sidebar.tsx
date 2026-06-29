@@ -5,11 +5,12 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 const menus = [
-  { title: "ダッシュボード", href: "/super-admin" },
-  { title: "会社管理", href: "/super-admin/organizations" },
-  { title: "契約管理", href: "/super-admin/contracts" },
-  { title: "全ユーザー", href: "/super-admin/users" },
-];
+    { title: "ダッシュボード", href: "/super-admin" },
+    { title: "会社管理", href: "/super-admin/organizations" },
+    { title: "契約管理", href: "/super-admin/contracts" },
+    { title: "全ユーザー", href: "/super-admin/users" },
+    { title: "Super Admin管理", href: "/super-admin/super-admin-users" },
+  ];
 
 export default function Sidebar() {
   const pathname = usePathname();
