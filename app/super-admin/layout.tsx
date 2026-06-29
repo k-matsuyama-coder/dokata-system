@@ -8,51 +8,37 @@ type Props = {
 
 export default function SuperAdminLayout({ children }: Props) {
   return (
-    <>
-      <div className="super-admin-layout">
-        <Sidebar />
+    <div
+      style={{
+        display: "flex",
+        minHeight: "100vh",
+        background: "#f7f7f7",
+        width: "100%",
+        overflowX: "hidden",
+      }}
+    >
+      <Sidebar />
 
-        <div className="super-admin-content">
-          <Header />
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          minWidth: 0,
+        }}
+      >
+        <Header />
 
-          <main className="super-admin-main">
-            {children}
-          </main>
-        </div>
+        <main
+          style={{
+            flex: 1,
+            minWidth: 0,
+            overflowX: "hidden",
+          }}
+        >
+          {children}
+        </main>
       </div>
-
-      <style jsx>{`
-        .super-admin-layout {
-          display: flex;
-          min-height: 100vh;
-          background: #f7f7f7;
-          width: 100%;
-          overflow-x: hidden;
-        }
-
-        .super-admin-content {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          min-width: 0;
-        }
-
-        .super-admin-main {
-          flex: 1;
-          min-width: 0;
-          overflow-x: hidden;
-        }
-
-        @media (max-width: 768px) {
-          .super-admin-layout {
-            display: block;
-          }
-
-          .super-admin-content {
-            width: 100%;
-          }
-        }
-      `}</style>
-    </>
+    </div>
   );
 }
