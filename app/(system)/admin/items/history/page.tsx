@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { hasRole } from "@/app/types/auth";
+import BackButton from "@/app/components/BackButton";
 
 type ItemRequest = {
   id: string;
@@ -133,9 +134,11 @@ if (!currentOrganizationId) {
   };
 
   return (
-    <div style={{ padding: 16, maxWidth: 1100, margin: "0 auto" }}>
-      <h1>物品使用履歴</h1>
-
+    <div style={{ padding: 16, width: "100%" }}>
+      <BackButton />
+  
+      <h1 style={{ marginTop: 12 }}>物品使用履歴</h1>
+  
       <div style={{ marginBottom: 16 }}>
         <select
           value={statusFilter}
@@ -154,14 +157,14 @@ if (!currentOrganizationId) {
           <option value="returned">返却済み</option>
         </select>
       </div>
-
-      <div style={{ overflowX: "auto" }}>
+  
+      <div className="history-table" style={{ width: "100%", overflowX: "auto" }}>
         <table
           style={{
             width: "100%",
             borderCollapse: "collapse",
             backgroundColor: "#fff",
-            minWidth: 900,
+            minWidth: 1300,
           }}
         >
           <thead>
@@ -250,7 +253,94 @@ if (!currentOrganizationId) {
             )}
           </tbody>
         </table>
+        </div>
+        <div className="history-cards">
+        {requests.map((request) => (
+          <div key={request.id} className="history-card">
+            <div className="card-top">
+              <strong>{request.items?.item_name || "-"}</strong>
+              <span style={{ color: getStatusColor(request.status), fontWeight: 800 }}>
+                {getStatusLabel(request.status)}
+              </span>
+            </div>
+
+            <div>使用者：{request.user_name}</div>
+            <div>種別：{request.items?.item_type || "-"}</div>
+            <div>区分：{request.items?.classification || "-"}</div>
+            <div>型番/品番：{request.items?.model_number || "-"}</div>
+            <div>管理場所：{request.items?.location || "-"}</div>
+            <div>管理者：{request.items?.manager_name || "-"}</div>
+            <div>利用開始日：{request.start_date}</div>
+            <div>返却予定日：{request.return_due_date || "-"}</div>
+            <div>
+              承認日：
+              {request.approved_at ? request.approved_at.slice(0, 10) : "-"}
+            </div>
+            <div>
+              返却申請日：
+              {request.return_requested_at
+                ? request.return_requested_at.slice(0, 10)
+                : "-"}
+            </div>
+            <div>
+              返却完了日：
+              {request.returned_at ? request.returned_at.slice(0, 10) : "-"}
+            </div>
+
+            {request.return_photo_url && (
+              <a href={request.return_photo_url} target="_blank" rel="noreferrer">
+                返却写真を見る
+              </a>
+            )}
+          </div>
+        ))}
+
+        {requests.length === 0 && (
+          <div className="history-card">履歴はありません。</div>
+        )}
       </div>
+
+      <style jsx>{`
+        .history-cards {
+          display: none;
+        }
+
+        @media (max-width: 768px) {
+          .history-table {
+            display: none;
+          }
+
+          .history-cards {
+            display: grid;
+            gap: 12px;
+          }
+
+          .history-card {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            padding: 12px;
+            font-size: 14px;
+            line-height: 1.8;
+          }
+
+          .card-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 8px;
+            margin-bottom: 8px;
+          }
+
+          .history-card a {
+            display: inline-block;
+            margin-top: 8px;
+            color: #2563eb;
+            font-weight: 800;
+          }
+        }
+      `}</style>
     </div>
   );
 }

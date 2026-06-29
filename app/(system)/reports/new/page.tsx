@@ -423,9 +423,14 @@ if (membersError) {
   return;
       }
 
-    toast.success("保存しました");
-    router.replace("/home");
-  };
+      toast.success("日報を登録しました", {
+        duration: 1200,
+      });
+      
+      setTimeout(() => {
+        router.replace("/home");
+      }, 900);
+    };
 
   return (
     <div>
