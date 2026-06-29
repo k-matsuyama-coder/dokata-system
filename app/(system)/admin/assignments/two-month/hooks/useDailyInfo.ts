@@ -31,6 +31,15 @@ export function useDailyInfo({
     field: "planned_count" | "detail",
     value: string
   ) => {
+    if (!organizationId) {
+      alert("会社情報が取得できません");
+      return;
+    }
+  
+    if (!assignmentId || assignmentId === "undefined") {
+      alert("現場IDが取得できません");
+      return;
+    }
     const existing = dailyInfos.find(
       (d) =>
         d.assignment_id === assignmentId &&
@@ -71,9 +80,7 @@ export function useDailyInfo({
     let data;
 
     try {
-      data = await updateDailyInfoApi(
-        organizationId,
-        payload);
+      data = await updateDailyInfoApi(payload);
     } catch (error) {
       alert(error instanceof Error ? "更新失敗: " + error.message : "更新失敗");
       return;

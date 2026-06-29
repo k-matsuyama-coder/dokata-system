@@ -10,8 +10,8 @@ const menuGroups = [
   {
     title: "配置",
     items: [
-      { label: "番割", href: "/assignments/month", icon: "📅", desc: "月別の配置を確認・編集" },
-      { label: "2ヶ月工程表", href: "/assignments/two-month", icon: "🗓️", desc: "2ヶ月工程の確認・編集" },
+      { label: "番割", href: "/admin/assignments/month", icon: "📅", desc: "月別の配置を確認・編集" },
+      { label: "2ヶ月工程表", href: "/admin/assignments/two-month", icon: "🗓️", desc: "2ヶ月工程の確認・編集" },
       { label: "シフト管理表", href: "/admin/shift-management", icon: "📝", desc: "作業員のシフト管理" },
     ],
   },

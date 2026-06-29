@@ -1,10 +1,16 @@
 import { useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 
-export function useRealtime(fetchData: () => void, baseMonth: string) {
+export function useRealtime(
+  fetchData: () => void,
+  baseMonth: string,
+  organizationId: string | null
+) {
   useEffect(() => {
+    if (!organizationId) return;
+
     const channel = supabase
-      .channel("two-month-realtime")
+      .channel(`two-month-realtime-${organizationId}`)
 
       .on(
         "postgres_changes",
@@ -12,6 +18,7 @@ export function useRealtime(fetchData: () => void, baseMonth: string) {
           event: "*",
           schema: "public",
           table: "assignment_site_daily_infos",
+          filter: `organization_id=eq.${organizationId}`,
         },
         fetchData
       )
@@ -22,6 +29,7 @@ export function useRealtime(fetchData: () => void, baseMonth: string) {
           event: "*",
           schema: "public",
           table: "assignments",
+          filter: `organization_id=eq.${organizationId}`,
         },
         fetchData
       )
@@ -32,6 +40,7 @@ export function useRealtime(fetchData: () => void, baseMonth: string) {
           event: "*",
           schema: "public",
           table: "assignment_site_members",
+          filter: `organization_id=eq.${organizationId}`,
         },
         fetchData
       )
@@ -41,5 +50,5 @@ export function useRealtime(fetchData: () => void, baseMonth: string) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [baseMonth]);
+  }, [baseMonth, organizationId, fetchData]);
 }
