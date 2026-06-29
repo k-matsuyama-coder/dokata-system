@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { hasRole } from "../../../types/auth";
+import BackButton from "@/app/components/BackButton";
 
 type Item = {
 id: string;
@@ -270,6 +271,7 @@ if (!currentOrganizationId) {
   };
 
 return (
+  <BackButton />
 <div style={{ padding: 16 }}>
 物品管理
 

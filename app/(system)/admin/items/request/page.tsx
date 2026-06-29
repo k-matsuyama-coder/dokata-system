@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import BackButton from "@/app/components/BackButton";
 
 type Item = {
   id: string;
@@ -179,6 +180,8 @@ const pushResults = await Promise.all(
         margin: "0 auto",
       }}
     >
+      <BackButton />
+      
       <h1>使用申請</h1>
 
       <div

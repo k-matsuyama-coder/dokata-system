@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { hasRole } from "@/app/types/auth";
+import BackButton from "@/app/components/BackButton";
 
 type ItemRequest = {
   id: string;
@@ -196,6 +197,8 @@ if (!currentOrganizationId) {
 
   return (
     <div style={{ padding: 16, maxWidth: 1000, margin: "0 auto" }}>
+      <BackButton />
+      
       <h1>物品申請確認</h1>
 
       <div style={{ display: "grid", gap: 12 }}>

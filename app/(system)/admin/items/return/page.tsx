@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import BackButton from "@/app/components/BackButton";
 
 type ItemRequest = {
   id: string;
@@ -191,6 +192,8 @@ if (admins && admins.length > 0) {
 
   return (
     <div style={{ padding: 16, maxWidth: 900, margin: "0 auto" }}>
+      <BackButton />
+
       <h1>物品返却申請</h1>
 
       <div style={{ display: "grid", gap: 12 }}>
