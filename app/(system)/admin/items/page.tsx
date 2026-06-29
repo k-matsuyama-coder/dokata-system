@@ -270,10 +270,12 @@ if (!currentOrganizationId) {
     fetchItems();
   };
 
-return (
-  <BackButton />
-<div style={{ padding: 16 }}>
-物品管理
+  return (
+    <>
+      <div style={{ padding: 16 }}>
+        <BackButton />
+  
+        <h1 style={{ marginTop: 12 }}>物品管理</h1>
 
 <div style={{ marginBottom: 20 }}>
   <button
@@ -557,6 +559,6 @@ return (
 </div>
 
 </div>
-
+  </>
 );
 }
