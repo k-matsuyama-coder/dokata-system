@@ -93,10 +93,10 @@ export function useMonthlyAssignmentMembers({
   };
 
   const deleteSiteMember = async (id: string) => {
-    const { error } = await deleteSiteMemberAction(
+    const { error } = await deleteSiteMemberAction({
       organizationId,
-      id
-    );
+      id,
+    });
 
     if (error) {
       alert("削除失敗: " + error.message);
