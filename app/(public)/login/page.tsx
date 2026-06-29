@@ -31,16 +31,21 @@ export default function LoginPage() {
       .eq("auth_user_id", user.id)
       .maybeSingle();
   
-    if (superAdminUser) {
-      window.location.href = "/super-admin";
+    const { data: employee } = await supabase
+      .from("employees")
+      .select("id, role, must_change_password, organization_id")
+      .eq("auth_user_id", user.id)
+      .maybeSingle();
+  
+    if (superAdminUser && employee) {
+      window.location.href = "/login/select-mode";
       return;
     }
   
-    const { data: employee } = await supabase
-      .from("employees")
-      .select("id, role, must_change_password")
-      .eq("auth_user_id", user.id)
-      .maybeSingle();
+    if (superAdminUser && !employee) {
+      window.location.href = "/super-admin";
+      return;
+    }
   
     if (!employee) {
       alert("社員情報がありません。管理者に確認してください。");
