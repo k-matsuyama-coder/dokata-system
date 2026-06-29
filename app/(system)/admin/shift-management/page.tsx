@@ -33,6 +33,7 @@ export default function ShiftManagementPage() {
   const [isDraggingShift, setIsDraggingShift] = useState(false);
 const [dragMode, setDragMode] = useState<"add" | "delete" | null>(null);
 const [dragCells, setDragCells] = useState<Set<string>>(new Set());
+const [isMobile, setIsMobile] = useState(false);
 
 const isAdmin = hasRole(loginEmployee?.role ?? "", "admin");
 
@@ -143,6 +144,20 @@ console.log("shift requestError:", requestError);
   useEffect(() => {
     fetchData();
   }, [month, days.length]);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+  
+    checkMobile();
+  
+    window.addEventListener("resize", checkMobile);
+  
+    return () => {
+      window.removeEventListener("resize", checkMobile);
+    };
+  }, []);
 
   useEffect(() => {
     const handleMouseUp = () => {
@@ -397,7 +412,17 @@ if (!currentOrganizationId) {
   };
 
   return (
-    <div style={{ padding: 16, backgroundColor: "#f5f6f8", minHeight: "100vh" }}>
+    <div
+  style={{
+    padding: isMobile ? 10 : 16,
+    backgroundColor: "#f5f6f8",
+    minHeight: "100vh",
+    width: "100%",
+    maxWidth: "100%",
+    boxSizing: "border-box",
+    overflowX: "hidden",
+  }}
+>
       <BackButton />
 
       <h1>シフト管理表</h1>
@@ -457,230 +482,328 @@ if (!currentOrganizationId) {
         </div>
       )}
 
-      {isAdmin ? (
+{isAdmin ? (
+  isMobile ? (
+    <div style={{ display: "grid", gap: 12 }}>
+      {employees.map((employee) => (
         <div
+          key={employee.name}
           style={{
-            overflowX: "auto",
+            backgroundColor: "#fff",
             border: "1px solid #ddd",
             borderRadius: 12,
-            backgroundColor: "#fff",
-            maxHeight: "78vh",
-          }}
-        >
-          <table
-  style={{
-    borderCollapse: "separate",
-    borderSpacing: 0,
-    minWidth: 1600,
-    width: "100%",
-    fontSize: 12,
-    userSelect: "none",
-  }}
->
-            <thead>
-              <tr>
-                <th style={{ ...th, ...stickyNameTh }}>名前</th>
-                <th style={th}>会社</th>
-
-                {days.map((date) => {
-                  const day = new Date(date).getDay();
-
-                  return (
-                    <th
-                      key={date}
-                      style={{
-                        ...th,
-                        backgroundColor:
-                          day === 0
-                            ? "#fee2e2"
-                            : day === 6
-                            ? "#dbeafe"
-                            : "#f3f4f6",
-                        color:
-                          day === 0
-                            ? "#dc2626"
-                            : day === 6
-                            ? "#2563eb"
-                            : "#111",
-                      }}
-                    >
-                      {Number(date.slice(-2))}
-                    </th>
-                  );
-                })}
-              </tr>
-            </thead>
-
-            <tbody>
-              {employees.map((employee) => (
-                <tr key={employee.name}>
-                  <td style={{ ...td, ...stickyNameTd }}>
-                    {employee.name}
-                  </td>
-
-                  <td style={td}>
-                    {employee.company_name || "-"}
-                  </td>
-
-                  {days.map((date) => {
-                    const dayRequests = getRequestsByEmployeeAndDate(
-                      employee.name,
-                      date
-                    );
-
-                    return (
-                      <td
-  key={date}
-  onMouseDown={(e) => {
-    e.preventDefault();
-    startShiftDrag(employee.name, date, dayRequests.length > 0);
-  }}
-  onMouseEnter={() => {
-    addDragCell(employee.name, date);
-  }}
-  style={{
-    ...td,
-    textAlign: "center",
-    backgroundColor: dragCells.has(getCellKey(employee.name, date))
-      ? dragMode === "delete"
-        ? "#fee2e2"
-        : "#dbeafe"
-      : dayRequests.length > 0
-      ? "#fef3c7"
-      : "#fff",
-    cursor: "pointer",
-    userSelect: "none",
-  }}
->
-                        {dayRequests.map((request) => (
-                          <div
-                          key={request.id}
-                          onDoubleClick={(e) => {
-                            e.stopPropagation();
-                            deleteRequest(request.id);
-                          }}
-                          title="ダブルタップで削除"
-                          style={{
-                            display: "grid",
-                            gap: 4,
-                            justifyItems: "center",
-                            cursor: "pointer",
-                          }}
-                        >
-                            <div
-                              style={{
-                                fontWeight: 900,
-                                color: "#b45309",
-                              }}
-                            >
-                              休
-                            </div>
-
-                            {request.memo && (
-                              <div style={{ fontSize: 10 }}>
-                                {request.memo}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <div
-          style={{
+            padding: 12,
             display: "grid",
-            gridTemplateColumns: "repeat(7, 1fr)",
-            gap: 6,
+            gap: 10,
           }}
         >
-          {["日", "月", "火", "水", "木", "金", "土"].map((day) => (
-            <div
-              key={day}
-              style={{
-                textAlign: "center",
-                fontWeight: 800,
-                backgroundColor: "#e5e7eb",
-                borderRadius: 8,
-                padding: 8,
-              }}
-            >
-              {day}
+          <div>
+            <div style={{ fontWeight: 900, fontSize: 16 }}>
+              {employee.name}
             </div>
-          ))}
+            <div style={{ fontSize: 13, color: "#666" }}>
+              {employee.company_name || "-"}
+            </div>
+          </div>
 
-          {Array.from({
-            length: new Date(`${month}-01`).getDay(),
-          }).map((_, index) => (
-            <div key={`empty-${index}`} />
-          ))}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
+gap: isMobile ? 4 : 6,
+            }}
+          >
+            {days.map((date) => {
+              const day = new Date(date).getDay();
+              const dayRequests = getRequestsByEmployeeAndDate(
+                employee.name,
+                date
+              );
 
-          {days.map((date) => {
-            const day = new Date(date).getDay();
-            const myRequests = getMyRequestsByDate(date);
-
-            return (
-              <div
-                key={date}
-                style={{
-                  minHeight: 90,
-                  backgroundColor:
-                    myRequests.length > 0
-                      ? "#fef3c7"
-                      : day === 0
-                      ? "#fff7f7"
-                      : day === 6
-                      ? "#f7fbff"
-                      : "#fff",
-                  border: "1px solid #ddd",
-                  borderRadius: 10,
-                  padding: 8,
-                }}
-              >
-                <div
+              return (
+                <button
+                  key={date}
+                  type="button"
+                  onClick={() => {
+                    if (dayRequests.length > 0) {
+                      deleteRequest(dayRequests[0].id);
+                    } else {
+                      addRequestForAdmin(employee.name, date);
+                    }
+                  }}
                   style={{
-                    fontWeight: 900,
+                    minHeight: 42,
+                    boxSizing: "border-box",
+minWidth: 0,
+padding: isMobile ? 4 : 6,
+overflow: "hidden",
+                    border: "1px solid #ddd",
+                    borderRadius: 8,
+                    backgroundColor:
+                      dayRequests.length > 0
+                        ? "#fef3c7"
+                        : day === 0
+                        ? "#fff7f7"
+                        : day === 6
+                        ? "#f7fbff"
+                        : "#fff",
                     color:
                       day === 0
                         ? "#dc2626"
                         : day === 6
                         ? "#2563eb"
                         : "#111",
-                    marginBottom: 6,
-                  }}
-                >
-                  {Number(date.slice(-2))}
-                </div>
-
-                {myRequests.map((request) => (
-                  <div
-                  key={request.id}
-                  onDoubleClick={() => deleteRequest(request.id)}
-                  title="ダブルタップで削除"
-                  style={{
-                    fontWeight: 800,
-                    color: "#b45309",
+                    fontWeight: 900,
                     cursor: "pointer",
                   }}
                 >
-                    休み希望
-                    {request.memo && (
-                      <div style={{ fontSize: 12, color: "#555" }}>
-                        {request.memo}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            );
-          })}
+                  <div>{Number(date.slice(-2))}</div>
+                  {dayRequests.length > 0 && (
+                    <div style={{ color: "#b45309", fontSize: 12 }}>
+                      休
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      )}
+      ))}
+    </div>
+  ) : (
+    <div
+      style={{
+        overflowX: "auto",
+        border: "1px solid #ddd",
+        borderRadius: 12,
+        backgroundColor: "#fff",
+        maxHeight: "78vh",
+      }}
+    >
+      <table
+        style={{
+          borderCollapse: "separate",
+          borderSpacing: 0,
+          minWidth: 1600,
+          width: "100%",
+          fontSize: 12,
+          userSelect: "none",
+        }}
+      >
+        <thead>
+          <tr>
+            <th style={{ ...th, ...stickyNameTh }}>名前</th>
+            <th style={th}>会社</th>
+
+            {days.map((date) => {
+              const day = new Date(date).getDay();
+
+              return (
+                <th
+                  key={date}
+                  style={{
+                    ...th,
+                    backgroundColor:
+                      day === 0
+                        ? "#fee2e2"
+                        : day === 6
+                        ? "#dbeafe"
+                        : "#f3f4f6",
+                    color:
+                      day === 0
+                        ? "#dc2626"
+                        : day === 6
+                        ? "#2563eb"
+                        : "#111",
+                  }}
+                >
+                  {Number(date.slice(-2))}
+                </th>
+              );
+            })}
+          </tr>
+        </thead>
+
+        <tbody>
+          {employees.map((employee) => (
+            <tr key={employee.name}>
+              <td style={{ ...td, ...stickyNameTd }}>{employee.name}</td>
+
+              <td style={td}>{employee.company_name || "-"}</td>
+
+              {days.map((date) => {
+                const dayRequests = getRequestsByEmployeeAndDate(
+                  employee.name,
+                  date
+                );
+
+                return (
+                  <td
+                    key={date}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      startShiftDrag(
+                        employee.name,
+                        date,
+                        dayRequests.length > 0
+                      );
+                    }}
+                    onMouseEnter={() => {
+                      addDragCell(employee.name, date);
+                    }}
+                    style={{
+                      ...td,
+                      textAlign: "center",
+                      backgroundColor: dragCells.has(
+                        getCellKey(employee.name, date)
+                      )
+                        ? dragMode === "delete"
+                          ? "#fee2e2"
+                          : "#dbeafe"
+                        : dayRequests.length > 0
+                        ? "#fef3c7"
+                        : "#fff",
+                      cursor: "pointer",
+                      userSelect: "none",
+                    }}
+                  >
+                    {dayRequests.map((request) => (
+                      <div
+                        key={request.id}
+                        onDoubleClick={(e) => {
+                          e.stopPropagation();
+                          deleteRequest(request.id);
+                        }}
+                        title="ダブルタップで削除"
+                        style={{
+                          display: "grid",
+                          gap: 4,
+                          justifyItems: "center",
+                          cursor: "pointer",
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontWeight: 900,
+                            color: "#b45309",
+                          }}
+                        >
+                          休
+                        </div>
+
+                        {request.memo && (
+                          <div style={{ fontSize: 10 }}>{request.memo}</div>
+                        )}
+                      </div>
+                    ))}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+) : (
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
+gap: isMobile ? 4 : 6,
+width: "100%",
+maxWidth: "100%",
+boxSizing: "border-box",
+    }}
+  >
+    {["日", "月", "火", "水", "木", "金", "土"].map((day) => (
+      <div
+        key={day}
+        style={{
+          textAlign: "center",
+          fontWeight: 800,
+          backgroundColor: "#e5e7eb",
+          borderRadius: 8,
+          padding: 8,
+          boxSizing: "border-box",
+minWidth: 0,
+overflow: "hidden",
+        }}
+      >
+        {day}
+      </div>
+    ))}
+
+    {Array.from({
+      length: new Date(`${month}-01`).getDay(),
+    }).map((_, index) => (
+      <div key={`empty-${index}`} />
+    ))}
+
+    {days.map((date) => {
+      const day = new Date(date).getDay();
+      const myRequests = getMyRequestsByDate(date);
+
+      return (
+        <div
+          key={date}
+          style={{
+            minHeight: 90,
+            backgroundColor:
+              myRequests.length > 0
+                ? "#fef3c7"
+                : day === 0
+                ? "#fff7f7"
+                : day === 6
+                ? "#f7fbff"
+                : "#fff",
+            border: "1px solid #ddd",
+            borderRadius: 10,
+            padding: 8,
+            boxSizing: "border-box",
+minWidth: 0,
+overflow: "hidden",
+          }}
+        >
+          <div
+            style={{
+              fontWeight: 900,
+              color:
+                day === 0
+                  ? "#dc2626"
+                  : day === 6
+                  ? "#2563eb"
+                  : "#111",
+              marginBottom: 6,
+            }}
+          >
+            {Number(date.slice(-2))}
+          </div>
+
+          {myRequests.map((request) => (
+            <div
+              key={request.id}
+              onDoubleClick={() => deleteRequest(request.id)}
+              title="ダブルタップで削除"
+              style={{
+                fontWeight: 800,
+                color: "#b45309",
+                cursor: "pointer",
+              }}
+            >
+              休み希望
+              {request.memo && (
+                <div style={{ fontSize: 12, color: "#555" }}>
+                  {request.memo}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      );
+    })}
+  </div>
+)}
     </div>
   );
 }

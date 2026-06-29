@@ -97,7 +97,14 @@ export default function AdminPage() {
   }, []);
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "#f5f6f8" }}>
+    <div
+  style={{
+    minHeight: "100vh",
+    backgroundColor: "#f5f6f8",
+    width: "100%",
+    overflowX: "hidden",
+  }}
+>
       <div
         style={{
           display: "grid",
@@ -163,7 +170,15 @@ export default function AdminPage() {
         </aside>
         )}
 
-        <main style={{ padding: 24 }}>
+<main
+  style={{
+    padding: isMobile ? 12 : 24,
+    width: "100%",
+    maxWidth: "100%",
+    boxSizing: "border-box",
+    overflowX: "hidden",
+  }}
+>
           <BackButton />
 
           <h1>管理者画面</h1>
@@ -171,10 +186,12 @@ export default function AdminPage() {
           <div
   style={{
     display: "flex",
+    flexWrap: "wrap",
     gap: 8,
-    overflowX: "auto",
+    overflowX: "hidden",
     marginBottom: 20,
     paddingBottom: 4,
+    maxWidth: "100%",
   }}
 >
   {menuGroups.map((group) => (
@@ -189,6 +206,8 @@ export default function AdminPage() {
         cursor: "pointer",
         whiteSpace: "nowrap",
         fontWeight: 700,
+        maxWidth: "100%",
+        boxSizing: "border-box",
         backgroundColor:
           activeTab === group.title
             ? "#111"
