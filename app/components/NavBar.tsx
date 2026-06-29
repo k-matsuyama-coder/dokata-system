@@ -37,6 +37,7 @@ const [organizationName, setOrganizationName] = useState("");
 const [notifications, setNotifications] = useState<Notification[]>([]);
 const [showNotifications, setShowNotifications] = useState(false);
 const [pushEnabled, setPushEnabled] = useState(false);
+const [impersonating, setImpersonating] = useState(false);
 
   useEffect(() => {
     const fetchRole = async () => {
@@ -56,6 +57,23 @@ if (!employee) return;
 setRole(employee.role);
 setEmployeeName(employee.name);
 setOrganizationId(employee.organization_id);
+
+const { data: sessionData } = await supabase.auth.getSession();
+const token = sessionData.session?.access_token;
+
+if (token) {
+  const res = await fetch("/api/current-organization", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const result = await res.json();
+
+  if (res.ok) {
+    setImpersonating(Boolean(result.impersonating));
+  }
+}
 
 if (employee.organization_id) {
   const { data: organization, error } = await supabase
@@ -227,6 +245,32 @@ if (employee.organization_id) {
   
     setPushEnabled(true);
     alert("この端末で通知を受け取れるようになりました");
+  };
+
+  const stopImpersonation = async () => {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token;
+  
+    if (!token) {
+      alert("ログイン情報が取得できません");
+      return;
+    }
+  
+    const res = await fetch("/api/impersonation/stop", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  
+    const result = await res.json();
+  
+    if (!res.ok) {
+      alert(result.error || "SuperAdminへ戻れませんでした");
+      return;
+    }
+  
+    window.location.href = "/super-admin";
   };
 
   const handleLogout = async () => {
@@ -468,6 +512,25 @@ gap: 12,
 >
 DOKATA-System
 </div>
+
+{impersonating && (
+  <button
+    type="button"
+    onClick={stopImpersonation}
+    style={{
+      border: "none",
+      backgroundColor: "#dc2626",
+      color: "#fff",
+      borderRadius: 8,
+      padding: "10px 12px",
+      fontWeight: 800,
+      cursor: "pointer",
+      textAlign: "left",
+    }}
+  >
+    ← SuperAdminへ戻る
+  </button>
+)}
             <a
               href="/home"
               onClick={() => setMenuOpen(false)}
@@ -497,8 +560,8 @@ DOKATA-System
   onClick={() => setMenuOpen(false)}
   className="nav-link"
   style={{
-    color: pathname.startsWith("/assignments/view") ? "#0070f3" : "#333",
-    fontWeight: pathname.startsWith("/assignments/view") ? 700 : 500,
+    color: pathname.startsWith("/admin/assignments/view") ? "#0070f3" : "#333",
+fontWeight: pathname.startsWith("/admin/assignments/view") ? 700 : 500,
   }}
 >
   番割
@@ -534,8 +597,8 @@ DOKATA-System
     onClick={() => setMenuOpen(false)}
     className="nav-link"
     style={{
-      color: pathname.startsWith("/assignments/month") ? "#0070f3" : "#333",
-fontWeight: pathname.startsWith("/assignments/month") ? 700 : 500,
+      color: pathname.startsWith("/admin/assignments/month") ? "#0070f3" : "#333",
+      fontWeight: pathname.startsWith("/admin/assignments/month") ? 700 : 500,
     }}
   >
     番割作成

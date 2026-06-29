@@ -14,6 +14,7 @@ type Organization = {
 export default function SuperAdminPage() {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
 
   const fetchOrganizations = async () => {
     setLoading(true);
@@ -36,6 +37,19 @@ export default function SuperAdminPage() {
     fetchOrganizations();
   }, []);
 
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+
+    return () => {
+      window.removeEventListener("resize", checkMobile);
+    };
+  }, []);
+
   const totalCount = organizations.length;
   const activeCount = organizations.filter((org) => org.status === "active").length;
   const trialCount = organizations.filter((org) => org.status === "trial").length;
@@ -45,23 +59,22 @@ export default function SuperAdminPage() {
   const cardStyle = {
     backgroundColor: "#fff",
     border: "1px solid #ddd",
-    borderRadius: 12,
-    padding: 16,
-  };
-
-  const linkStyle = {
-    display: "block",
-    backgroundColor: "#111",
-    color: "#fff",
-    padding: 16,
-    borderRadius: 10,
-    textDecoration: "none",
-    fontWeight: 900,
-  };
+    borderRadius: 14,
+    padding: isMobile ? 14 : 16,
+    boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+  } as const;
 
   if (loading) {
     return (
-      <div style={{ maxWidth: 760, margin: "0 auto", padding: 16 }}>
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 760,
+          margin: "0 auto",
+          padding: isMobile ? 12 : 16,
+          boxSizing: "border-box",
+        }}
+      >
         <BackButton />
         <p>読み込み中...</p>
       </div>
@@ -69,46 +82,78 @@ export default function SuperAdminPage() {
   }
 
   return (
-    <div style={{ maxWidth: 760, margin: "0 auto", padding: 16 }}>
+    <div
+      style={{
+        width: "100%",
+        maxWidth: 860,
+        margin: "0 auto",
+        padding: isMobile ? 12 : 16,
+        boxSizing: "border-box",
+      }}
+    >
       <BackButton />
 
-      <h1>Super Admin</h1>
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: isMobile ? 13 : 14, color: "#666" }}>
+          DOKATA-System
+        </div>
+
+        <h1
+          style={{
+            margin: "6px 0 0",
+            fontSize: isMobile ? 24 : 32,
+            fontWeight: 900,
+          }}
+        >
+          Super Admin
+        </h1>
+      </div>
 
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(2, 1fr)",
-          gap: 12,
+          gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)",
+          gap: isMobile ? 10 : 12,
           marginBottom: 24,
         }}
       >
-        <div style={cardStyle}>
-          <div style={{ fontSize: 14, color: "#555" }}>契約会社数</div>
-          <div style={{ fontSize: 30, fontWeight: 900 }}>{totalCount}社</div>
-        </div>
-
-        <div style={cardStyle}>
-          <div style={{ fontSize: 14, color: "#555" }}>利用中</div>
-          <div style={{ fontSize: 30, fontWeight: 900 }}>{activeCount}社</div>
-        </div>
-
-        <div style={cardStyle}>
-          <div style={{ fontSize: 14, color: "#555" }}>トライアル</div>
-          <div style={{ fontSize: 30, fontWeight: 900 }}>{trialCount}社</div>
-        </div>
-
-        <div style={cardStyle}>
-          <div style={{ fontSize: 14, color: "#555" }}>停止中</div>
-          <div style={{ fontSize: 30, fontWeight: 900 }}>{suspendedCount}社</div>
-        </div>
-
-        <div style={cardStyle}>
-          <div style={{ fontSize: 14, color: "#555" }}>解約済み</div>
-          <div style={{ fontSize: 30, fontWeight: 900 }}>{cancelledCount}社</div>
-        </div>
+        <SummaryCard label="契約会社数" value={`${totalCount}社`} style={cardStyle} />
+        <SummaryCard label="利用中" value={`${activeCount}社`} style={cardStyle} />
+        <SummaryCard label="トライアル" value={`${trialCount}社`} style={cardStyle} />
+        <SummaryCard label="停止中" value={`${suspendedCount}社`} style={cardStyle} />
+        <SummaryCard label="解約済み" value={`${cancelledCount}社`} style={cardStyle} />
       </div>
 
-      <h2>管理メニュー</h2>
+      <h2
+        style={{
+          fontSize: isMobile ? 18 : 22,
+          marginBottom: 12,
+        }}
+      >
+        管理メニュー
+      </h2>
+    </div>
+  );
+}
+
+function SummaryCard({
+  label,
+  value,
+  style,
+}: {
+  label: string;
+  value: string;
+  style: React.CSSProperties;
+}) {
+  return (
+    <div style={style}>
+      <div style={{ fontSize: 13, color: "#555", fontWeight: 700 }}>
+        {label}
+      </div>
+
+      <div style={{ fontSize: 28, fontWeight: 900, marginTop: 6 }}>
+        {value}
+      </div>
     </div>
   );
 }
