@@ -80,6 +80,7 @@ const getCurrentOrganization = async () => {
   return {
     organizationId: result.organizationId as string | null,
     impersonating: Boolean(result.impersonating),
+    isSuperAdmin: Boolean(result.isSuperAdmin),
   };
 };
 
@@ -97,6 +98,11 @@ useEffect(() => {
 const currentOrganization = await getCurrentOrganization();
 
 if (!currentOrganization?.organizationId) {
+  if (currentOrganization?.isSuperAdmin) {
+    window.location.href = "/super-admin";
+    return;
+  }
+
   alert("会社情報が取得できません");
   return;
 }
