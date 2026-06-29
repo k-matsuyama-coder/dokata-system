@@ -68,16 +68,23 @@ export default function MyMonthlyScheduleModal({ open, onClose }: Props) {
   .single();
 
       if (!employee) return;
+      const organizationId = employee.organization_id;
+
+if (!organizationId) {
+  alert("会社情報が取得できません");
+  return;
+}
 
       const startDate = `${month}-01`;
       const endDate = days[days.length - 1];
 
       const { data: memberData, error: memberError } = await supabase
-        .from("assignment_site_members")
-        .select("id, assignment_id, work_date, employee_name")
-        .eq("employee_name", employee.name)
-        .gte("work_date", startDate)
-        .lte("work_date", endDate);
+  .from("assignment_site_members")
+  .select("id, assignment_id, work_date, employee_name")
+  .eq("organization_id", organizationId)
+  .eq("employee_name", employee.name)
+  .gte("work_date", startDate)
+  .lte("work_date", endDate);
 
       if (memberError) {
         alert("予定取得失敗: " + memberError.message);
@@ -110,6 +117,7 @@ export default function MyMonthlyScheduleModal({ open, onClose }: Props) {
     start_date,
     end_date
   `)
+  .eq("organization_id", organizationId)
   .in("id", assignmentIds);
 
       if (assignmentError) {

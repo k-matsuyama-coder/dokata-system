@@ -59,6 +59,11 @@ export default function LoginPage() {
       return;
     }
     
+    if (employee.role === "super_admin") {
+      window.location.href = "/super-admin";
+      return;
+    }
+    
     window.location.href = "/home";
   };
 

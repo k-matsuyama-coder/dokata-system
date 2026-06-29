@@ -2,11 +2,17 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import BackButton from "@/app/components/BackButton";
+import Page from "@/app/components/ui/Page";
+import OrganizationCreateForm from "./components/OrganizationCreateForm";
+import OrganizationList from "./components/OrganizationList";
 
 type Organization = {
   id: string;
   name: string;
+  plan: string | null;
+  status: string | null;
+  contract_start_date: string | null;
+  contract_end_date: string | null;
 };
 
 export default function OrganizationsPage() {
@@ -21,7 +27,7 @@ export default function OrganizationsPage() {
   const fetchOrganizations = async () => {
     const { data, error } = await supabase
       .from("organizations")
-      .select("id, name")
+      .select("id, name, plan, status, contract_start_date, contract_end_date")
       .order("name");
 
     if (error) {
@@ -87,116 +93,24 @@ export default function OrganizationsPage() {
     fetchOrganizations();
   };
 
-  const inputStyle = {
-    width: "100%",
-    padding: 12,
-    border: "1px solid #ccc",
-    borderRadius: 8,
-    fontSize: 16,
-    boxSizing: "border-box" as const,
-  };
-
   return (
-    <div style={{ maxWidth: 760, margin: "0 auto", padding: 16 }}>
-      <BackButton />
+    <Page title="会社管理">
 
-      <h1>会社管理</h1>
+      <OrganizationCreateForm
+        organizationName={organizationName}
+        setOrganizationName={setOrganizationName}
+        adminLastName={adminLastName}
+        setAdminLastName={setAdminLastName}
+        adminFirstName={adminFirstName}
+        setAdminFirstName={setAdminFirstName}
+        adminEmail={adminEmail}
+        setAdminEmail={setAdminEmail}
+        createdPassword={createdPassword}
+        loading={loading}
+        onCreate={handleCreate}
+      />
 
-      <div
-        style={{
-          backgroundColor: "#fff",
-          border: "1px solid #ddd",
-          borderRadius: 12,
-          padding: 16,
-          display: "grid",
-          gap: 12,
-          marginBottom: 24,
-        }}
-      >
-        <h2 style={{ margin: 0 }}>会社追加</h2>
-
-        <input
-          placeholder="会社名"
-          value={organizationName}
-          onChange={(e) => setOrganizationName(e.target.value)}
-          style={inputStyle}
-        />
-
-        <input
-          placeholder="管理者 苗字"
-          value={adminLastName}
-          onChange={(e) => setAdminLastName(e.target.value)}
-          style={inputStyle}
-        />
-
-        <input
-          placeholder="管理者 名前"
-          value={adminFirstName}
-          onChange={(e) => setAdminFirstName(e.target.value)}
-          style={inputStyle}
-        />
-
-        <input
-          placeholder="管理者メールアドレス"
-          value={adminEmail}
-          onChange={(e) => setAdminEmail(e.target.value)}
-          style={inputStyle}
-        />
-
-        <button
-          type="button"
-          onClick={handleCreate}
-          disabled={loading}
-          style={{
-            padding: 14,
-            border: "none",
-            borderRadius: 8,
-            backgroundColor: loading ? "#999" : "#111",
-            color: "#fff",
-            fontWeight: 800,
-            cursor: loading ? "not-allowed" : "pointer",
-          }}
-        >
-          {loading ? "作成中..." : "会社と初期管理者を作成"}
-        </button>
-
-        {createdPassword && (
-          <div
-            style={{
-              border: "1px solid #ccc",
-              borderRadius: 8,
-              padding: 12,
-              backgroundColor: "#f9fafb",
-            }}
-          >
-            <div style={{ fontWeight: 800 }}>初期パスワード</div>
-            <div style={{ fontSize: 20, fontWeight: 900, marginTop: 6 }}>
-              {createdPassword}
-            </div>
-          </div>
-        )}
-      </div>
-
-      <h2>会社一覧</h2>
-
-      <div style={{ display: "grid", gap: 10 }}>
-        {organizations.map((org) => (
-          <div
-            key={org.id}
-            style={{
-              backgroundColor: "#fff",
-              border: "1px solid #ddd",
-              borderRadius: 10,
-              padding: 12,
-              fontWeight: 800,
-            }}
-          >
-            {org.name}
-          </div>
-        ))}
-
-        {organizations.length === 0 && <p>会社がありません</p>}
-      </div>
-    </div>
+      <OrganizationList organizations={organizations} />
+      </Page>
   );
 }

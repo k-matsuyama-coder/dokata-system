@@ -20,11 +20,12 @@ export async function POST(req: Request) {
     const body = await req.json();
 
     const employeeName = body.employeeName;
+    const organizationId = body.organizationId;
     const title = body.title;
     const message = body.message;
     const url = new URL(body.url || "/reports/new", req.url).href;
 
-    if (!employeeName || !title || !message) {
+    if (!employeeName || !organizationId || !title || !message) {
       return NextResponse.json(
         {
           success: false,
@@ -34,10 +35,21 @@ export async function POST(req: Request) {
       );
     }
 
-    const { data: subscriptions } = await supabase
+    const { data: subscriptions, error } = await supabase
       .from("push_subscriptions")
       .select("*")
+      .eq("organization_id", organizationId)
       .eq("employee_name", employeeName);
+
+    if (error) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: error.message,
+        },
+        { status: 500 }
+      );
+    }
 
     if (!subscriptions?.length) {
       return NextResponse.json({
@@ -62,9 +74,9 @@ export async function POST(req: Request) {
             url,
           })
         );
-    } catch (e: any) {
+      } catch (e: any) {
         console.error("push送信失敗", e);
-      
+
         return NextResponse.json({
           success: false,
           message: e.message,
@@ -73,9 +85,9 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({
-        success: true,
-        sentCount: subscriptions.length,
-      });
+      success: true,
+      sentCount: subscriptions.length,
+    });
   } catch (error) {
     console.error(error);
 

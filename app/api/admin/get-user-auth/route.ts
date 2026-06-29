@@ -35,13 +35,22 @@ export async function POST(req: Request) {
 
     const { data: adminEmployee } = await supabaseAdmin
       .from("employees")
-      .select("role")
+      .select("role, organization_id")
       .eq("auth_user_id", userData.user.id)
       .single();
 
     if (!adminEmployee || !hasRole(adminEmployee.role, "admin")) {
       return Response.json({ error: "管理者のみ実行できます" }, { status: 403 });
     }
+
+    if (!adminEmployee.organization_id) {
+      return Response.json(
+        { error: "会社情報が取得できません" },
+        { status: 403 }
+      );
+    }
+
+    const organizationId = adminEmployee.organization_id;
 
     const body = await req.json();
     const { authUserId } = body;
@@ -50,17 +59,35 @@ export async function POST(req: Request) {
       return Response.json({ error: "authUserIdが必要です" }, { status: 400 });
     }
 
+    const { data: targetEmployee } = await supabaseAdmin
+      .from("employees")
+      .select("id")
+      .eq("organization_id", organizationId)
+      .eq("auth_user_id", authUserId)
+      .maybeSingle();
+
+    if (!targetEmployee) {
+      return Response.json(
+        { error: "対象社員が見つかりません" },
+        { status: 404 }
+      );
+    }
+
     const { data, error } =
       await supabaseAdmin.auth.admin.getUserById(authUserId);
 
-    if (error) {
-      return Response.json({ error: error.message }, { status: 500 });
+    if (error || !data.user) {
+      return Response.json(
+        { error: error?.message || "ユーザー取得失敗" },
+        { status: 500 }
+      );
     }
 
     return Response.json({
       email: data.user.email,
     });
-  } catch {
+  } catch (e) {
+    console.error(e);
     return Response.json({ error: "server error" }, { status: 500 });
   }
 }

@@ -94,22 +94,25 @@ export async function POST(req: Request) {
     }
 
     const { error: employeeError } = await supabaseAdmin
-      .from("employees")
-      .insert({
-        auth_user_id: authData.user.id,
-        name: adminName,
-        role: "admin",
-        organization_id: organization.id,
-        company_name: organization.name,
-        must_change_password: true,
-      });
+  .from("employees")
+  .insert({
+    auth_user_id: authData.user.id,
+    name: adminName,
+    role: "admin",
+    organization_id: organization.id,
+    company_name: organization.name,
+    must_change_password: true,
+  });
 
-    if (employeeError) {
-      return Response.json(
-        { error: employeeError.message },
-        { status: 500 }
-      );
-    }
+if (employeeError) {
+  // 作成済みのAuthユーザーを削除
+  await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
+
+  return Response.json(
+    { error: employeeError.message },
+    { status: 500 }
+  );
+}
 
     return Response.json({
       success: true,

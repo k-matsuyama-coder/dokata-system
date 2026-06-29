@@ -46,6 +46,13 @@ export async function POST(req: Request) {
       return Response.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    if (!loginEmployee.organization_id) {
+      return Response.json(
+        { error: "会社情報が取得できません" },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json();
     const { lastName, firstName, email, role, companyName } = body;
 
@@ -88,7 +95,12 @@ export async function POST(req: Request) {
     });
 
     if (employeeError) {
-      return Response.json({ error: employeeError.message }, { status: 500 });
+      await supabase.auth.admin.deleteUser(createdUser.id);
+    
+      return Response.json(
+        { error: employeeError.message },
+        { status: 500 }
+      );
     }
 
     return Response.json({

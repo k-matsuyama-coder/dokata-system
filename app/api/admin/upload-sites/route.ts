@@ -35,13 +35,25 @@ export async function POST(req: Request) {
 
     const { data: adminEmployee } = await supabase
       .from("employees")
-      .select("role")
+      .select("role, organization_id")
       .eq("auth_user_id", userData.user.id)
       .single();
 
-    if (!adminEmployee || !hasRole(adminEmployee.role, "admin")) {
-      return Response.json({ error: "管理者のみ実行できます" }, { status: 403 });
+    if (!adminEmployee?.organization_id) {
+      return Response.json(
+        { error: "会社情報が取得できません" },
+        { status: 403 }
+      );
     }
+
+    if (!hasRole(adminEmployee.role, "admin")) {
+      return Response.json(
+        { error: "管理者のみ実行できます" },
+        { status: 403 }
+      );
+    }
+
+    const organizationId = adminEmployee.organization_id;
 
     const body = await req.json();
     const { rows } = body;
@@ -52,23 +64,27 @@ export async function POST(req: Request) {
 
     let insertedCount = 0;
 
-    for (const r of rows) {
-      const contractor = String(r[0] ?? "").replace("\uFEFF", "").trim();
-      const manager = String(r[1] ?? "").trim();
-      const site = String(r[2] ?? "").trim();
+    for (const row of rows) {
+      const contractor = String(row[0] ?? "").replace("\uFEFF", "").trim();
+      const manager = String(row[1] ?? "").trim();
+      const site = String(row[2] ?? "").trim();
 
       if (!contractor || !site) continue;
 
       const { data: existingContractor } = await supabase
         .from("contractors")
         .select("id")
+        .eq("organization_id", organizationId)
         .eq("name", contractor)
         .maybeSingle();
 
       if (!existingContractor) {
         const { error: contractorError } = await supabase
           .from("contractors")
-          .insert({ name: contractor });
+          .insert({
+            organization_id: organizationId,
+            name: contractor,
+          });
 
         if (contractorError) {
           return Response.json(
@@ -81,17 +97,21 @@ export async function POST(req: Request) {
       const { data: existingSite } = await supabase
         .from("sites")
         .select("id")
+        .eq("organization_id", organizationId)
         .eq("contractor_name", contractor)
         .eq("site_name", site)
         .maybeSingle();
 
       if (existingSite) continue;
 
-      const { error: siteError } = await supabase.from("sites").insert({
-        contractor_name: contractor,
-        manager_name: manager || null,
-        site_name: site,
-      });
+      const { error: siteError } = await supabase
+        .from("sites")
+        .insert({
+          organization_id: organizationId,
+          contractor_name: contractor,
+          manager_name: manager || null,
+          site_name: site,
+        });
 
       if (siteError) {
         return Response.json(

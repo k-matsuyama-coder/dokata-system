@@ -25,6 +25,11 @@ export default function NavBar() {
   const [role, setRole] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
+
+if (pathname.startsWith("/super-admin")) {
+  return null;
+}
+
   const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [employeeName, setEmployeeName] = useState("");
   const [organizationId, setOrganizationId] = useState<string | null>(null);
@@ -71,12 +76,13 @@ if (employee.organization_id) {
   }, []);
 
   useEffect(() => {
-    if (!employeeName) return;
+    if (!employeeName || !organizationId) return;
   
     const fetchNotifications = async () => {
       const { data } = await supabase
         .from("notifications")
         .select("id, employee_name, title, message, link_url, is_read")
+        .eq("organization_id", organizationId)
         .eq("employee_name", employeeName)
         .eq("is_read", false)
         .order("created_at", { ascending: false });
@@ -94,6 +100,7 @@ if (employee.organization_id) {
           event: "*",
           schema: "public",
           table: "notifications",
+          filter: `organization_id=eq.${organizationId}`,
         },
         fetchNotifications
       )
@@ -102,13 +109,18 @@ if (employee.organization_id) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [employeeName]);
+  }, [employeeName, organizationId]);
 
   const markNotificationAsRead = async (notification: Notification) => {
+    if (!organizationId) {
+      alert("会社情報が取得できません");
+      return;
+    }
     const { error } = await supabase
       .from("notifications")
       .update({ is_read: true })
-      .eq("id", notification.id);
+      .eq("organization_id", organizationId)
+.eq("id", notification.id);
   
     if (error) {
       alert("通知更新失敗: " + error.message);
@@ -141,6 +153,10 @@ if (employee.organization_id) {
   };
   
   const enablePushNotifications = async () => {
+    if (!organizationId) {
+      alert("会社情報が取得できません");
+      return;
+    }
     if (!employeeName) {
       alert("社員情報を取得できていません");
       return;
@@ -191,14 +207,18 @@ if (employee.organization_id) {
     await supabase
       .from("push_subscriptions")
       .delete()
+      .eq("organization_id", organizationId)
       .eq("employee_name", employeeName);
   
-    const { error } = await supabase.from("push_subscriptions").insert({
-      employee_name: employeeName,
-      endpoint: json.endpoint,
-      p256dh: json.keys.p256dh,
-      auth: json.keys.auth,
-    });
+      const { error } = await supabase
+      .from("push_subscriptions")
+      .insert({
+        organization_id: organizationId,
+        employee_name: employeeName,
+        endpoint: json.endpoint,
+        p256dh: json.keys.p256dh,
+        auth: json.keys.auth,
+      });
   
     if (error) {
       alert("通知端末登録失敗: " + error.message);
@@ -473,7 +493,7 @@ DOKATA-System
             </a>
 
             <a
-  href="/assignments/view"
+  href="/admin/assignments/view"
   onClick={() => setMenuOpen(false)}
   className="nav-link"
   style={{
@@ -510,7 +530,7 @@ DOKATA-System
 
 {hasRole(role ?? "", "admin") && (
   <a
-    href="/assignments/month"
+  href="/admin/assignments/month"
     onClick={() => setMenuOpen(false)}
     className="nav-link"
     style={{
