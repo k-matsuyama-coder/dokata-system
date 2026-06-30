@@ -164,13 +164,14 @@ export default function TwoMonthPage() {
     fetchData,
   });
 
-    const { updateDailyInfo } = useDailyInfo({
-      dailyInfos,
-      setDailyInfos,
-      isUndoRedo,
-      setUndoStack,
-      setRedoStack,
-    });
+  const { updateDailyInfo } = useDailyInfo({
+    organizationId,
+    dailyInfos,
+    setDailyInfos,
+    isUndoRedo,
+    setUndoStack,
+    setRedoStack,
+  });
 
     const {
       getPlannedCount,

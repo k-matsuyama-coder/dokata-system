@@ -1,3 +1,4 @@
+// app/(system)/admin/assignments/two-month/hooks/useDailyInfo.ts
 import type { DailyInfo } from "../types";
 import { updateDailyInfoApi } from "../api";
 
@@ -9,7 +10,7 @@ type HistoryItem = {
 };
 
 type Props = {
-  organizationId: string;
+  organizationId: string | null;
   dailyInfos: DailyInfo[];
   setDailyInfos: React.Dispatch<React.SetStateAction<DailyInfo[]>>;
   isUndoRedo: boolean;
@@ -35,15 +36,14 @@ export function useDailyInfo({
       alert("会社情報が取得できません");
       return;
     }
-  
+
     if (!assignmentId || assignmentId === "undefined") {
       alert("現場IDが取得できません");
       return;
     }
+
     const existing = dailyInfos.find(
-      (d) =>
-        d.assignment_id === assignmentId &&
-        d.work_date === workDate
+      (d) => d.assignment_id === assignmentId && d.work_date === workDate
     );
 
     const before = String(existing?.planned_count ?? "");
@@ -58,7 +58,6 @@ export function useDailyInfo({
           after: value,
         },
       ]);
-
       setRedoStack([]);
     }
 
@@ -71,39 +70,30 @@ export function useDailyInfo({
             ? null
             : Number(value)
           : existing?.planned_count ?? null,
-      detail:
-        field === "detail"
-          ? value
-          : existing?.detail ?? null,
+      detail: field === "detail" ? value : existing?.detail ?? null,
     };
 
-    let data;
-
     try {
-      data = await updateDailyInfoApi(payload);
+      const data = await updateDailyInfoApi(payload, organizationId);
+
+      setDailyInfos((prev) => {
+        const exists = prev.some(
+          (d) => d.assignment_id === assignmentId && d.work_date === workDate
+        );
+
+        if (exists) {
+          return prev.map((d) =>
+            d.assignment_id === assignmentId && d.work_date === workDate
+              ? data
+              : d
+          );
+        }
+
+        return [...prev, data];
+      });
     } catch (error) {
       alert(error instanceof Error ? "更新失敗: " + error.message : "更新失敗");
-      return;
     }
-
-    setDailyInfos((prev) => {
-      const exists = prev.some(
-        (d) =>
-          d.assignment_id === assignmentId &&
-          d.work_date === workDate
-      );
-
-      if (exists) {
-        return prev.map((d) =>
-          d.assignment_id === assignmentId &&
-          d.work_date === workDate
-            ? data
-            : d
-        );
-      }
-
-      return [...prev, data];
-    });
   };
 
   return {
