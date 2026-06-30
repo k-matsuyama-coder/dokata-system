@@ -1,31 +1,28 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 
 import { updateDailyInfoAction } from "../actions/updateDailyInfo";
-
 import type { DailyInfo } from "../types";
 
 type Field = "planned_count" | "detail" | "vehicle_names";
 
 type Props = {
-    dailyInfos: DailyInfo[];
-    setDailyInfos: Dispatch<SetStateAction<DailyInfo[]>>;
-    organizationId: string;
-  };
+  dailyInfos: DailyInfo[];
+  setDailyInfos: Dispatch<SetStateAction<DailyInfo[]>>;
+  organizationId: string;
+};
 
-  export function useMonthlyAssignmentDailyInfo({
-    organizationId,
-    dailyInfos,
-    setDailyInfos,
-  }: Props) {
-    const [editingDetails, setEditingDetails] = useState<Record<string, string>>(
-        {}
-      );
-      
-      const [saveTimers, setSaveTimers] = useState<
-        Record<string, ReturnType<typeof setTimeout>>
-      >({});
-    const dailyInfoMap = useMemo(() => {
+export function useMonthlyAssignmentDailyInfo({
+  organizationId,
+  dailyInfos,
+  setDailyInfos,
+}: Props) {
+  const [editingDetails, setEditingDetails] = useState<Record<string, string>>({});
+  const [saveTimers, setSaveTimers] = useState<
+    Record<string, ReturnType<typeof setTimeout>>
+  >({});
+
+  const dailyInfoMap = useMemo(() => {
     const map = new Map<string, DailyInfo>();
 
     dailyInfos.forEach((info) => {
@@ -35,12 +32,28 @@ type Props = {
     return map;
   }, [dailyInfos]);
 
-  const getDailyInfo = (
-    assignmentId: string,
-    workDate: string
-  ) => {
+  const getDailyInfo = (assignmentId: string, workDate: string) => {
     return dailyInfoMap.get(`${assignmentId}_${workDate}`);
   };
+
+  const getDetailValue = (assignmentId: string, workDate: string) => {
+    const key = `${assignmentId}_${workDate}`;
+    return editingDetails[key] ?? getDailyInfo(assignmentId, workDate)?.detail ?? "";
+  };
+
+  useEffect(() => {
+    setEditingDetails((prev) => {
+      const next = { ...prev };
+
+      for (const key of Object.keys(next)) {
+        if (!(key in saveTimers)) {
+          delete next[key];
+        }
+      }
+
+      return next;
+    });
+  }, [dailyInfos, saveTimers]);
 
   const updateDailyInfo = async (
     assignmentId: string,
@@ -68,9 +81,7 @@ type Props = {
       const exists = prev.some((info) => info.id === data.id);
 
       if (exists) {
-        return prev.map((info) =>
-          info.id === data.id ? data : info
-        );
+        return prev.map((info) => (info.id === data.id ? data : info));
       }
 
       return [...prev, data];
@@ -94,6 +105,7 @@ type Props = {
   return {
     dailyInfoMap,
     getDailyInfo,
+    getDetailValue,
     updateDailyInfo,
     editingDetails,
     setEditingDetails,

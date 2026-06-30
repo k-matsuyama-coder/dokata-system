@@ -44,7 +44,7 @@ export default function AssignmentDetailTextarea({
 
   return (
     <textarea
-      value={editingDetails[key] ?? dailyInfo?.detail ?? ""}
+      value={key in editingDetails ? editingDetails[key] : dailyInfo?.detail ?? ""}
       onChange={(e) => {
         const value = e.target.value;
 
@@ -58,12 +58,7 @@ export default function AssignmentDetailTextarea({
         }
 
         const timer = setTimeout(() => {
-          updateDailyInfo(
-            assignmentId,
-            workDate,
-            "detail",
-            value
-          );
+          updateDailyInfo(assignmentId, workDate, "detail", value);
         }, 500);
 
         setSaveTimers((prev) => ({
