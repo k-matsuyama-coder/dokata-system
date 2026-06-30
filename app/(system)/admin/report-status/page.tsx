@@ -76,10 +76,11 @@ if (!currentOrganizationId) {
     }
   
     const { data: employee } = await supabase
-      .from("employees")
-      .select("role")
-      .eq("auth_user_id", userData.user.id)
-      .single();
+  .from("employees")
+  .select("role")
+  .eq("organization_id", currentOrganizationId)
+  .eq("auth_user_id", userData.user.id)
+  .single();
   
     if (!employee || !hasRole(employee.role, "admin")) {
       window.location.href = "/home";
@@ -248,14 +249,22 @@ if (totalSites === 0) {
   const startOffset = (firstDay.getDay() + 6) % 7;
 
   const sendNotificationToForeman = async (row: any) => {
+    const currentOrganizationId = await getCurrentOrganization();
+  
+    if (!currentOrganizationId) {
+      alert("会社情報が取得できません");
+      return;
+    }
+  
     const foreman = siteMembers.find(
       (member) =>
         member.assignment_id === row.assignment.id &&
+        member.work_date === date &&
         member.is_foreman
     );
   
     if (!foreman) {
-      alert("この現場に職長が設定されていません");
+      alert("この日のこの現場に職長が設定されていません");
       return;
     }
   
@@ -263,12 +272,27 @@ if (totalSites === 0) {
       row.assignment.site_name ?? ""
     )}`;
   
+    const { error: insertError } = await supabase.from("notifications").insert({
+      organization_id: currentOrganizationId,
+      employee_name: foreman.employee_name,
+      title: "日報確認依頼",
+      message: `${date} ${row.assignment.site_name} の日報を提出してください`,
+      link_url: reportUrl,
+      is_read: false,
+    });
+  
+    if (insertError) {
+      alert("通知保存失敗: " + insertError.message);
+      return;
+    }
+  
     const pushResponse = await fetch("/api/send-push", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
+        organizationId: currentOrganizationId,
         employeeName: foreman.employee_name,
         title: "日報確認依頼",
         message: `${date} ${row.assignment.site_name} の日報を提出してください`,
@@ -278,13 +302,13 @@ if (totalSites === 0) {
   
     const pushResult = await pushResponse.json();
   
-    if (!pushResult.success) {
-      alert("プッシュ通知失敗: " + pushResult.message);
+    if (!pushResponse.ok || !pushResult.success) {
+      alert("プッシュ通知失敗: " + (pushResult.message ?? "送信失敗"));
       return;
     }
   
     alert(
-      `${foreman.employee_name} さんに通知しました / Push送信数: ${pushResult.sentCount}`
+      `${foreman.employee_name} さんに通知しました / Push送信数: ${pushResult.sentCount ?? 0}`
     );
   };
 
@@ -305,6 +329,7 @@ if (!currentOrganizationId) {
       const foreman = siteMembers.find(
         (member) =>
           member.assignment_id === row.assignment.id &&
+          member.work_date === date &&
           member.is_foreman
       );
 
@@ -330,11 +355,12 @@ if (!currentOrganizationId) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-            employeeName: foreman.employee_name,
-            title: "日報確認依頼",
-            message: `${date} ${row.assignment.site_name} の日報を確認してください`,
-            url: reportUrl,
-          }),
+          organizationId: currentOrganizationId,
+          employeeName: foreman.employee_name,
+          title: "日報確認依頼",
+          message: `${date} ${row.assignment.site_name} の日報を確認してください`,
+          url: reportUrl,
+        }),
       });
       
       sentCount++;

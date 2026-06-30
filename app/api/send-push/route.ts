@@ -58,36 +58,42 @@ export async function POST(req: Request) {
       });
     }
 
-    for (const sub of subscriptions) {
-      try {
-        await webpush.sendNotification(
-          {
-            endpoint: sub.endpoint,
-            keys: {
-              p256dh: sub.p256dh,
-              auth: sub.auth,
-            },
-          },
-          JSON.stringify({
-            title,
-            body: message,
-            url,
-          })
-        );
-      } catch (e: any) {
-        console.error("push送信失敗", e);
+    let sentCount = 0;
 
-        return NextResponse.json({
-          success: false,
-          message: e.message,
-        });
-      }
-    }
+for (const sub of subscriptions) {
+  try {
+    await webpush.sendNotification(
+      {
+        endpoint: sub.endpoint,
+        keys: {
+          p256dh: sub.p256dh,
+          auth: sub.auth,
+        },
+      },
+      JSON.stringify({
+        title,
+        body: message,
+        url,
+      })
+    );
+    sentCount++;
+  } catch (e: any) {
+    console.error("push送信失敗", e);
+  }
+}
 
-    return NextResponse.json({
-      success: true,
-      sentCount: subscriptions.length,
-    });
+if (sentCount === 0) {
+  return NextResponse.json({
+    success: false,
+    message: "送信できる端末がありません",
+  });
+}
+
+return NextResponse.json({
+  success: true,
+  sentCount,
+});
+
   } catch (error) {
     console.error(error);
 
