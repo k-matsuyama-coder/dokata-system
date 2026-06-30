@@ -57,6 +57,10 @@ export default function TwoMonthAssignmentRow({
   const [editingDetails, setEditingDetails] = useState<Record<string, string>>(
     {}
   );
+  const [savedDetails, setSavedDetails] = useState<
+  Record<string, "show" | "fade">
+>({});
+
   const [saveTimers, setSaveTimers] = useState<
     Record<string, ReturnType<typeof setTimeout>>
   >({});
@@ -164,54 +168,115 @@ export default function TwoMonthAssignmentRow({
                 justifyItems: "center",
               }}
             >
-              <textarea
-                value={textareaValue}
-                onChange={(e) => {
-                  const value = e.target.value;
+              <div
+  style={{
+    position: "relative",
+    width: 72,
+  }}
+>
+  <textarea
+    value={textareaValue}
+    onChange={(e) => {
+      const value = e.target.value;
 
-                  setEditingDetails((prev) => ({
-                    ...prev,
-                    [detailKey]: value,
-                  }));
+      setEditingDetails((prev) => ({
+        ...prev,
+        [detailKey]: value,
+      }));
 
-                  if (saveTimers[detailKey]) {
-                    clearTimeout(saveTimers[detailKey]);
-                  }
+      if (saveTimers[detailKey]) {
+        clearTimeout(saveTimers[detailKey]);
+      }
 
-                  const timer = setTimeout(async () => {
-                    await updateDailyInfo(assignment.id, date, "detail", value);
+      const timer = setTimeout(async () => {
+        try {
+          await updateDailyInfo(assignment.id, date, "detail", value);
 
-                    setEditingDetails((prev) => {
-                      const next = { ...prev };
-                      delete next[detailKey];
-                      return next;
-                    });
+          setSavedDetails((prev) => ({
+            ...prev,
+            [detailKey]: "show",
+          }));
 
-                    setSaveTimers((prev) => {
-                      const next = { ...prev };
-                      delete next[detailKey];
-                      return next;
-                    });
-                  }, 500);
+          setTimeout(() => {
+            setSavedDetails((prev) => ({
+              ...prev,
+              [detailKey]: "fade",
+            }));
+          }, 400);
 
-                  setSaveTimers((prev) => ({
-                    ...prev,
-                    [detailKey]: timer,
-                  }));
-                }}
-                placeholder="詳細"
-                style={{
-                  width: 92,
-                  minHeight: 42,
-                  padding: 4,
-                  border: "1px solid #ccc",
-                  borderRadius: 4,
-                  fontSize: 10,
-                  resize: "vertical",
-                  backgroundColor: "#fff",
-                  boxSizing: "border-box",
-                }}
-              />
+          setTimeout(() => {
+            setSavedDetails((prev) => {
+              const next = { ...prev };
+              delete next[detailKey];
+              return next;
+            });
+          }, 1400);
+        } finally {
+          setEditingDetails((prev) => {
+            const next = { ...prev };
+            delete next[detailKey];
+            return next;
+          });
+
+          setSaveTimers((prev) => {
+            const next = { ...prev };
+            delete next[detailKey];
+            return next;
+          });
+        }
+      }, 3000);
+
+      setSaveTimers((prev) => ({
+        ...prev,
+        [detailKey]: timer,
+      }));
+    }}
+    onInput={(e) => {
+      const el = e.currentTarget;
+      el.style.height = "auto";
+      el.style.height = `${Math.min(el.scrollHeight, 40)}px`;
+    }}
+    placeholder="詳細"
+    style={{
+      width: "100%",
+      minHeight: 24,
+      height: 24,
+      maxHeight: 40,
+      overflowY: "auto",
+      padding: "10px 3px 3px 3px",
+      border: "1px solid #ccc",
+      borderRadius: 4,
+      fontSize: 10,
+      lineHeight: 1.2,
+      resize: "none",
+      backgroundColor: "#fff",
+      boxSizing: "border-box",
+    }}
+  />
+
+  {savedDetails[detailKey] && (
+    <div
+      style={{
+        position: "absolute",
+        top: 2,
+        right: 4,
+        fontSize: 8,
+        color: "#166534",
+        backgroundColor: "#dcfce7",
+        border: "1px solid #bbf7d0",
+        borderRadius: 999,
+        padding: "1px 5px",
+        lineHeight: 1.2,
+        fontWeight: 700,
+        pointerEvents: "none",
+        opacity: savedDetails[detailKey] === "fade" ? 0 : 1,
+        transition: "opacity 1s ease",
+      }}
+    >
+      保存済み
+    </div>
+  )}
+</div>
 
               <input
                 data-planned-input="true"
