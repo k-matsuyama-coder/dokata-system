@@ -29,9 +29,7 @@ type DailyReport = {
 };
 
 export default function ReportStatusPage() {
-  const [date, setDate] = useState(() =>
-    new Date().toISOString().slice(0, 10)
-  );
+  const [date, setDate] = useState(() => formatLocalDate(new Date()));
 
   const [calendarMonth, setCalendarMonth] = useState(() => {
     const now = new Date();
@@ -42,6 +40,14 @@ export default function ReportStatusPage() {
   const [siteMembers, setSiteMembers] = useState<SiteMember[]>([]);
   const [reports, setReports] = useState<DailyReport[]>([]);
   const [showUnsubmittedOnly, setShowUnsubmittedOnly] = useState(false);
+
+  const formatLocalDate = (d: Date) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
   const getCurrentOrganization = async () => {
     const { data: sessionData } = await supabase.auth.getSession();
     const token = sessionData.session?.access_token;
@@ -142,21 +148,21 @@ if (!currentOrganizationId) {
     fetchData();
   }, [date, calendarMonth]);
 
-  const startOfMonth = new Date(
-    calendarMonth.getFullYear(),
-    calendarMonth.getMonth(),
-    1
-  )
-    .toISOString()
-    .slice(0, 10);
+  const startOfMonth = formatLocalDate(
+    new Date(
+      calendarMonth.getFullYear(),
+      calendarMonth.getMonth(),
+      1
+    )
+  );
   
-  const endOfMonth = new Date(
-    calendarMonth.getFullYear(),
-    calendarMonth.getMonth() + 1,
-    0
-  )
-    .toISOString()
-    .slice(0, 10);
+  const endOfMonth = formatLocalDate(
+    new Date(
+      calendarMonth.getFullYear(),
+      calendarMonth.getMonth() + 1,
+      0
+    )
+  );
 
   const rows = useMemo(() => {
     return assignments
@@ -484,7 +490,7 @@ if (!currentOrganizationId) {
           border:
   day.dateString === date
     ? "3px solid #2563eb"
-    : day.dateString === new Date().toISOString().slice(0, 10)
+    : day.dateString === formatLocalDate(new Date())
     ? "2px solid #16a34a"
     : "1px solid #ddd",
         }}
@@ -531,7 +537,7 @@ if (!currentOrganizationId) {
     onClick={() => {
       const d = new Date(date);
       d.setDate(d.getDate() - 1);
-      setDate(d.toISOString().slice(0, 10));
+      setDate(formatLocalDate(d));
     }}
     style={{
       padding: "10px 14px",
@@ -559,7 +565,7 @@ if (!currentOrganizationId) {
     onClick={() => {
       const d = new Date(date);
       d.setDate(d.getDate() + 1);
-      setDate(d.toISOString().slice(0, 10));
+      setDate(formatLocalDate(d));
     }}
     style={{
       padding: "10px 14px",
@@ -573,7 +579,7 @@ if (!currentOrganizationId) {
 
   <button
     onClick={() =>
-      setDate(new Date().toISOString().slice(0, 10))
+      setDate(formatLocalDate(new Date()))
     }
     style={{
       padding: "10px 14px",
