@@ -1,3 +1,5 @@
+// app/(system)/admin/assignments/two-month/components/AssignmentRow.tsx
+import { useEffect, useState } from "react";
 import type { Assignment } from "../types";
 import {
   stickyTd,
@@ -34,7 +36,7 @@ type Props = {
     workDate: string,
     field: "planned_count" | "detail",
     value: string
-  ) => void;
+  ) => void | Promise<void>;
 };
 
 export default function TwoMonthAssignmentRow({
@@ -50,10 +52,21 @@ export default function TwoMonthAssignmentRow({
   getPlannedCount,
   getBandColor,
   getDetailTags,
-  removeDetailTag,
-  addDetailTag,
   updateDailyInfo,
 }: Props) {
+  const [editingDetails, setEditingDetails] = useState<Record<string, string>>(
+    {}
+  );
+  const [saveTimers, setSaveTimers] = useState<
+    Record<string, ReturnType<typeof setTimeout>>
+  >({});
+
+  useEffect(() => {
+    return () => {
+      Object.values(saveTimers).forEach((timer) => clearTimeout(timer));
+    };
+  }, [saveTimers]);
+
   return (
     <tr>
       <td
@@ -117,11 +130,16 @@ export default function TwoMonthAssignmentRow({
       </td>
 
       <td style={stickyTotalTd1}>{getMonthlyTotal(assignment.id, 0)}</td>
-
       <td style={stickyTotalTd2}>{getMonthlyTotal(assignment.id, 1)}</td>
 
       {days.map((date) => {
         const count = getPlannedCount(assignment.id, date);
+        const detailValue = getDetailTags(assignment.id, date).join(",");
+        const detailKey = `${assignment.id}_${date}`;
+        const textareaValue =
+          detailKey in editingDetails
+            ? editingDetails[detailKey]
+            : detailValue;
 
         return (
           <td
@@ -132,10 +150,10 @@ export default function TwoMonthAssignmentRow({
                 count !== ""
                   ? getBandColor(assignment)
                   : new Date(date).getDay() === 0
-                  ? "#fff7f7"
-                  : new Date(date).getDay() === 6
-                  ? "#f7fbff"
-                  : "#fff",
+                    ? "#fff7f7"
+                    : new Date(date).getDay() === 6
+                      ? "#f7fbff"
+                      : "#fff",
               borderTop: count !== "" ? "5px solid #22c55e" : td.border,
             }}
           >
@@ -146,72 +164,54 @@ export default function TwoMonthAssignmentRow({
                 justifyItems: "center",
               }}
             >
-              <div
-                style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: 4,
-                  justifyContent: "center",
+              <textarea
+                value={textareaValue}
+                onChange={(e) => {
+                  const value = e.target.value;
+
+                  setEditingDetails((prev) => ({
+                    ...prev,
+                    [detailKey]: value,
+                  }));
+
+                  if (saveTimers[detailKey]) {
+                    clearTimeout(saveTimers[detailKey]);
+                  }
+
+                  const timer = setTimeout(async () => {
+                    await updateDailyInfo(assignment.id, date, "detail", value);
+
+                    setEditingDetails((prev) => {
+                      const next = { ...prev };
+                      delete next[detailKey];
+                      return next;
+                    });
+
+                    setSaveTimers((prev) => {
+                      const next = { ...prev };
+                      delete next[detailKey];
+                      return next;
+                    });
+                  }, 500);
+
+                  setSaveTimers((prev) => ({
+                    ...prev,
+                    [detailKey]: timer,
+                  }));
                 }}
-              >
-                {getDetailTags(assignment.id, date).map((tag) => (
-                  <div
-                    key={tag}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 4,
-                      backgroundColor: "#dcfce7",
-                      color: "#166534",
-                      padding: "2px 6px",
-                      borderRadius: 999,
-                      fontSize: 10,
-                      fontWeight: 700,
-                    }}
-                  >
-                    {tag}
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        removeDetailTag(assignment.id, date, tag)
-                      }
-                      style={{
-                        border: "none",
-                        background: "transparent",
-                        cursor: "pointer",
-                        color: "#166534",
-                        fontWeight: 700,
-                      }}
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-
-                <input
-                  list="detail-history"
-                  placeholder="+"
-                  onKeyDown={(e) => {
-                    if (e.key !== "Enter") return;
-
-                    e.preventDefault();
-
-                    const value = e.currentTarget.value.trim();
-
-                    addDetailTag(assignment.id, date, value);
-
-                    e.currentTarget.value = "";
-                  }}
-                  style={{
-                    width: 60,
-                    border: "none",
-                    background: "transparent",
-                    fontSize: 10,
-                    textAlign: "center",
-                  }}
-                />
-              </div>
+                placeholder="詳細"
+                style={{
+                  width: 92,
+                  minHeight: 42,
+                  padding: 4,
+                  border: "1px solid #ccc",
+                  borderRadius: 4,
+                  fontSize: 10,
+                  resize: "vertical",
+                  backgroundColor: "#fff",
+                  boxSizing: "border-box",
+                }}
+              />
 
               <input
                 data-planned-input="true"
