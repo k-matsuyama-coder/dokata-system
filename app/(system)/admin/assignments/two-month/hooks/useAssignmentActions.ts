@@ -1,3 +1,4 @@
+// app/(system)/admin/assignments/two-month/hooks/useAssignmentActions.ts
 import {
   uploadAssignmentFiles,
   deleteAssignmentApi,
@@ -17,6 +18,7 @@ import type {
 } from "../types";
 
 type Props = {
+  organizationId: string | null;
   days: string[];
 
   siteName: string;
@@ -52,10 +54,18 @@ type Props = {
   setDailyInfos: React.Dispatch<React.SetStateAction<DailyInfo[]>>;
   setSiteMembers: React.Dispatch<React.SetStateAction<SiteMember[]>>;
 
-  fetchData: () => void;
+  fetchData: () => void | Promise<void>;
 };
 
+function ensureOrganizationId(organizationId: string | null): string {
+  if (!organizationId) {
+    throw new Error("会社情報が取得できません");
+  }
+  return organizationId;
+}
+
 export function useAssignmentActions({
+  organizationId,
   days,
   siteName,
   contractorName,
@@ -94,8 +104,9 @@ export function useAssignmentActions({
     files: FileList | null
   ) => {
     try {
-      await uploadAssignmentFiles(assignmentId, files);
-      fetchData();
+      const safeOrganizationId = ensureOrganizationId(organizationId);
+      await uploadAssignmentFiles(assignmentId, files, safeOrganizationId);
+      await fetchData();
     } catch (error) {
       alert(error instanceof Error ? error.message : "アップロードに失敗しました");
     }
@@ -105,10 +116,11 @@ export function useAssignmentActions({
     if (!editingAssignment) return;
 
     try {
-      await updateAssignmentApi(editingAssignment);
+      const safeOrganizationId = ensureOrganizationId(organizationId);
+      await updateAssignmentApi(editingAssignment, safeOrganizationId);
 
       setEditingAssignment(null);
-      fetchData();
+      await fetchData();
     } catch (error) {
       alert(error instanceof Error ? error.message : "更新に失敗しました");
     }
@@ -119,11 +131,13 @@ export function useAssignmentActions({
     if (!ok) return;
 
     try {
-      await deleteAssignmentApi(id);
+      const safeOrganizationId = ensureOrganizationId(organizationId);
+      await deleteAssignmentApi(id, safeOrganizationId);
 
       setAssignments((prev) => prev.filter((a) => a.id !== id));
       setDailyInfos((prev) => prev.filter((d) => d.assignment_id !== id));
       setSiteMembers((prev) => prev.filter((m) => m.assignment_id !== id));
+      setAssignmentFiles((prev) => prev.filter((f) => f.assignment_id !== id));
     } catch (error) {
       alert(error instanceof Error ? error.message : "削除に失敗しました");
     }
@@ -134,11 +148,10 @@ export function useAssignmentActions({
     if (!ok) return;
 
     try {
-      await deleteAssignmentFileApi(file.id);
+      const safeOrganizationId = ensureOrganizationId(organizationId);
+      await deleteAssignmentFileApi(file.id, safeOrganizationId);
 
-      setAssignmentFiles((prev) =>
-        prev.filter((item) => item.id !== file.id)
-      );
+      setAssignmentFiles((prev) => prev.filter((item) => item.id !== file.id));
     } catch (error) {
       alert(error instanceof Error ? error.message : "ファイル削除に失敗しました");
     }
@@ -150,12 +163,8 @@ export function useAssignmentActions({
   ) => {
     if (fromAssignmentId === toAssignmentId) return;
 
-    const fromIndex = sortedAssignments.findIndex(
-      (a) => a.id === fromAssignmentId
-    );
-    const toIndex = sortedAssignments.findIndex(
-      (a) => a.id === toAssignmentId
-    );
+    const fromIndex = sortedAssignments.findIndex((a) => a.id === fromAssignmentId);
+    const toIndex = sortedAssignments.findIndex((a) => a.id === toAssignmentId);
 
     if (fromIndex === -1 || toIndex === -1) return;
 
@@ -166,10 +175,11 @@ export function useAssignmentActions({
     setAssignments(nextAssignments);
 
     try {
-      await updateAssignmentSortOrderApi(nextAssignments);
+      const safeOrganizationId = ensureOrganizationId(organizationId);
+      await updateAssignmentSortOrderApi(nextAssignments, safeOrganizationId);
     } catch (error) {
       alert(error instanceof Error ? error.message : "並び替え保存に失敗しました");
-      fetchData();
+      await fetchData();
     }
   };
 
@@ -180,21 +190,26 @@ export function useAssignmentActions({
     }
 
     try {
-      const assignmentId = await addAssignmentApi({
-        assignment_date: days[0],
-        contractor_name: contractorName,
-        site_name: siteName,
-        construction_type: constructionType,
-        manager_name: managerName,
-        contact_phone: contactPhone,
-        address,
-        shift_type: shiftType,
-        meeting_time: meetingTime,
-        start_date: startDate,
-        end_date: endDate || null,
-      });
+      const safeOrganizationId = ensureOrganizationId(organizationId);
 
-      await uploadFiles(assignmentId, newFiles);
+      const assignmentId = await addAssignmentApi(
+        {
+          assignment_date: days[0],
+          contractor_name: contractorName,
+          site_name: siteName,
+          construction_type: constructionType,
+          manager_name: managerName,
+          contact_phone: contactPhone,
+          address,
+          shift_type: shiftType,
+          meeting_time: meetingTime,
+          start_date: startDate,
+          end_date: endDate || null,
+        },
+        safeOrganizationId
+      );
+
+      await uploadAssignmentFiles(assignmentId, newFiles, safeOrganizationId);
 
       setSiteName("");
       setContractorName("");
@@ -209,7 +224,7 @@ export function useAssignmentActions({
       setShowAddModal(false);
       setNewFiles(null);
 
-      fetchData();
+      await fetchData();
     } catch (error) {
       alert(error instanceof Error ? error.message : "現場追加に失敗しました");
     }

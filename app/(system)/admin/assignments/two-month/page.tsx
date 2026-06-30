@@ -64,7 +64,7 @@ export default function TwoMonthPage() {
     setContractors,
     contractorContacts,
     setContractorContacts,
-  
+    organizationId,
     baseMonth,
     setBaseMonth,
     days,
@@ -129,6 +129,7 @@ export default function TwoMonthPage() {
     moveAssignmentRow,
     handleAddSite,
   } = useAssignmentActions({
+    organizationId,
     days,
     siteName,
     contractorName,
