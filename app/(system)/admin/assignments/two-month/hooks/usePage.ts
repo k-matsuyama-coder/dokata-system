@@ -1,4 +1,3 @@
-// app/.../hooks/usePage.ts
 import { useEffect, useMemo, useState } from "react";
 import { fetchTwoMonthData } from "../api";
 import { supabase } from "@/lib/supabase";
@@ -137,7 +136,7 @@ export function useTwoMonthPage() {
       }
 
       const organizationId = orgResult.organizationId;
-setOrganizationId(organizationId);
+      setOrganizationId(organizationId);
 
       const { data: employee, error: employeeError } = await supabase
         .from("employees")
@@ -232,7 +231,7 @@ setOrganizationId(organizationId);
     isUndoRedo,
     setIsUndoRedo,
     organizationId,
-setOrganizationId,
+    setOrganizationId,
     fetchData,
   };
 }
