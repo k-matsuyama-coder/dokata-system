@@ -1,7 +1,8 @@
+// app/.../hooks/usePage.ts
 import { useEffect, useMemo, useState } from "react";
 import { fetchTwoMonthData } from "../api";
 import { supabase } from "@/lib/supabase";
-import { hasRole } from "../../../../../types/auth";
+import { hasRole } from "@/app/types/auth";
 
 import type {
   Assignment,
@@ -20,27 +21,30 @@ type HistoryItem = {
   after: string;
 };
 
+type CurrentOrganizationResponse = {
+  organizationId: string | null;
+  impersonating?: boolean;
+  isSuperAdmin?: boolean;
+  message?: string;
+  error?: string;
+};
+
 export function useTwoMonthPage() {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [assignmentFiles, setAssignmentFiles] = useState<AssignmentFile[]>([]);
   const [dailyInfos, setDailyInfos] = useState<DailyInfo[]>([]);
   const [siteMembers, setSiteMembers] = useState<SiteMember[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
-
   const [contractors, setContractors] = useState<Contractor[]>([]);
-  const [contractorContacts, setContractorContacts] = useState<
-    ContractorContact[]
-  >([]);
+  const [contractorContacts, setContractorContacts] = useState<ContractorContact[]>([]);
+  const [organizationId, setOrganizationId] = useState<string | null>(null);
 
   const [baseMonth, setBaseMonth] = useState(() => {
     const now = new Date();
     let year = now.getFullYear();
     let month = now.getMonth() + 1;
 
-    if (month % 2 !== 0) {
-      month -= 1;
-    }
-
+    if (month % 2 !== 0) month -= 1;
     if (month === 0) {
       month = 12;
       year -= 1;
@@ -59,13 +63,11 @@ export function useTwoMonthPage() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
-  const [editingAssignment, setEditingAssignment] =
-    useState<Assignment | null>(null);
+  const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
   const [newFiles, setNewFiles] = useState<FileList | null>(null);
   const [constructionType, setConstructionType] = useState("第一工事");
   const [sortMode, setSortMode] = useState("manual");
-  const [draggingAssignmentId, setDraggingAssignmentId] =
-    useState<string | null>(null);
+  const [draggingAssignmentId, setDraggingAssignmentId] = useState<string | null>(null);
 
   const [undoStack, setUndoStack] = useState<HistoryItem[]>([]);
   const [redoStack, setRedoStack] = useState<HistoryItem[]>([]);
@@ -89,65 +91,90 @@ export function useTwoMonthPage() {
 
   const fetchData = async () => {
     try {
-      const { data: userData } = await supabase.auth.getUser();
-  
-      if (!userData.user) {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
         window.location.href = "/login";
         return;
       }
-  
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
-  
-      if (!token) {
+
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+
+      const token = session?.access_token;
+
+      if (sessionError || !token) {
         window.location.href = "/login";
         return;
       }
-  
+
       const res = await fetch("/api/current-organization", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-  
-      const result = await res.json();
-  
-      if (!res.ok || !result.organizationId) {
+
+      const orgResult = (await res.json()) as CurrentOrganizationResponse;
+
+      if (!res.ok) {
+        alert(orgResult.error ?? orgResult.message ?? "会社情報の取得に失敗しました");
+        return;
+      }
+
+      if (!orgResult.organizationId) {
+        if (orgResult.isSuperAdmin && !orgResult.impersonating) {
+          alert("対象会社が未選択です。会社を選択してから開いてください。");
+          return;
+        }
+
         alert("会社情報が取得できません");
         return;
       }
-  
-      const organizationId = result.organizationId as string;
-  
-      const { data: employee } = await supabase
+
+      const organizationId = orgResult.organizationId;
+setOrganizationId(organizationId);
+
+      const { data: employee, error: employeeError } = await supabase
         .from("employees")
         .select("role")
         .eq("organization_id", organizationId)
-        .eq("auth_user_id", userData.user.id)
-        .single();
-  
+        .eq("auth_user_id", user.id)
+        .maybeSingle();
+
+      if (employeeError) {
+        throw employeeError;
+      }
+
       if (!employee || !hasRole(employee.role, "admin")) {
         alert("管理者のみ閲覧できます");
         window.location.href = "/home";
         return;
       }
-  
-      const resultData = await fetchTwoMonthData(days);
-  
-      setEmployees(resultData.employees);
-      setContractors(resultData.contractors);
-      setContractorContacts(resultData.contractorContacts);
-      setAssignments(resultData.assignments);
-      setDailyInfos(resultData.dailyInfos);
-      setSiteMembers(resultData.siteMembers);
-      setAssignmentFiles(resultData.assignmentFiles);
+
+      const resultData = await fetchTwoMonthData({
+        days,
+        organizationId,
+      });
+
+      setEmployees(resultData.employees ?? []);
+      setContractors(resultData.contractors ?? []);
+      setContractorContacts(resultData.contractorContacts ?? []);
+      setAssignments(resultData.assignments ?? []);
+      setDailyInfos(resultData.dailyInfos ?? []);
+      setSiteMembers(resultData.siteMembers ?? []);
+      setAssignmentFiles(resultData.assignmentFiles ?? []);
     } catch (error) {
       alert(error instanceof Error ? error.message : "データ取得に失敗しました");
     }
   };
 
   useEffect(() => {
-    fetchData();
+    void fetchData();
   }, [baseMonth]);
 
   return {
@@ -165,11 +192,9 @@ export function useTwoMonthPage() {
     setContractors,
     contractorContacts,
     setContractorContacts,
-
     baseMonth,
     setBaseMonth,
     days,
-
     siteName,
     setSiteName,
     contractorName,
@@ -200,13 +225,14 @@ export function useTwoMonthPage() {
     setSortMode,
     draggingAssignmentId,
     setDraggingAssignmentId,
-
     undoStack,
     setUndoStack,
     redoStack,
     setRedoStack,
     isUndoRedo,
     setIsUndoRedo,
+    organizationId,
+setOrganizationId,
     fetchData,
   };
 }

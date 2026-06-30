@@ -1,31 +1,259 @@
+// app/.../hooks/usePage.ts
+import { useEffect, useMemo, useState } from "react";
+import { fetchTwoMonthData } from "../api";
+import { supabase } from "@/lib/supabase";
+import { hasRole } from "@/types/auth";
+
+import type {
+  Assignment,
+  AssignmentFile,
+  Contractor,
+  ContractorContact,
+  DailyInfo,
+  Employee,
+  SiteMember,
+} from "../types";
+
+type HistoryItem = {
+  assignmentId: string;
+  workDate: string;
+  before: string;
+  after: string;
+};
+
+type CurrentOrganizationResponse = {
+  organizationId: string | null;
+  impersonating?: boolean;
+  isSuperAdmin?: boolean;
+  message?: string;
+  error?: string;
+};
+
+export function useTwoMonthPage() {
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [assignmentFiles, setAssignmentFiles] = useState<AssignmentFile[]>([]);
+  const [dailyInfos, setDailyInfos] = useState<DailyInfo[]>([]);
+  const [siteMembers, setSiteMembers] = useState<SiteMember[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [contractors, setContractors] = useState<Contractor[]>([]);
+  const [contractorContacts, setContractorContacts] = useState<ContractorContact[]>([]);
+
+  const [baseMonth, setBaseMonth] = useState(() => {
+    const now = new Date();
+    let year = now.getFullYear();
+    let month = now.getMonth() + 1;
+
+    if (month % 2 !== 0) month -= 1;
+    if (month === 0) {
+      month = 12;
+      year -= 1;
+    }
+
+    return `${year}-${String(month).padStart(2, "0")}`;
+  });
+
+  const [siteName, setSiteName] = useState("");
+  const [contractorName, setContractorName] = useState("");
+  const [managerName, setManagerName] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [shiftType, setShiftType] = useState("day");
+  const [meetingTime, setMeetingTime] = useState("08:00");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
+  const [newFiles, setNewFiles] = useState<FileList | null>(null);
+  const [constructionType, setConstructionType] = useState("第一工事");
+  const [sortMode, setSortMode] = useState("manual");
+  const [draggingAssignmentId, setDraggingAssignmentId] = useState<string | null>(null);
+
+  const [undoStack, setUndoStack] = useState<HistoryItem[]>([]);
+  const [redoStack, setRedoStack] = useState<HistoryItem[]>([]);
+  const [isUndoRedo, setIsUndoRedo] = useState(false);
+
+  const days = useMemo(() => {
+    const [year, month] = baseMonth.split("-").map(Number);
+    const start = new Date(year, month - 1, 1);
+
+    return Array.from({ length: 62 }, (_, i) => {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+
+      return `${y}-${m}-${day}`;
+    });
+  }, [baseMonth]);
+
+  const fetchData = async () => {
+    try {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        window.location.href = "/login";
+        return;
+      }
+
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+
+      const token = session?.access_token;
+
+      if (sessionError || !token) {
+        window.location.href = "/login";
+        return;
+      }
+
+      const res = await fetch("/api/current-organization", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const orgResult = (await res.json()) as CurrentOrganizationResponse;
+
+      if (!res.ok) {
+        alert(orgResult.error ?? orgResult.message ?? "会社情報の取得に失敗しました");
+        return;
+      }
+
+      if (!orgResult.organizationId) {
+        if (orgResult.isSuperAdmin && !orgResult.impersonating) {
+          alert("対象会社が未選択です。会社を選択してから開いてください。");
+          return;
+        }
+
+        alert("会社情報が取得できません");
+        return;
+      }
+
+      const organizationId = orgResult.organizationId;
+
+      const { data: employee, error: employeeError } = await supabase
+        .from("employees")
+        .select("role")
+        .eq("organization_id", organizationId)
+        .eq("auth_user_id", user.id)
+        .maybeSingle();
+
+      if (employeeError) {
+        throw new Error(`社員権限取得失敗: ${employeeError.message}`);
+      }
+
+      if (!employee || !hasRole(employee.role, "admin")) {
+        alert("管理者のみ閲覧できます");
+        window.location.href = "/home";
+        return;
+      }
+
+      const resultData = await fetchTwoMonthData({
+        days,
+        organizationId,
+      });
+
+      setEmployees(resultData.employees ?? []);
+      setContractors(resultData.contractors ?? []);
+      setContractorContacts(resultData.contractorContacts ?? []);
+      setAssignments(resultData.assignments ?? []);
+      setDailyInfos(resultData.dailyInfos ?? []);
+      setSiteMembers(resultData.siteMembers ?? []);
+      setAssignmentFiles(resultData.assignmentFiles ?? []);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "データ取得に失敗しました");
+    }
+  };
+
+  useEffect(() => {
+    void fetchData();
+  }, [baseMonth]);
+
+  return {
+    assignments,
+    setAssignments,
+    assignmentFiles,
+    setAssignmentFiles,
+    dailyInfos,
+    setDailyInfos,
+    siteMembers,
+    setSiteMembers,
+    employees,
+    setEmployees,
+    contractors,
+    setContractors,
+    contractorContacts,
+    setContractorContacts,
+    baseMonth,
+    setBaseMonth,
+    days,
+    siteName,
+    setSiteName,
+    contractorName,
+    setContractorName,
+    managerName,
+    setManagerName,
+    contactPhone,
+    setContactPhone,
+    address,
+    setAddress,
+    shiftType,
+    setShiftType,
+    meetingTime,
+    setMeetingTime,
+    startDate,
+    setStartDate,
+    endDate,
+    setEndDate,
+    showAddModal,
+    setShowAddModal,
+    editingAssignment,
+    setEditingAssignment,
+    newFiles,
+    setNewFiles,
+    constructionType,
+    setConstructionType,
+    sortMode,
+    setSortMode,
+    draggingAssignmentId,
+    setDraggingAssignmentId,
+    undoStack,
+    setUndoStack,
+    redoStack,
+    setRedoStack,
+    isUndoRedo,
+    setIsUndoRedo,
+    fetchData,
+  };
+}
+
+// app/.../api.ts
 import { supabase } from "@/lib/supabase";
 import type { Assignment, ConstructionType, ShiftType } from "./types";
 
-async function getCurrentOrganization() {
-  const { data: sessionData } = await supabase.auth.getSession();
-  const token = sessionData.session?.access_token;
+type TwoMonthDataParams = {
+  days: string[];
+  organizationId: string;
+};
 
-  if (!token) {
-    throw new Error("ログイン情報なし");
+function ensureOrganizationId(organizationId: string | null | undefined) {
+  if (!organizationId) {
+    throw new Error("会社情報が取得できません");
   }
-
-  const res = await fetch("/api/current-organization", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  const result = await res.json();
-
-  if (!res.ok) {
-    throw new Error(result.error || "会社情報取得失敗");
-  }
-
-  return result.organizationId as string;
+  return organizationId;
 }
 
-export async function fetchTwoMonthData(days: string[]) {
-  const organizationId = await getCurrentOrganization();
+export async function fetchTwoMonthData({
+  days,
+  organizationId,
+}: TwoMonthDataParams) {
+  const safeOrganizationId = ensureOrganizationId(organizationId);
 
   const startDate = days[0];
   const endDate = days[days.length - 1];
@@ -33,7 +261,7 @@ export async function fetchTwoMonthData(days: string[]) {
   const { data: employeeData, error: employeeError } = await supabase
     .from("employees")
     .select("name, company_name")
-    .eq("organization_id", organizationId)
+    .eq("organization_id", safeOrganizationId)
     .order("name", { ascending: true });
 
   if (employeeError) {
@@ -43,7 +271,7 @@ export async function fetchTwoMonthData(days: string[]) {
   const { data: contractorData, error: contractorError } = await supabase
     .from("contractors")
     .select("id, name")
-    .eq("organization_id", organizationId)
+    .eq("organization_id", safeOrganizationId)
     .order("name", { ascending: true });
 
   if (contractorError) {
@@ -53,7 +281,7 @@ export async function fetchTwoMonthData(days: string[]) {
   const { data: contactData, error: contactError } = await supabase
     .from("contractor_contacts")
     .select("id, contractor_id, manager_name, contact_phone")
-    .eq("organization_id", organizationId);
+    .eq("organization_id", safeOrganizationId);
 
   if (contactError) {
     throw new Error("担当者取得失敗: " + contactError.message);
@@ -77,7 +305,7 @@ export async function fetchTwoMonthData(days: string[]) {
       start_date,
       end_date
     `)
-    .eq("organization_id", organizationId)
+    .eq("organization_id", safeOrganizationId)
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: true });
 
@@ -102,7 +330,7 @@ export async function fetchTwoMonthData(days: string[]) {
   const { data: dailyInfoData, error: dailyInfoError } = await supabase
     .from("assignment_site_daily_infos")
     .select("id, assignment_id, work_date, planned_count, detail, vehicle_names")
-    .eq("organization_id", organizationId)
+    .eq("organization_id", safeOrganizationId)
     .in("assignment_id", assignmentIds)
     .gte("work_date", startDate)
     .lte("work_date", endDate);
@@ -114,7 +342,7 @@ export async function fetchTwoMonthData(days: string[]) {
   const { data: memberData, error: memberError } = await supabase
     .from("assignment_site_members")
     .select("id, assignment_id, work_date, employee_name, is_driver, is_operator, is_foreman, heavy_equipment")
-    .eq("organization_id", organizationId)
+    .eq("organization_id", safeOrganizationId)
     .in("assignment_id", assignmentIds)
     .gte("work_date", startDate)
     .lte("work_date", endDate);
@@ -126,7 +354,7 @@ export async function fetchTwoMonthData(days: string[]) {
   const { data: fileData, error: fileError } = await supabase
     .from("assignment_files")
     .select("id, assignment_id, file_name, file_url, file_path")
-    .eq("organization_id", organizationId)
+    .eq("organization_id", safeOrganizationId)
     .in("assignment_id", assignmentIds);
 
   if (fileError) {
@@ -146,11 +374,11 @@ export async function fetchTwoMonthData(days: string[]) {
 
 export async function uploadAssignmentFiles(
   assignmentId: string,
-  files: FileList | null
+  files: FileList | null,
+  organizationId: string
 ) {
+  const safeOrganizationId = ensureOrganizationId(organizationId);
   if (!files) return;
-
-  const organizationId = await getCurrentOrganization();
 
   for (const file of Array.from(files)) {
     const filePath = `${assignmentId}/${Date.now()}_${file.name}`;
@@ -170,7 +398,7 @@ export async function uploadAssignmentFiles(
     const { error: insertError } = await supabase
       .from("assignment_files")
       .insert({
-        organization_id: organizationId,
+        organization_id: safeOrganizationId,
         assignment_id: assignmentId,
         file_name: file.name,
         file_url: data.publicUrl,
@@ -183,48 +411,43 @@ export async function uploadAssignmentFiles(
   }
 }
 
-export async function deleteAssignmentApi(id: string) {
-  const organizationId = await getCurrentOrganization();
+export async function deleteAssignmentApi(id: string, organizationId: string) {
+  const safeOrganizationId = ensureOrganizationId(organizationId);
 
   const { data: files } = await supabase
     .from("assignment_files")
     .select("file_path")
-    .eq("organization_id", organizationId)
+    .eq("organization_id", safeOrganizationId)
     .eq("assignment_id", id);
 
-  const filePaths =
-    files
-      ?.map((file) => file.file_path)
-      .filter(Boolean) ?? [];
+  const filePaths = files?.map((file) => file.file_path).filter(Boolean) ?? [];
 
   if (filePaths.length > 0) {
-    await supabase.storage
-      .from("assignment-files")
-      .remove(filePaths);
+    await supabase.storage.from("assignment-files").remove(filePaths);
   }
 
   await supabase
     .from("assignment_site_members")
     .delete()
-    .eq("organization_id", organizationId)
+    .eq("organization_id", safeOrganizationId)
     .eq("assignment_id", id);
 
   await supabase
     .from("assignment_site_daily_infos")
     .delete()
-    .eq("organization_id", organizationId)
+    .eq("organization_id", safeOrganizationId)
     .eq("assignment_id", id);
 
   await supabase
     .from("assignment_files")
     .delete()
-    .eq("organization_id", organizationId)
+    .eq("organization_id", safeOrganizationId)
     .eq("assignment_id", id);
 
   const { error } = await supabase
     .from("assignments")
     .delete()
-    .eq("organization_id", organizationId)
+    .eq("organization_id", safeOrganizationId)
     .eq("id", id);
 
   if (error) {
@@ -232,13 +455,13 @@ export async function deleteAssignmentApi(id: string) {
   }
 }
 
-export async function deleteAssignmentFileApi(id: string) {
-  const organizationId = await getCurrentOrganization();
+export async function deleteAssignmentFileApi(id: string, organizationId: string) {
+  const safeOrganizationId = ensureOrganizationId(organizationId);
 
   const { data: file, error: selectError } = await supabase
     .from("assignment_files")
     .select("file_path")
-    .eq("organization_id", organizationId)
+    .eq("organization_id", safeOrganizationId)
     .eq("id", id)
     .single();
 
@@ -259,7 +482,7 @@ export async function deleteAssignmentFileApi(id: string) {
   const { error } = await supabase
     .from("assignment_files")
     .delete()
-    .eq("organization_id", organizationId)
+    .eq("organization_id", safeOrganizationId)
     .eq("id", id);
 
   if (error) {
@@ -267,8 +490,11 @@ export async function deleteAssignmentFileApi(id: string) {
   }
 }
 
-export async function updateAssignmentApi(assignment: Assignment) {
-  const organizationId = await getCurrentOrganization();
+export async function updateAssignmentApi(
+  assignment: Assignment,
+  organizationId: string
+) {
+  const safeOrganizationId = ensureOrganizationId(organizationId);
 
   const { error } = await supabase
     .from("assignments")
@@ -286,7 +512,7 @@ export async function updateAssignmentApi(assignment: Assignment) {
       start_date: assignment.start_date,
       end_date: assignment.end_date,
     })
-    .eq("organization_id", organizationId)
+    .eq("organization_id", safeOrganizationId)
     .eq("id", assignment.id);
 
   if (error) {
@@ -294,25 +520,28 @@ export async function updateAssignmentApi(assignment: Assignment) {
   }
 }
 
-export async function addAssignmentApi(data: {
-  assignment_date: string;
-  contractor_name: string;
-  site_name: string;
-  construction_type: ConstructionType;
-  manager_name: string;
-  contact_phone: string;
-  address: string;
-  shift_type: ShiftType;
-  meeting_time: string;
-  start_date: string;
-  end_date: string | null;
-}) {
-  const organizationId = await getCurrentOrganization();
+export async function addAssignmentApi(
+  data: {
+    assignment_date: string;
+    contractor_name: string;
+    site_name: string;
+    construction_type: ConstructionType;
+    manager_name: string;
+    contact_phone: string;
+    address: string;
+    shift_type: ShiftType;
+    meeting_time: string;
+    start_date: string;
+    end_date: string | null;
+  },
+  organizationId: string
+) {
+  const safeOrganizationId = ensureOrganizationId(organizationId);
 
   const { data: result, error } = await supabase
     .from("assignments")
     .insert({
-      organization_id: organizationId,
+      organization_id: safeOrganizationId,
       ...data,
       start_time: data.shift_type === "night" ? "20:00" : "08:00",
       end_time: data.shift_type === "night" ? "05:00" : "17:00",
@@ -327,19 +556,22 @@ export async function addAssignmentApi(data: {
   return result.id;
 }
 
-export async function updateDailyInfoApi(payload: {
-  assignment_id: string;
-  work_date: string;
-  planned_count: number | null;
-  detail: string | null;
-}) {
-  const organizationId = await getCurrentOrganization();
+export async function updateDailyInfoApi(
+  payload: {
+    assignment_id: string;
+    work_date: string;
+    planned_count: number | null;
+    detail: string | null;
+  },
+  organizationId: string
+) {
+  const safeOrganizationId = ensureOrganizationId(organizationId);
 
   const { data, error } = await supabase
     .from("assignment_site_daily_infos")
     .upsert(
       {
-        organization_id: organizationId,
+        organization_id: safeOrganizationId,
         ...payload,
       },
       {
@@ -357,16 +589,17 @@ export async function updateDailyInfoApi(payload: {
 }
 
 export async function updateAssignmentSortOrderApi(
-  assignments: { id: string }[]
+  assignments: { id: string }[],
+  organizationId: string
 ) {
-  const organizationId = await getCurrentOrganization();
+  const safeOrganizationId = ensureOrganizationId(organizationId);
 
   const results = await Promise.all(
     assignments.map((assignment, index) =>
       supabase
         .from("assignments")
         .update({ sort_order: index })
-        .eq("organization_id", organizationId)
+        .eq("organization_id", safeOrganizationId)
         .eq("id", assignment.id)
     )
   );

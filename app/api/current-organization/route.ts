@@ -1,3 +1,4 @@
+// app/api/current-organization/route.ts
 import { createClient } from "@supabase/supabase-js";
 import { serverError, unauthorized } from "@/app/api/_lib/response";
 import { supabaseAdmin } from "@/app/api/_lib/supabaseAdmin";
@@ -7,7 +8,7 @@ export async function GET(req: Request) {
     const token = req.headers.get("authorization")?.replace("Bearer ", "");
 
     if (!token) {
-      return unauthorized();
+      return unauthorized("認証トークンがありません");
     }
 
     const authClient = createClient(
@@ -21,7 +22,7 @@ export async function GET(req: Request) {
     } = await authClient.auth.getUser(token);
 
     if (userError || !user) {
-      return unauthorized();
+      return unauthorized("ユーザー認証に失敗しました");
     }
 
     const { data: superAdminUser } = await supabaseAdmin
@@ -41,9 +42,18 @@ export async function GET(req: Request) {
         .limit(1)
         .maybeSingle();
 
+      if (!session?.organization_id) {
+        return Response.json({
+          organizationId: null,
+          impersonating: false,
+          isSuperAdmin: true,
+          message: "対象会社が未選択です",
+        });
+      }
+
       return Response.json({
-        organizationId: session?.organization_id ?? null,
-        impersonating: Boolean(session?.organization_id),
+        organizationId: session.organization_id,
+        impersonating: true,
         isSuperAdmin: true,
       });
     }
@@ -52,7 +62,7 @@ export async function GET(req: Request) {
       .from("employees")
       .select("id, role, organization_id")
       .eq("auth_user_id", user.id)
-      .single();
+      .maybeSingle();
 
     if (employeeError || !employee) {
       return unauthorized("社員情報が見つかりません");
