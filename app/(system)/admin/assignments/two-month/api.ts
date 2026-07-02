@@ -310,6 +310,27 @@ export async function updateAssignmentApi(
   }
 }
 
+async function getTopSortOrder(organizationId: string) {
+  const safeOrganizationId = ensureOrganizationId(organizationId);
+
+  const { data, error } = await supabase
+    .from("assignments")
+    .select("sort_order")
+    .eq("organization_id", safeOrganizationId)
+    .order("sort_order", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error("並び順取得失敗: " + error.message);
+  }
+
+  const currentTop =
+    typeof data?.sort_order === "number" ? data.sort_order : 0;
+
+  return currentTop - 1;
+}
+
 export async function addAssignmentApi(
   data: {
     assignment_date: string;
@@ -327,12 +348,14 @@ export async function addAssignmentApi(
   organizationId: string
 ) {
   const safeOrganizationId = ensureOrganizationId(organizationId);
+  const sortOrder = await getTopSortOrder(safeOrganizationId);
 
   const { data: result, error } = await supabase
     .from("assignments")
     .insert({
       organization_id: safeOrganizationId,
       ...data,
+      sort_order: sortOrder,
       start_time: data.shift_type === "night" ? "20:00" : "08:00",
       end_time: data.shift_type === "night" ? "05:00" : "17:00",
     })

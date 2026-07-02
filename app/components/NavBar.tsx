@@ -22,6 +22,10 @@ type EmployeeWithOrg = {
   organization_id: string | null;
 };
 
+type OrganizationRow = {
+  name: string | null;
+};
+
 export default function NavBar() {
   const [role, setRole] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -31,83 +35,93 @@ export default function NavBar() {
   const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [employeeName, setEmployeeName] = useState("");
   const [organizationId, setOrganizationId] = useState<string | null>(null);
-const [organizationName, setOrganizationName] = useState("");
-const [notifications, setNotifications] = useState<Notification[]>([]);
-const [showNotifications, setShowNotifications] = useState(false);
-const [pushEnabled, setPushEnabled] = useState(false);
-const [impersonating, setImpersonating] = useState(false);
+  const [organizationName, setOrganizationName] = useState("");
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [impersonating, setImpersonating] = useState(false);
 
   useEffect(() => {
+    let active = true;
+
     const fetchRole = async () => {
-      const { data: userData } = await supabase.auth.getUser();
-      const user = userData.user;
+      const { data: sessionData, error: sessionError } =
+        await supabase.auth.getSession();
+
+      if (sessionError || !active) return;
+
+      const session = sessionData.session;
+      const user = session?.user ?? null;
+      const token = session?.access_token ?? null;
 
       if (!user) return;
 
-      const { data: employee } = await supabase
-  .from("employees")
-  .select("name, role, organization_id")
-  .eq("auth_user_id", user.id)
-  .single<EmployeeWithOrg>();
+      const { data: employee, error: employeeError } = await supabase
+        .from("employees")
+        .select("name, role, organization_id")
+        .eq("auth_user_id", user.id)
+        .single<EmployeeWithOrg>();
 
-if (!employee) return;
+      if (!active || employeeError || !employee) return;
 
-setRole(employee.role);
-setEmployeeName(employee.name);
-setOrganizationId(employee.organization_id);
+      setRole(employee.role);
+      setEmployeeName(employee.name);
+      setOrganizationId(employee.organization_id);
 
-const { data: sessionData } = await supabase.auth.getSession();
-const token = sessionData.session?.access_token;
+      if (token) {
+        const res = await fetch("/api/current-organization", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-if (token) {
-  const res = await fetch("/api/current-organization", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+        const result = await res.json();
 
-  const result = await res.json();
+        if (!active) return;
 
-  if (res.ok) {
-    setImpersonating(Boolean(result.impersonating));
-  }
-}
+        if (res.ok) {
+          setImpersonating(Boolean(result.impersonating));
+        }
+      }
 
-if (employee.organization_id) {
-  const { data: organization, error } = await supabase
-    .from("organizations")
-    .select("*")
-    .eq("id", employee.organization_id)
-    .single();
+      if (employee.organization_id) {
+        const { data: organization, error: organizationError } = await supabase
+          .from("organizations")
+          .select("name")
+          .eq("id", employee.organization_id)
+          .single<OrganizationRow>();
 
-  console.log("organization_id", employee.organization_id);
-  console.log("organization", organization);
-  console.log("error", error);
+        if (!active || organizationError) return;
 
-  setOrganizationName(organization?.name ?? "");
-}
+        setOrganizationName(organization?.name ?? "");
+      }
     };
 
-    fetchRole();
+    void fetchRole();
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   useEffect(() => {
     if (!employeeName || !organizationId) return;
-  
+
     const fetchNotifications = async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("notifications")
         .select("id, employee_name, title, message, link_url, is_read")
         .eq("organization_id", organizationId)
         .eq("employee_name", employeeName)
         .eq("is_read", false)
         .order("created_at", { ascending: false });
-  
+
+      if (error) return;
       setNotifications(data ?? []);
     };
-  
-    fetchNotifications();
-  
+
+    void fetchNotifications();
+
     const channel = supabase
       .channel("notifications-realtime")
       .on(
@@ -118,12 +132,14 @@ if (employee.organization_id) {
           table: "notifications",
           filter: `organization_id=eq.${organizationId}`,
         },
-        fetchNotifications
+        () => {
+          void fetchNotifications();
+        }
       )
       .subscribe();
-  
+
     return () => {
-      supabase.removeChannel(channel);
+      void supabase.removeChannel(channel);
     };
   }, [employeeName, organizationId]);
 
@@ -132,21 +148,20 @@ if (employee.organization_id) {
       alert("会社情報が取得できません");
       return;
     }
+
     const { error } = await supabase
       .from("notifications")
       .update({ is_read: true })
       .eq("organization_id", organizationId)
-.eq("id", notification.id);
-  
+      .eq("id", notification.id);
+
     if (error) {
       alert("通知更新失敗: " + error.message);
       return;
     }
-  
-    setNotifications((prev) =>
-      prev.filter((item) => item.id !== notification.id)
-    );
-  
+
+    setNotifications((prev) => prev.filter((item) => item.id !== notification.id));
+
     if (notification.link_url) {
       window.location.href = notification.link_url;
     }
@@ -157,90 +172,88 @@ if (employee.organization_id) {
     const base64 = (base64String + padding)
       .replace(/-/g, "+")
       .replace(/_/g, "/");
-  
+
     const rawData = window.atob(base64);
     const outputArray = new Uint8Array(rawData.length);
-  
-    for (let i = 0; i < rawData.length; i++) {
+
+    for (let i = 0; i < rawData.length; i += 1) {
       outputArray[i] = rawData.charCodeAt(i);
     }
-  
+
     return outputArray;
   };
-  
+
   const enablePushNotifications = async () => {
     if (!organizationId) {
       alert("会社情報が取得できません");
       return;
     }
+
     if (!employeeName) {
       alert("社員情報を取得できていません");
       return;
     }
-  
+
     if (!("serviceWorker" in navigator)) {
       alert("この端末は通知未対応です");
       return;
     }
-  
+
     if (!("PushManager" in window)) {
       alert("この端末はプッシュ通知未対応です");
       return;
     }
-  
+
     const permission = await Notification.requestPermission();
-  
+
     if (permission !== "granted") {
       alert("通知が許可されませんでした");
       return;
     }
-  
+
     const registration = await navigator.serviceWorker.register("/sw.js");
-  
     const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-  
+
     if (!vapidPublicKey) {
       alert("VAPID公開キーが設定されていません");
       return;
     }
-  
+
     let subscription = await registration.pushManager.getSubscription();
-  
+
     if (!subscription) {
       subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
       });
     }
-  
+
     const json = subscription.toJSON();
-  
+
     if (!json.endpoint || !json.keys?.p256dh || !json.keys?.auth) {
       alert("端末登録情報を取得できませんでした");
       return;
     }
-  
+
     await supabase
       .from("push_subscriptions")
       .delete()
       .eq("organization_id", organizationId)
       .eq("employee_name", employeeName);
-  
-      const { error } = await supabase
-      .from("push_subscriptions")
-      .insert({
-        organization_id: organizationId,
-        employee_name: employeeName,
-        endpoint: json.endpoint,
-        p256dh: json.keys.p256dh,
-        auth: json.keys.auth,
-      });
-  
+
+    const { error } = await supabase.from("push_subscriptions").insert({
+      organization_id: organizationId,
+      employee_name: employeeName,
+      endpoint: json.endpoint,
+      p256dh: json.keys.p256dh,
+      auth: json.keys.auth,
+    });
+
     if (error) {
       alert("通知端末登録失敗: " + error.message);
       return;
     }
-  
+
     setPushEnabled(true);
     alert("この端末で通知を受け取れるようになりました");
   };
@@ -248,26 +261,26 @@ if (employee.organization_id) {
   const stopImpersonation = async () => {
     const { data: sessionData } = await supabase.auth.getSession();
     const token = sessionData.session?.access_token;
-  
+
     if (!token) {
       alert("ログイン情報が取得できません");
       return;
     }
-  
+
     const res = await fetch("/api/impersonation/stop", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
-  
+
     const result = await res.json();
-  
+
     if (!res.ok) {
       alert(result.error || "SuperAdminへ戻れませんでした");
       return;
     }
-  
+
     window.location.href = "/super-admin";
   };
 
@@ -290,7 +303,7 @@ if (employee.organization_id) {
         zIndex: 50000,
         display: "flex",
         justifyContent: "flex-start",
-gap: 12,
+        gap: 12,
         alignItems: "center",
         padding: "14px 20px",
         borderBottom: "1px solid #ddd",
@@ -300,376 +313,380 @@ gap: 12,
       }}
     >
       <button
-  type="button"
-  onClick={(e) => {
-    e.stopPropagation();
-    setMenuOpen(!menuOpen);
-  }}
-  style={{
-    border: "1px solid #ddd",
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    padding: "8px 12px",
-    cursor: "pointer",
-    fontSize: 18,
-  }}
->
-  ☰
-</button>
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setMenuOpen(!menuOpen);
+        }}
+        style={{
+          border: "1px solid #ddd",
+          backgroundColor: "#fff",
+          borderRadius: 8,
+          padding: "8px 12px",
+          cursor: "pointer",
+          fontSize: 18,
+        }}
+      >
+        ☰
+      </button>
 
-<a
-  href="/home"
-  onClick={() => setMenuOpen(false)}
-  style={{
-    fontWeight: "bold",
-    fontSize: 18,
-    textDecoration: "none",
-    color: "#111",
-    cursor: "pointer",
-  }}
->
-  DOKATA-System
-  </a>
+      <a
+        href="/home"
+        onClick={() => setMenuOpen(false)}
+        style={{
+          fontWeight: "bold",
+          fontSize: 18,
+          textDecoration: "none",
+          color: "#111",
+          cursor: "pointer",
+        }}
+      >
+        DOKATA-System
+      </a>
 
-<div
-  style={{
-    marginLeft: "auto",
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-  }}
->
+      <div
+        style={{
+          marginLeft: "auto",
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+        }}
+      >
+        <select
+          value={language}
+          onChange={(e) => setLanguage(e.target.value as "ja" | "en")}
+          style={{
+            border: "1px solid #ddd",
+            backgroundColor: "#fff",
+            borderRadius: 8,
+            padding: "8px 10px",
+            cursor: "pointer",
+            fontSize: 13,
+          }}
+        >
+          <option value="ja">日本語</option>
+          <option value="en">English</option>
+        </select>
 
-<select
-  value={language}
-  onChange={(e) => setLanguage(e.target.value as "ja" | "en")}
-  style={{
-    border: "1px solid #ddd",
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    padding: "8px 10px",
-    cursor: "pointer",
-    fontSize: 13,
-  }}
->
-  <option value="ja">日本語</option>
-  <option value="en">English</option>
-</select>
-  <button
-    type="button"
-    onClick={() => setShowCalendarModal(true)}
-    style={{
-      border: "1px solid #ddd",
-      backgroundColor: "#fff",
-      borderRadius: 8,
-      padding: "8px 12px",
-      cursor: "pointer",
-      fontSize: 18,
-    }}
-  >
-    📅
-  </button>
+        <button
+          type="button"
+          onClick={() => setShowCalendarModal(true)}
+          style={{
+            border: "1px solid #ddd",
+            backgroundColor: "#fff",
+            borderRadius: 8,
+            padding: "8px 12px",
+            cursor: "pointer",
+            fontSize: 18,
+          }}
+        >
+          📅
+        </button>
 
-  <button
-  type="button"
-  onClick={enablePushNotifications}
-  style={{
-    border: "1px solid #ddd",
-    backgroundColor: pushEnabled ? "#16a34a" : "#fff",
-    color: pushEnabled ? "#fff" : "#111",
-    borderRadius: 8,
-    padding: "8px 12px",
-    cursor: "pointer",
-    fontSize: 16,
-  }}
->
-  📲
-</button>
+        <button
+          type="button"
+          onClick={enablePushNotifications}
+          style={{
+            border: "1px solid #ddd",
+            backgroundColor: pushEnabled ? "#16a34a" : "#fff",
+            color: pushEnabled ? "#fff" : "#111",
+            borderRadius: 8,
+            padding: "8px 12px",
+            cursor: "pointer",
+            fontSize: 16,
+          }}
+        >
+          📲
+        </button>
 
-  <div style={{ position: "relative" }}>
-  <button
-    type="button"
-    onClick={() => setShowNotifications(!showNotifications)}
-    style={{
-      border: "1px solid #ddd",
-      backgroundColor: "#fff",
-      borderRadius: 8,
-      padding: "8px 12px",
-      cursor: "pointer",
-      fontSize: 18,
-    }}
-  >
-    🔔
-  </button>
+        <div style={{ position: "relative" }}>
+          <button
+            type="button"
+            onClick={() => setShowNotifications(!showNotifications)}
+            style={{
+              border: "1px solid #ddd",
+              backgroundColor: "#fff",
+              borderRadius: 8,
+              padding: "8px 12px",
+              cursor: "pointer",
+              fontSize: 18,
+            }}
+          >
+            🔔
+          </button>
 
-  {notifications.length > 0 && (
-  <span
-    style={{
-      position: "absolute",
-      top: -8,
-      right: -8,
-      minWidth: 20,
-      height: 20,
-      padding: "0 5px",
-      borderRadius: 999,
-      backgroundColor: "#ef4444",
-      color: "#fff",
-      fontSize: 11,
-      fontWeight: 800,
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      lineHeight: 1,
-      border: "2px solid #fff",
-      boxSizing: "border-box",
-    }}
-  >
-    {notifications.length > 99 ? "99+" : notifications.length}
-  </span>
-)}
+          {notifications.length > 0 && (
+            <span
+              style={{
+                position: "absolute",
+                top: -8,
+                right: -8,
+                minWidth: 20,
+                height: 20,
+                padding: "0 5px",
+                borderRadius: 999,
+                backgroundColor: "#ef4444",
+                color: "#fff",
+                fontSize: 11,
+                fontWeight: 800,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                lineHeight: 1,
+                border: "2px solid #fff",
+                boxSizing: "border-box",
+              }}
+            >
+              {notifications.length > 99 ? "99+" : notifications.length}
+            </span>
+          )}
 
-  {showNotifications && (
-    <div
-      style={{
-        position: "absolute",
-        right: 0,
-        top: 44,
-        width: 280,
-        backgroundColor: "#fff",
-        border: "1px solid #ddd",
-        borderRadius: 12,
-        padding: 10,
-        boxShadow: "0 6px 18px rgba(0,0,0,0.15)",
-        zIndex: 2000,
-      }}
-    >
-      {notifications.length === 0 ? (
-        <div style={{ color: "#666", fontSize: 13 }}>
-          {t("components_navbar.通知はありません")}
+          {showNotifications && (
+            <div
+              style={{
+                position: "absolute",
+                right: 0,
+                top: 44,
+                width: 280,
+                backgroundColor: "#fff",
+                border: "1px solid #ddd",
+                borderRadius: 12,
+                padding: 10,
+                boxShadow: "0 6px 18px rgba(0,0,0,0.15)",
+                zIndex: 2000,
+              }}
+            >
+              {notifications.length === 0 ? (
+                <div style={{ color: "#666", fontSize: 13 }}>
+                  {t("components_navbar.通知はありません")}
+                </div>
+              ) : (
+                notifications.map((notification) => (
+                  <div
+                    key={notification.id}
+                    onClick={() => markNotificationAsRead(notification)}
+                    style={{
+                      borderBottom: "1px solid #eee",
+                      padding: "8px 0",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <div style={{ fontWeight: 800 }}>{notification.title}</div>
+                    <div style={{ fontSize: 13, color: "#555", marginTop: 4 }}>
+                      {notification.message}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
         </div>
-      ) : (
-        notifications.map((notification) => (
+      </div>
+
+      <div
+        onMouseEnter={() => setMenuOpen(true)}
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: 12,
+          height: "100vh",
+          zIndex: 999,
+        }}
+      />
+
+      <>
+        {menuOpen && (
           <div
-  key={notification.id}
-  onClick={() => markNotificationAsRead(notification)}
-  style={{
-    borderBottom: "1px solid #eee",
-    padding: "8px 0",
-    cursor: "pointer",
-  }}
->
-            <div style={{ fontWeight: 800 }}>
-              {notification.title}
-            </div>
+            onClick={() => setMenuOpen(false)}
+            style={{
+              position: "fixed",
+              inset: 0,
+              backgroundColor: "rgba(0,0,0,0.3)",
+              zIndex: 50001,
+            }}
+          />
+        )}
 
-            <div style={{ fontSize: 13, color: "#555", marginTop: 4 }}>
-              {notification.message}
-            </div>
+        <div
+          onMouseEnter={() => setMenuOpen(true)}
+          onMouseLeave={() => setMenuOpen(false)}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: menuOpen ? 0 : -260,
+            width: 250,
+            height: "100vh",
+            backgroundColor: "#fff",
+            borderRight: "1px solid #ddd",
+            padding: 20,
+            display: "flex",
+            flexDirection: "column",
+            gap: 16,
+            transition: "left 0.25s ease",
+            zIndex: 50002,
+            boxShadow: "-2px 0 10px rgba(0,0,0,0.12)",
+          }}
+        >
+          <div
+            style={{
+              fontSize: 20,
+              fontWeight: 800,
+              marginBottom: 10,
+              borderBottom: "1px solid #eee",
+              paddingBottom: 12,
+            }}
+          >
+            DOKATA-System
           </div>
-        ))
-      )}
-    </div>
-  )}
-</div>
-</div>
 
-<div
-  onMouseEnter={() => setMenuOpen(true)}
-  style={{
-    position: "fixed",
-    top: 0,
-    left: 0,
-    width: 12,
-    height: "100vh",
-    zIndex: 999,
-  }}
-/>
-
-        <>
-  {menuOpen && (
-    <div
-      onClick={() => setMenuOpen(false)}
-      style={{
-        position: "fixed",
-        inset: 0,
-        backgroundColor: "rgba(0,0,0,0.3)",
-        zIndex: 50001,
-      }}
-    />
-  )}
-
-<div
-  onMouseEnter={() => setMenuOpen(true)}
-  onMouseLeave={() => setMenuOpen(false)}
-  style={{
-    position: "fixed",
-    top: 0,
-    left: menuOpen ? 0 : -260,
-    width: 250,
-    height: "100vh",
-    backgroundColor: "#fff",
-    borderRight: "1px solid #ddd",
-    padding: 20,
-    display: "flex",
-    flexDirection: "column",
-    gap: 16,
-    transition: "left 0.25s ease",
-    zIndex: 50002,
-    boxShadow: "-2px 0 10px rgba(0,0,0,0.12)",
-  }}
->
-
-<div
-  style={{
-    fontSize: 20,
-    fontWeight: 800,
-    marginBottom: 10,
-    borderBottom: "1px solid #eee",
-    paddingBottom: 12,
-  }}
->
-DOKATA-System
-</div>
-
-{impersonating && (
-  <button
-    type="button"
-    onClick={stopImpersonation}
-    style={{
-      border: "none",
-      backgroundColor: "#dc2626",
-      color: "#fff",
-      borderRadius: 8,
-      padding: "10px 12px",
-      fontWeight: 800,
-      cursor: "pointer",
-      textAlign: "left",
-      width: "100%",
-whiteSpace: "nowrap",
-boxSizing: "border-box",
-    }}
-  >
-    {t("components_navbar.super_adminへ戻る")}
-  </button>
-)}
-            <a
-              href="/home"
-              onClick={() => setMenuOpen(false)}
-              className="nav-link"
-              style={{
-                color: pathname === "/home" ? "#0070f3" : "#333",
-                fontWeight: pathname === "/home" ? 700 : 500,
-              }}
-            >
-              {t("navbar.home")}
-            </a>
-
-            <a
-              href="/reports"
-              onClick={() => setMenuOpen(false)}
-              className="nav-link"
-              style={{
-                color: pathname.startsWith("/reports") ? "#0070f3" : "#333",
-                fontWeight: pathname.startsWith("/reports") ? 700 : 500,
-              }}
-            >
-              {t("navbar.reports")}
-            </a>
-
-            <a
-  href="/admin/assignments/view"
-  onClick={() => setMenuOpen(false)}
-  className="nav-link"
-  style={{
-    color: pathname.startsWith("/admin/assignments/view") ? "#0070f3" : "#333",
-fontWeight: pathname.startsWith("/admin/assignments/view") ? 700 : 500,
-  }}
->
-{t("navbar.assignments")}
-</a>
-
-            <a
-              href="/profile"
-              onClick={() => setMenuOpen(false)}
-              className="nav-link"
-              style={{
-                color: pathname.startsWith("/profile") ? "#0070f3" : "#333",
-                fontWeight: pathname.startsWith("/profile") ? 700 : 500,
-              }}
-            >
-              {t("navbar.mypage")}
-            </a>
-
-            <a
-  href="/admin/analytics"
-  onClick={() => setMenuOpen(false)}
-  className="nav-link"
-  style={{
-    color: pathname.startsWith("/admin/analytics") ? "#0070f3" : "#333",
-    fontWeight: pathname.startsWith("/admin/analytics") ? 700 : 500,
-  }}
->
-{t("navbar.analytics")}
-</a>
-
-{hasRole(role ?? "", "admin") && (
-  <a
-  href="/admin/assignments/month"
-    onClick={() => setMenuOpen(false)}
-    className="nav-link"
-    style={{
-      color: pathname.startsWith("/admin/assignments/month") ? "#0070f3" : "#333",
-      fontWeight: pathname.startsWith("/admin/assignments/month") ? 700 : 500,
-    }}
-  >
-    {t("navbar.assignment_create")}
-  </a>
-)}
-
-{hasRole(role ?? "", "admin") && (
-  <a
-    href="/admin"
-                onClick={() => setMenuOpen(false)}
-                className="nav-link"
-                style={{
-                  color:
-  pathname.startsWith("/admin") &&
-  !pathname.startsWith("/admin/analytics")
-    ? "#0070f3"
-    : "#333",
-fontWeight:
-  pathname.startsWith("/admin") &&
-  !pathname.startsWith("/admin/analytics")
-    ? 700
-    : 500,
-                }}
-              >
-                {t("navbar.admin")}
-              </a>
-            )}
-
+          {impersonating && (
             <button
-              onClick={handleLogout}
+              type="button"
+              onClick={stopImpersonation}
               style={{
                 border: "none",
-                background: "none",
+                backgroundColor: "#dc2626",
+                color: "#fff",
+                borderRadius: 8,
+                padding: "10px 12px",
+                fontWeight: 800,
                 cursor: "pointer",
-                color: "#333",
-                fontWeight: 500,
                 textAlign: "left",
-                padding: 0,
+                width: "100%",
+                whiteSpace: "nowrap",
+                boxSizing: "border-box",
               }}
             >
-              {t("navbar.logout")}
+              {t("components_navbar.super_adminへ戻る")}
             </button>
-          </div>
-          </>
+          )}
 
-<MyMonthlyScheduleModal
-  open={showCalendarModal}
-  onClose={() => setShowCalendarModal(false)}
-/>
+          <a
+            href="/home"
+            onClick={() => setMenuOpen(false)}
+            className="nav-link"
+            style={{
+              color: pathname === "/home" ? "#0070f3" : "#333",
+              fontWeight: pathname === "/home" ? 700 : 500,
+            }}
+          >
+            {t("navbar.home")}
+          </a>
 
+          <a
+            href="/reports"
+            onClick={() => setMenuOpen(false)}
+            className="nav-link"
+            style={{
+              color: pathname.startsWith("/reports") ? "#0070f3" : "#333",
+              fontWeight: pathname.startsWith("/reports") ? 700 : 500,
+            }}
+          >
+            {t("navbar.reports")}
+          </a>
+
+          <a
+            href="/admin/assignments/view"
+            onClick={() => setMenuOpen(false)}
+            className="nav-link"
+            style={{
+              color: pathname.startsWith("/admin/assignments/view")
+                ? "#0070f3"
+                : "#333",
+              fontWeight: pathname.startsWith("/admin/assignments/view")
+                ? 700
+                : 500,
+            }}
+          >
+            {t("navbar.assignments")}
+          </a>
+
+          <a
+            href="/profile"
+            onClick={() => setMenuOpen(false)}
+            className="nav-link"
+            style={{
+              color: pathname.startsWith("/profile") ? "#0070f3" : "#333",
+              fontWeight: pathname.startsWith("/profile") ? 700 : 500,
+            }}
+          >
+            {t("navbar.mypage")}
+          </a>
+
+          <a
+            href="/admin/analytics"
+            onClick={() => setMenuOpen(false)}
+            className="nav-link"
+            style={{
+              color: pathname.startsWith("/admin/analytics") ? "#0070f3" : "#333",
+              fontWeight: pathname.startsWith("/admin/analytics") ? 700 : 500,
+            }}
+          >
+            {t("navbar.analytics")}
+          </a>
+
+          {hasRole(role ?? "", "admin") && (
+            <a
+              href="/admin/assignments/month"
+              onClick={() => setMenuOpen(false)}
+              className="nav-link"
+              style={{
+                color: pathname.startsWith("/admin/assignments/month")
+                  ? "#0070f3"
+                  : "#333",
+                fontWeight: pathname.startsWith("/admin/assignments/month")
+                  ? 700
+                  : 500,
+              }}
+            >
+              {t("navbar.assignment_create")}
+            </a>
+          )}
+
+          {hasRole(role ?? "", "admin") && (
+            <a
+              href="/admin"
+              onClick={() => setMenuOpen(false)}
+              className="nav-link"
+              style={{
+                color:
+                  pathname.startsWith("/admin") &&
+                  !pathname.startsWith("/admin/analytics")
+                    ? "#0070f3"
+                    : "#333",
+                fontWeight:
+                  pathname.startsWith("/admin") &&
+                  !pathname.startsWith("/admin/analytics")
+                    ? 700
+                    : 500,
+              }}
+            >
+              {t("navbar.admin")}
+            </a>
+          )}
+
+          <button
+            onClick={handleLogout}
+            style={{
+              border: "none",
+              background: "none",
+              cursor: "pointer",
+              color: "#333",
+              fontWeight: 500,
+              textAlign: "left",
+              padding: 0,
+            }}
+          >
+            {t("navbar.logout")}
+          </button>
+        </div>
+      </>
+
+      <MyMonthlyScheduleModal
+        open={showCalendarModal}
+        onClose={() => setShowCalendarModal(false)}
+      />
     </header>
   );
 }

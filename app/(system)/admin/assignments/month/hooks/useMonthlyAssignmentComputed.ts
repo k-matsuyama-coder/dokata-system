@@ -8,6 +8,7 @@ import type {
 } from "../types";
 
 type Props = {
+  month: string;
   days: string[];
   assignments: Assignment[];
   siteMembers: SiteMember[];
@@ -17,6 +18,7 @@ type Props = {
 };
 
 export function useMonthlyAssignmentComputed({
+  month,
   days,
   assignments,
   siteMembers,
@@ -70,16 +72,20 @@ export function useMonthlyAssignmentComputed({
 
   const assignmentCountMap = useMemo(() => {
     const map = new Map<string, number>();
-
+  
     siteMembers.forEach((member) => {
+      if (!member.work_date.startsWith(`${month}-`)) {
+        return;
+      }
+  
       map.set(
         member.employee_name,
         (map.get(member.employee_name) ?? 0) + 1
       );
     });
-
+  
     return map;
-  }, [siteMembers]);
+  }, [siteMembers, month]);
 
   const getAssignmentCount = (employeeName: string) =>
     assignmentCountMap.get(employeeName) ?? 0;

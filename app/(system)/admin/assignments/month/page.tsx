@@ -1,7 +1,7 @@
 "use client";
 
 import { supabase } from "@/lib/supabase";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import BackButton from "@/app/components/BackButton";
 import AssignmentEditModal from "./components/AssignmentEditModal";
 import AddAssignmentModal from "./components/AddAssignmentModal";
@@ -191,6 +191,48 @@ export default function MonthlyAssignmentsPage() {
     setSelectedShiftType,
   } = useMonthlyAssignmentSelection();
 
+  const dragClientYRef = useRef<number | null>(null);
+  const tableScrollRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!draggingAssignmentId) {
+      dragClientYRef.current = null;
+      return;
+    }
+  
+    const handleDragOver = (event: DragEvent) => {
+      dragClientYRef.current = event.clientY;
+    };
+  
+    const intervalId = window.setInterval(() => {
+      const container = tableScrollRef.current;
+      const y = dragClientYRef.current;
+  
+      if (!container || y == null) return;
+  
+      const rect = container.getBoundingClientRect();
+      const EDGE_PX = 100;
+      const STEP = 28;
+  
+      if (y < rect.top + EDGE_PX) {
+        container.scrollTop -= STEP;
+        return;
+      }
+  
+      if (y > rect.bottom - EDGE_PX) {
+        container.scrollTop += STEP;
+      }
+    }, 50);
+  
+    window.addEventListener("dragover", handleDragOver);
+  
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener("dragover", handleDragOver);
+      dragClientYRef.current = null;
+    };
+  }, [draggingAssignmentId]);
+
   useEffect(() => {
     const fetchOrganization = async () => {
       const organizationId = await getCurrentOrganization();
@@ -254,6 +296,7 @@ export default function MonthlyAssignmentsPage() {
     getUnassignedEmployeesByDate,
     isAssignedSameDateDifferentShift,
   } = useMonthlyAssignmentComputed({
+    month,
     days,
     assignments,
     siteMembers,
@@ -608,14 +651,15 @@ export default function MonthlyAssignmentsPage() {
         <MonthlyAssignmentContext.Provider value={assignmentContextValue}>
           <MonthlyAssignmentSelectionContext.Provider value={selectionContextValue}>
             <MonthlyAssignmentActionContext.Provider value={actionContextValue}>
-              <MonthlyAssignmentsTable
-                isMobile={isMobile}
-                viewMode={viewMode}
-                days={days}
-                dailySummaryMap={dailySummaryMap}
-                assignmentMap={assignmentMap}
-                getDateHeaderStyle={getDateHeaderStyle}
-              >
+            <MonthlyAssignmentsTable
+  ref={tableScrollRef}
+  isMobile={isMobile}
+  viewMode={viewMode}
+  days={days}
+  dailySummaryMap={dailySummaryMap}
+  assignmentMap={assignmentMap}
+  getDateHeaderStyle={getDateHeaderStyle}
+>
                 <tbody>
                   <AssignmentGroups groupedAssignments={groupedAssignments} />
                 </tbody>

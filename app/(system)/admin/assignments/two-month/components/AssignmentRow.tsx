@@ -267,66 +267,82 @@ export default function TwoMonthAssignmentRow({
               </div>
 
               <input
-                data-planned-input="true"
-                data-assignment-id={assignment.id}
-                data-work-date={date}
-                type="number"
-                inputMode="numeric"
-                defaultValue={count}
-                onKeyDown={(e) => {
-                  const inputs = Array.from(
-                    document.querySelectorAll<HTMLInputElement>(
-                      'input[data-planned-input="true"]'
-                    )
-                  );
+  data-planned-input="true"
+  data-assignment-id={assignment.id}
+  data-work-date={date}
+  type="number"
+  min={0}
+  inputMode="numeric"
+  defaultValue={count}
+  onKeyDown={(e) => {
+    const inputs = Array.from(
+      document.querySelectorAll<HTMLInputElement>(
+        'input[data-planned-input="true"]'
+      )
+    );
 
-                  const currentIndex = inputs.indexOf(e.currentTarget);
+    const currentIndex = inputs.indexOf(e.currentTarget);
 
-                  if (currentIndex === -1) return;
+    if (currentIndex === -1) return;
 
-                  if (e.key === "Tab") {
-                    e.preventDefault();
+    if (e.key === "Tab") {
+      e.preventDefault();
 
-                    const nextIndex = e.shiftKey
-                      ? currentIndex - 1
-                      : currentIndex + 1;
+      const nextIndex = e.shiftKey
+        ? currentIndex - 1
+        : currentIndex + 1;
 
-                    inputs[nextIndex]?.focus();
-                    inputs[nextIndex]?.select();
-                  }
+      inputs[nextIndex]?.focus();
+      inputs[nextIndex]?.select();
+    }
 
-                  if (e.key === "ArrowRight") {
-                    e.preventDefault();
-                    inputs[currentIndex + 1]?.focus();
-                    inputs[currentIndex + 1]?.select();
-                  }
+    if (e.key === "ArrowRight") {
+      e.preventDefault();
+      inputs[currentIndex + 1]?.focus();
+      inputs[currentIndex + 1]?.select();
+    }
 
-                  if (e.key === "ArrowLeft") {
-                    e.preventDefault();
-                    inputs[currentIndex - 1]?.focus();
-                    inputs[currentIndex - 1]?.select();
-                  }
-                }}
-                onBlur={(e) =>
-                  updateDailyInfo(
-                    assignment.id,
-                    date,
-                    "planned_count",
-                    e.target.value
-                  )
-                }
-                style={{
-                  width: 44,
-                  padding: 4,
-                  border: "1px solid #ccc",
-                  borderRadius: 4,
-                  textAlign: "center",
-                  fontSize: 12,
-                  backgroundColor: "#fff",
-                  appearance: "textfield",
-                  MozAppearance: "textfield",
-                }}
-              />
+    if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      inputs[currentIndex - 1]?.focus();
+      inputs[currentIndex - 1]?.select();
+    }
+  }}
+  onBlur={(e) => {
+    const rawValue = e.target.value;
+
+    if (rawValue === "") {
+      updateDailyInfo(
+        assignment.id,
+        date,
+        "planned_count",
+        ""
+      );
+      return;
+    }
+
+    const safeValue = String(Math.max(0, Number(rawValue)));
+    e.currentTarget.value = safeValue;
+
+    updateDailyInfo(
+      assignment.id,
+      date,
+      "planned_count",
+      safeValue
+    );
+  }}
+  style={{
+    width: 44,
+    padding: 4,
+    border: "1px solid #ccc",
+    borderRadius: 4,
+    textAlign: "center",
+    fontSize: 12,
+    backgroundColor: "#fff",
+    appearance: "textfield",
+    MozAppearance: "textfield",
+  }}
+/>
             </div>
           </td>
         );

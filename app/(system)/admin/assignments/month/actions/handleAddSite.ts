@@ -37,6 +37,25 @@ type Props = {
   constructionType: string;
 };
 
+async function getTopSortOrder(organizationId: string) {
+  const { data, error } = await supabase
+    .from("assignments")
+    .select("sort_order")
+    .eq("organization_id", organizationId)
+    .order("sort_order", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  const currentTop =
+    typeof data?.sort_order === "number" ? data.sort_order : 0;
+
+  return currentTop - 1;
+}
+
 export async function handleAddSiteAction({
   month,
   siteName,
@@ -58,68 +77,81 @@ export async function handleAddSiteAction({
       },
     };
   }
-  const organizationId = await getCurrentOrganization();
 
-  const { data, error } = await supabase
-  .from("assignments")
-  .insert({
-    organization_id: organizationId,
-    assignment_date: `${month}-01`,
-    start_date: startDate,
-    end_date: endDate || null,
-    contractor_name: contractorName,
-    site_name: siteName,
-    shift_type: shiftType,
-    start_time: shiftType === "night" ? "20:00" : "08:00",
-    end_time: shiftType === "night" ? "05:00" : "17:00",
-    manager_name: managerName,
-    contact_phone: contactPhone,
-    address,
-    meeting_time: meetingTime,
-    construction_type: constructionType,
-  })
-  .select("id")
-  .single();
+  try {
+    const organizationId = await getCurrentOrganization();
+    const sortOrder = await getTopSortOrder(organizationId);
 
-if (error || !data) {
-  return { data, error };
-}
-
-if (contractorName && managerName && contactPhone) {
-  const { data: contractor } = await supabase
-  .from("contractors")
-  .select("id")
-  .eq("organization_id", organizationId)
-  .eq("name", contractorName)
-  .maybeSingle();
-
-  if (contractor?.id) {
-    const { data: existingContact } = await supabase
-  .from("contractor_contacts")
-  .select("id, contact_phone")
-  .eq("organization_id", organizationId)
-  .eq("contractor_id", contractor.id)
-  .eq("manager_name", managerName)
-  .maybeSingle();
-
-    if (!existingContact) {
-      await supabase.from("contractor_contacts").insert({
+    const { data, error } = await supabase
+      .from("assignments")
+      .insert({
         organization_id: organizationId,
-        contractor_id: contractor.id,
+        assignment_date: `${month}-01`,
+        start_date: startDate,
+        end_date: endDate || null,
+        contractor_name: contractorName,
+        site_name: siteName,
+        shift_type: shiftType,
+        start_time: shiftType === "night" ? "20:00" : "08:00",
+        end_time: shiftType === "night" ? "05:00" : "17:00",
         manager_name: managerName,
         contact_phone: contactPhone,
-      });
-    } else if (!existingContact.contact_phone) {
-      await supabase
-        .from("contractor_contacts")
-        .update({
-          contact_phone: contactPhone,
-        })
-        .eq("organization_id", organizationId)
-        .eq("id", existingContact.id);
-    }
-  }
-}
+        address,
+        meeting_time: meetingTime,
+        construction_type: constructionType,
+        sort_order: sortOrder,
+      })
+      .select("id")
+      .single();
 
-return { data, error: null };
+    if (error || !data) {
+      return { data, error };
+    }
+
+    if (contractorName && managerName && contactPhone) {
+      const { data: contractor } = await supabase
+        .from("contractors")
+        .select("id")
+        .eq("organization_id", organizationId)
+        .eq("name", contractorName)
+        .maybeSingle();
+
+      if (contractor?.id) {
+        const { data: existingContact } = await supabase
+          .from("contractor_contacts")
+          .select("id, contact_phone")
+          .eq("organization_id", organizationId)
+          .eq("contractor_id", contractor.id)
+          .eq("manager_name", managerName)
+          .maybeSingle();
+
+        if (!existingContact) {
+          await supabase.from("contractor_contacts").insert({
+            organization_id: organizationId,
+            contractor_id: contractor.id,
+            manager_name: managerName,
+            contact_phone: contactPhone,
+          });
+        } else if (!existingContact.contact_phone) {
+          await supabase
+            .from("contractor_contacts")
+            .update({
+              contact_phone: contactPhone,
+            })
+            .eq("organization_id", organizationId)
+            .eq("id", existingContact.id);
+        }
+      }
+    }
+
+    return { data, error: null };
+  } catch (error) {
+    return {
+      data: null,
+      error: {
+        message:
+          error instanceof Error ? error.message : "現場追加に失敗しました",
+      },
+    };
+  }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import type React from "react";
+import React from "react";
 import AssignmentDateHeader from "./AssignmentDateHeader";
 
 import type {
@@ -31,80 +31,84 @@ type Props = {
   children: React.ReactNode;
 };
 
-export default function MonthlyAssignmentsTable({
-  isMobile,
-  viewMode,
-  days,
-  dailySummaryMap,
-  assignmentMap,
-  getDateHeaderStyle,
-  children,
-}: Props) {
-  return (
-    <div
-      style={{
-        overflowX: "auto",
-        overflowY: "auto",
-        border: "1px solid #ddd",
-        borderRadius: 12,
-        backgroundColor: "#fff",
-        maxHeight: "78vh",
-        position: "relative",
-      }}
-    >
-      <table
+const MonthlyAssignmentsTable = React.forwardRef<HTMLDivElement, Props>(
+  function MonthlyAssignmentsTable(
+    {
+      isMobile,
+      viewMode,
+      days,
+      dailySummaryMap,
+      assignmentMap,
+      getDateHeaderStyle,
+      children,
+    },
+    ref
+  ) {
+    return (
+      <div
+        ref={ref}
         style={{
-          borderCollapse: "separate",
-          borderSpacing: 0,
-          minWidth:
-            viewMode === "week"
-              ? isMobile
-                ? 900
-                : 1200
-              : isMobile
-              ? 950
-              : 1700,
-          width: "100%",
+          overflowX: "auto",
+          overflowY: "auto",
+          border: "1px solid #ddd",
+          borderRadius: 12,
           backgroundColor: "#fff",
-          fontSize: isMobile ? 10 : 12,
+          maxHeight: "78vh",
+          position: "relative",
         }}
       >
-        <thead>
-          <tr>
-            {!isMobile && (
-              <th style={{ ...th, ...stickyTh1 }}>元請</th>
-            )}
+        <table
+          style={{
+            borderCollapse: "separate",
+            borderSpacing: 0,
+            minWidth:
+              viewMode === "week"
+                ? isMobile
+                  ? 900
+                  : 1200
+                : isMobile
+                ? 950
+                : 1700,
+            width: "100%",
+            backgroundColor: "#fff",
+            fontSize: isMobile ? 10 : 12,
+          }}
+        >
+          <thead>
+            <tr>
+              {!isMobile && <th style={{ ...th, ...stickyTh1 }}>元請</th>}
 
-            <th
-              style={{
-                ...th,
-                ...stickyTh2,
-                left: isMobile ? 0 : 70,
-              }}
-            >
-              現場名
-            </th>
+              <th
+                style={{
+                  ...th,
+                  ...stickyTh2,
+                  left: isMobile ? 0 : 70,
+                }}
+              >
+                現場名
+              </th>
 
-            {!isMobile && (
-              <th style={{ ...th, ...stickyTh3 }}>担当者</th>
-            )}
+              {!isMobile && <th style={{ ...th, ...stickyTh3 }}>担当者</th>}
 
-            <th style={th}>昼/夜</th>
+              <th style={th}>昼/夜</th>
 
-            {days.map((date) => (
-              <AssignmentDateHeader
-                key={date}
-                date={date}
-                summary={dailySummaryMap.get(date)}
-                assignmentMap={assignmentMap}
-                getDateHeaderStyle={getDateHeaderStyle}
-              />
-            ))}
-          </tr>
-        </thead>
+              {days.map((date) => (
+                <AssignmentDateHeader
+                  key={date}
+                  date={date}
+                  summary={dailySummaryMap.get(date)}
+                  assignmentMap={assignmentMap}
+                  getDateHeaderStyle={getDateHeaderStyle}
+                />
+              ))}
+            </tr>
+          </thead>
 
-        {children}
-      </table>
-    </div>
-  );
-}
+          {children}
+        </table>
+      </div>
+    );
+  }
+);
+
+export default MonthlyAssignmentsTable;

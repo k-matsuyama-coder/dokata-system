@@ -11,8 +11,6 @@ import { useMonthlyAssignmentActionContext } from "../contexts/monthlyAssignment
 
 import type {
   Assignment,
-  DailyInfo,
-  SiteMember,
 } from "../types";
 
 import {
@@ -25,115 +23,143 @@ import {
 import { isOutOfAssignmentPeriod } from "../utils";
 
 type Props = {
-    assignment: Assignment;
+  assignment: Assignment;
+};
+
+function AssignmentRowContent({ assignment }: Props) {
+  const {
+    days,
+    isMobile,
+    viewMode,
+    sortMode,
+    editingDetails,
+    saveTimers,
+    getCellMembers,
+    getDailyInfo,
+    getCellStyle,
+    setShowMemberModal,
+    setEditingDetails,
+    setSaveTimers,
+    setEditingAssignment,
+    flushDetailSave,
+  } = useMonthlyAssignmentContext();
+
+  const {
+    moveAssignmentRow,
+    deleteAssignment,
+    moveSiteMember,
+    addEmployeeToCell,
+    moveVehicleToCell,
+    addVehicleToCell,
+    removeVehicleFromCell,
+    updateDailyInfo,
+    deleteSiteMember,
+    toggleForeman,
+  } = useMonthlyAssignmentActionContext();
+
+  const {
+    draggingAssignmentId,
+    setDraggingAssignmentId,
+    draggingSiteMemberId,
+    setDraggingSiteMemberId,
+    draggingEmployeeName,
+    draggingVehicleName,
+    draggingVehicleFrom,
+    setDraggingVehicleFrom,
+    selectedSiteMemberId,
+    setSelectedSiteMemberId,
+    selectedEmployeeName,
+    setSelectedEmployeeName,
+    setSelectedDate,
+    setSelectedShiftType,
+    copiedEmployeeNames,
+    setCopiedEmployeeNames,
+    copiedVehicleNames,
+    setCopiedVehicleNames,
+    setDraggingVehicleName,
+  } = useMonthlyAssignmentSelectionContext();
+
+  const canDragRow = !isMobile && sortMode === "manual";
+
+  const handleAssignmentDragStart = () => {
+    if (!canDragRow) return;
+    setDraggingAssignmentId(assignment.id);
   };
 
-  function AssignmentRowContent({
-    assignment,
-  }: Props) {
-    const {
-        days,
-        isMobile,
-        viewMode,
-        sortMode,
-        editingDetails,
-        saveTimers,
-        getCellMembers,
-        getDailyInfo,
-        getCellStyle,
-        setShowMemberModal,
-        setEditingDetails,
-        setSaveTimers,
-        setEditingAssignment,
-      } = useMonthlyAssignmentContext();
-      
-      const {
-        moveAssignmentRow,
-        deleteAssignment,
-        moveSiteMember,
-        addEmployeeToCell,
-        moveVehicleToCell,
-        addVehicleToCell,
-        removeVehicleFromCell,
-        updateDailyInfo,
-        deleteSiteMember,
-        toggleForeman,
-      } = useMonthlyAssignmentActionContext();
-      
-      const {
-        draggingAssignmentId,
-        setDraggingAssignmentId,
-        draggingSiteMemberId,
-        setDraggingSiteMemberId,
-        draggingEmployeeName,
-        draggingVehicleName,
-        draggingVehicleFrom,
-        setDraggingVehicleFrom,
-        selectedSiteMemberId,
-        setSelectedSiteMemberId,
-        selectedEmployeeName,
-        setSelectedEmployeeName,
-        setSelectedDate,
-        setSelectedShiftType,
-        copiedEmployeeNames,
-        setCopiedEmployeeNames,
-        copiedVehicleNames,
-        setCopiedVehicleNames,
-        setDraggingVehicleName,
-      } = useMonthlyAssignmentSelectionContext();
+  const handleAssignmentDragEnd = () => {
+    setDraggingAssignmentId(null);
+  };
+
+  const handleAssignmentDragOver = (
+    e: React.DragEvent<HTMLTableCellElement>
+  ) => {
+    if (!canDragRow) return;
+    e.preventDefault();
+  };
+
+  const handleAssignmentDrop = () => {
+    if (!canDragRow) return;
+    if (!draggingAssignmentId) return;
+    if (draggingAssignmentId === assignment.id) return;
+
+    moveAssignmentRow(draggingAssignmentId, assignment.id);
+  };
+
+  const rowDropHighlight =
+    canDragRow && draggingAssignmentId && draggingAssignmentId !== assignment.id;
+
+  const fixedCellBackground =
+    draggingAssignmentId === assignment.id
+      ? "#dbeafe"
+      : rowDropHighlight
+      ? "#eff6ff"
+      : assignment.shift_type === "night"
+      ? "#e5e7eb"
+      : "#fff";
+
   return (
     <AssignmentRow
       style={{
-        backgroundColor:
-          assignment.shift_type === "night"
-            ? "#f3f4f6"
-            : "#fff",
+        backgroundColor: assignment.shift_type === "night" ? "#f3f4f6" : "#fff",
       }}
     >
       {!isMobile && (
-  <td
-    style={{
-      ...td,
-      ...stickyTd1,
-      backgroundColor:
-        assignment.shift_type === "night" ? "#e5e7eb" : "#fff",
-      fontSize: 15,
-      fontWeight: 700,
-      textAlign: "center",
-      verticalAlign: "middle",
-      padding: "10px 8px",
-      lineHeight: 1.4,
-    }}
-  >
-    {assignment.contractor_name || "-"}
-  </td>
-)}
+        <td
+          draggable={canDragRow}
+          onDragStart={handleAssignmentDragStart}
+          onDragEnd={handleAssignmentDragEnd}
+          onDragOver={handleAssignmentDragOver}
+          onDrop={handleAssignmentDrop}
+          style={{
+            ...td,
+            ...stickyTd1,
+            backgroundColor: fixedCellBackground,
+            fontSize: 15,
+            fontWeight: 700,
+            textAlign: "center",
+            verticalAlign: "middle",
+            padding: "10px 8px",
+            lineHeight: 1.4,
+            cursor: canDragRow ? "grab" : "default",
+          }}
+        >
+          {assignment.contractor_name || "-"}
+        </td>
+      )}
 
       <td
-        draggable={!isMobile && sortMode === "manual"}
-        onDragStart={() => setDraggingAssignmentId(assignment.id)}
-        onDragEnd={() => setDraggingAssignmentId(null)}
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={() => {
-          if (!draggingAssignmentId) return;
-
-          moveAssignmentRow(
-            draggingAssignmentId,
-            assignment.id
-          );
-        }}
+        draggable={canDragRow}
+        onDragStart={handleAssignmentDragStart}
+        onDragEnd={handleAssignmentDragEnd}
+        onDragOver={handleAssignmentDragOver}
+        onDrop={handleAssignmentDrop}
         style={{
           ...td,
           ...stickyTd2,
           left: isMobile ? 0 : 70,
           fontWeight: 800,
-          cursor: !isMobile && sortMode === "manual" ? "grab" : "pointer",
-          backgroundColor:
-            draggingAssignmentId === assignment.id
-              ? "#dbeafe"
-              : assignment.shift_type === "night"
-              ? "#e5e7eb"
-              : "#fff",
+          cursor: canDragRow ? "grab" : "pointer",
+          backgroundColor: fixedCellBackground,
           minWidth: viewMode === "week" ? 260 : 180,
           width: viewMode === "week" ? 260 : 180,
           textAlign: "center",
@@ -144,13 +170,26 @@ type Props = {
         <div
           style={{
             display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
             alignItems: "center",
-            gap: 8,
+            justifyContent: "center",
+            gap: 10,
             minHeight: 80,
           }}
         >
+          {canDragRow && (
+            <span
+              title="ドラッグして上下移動"
+              style={{
+                fontSize: 18,
+                lineHeight: 1,
+                opacity: 0.55,
+                userSelect: "none",
+              }}
+            >
+              ☰
+            </span>
+          )}
+
           <span
             onClick={() => setEditingAssignment(assignment)}
             style={{
@@ -168,42 +207,55 @@ type Props = {
       </td>
 
       {!isMobile && (
-  <td
-    style={{
-      ...td,
-      ...stickyTd3,
-      backgroundColor:
-        assignment.shift_type === "night" ? "#e5e7eb" : "#fff",
-      fontSize: 15,
-      fontWeight: 700,
-      textAlign: "center",
-      verticalAlign: "middle",
-      padding: "10px 8px",
-      lineHeight: 1.4,
-    }}
-  >
-    {assignment.manager_name || "-"}
-  </td>
-)}
+        <td
+          draggable={canDragRow}
+          onDragStart={handleAssignmentDragStart}
+          onDragEnd={handleAssignmentDragEnd}
+          onDragOver={handleAssignmentDragOver}
+          onDrop={handleAssignmentDrop}
+          style={{
+            ...td,
+            ...stickyTd3,
+            backgroundColor: fixedCellBackground,
+            fontSize: 15,
+            fontWeight: 700,
+            textAlign: "center",
+            verticalAlign: "middle",
+            padding: "10px 8px",
+            lineHeight: 1.4,
+            cursor: canDragRow ? "grab" : "default",
+          }}
+        >
+          {assignment.manager_name || "-"}
+        </td>
+      )}
 
-<td
-  style={{
-    ...td,
-    position: "sticky",
-    left: isMobile ? 0 : 310, // ←重要
-    zIndex: 15,
-
-    fontWeight: 800,
-    color: assignment.shift_type === "night" ? "#fff" : "#111",
-    backgroundColor:
-      assignment.shift_type === "night"
-        ? "#374151"
-        : "#f3f4f6",
-
-    textAlign: "center",
-    verticalAlign: "middle",
-  }}
->
+      <td
+        draggable={canDragRow}
+        onDragStart={handleAssignmentDragStart}
+        onDragEnd={handleAssignmentDragEnd}
+        onDragOver={handleAssignmentDragOver}
+        onDrop={handleAssignmentDrop}
+        style={{
+          ...td,
+          position: "sticky",
+          left: isMobile ? 0 : 310,
+          zIndex: 15,
+          fontWeight: 800,
+          color: assignment.shift_type === "night" ? "#fff" : "#111",
+          backgroundColor:
+            draggingAssignmentId === assignment.id
+              ? "#dbeafe"
+              : rowDropHighlight
+              ? "#eff6ff"
+              : assignment.shift_type === "night"
+              ? "#374151"
+              : "#f3f4f6",
+          textAlign: "center",
+          verticalAlign: "middle",
+          cursor: canDragRow ? "grab" : "default",
+        }}
+      >
         {assignment.shift_type === "night" ? "夜" : "昼"}
       </td>
 
@@ -234,20 +286,12 @@ type Props = {
               if (isOutOfPeriod) return;
 
               if (draggingSiteMemberId) {
-                moveSiteMember(
-                  draggingSiteMemberId,
-                  assignment.id,
-                  date
-                );
+                moveSiteMember(draggingSiteMemberId, assignment.id, date);
                 return;
               }
 
               if (draggingEmployeeName) {
-                addEmployeeToCell(
-                  draggingEmployeeName,
-                  assignment.id,
-                  date
-                );
+                addEmployeeToCell(draggingEmployeeName, assignment.id, date);
                 return;
               }
 
@@ -264,11 +308,7 @@ type Props = {
               }
 
               if (draggingVehicleName) {
-                addVehicleToCell(
-                  draggingVehicleName,
-                  assignment.id,
-                  date
-                );
+                addVehicleToCell(draggingVehicleName, assignment.id, date);
                 setDraggingVehicleName(null);
               }
             }}
@@ -279,22 +319,13 @@ type Props = {
               setSelectedShiftType(assignment.shift_type ?? "day");
 
               if (selectedSiteMemberId) {
-                moveSiteMember(
-                  selectedSiteMemberId,
-                  assignment.id,
-                  date
-                );
+                moveSiteMember(selectedSiteMemberId, assignment.id, date);
                 setSelectedSiteMemberId(null);
                 return;
               }
 
               if (selectedEmployeeName) {
-                addEmployeeToCell(
-                  selectedEmployeeName,
-                  assignment.id,
-                  date
-                );
-
+                addEmployeeToCell(selectedEmployeeName, assignment.id, date);
                 setSelectedEmployeeName(null);
 
                 if (isMobile) {
@@ -308,12 +339,7 @@ type Props = {
                 const isMultiPaste = copiedEmployeeNames.length > 1;
 
                 copiedEmployeeNames.forEach((name) => {
-                  addEmployeeToCell(
-                    name,
-                    assignment.id,
-                    date,
-                    !isMultiPaste
-                  );
+                  addEmployeeToCell(name, assignment.id, date, !isMultiPaste);
                 });
 
                 if (!e.shiftKey) {
@@ -363,6 +389,7 @@ type Props = {
               setSelectedSiteMemberId={setSelectedSiteMemberId}
               setSelectedEmployeeName={setSelectedEmployeeName}
               updateDailyInfo={updateDailyInfo}
+              flushDetailSave={flushDetailSave}
               removeVehicleFromCell={removeVehicleFromCell}
               deleteSiteMember={deleteSiteMember}
               toggleForeman={toggleForeman}
@@ -373,4 +400,5 @@ type Props = {
     </AssignmentRow>
   );
 }
+
 export default React.memo(AssignmentRowContent);

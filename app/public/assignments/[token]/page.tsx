@@ -114,6 +114,14 @@ function isUrl(value: string) {
   }
 }
 
+function toTelHref(phone: string) {
+  return `tel:${phone.replace(/[^\d+]/g, "")}`;
+}
+
+function toGoogleMapsSearchUrl(address: string) {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+}
+
 export default function PublicAssignmentsPage() {
   const params = useParams<{ token: string }>();
   const token = typeof params?.token === "string" ? params.token : "";
@@ -316,27 +324,34 @@ export default function PublicAssignmentsPage() {
                               担当：{row.manager_name || "-"}
                             </div>
                             <div style={infoLineStyle}>
-                              連絡先：{row.contact_phone || "-"}
-                            </div>
-                            <div style={infoLineStyle}>
-                              住所：
-                              {row.address ? (
-                                isUrl(row.address) ? (
-                                  <a
-                                    href={row.address}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    style={addressLinkStyle}
-                                  >
-                                    {row.address}
-                                  </a>
-                                ) : (
-                                  <span style={addressTextStyle}>{row.address}</span>
-                                )
-                              ) : (
-                                " -"
-                              )}
-                            </div>
+  連絡先：
+  {row.contact_phone ? (
+    <a href={toTelHref(row.contact_phone)} style={infoLinkStyle}>
+      {row.contact_phone}
+    </a>
+  ) : (
+    " -"
+  )}
+</div>
+<div style={infoLineStyle}>
+  住所：
+  {row.address ? (
+    <a
+      href={
+        isUrl(row.address)
+          ? row.address
+          : toGoogleMapsSearchUrl(row.address)
+      }
+      target="_blank"
+      rel="noreferrer"
+      style={addressLinkStyle}
+    >
+      {row.address}
+    </a>
+  ) : (
+    " -"
+  )}
+</div>
 
                             {row.notes ? (
                               <div style={notesBarStyle}>作業：{row.notes}</div>
@@ -624,10 +639,6 @@ const infoLineStyle: React.CSSProperties = {
 const addressLinkStyle: React.CSSProperties = {
   color: "#2563eb",
   textDecoration: "underline",
-  marginLeft: 2,
-};
-
-const addressTextStyle: React.CSSProperties = {
   marginLeft: 2,
 };
 

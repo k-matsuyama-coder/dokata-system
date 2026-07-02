@@ -1,5 +1,7 @@
+// app/(system)/admin/assignments/month/components/AssignmentDayCell.tsx
 "use client";
 
+import type React from "react";
 import type { DailyInfo } from "../types";
 
 type Props = {
@@ -7,11 +9,9 @@ type Props = {
   isOutOfPeriod: boolean;
   plannedCount: number | null;
   memberCount: number;
-
   assignmentId: string;
   workDate: string;
   dailyInfo: DailyInfo | undefined;
-
   updateDailyInfo: (
     assignmentId: string,
     workDate: string,
@@ -19,6 +19,35 @@ type Props = {
     value: string
   ) => void;
 };
+
+function movePlannedCountFocus(
+  event: React.KeyboardEvent<HTMLInputElement>,
+  direction: "left" | "right"
+) {
+  const currentInput = event.currentTarget;
+  const row = currentInput.closest("tr");
+
+  if (!row) return;
+
+  const inputs = Array.from(
+    row.querySelectorAll<HTMLInputElement>('input[data-planned-count="true"]')
+  ).filter((input) => !input.disabled);
+
+  const currentIndex = inputs.findIndex((input) => input === currentInput);
+
+  if (currentIndex === -1) return;
+
+  const nextIndex =
+    direction === "left" ? currentIndex - 1 : currentIndex + 1;
+
+  const nextInput = inputs[nextIndex];
+
+  if (!nextInput) return;
+
+  event.preventDefault();
+  nextInput.focus();
+  nextInput.select();
+}
 
 export default function AssignmentDayCell({
   isMobile,
@@ -63,11 +92,7 @@ export default function AssignmentDayCell({
         style={{
           fontSize: isMobile ? 10 : 11,
           fontWeight: 800,
-          color: isShort
-            ? "#d11a2a"
-            : isPerfect
-            ? "#16a34a"
-            : "#555",
+          color: isShort ? "#d11a2a" : isPerfect ? "#16a34a" : "#555",
           display: "grid",
           gap: 2,
           lineHeight: 1.4,
@@ -81,15 +106,36 @@ export default function AssignmentDayCell({
 
       <input
   type="number"
+  min={0}
+  data-planned-count="true"
   value={dailyInfo?.planned_count ?? ""}
-  onChange={(e) =>
+  onChange={(e) => {
+    const rawValue = e.target.value;
+
+    if (rawValue === "") {
+      updateDailyInfo(assignmentId, workDate, "planned_count", "");
+      return;
+    }
+
+    const nextValue = Math.max(0, Number(rawValue));
     updateDailyInfo(
       assignmentId,
       workDate,
       "planned_count",
-      e.target.value
-    )
-  }
+      String(nextValue)
+    );
+  }}
+  onFocus={(e) => e.currentTarget.select()}
+  onKeyDown={(e) => {
+    if (e.key === "ArrowLeft") {
+      movePlannedCountFocus(e, "left");
+      return;
+    }
+
+    if (e.key === "ArrowRight") {
+      movePlannedCountFocus(e, "right");
+    }
+  }}
   placeholder="人"
   disabled={isOutOfPeriod}
   style={{
