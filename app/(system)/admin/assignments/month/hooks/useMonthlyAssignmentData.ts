@@ -1,12 +1,11 @@
 // app/(system)/admin/assignments/month/hooks/useMonthlyAssignmentData.ts
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import {
   getAssignments,
   getAssignmentFiles,
   getContractorContacts,
   getContractors,
-  getCurrentOrganization,
   getDailyInfos,
   getEmployees,
   getShiftRequests,
@@ -33,9 +32,10 @@ type Vehicle = {
 
 type Props = {
   days: string[];
+  organizationId: string | null;
 };
 
-export function useMonthlyAssignmentData({ days }: Props) {
+export function useMonthlyAssignmentData({ days, organizationId }: Props) {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [assignmentFiles, setAssignmentFiles] = useState<AssignmentFile[]>([]);
   const [siteMembers, setSiteMembers] = useState<SiteMember[]>([]);
@@ -47,26 +47,9 @@ export function useMonthlyAssignmentData({ days }: Props) {
   const [contractorContacts, setContractorContacts] = useState<
     ContractorContact[]
   >([]);
-  const [organizationId, setOrganizationId] = useState<string | null>(null);
 
   const startDate = useMemo(() => days[0] ?? "", [days]);
   const endDate = useMemo(() => days[days.length - 1] ?? "", [days]);
-
-  useEffect(() => {
-    let active = true;
-
-    const loadOrganizationId = async () => {
-      const currentOrganizationId = await getCurrentOrganization();
-      if (!active) return;
-      setOrganizationId(currentOrganizationId);
-    };
-
-    void loadOrganizationId();
-
-    return () => {
-      active = false;
-    };
-  }, []);
 
   const fetchMasterData = useCallback(async () => {
     if (!organizationId) return;

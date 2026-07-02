@@ -239,6 +239,7 @@ export default function MonthlyAssignmentsPage() {
     fetchData,
   } = useMonthlyAssignmentData({
     days,
+    organizationId: currentOrganizationId,
   });
 
   useEffect(() => {
