@@ -1,4 +1,5 @@
-import { useEffect } from "react";
+// app/(system)/admin/assignments/month/hooks/useMonthlyAssignmentAdmin.ts
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { hasRole } from "@/app/types/auth";
 
@@ -15,6 +16,8 @@ export function useMonthlyAssignmentAdmin({
   weekStart,
   fetchData,
 }: Props) {
+  const [isAdminChecked, setIsAdminChecked] = useState(false);
+
   useEffect(() => {
     const checkAdmin = async () => {
       const { data: userData } = await supabase.auth.getUser();
@@ -27,25 +30,24 @@ export function useMonthlyAssignmentAdmin({
 
       const { data: employee } = await supabase
         .from("employees")
-        .select(`
-          *,
-          organizations (
-            id,
-            name
-          )
-        `)
+        .select("role")
         .eq("auth_user_id", user.id)
         .single();
 
-        if (!employee || !hasRole(employee.role, "admin")) {
-          alert("管理者のみ閲覧できます");
-          window.location.href = "/home";
-          return;
-        }
+      if (!employee || !hasRole(employee.role, "admin")) {
+        alert("管理者のみ閲覧できます");
+        window.location.href = "/home";
+        return;
+      }
 
-      await fetchData();
+      setIsAdminChecked(true);
     };
 
     checkAdmin();
-  }, [month, viewMode, weekStart, fetchData]);
+  }, []);
+
+  useEffect(() => {
+    if (!isAdminChecked) return;
+    void fetchData();
+  }, [isAdminChecked, month, viewMode, weekStart, fetchData]);
 }

@@ -37,14 +37,6 @@ import {
 } from "./contexts/monthlyAssignmentActionContext";
 import { getWeekStart } from "./utils";
 
-type PublicAssignmentLink = {
-  id: string;
-  token: string;
-  expires_at: string;
-  is_active: boolean;
-  created_at: string;
-};
-
 export default function MonthlyAssignmentsPage() {
   const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [viewMode, setViewMode] = useState<"month" | "week">("month");
@@ -92,37 +84,6 @@ export default function MonthlyAssignmentsPage() {
     return sessionData.session?.access_token ?? null;
   };
 
-  const fetchPublicLinks = async () => {
-    try {
-      setLoadingPublicLinks(true);
-
-      const token = await getAccessToken();
-
-      if (!token) {
-        alert("ログイン情報がありません");
-        return;
-      }
-
-      const res = await fetch("/api/admin/public/assignments/links", {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const result = await res.json();
-
-      if (!res.ok || !result.success) {
-        alert(result.message ?? "公開URL一覧の取得に失敗しました");
-        return;
-      }
-
-      setPublicLinks(result.links ?? []);
-    } finally {
-      setLoadingPublicLinks(false);
-    }
-  };
-
   const createPublicLink = async () => {
     try {
       setCreatingPublicLink(true);
@@ -165,53 +126,6 @@ export default function MonthlyAssignmentsPage() {
     } finally {
       setCreatingPublicLink(false);
     }
-  };
-
-  const revokePublicLink = async (id: string) => {
-    const ok = window.confirm("この公開URLを無効化しますか？");
-    if (!ok) return;
-
-    try {
-      setRevokingLinkId(id);
-
-      const token = await getAccessToken();
-
-      if (!token) {
-        alert("ログイン情報がありません");
-        return;
-      }
-
-      const res = await fetch("/api/admin/public/assignments/revoke-link", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ id }),
-      });
-
-      const result = await res.json();
-
-      if (!res.ok || !result.success) {
-        alert(result.message ?? "公開URLの無効化に失敗しました");
-        return;
-      }
-
-      alert("公開URLを無効化しました");
-      await fetchPublicLinks();
-    } finally {
-      setRevokingLinkId(null);
-    }
-  };
-
-  const copyPublicUrl = async (token: string) => {
-    const url = `${window.location.origin}/public/assignments/${token}`;
-    await navigator.clipboard.writeText(url);
-    alert(`コピーしました\n${url}`);
-  };
-
-  const formatDateTime = (value: string) => {
-    return new Date(value).toLocaleString("ja-JP");
   };
 
   const {
@@ -291,11 +205,6 @@ export default function MonthlyAssignmentsPage() {
 
     fetchOrganization();
   }, []);
-
-  useEffect(() => {
-    if (!currentOrganizationId) return;
-    fetchPublicLinks();
-  }, [currentOrganizationId]);
 
   const { isMobile } = useResponsive();
 
@@ -467,89 +376,152 @@ export default function MonthlyAssignmentsPage() {
     todayString,
   });
 
-  const assignmentContextValue: MonthlyAssignmentContextValue = {
-    days,
-    isMobile,
-    viewMode,
-    sortMode,
-    draggingAssignmentId,
-    draggingSiteMemberId,
-    draggingEmployeeName,
-    draggingVehicleName,
-    draggingVehicleFrom,
-    selectedSiteMemberId,
-    selectedEmployeeName,
-    copiedEmployeeNames,
-    copiedVehicleNames,
-    editingDetails,
-    saveTimers,
-    getCellMembers,
-    getDailyInfo,
-    getCellStyle,
-    setDraggingAssignmentId,
-    setDraggingSiteMemberId,
-    setDraggingEmployeeName,
-    setDraggingVehicleName,
-    setDraggingVehicleFrom,
-    setSelectedDate,
-    setSelectedShiftType,
-    setSelectedSiteMemberId,
-    setSelectedEmployeeName,
-    setShowMemberModal,
-    setCopiedEmployeeNames,
-    setCopiedVehicleNames,
-    setEditingDetails,
-    setSaveTimers,
-    setEditingAssignment,
-    moveAssignmentRow,
-    deleteAssignment,
-    moveSiteMember,
-    addEmployeeToCell,
-    moveVehicleToCell,
-    addVehicleToCell,
-    removeVehicleFromCell,
-    updateDailyInfo,
-    deleteSiteMember,
-    toggleForeman,
-  };
+  const assignmentContextValue = useMemo<MonthlyAssignmentContextValue>(
+    () => ({
+      days,
+      isMobile,
+      viewMode,
+      sortMode,
+      draggingAssignmentId,
+      draggingSiteMemberId,
+      draggingEmployeeName,
+      draggingVehicleName,
+      draggingVehicleFrom,
+      selectedSiteMemberId,
+      selectedEmployeeName,
+      copiedEmployeeNames,
+      copiedVehicleNames,
+      editingDetails,
+      saveTimers,
+      getCellMembers,
+      getDailyInfo,
+      getCellStyle,
+      setDraggingAssignmentId,
+      setDraggingSiteMemberId,
+      setDraggingEmployeeName,
+      setDraggingVehicleName,
+      setDraggingVehicleFrom,
+      setSelectedDate,
+      setSelectedShiftType,
+      setSelectedSiteMemberId,
+      setSelectedEmployeeName,
+      setShowMemberModal,
+      setCopiedEmployeeNames,
+      setCopiedVehicleNames,
+      setEditingDetails,
+      setSaveTimers,
+      setEditingAssignment,
+      moveAssignmentRow,
+      deleteAssignment,
+      moveSiteMember,
+      addEmployeeToCell,
+      moveVehicleToCell,
+      addVehicleToCell,
+      removeVehicleFromCell,
+      updateDailyInfo,
+      deleteSiteMember,
+      toggleForeman,
+    }),
+    [
+      days,
+      isMobile,
+      viewMode,
+      sortMode,
+      draggingAssignmentId,
+      draggingSiteMemberId,
+      draggingEmployeeName,
+      draggingVehicleName,
+      draggingVehicleFrom,
+      selectedSiteMemberId,
+      selectedEmployeeName,
+      copiedEmployeeNames,
+      copiedVehicleNames,
+      editingDetails,
+      saveTimers,
+      getCellMembers,
+      getDailyInfo,
+      getCellStyle,
+      moveAssignmentRow,
+      deleteAssignment,
+      moveSiteMember,
+      addEmployeeToCell,
+      moveVehicleToCell,
+      addVehicleToCell,
+      removeVehicleFromCell,
+      updateDailyInfo,
+      deleteSiteMember,
+      toggleForeman,
+      setShowMemberModal,
+      setEditingAssignment,
+    ]
+  );
 
-  const selectionContextValue: MonthlyAssignmentSelectionContextValue = {
-    draggingAssignmentId,
-    setDraggingAssignmentId,
-    draggingSiteMemberId,
-    setDraggingSiteMemberId,
-    draggingEmployeeName,
-    setDraggingEmployeeName,
-    draggingVehicleName,
-    setDraggingVehicleName,
-    draggingVehicleFrom,
-    setDraggingVehicleFrom,
-    selectedSiteMemberId,
-    setSelectedSiteMemberId,
-    selectedEmployeeName,
-    setSelectedEmployeeName,
-    selectedDate,
-    setSelectedDate,
-    selectedShiftType,
-    setSelectedShiftType,
-    copiedEmployeeNames,
-    setCopiedEmployeeNames,
-    copiedVehicleNames,
-    setCopiedVehicleNames,
-  };
+  const selectionContextValue = useMemo<MonthlyAssignmentSelectionContextValue>(
+    () => ({
+      draggingAssignmentId,
+      setDraggingAssignmentId,
+      draggingSiteMemberId,
+      setDraggingSiteMemberId,
+      draggingEmployeeName,
+      setDraggingEmployeeName,
+      draggingVehicleName,
+      setDraggingVehicleName,
+      draggingVehicleFrom,
+      setDraggingVehicleFrom,
+      selectedSiteMemberId,
+      setSelectedSiteMemberId,
+      selectedEmployeeName,
+      setSelectedEmployeeName,
+      selectedDate,
+      setSelectedDate,
+      selectedShiftType,
+      setSelectedShiftType,
+      copiedEmployeeNames,
+      setCopiedEmployeeNames,
+      copiedVehicleNames,
+      setCopiedVehicleNames,
+    }),
+    [
+      draggingAssignmentId,
+      draggingSiteMemberId,
+      draggingEmployeeName,
+      draggingVehicleName,
+      draggingVehicleFrom,
+      selectedSiteMemberId,
+      selectedEmployeeName,
+      selectedDate,
+      selectedShiftType,
+      copiedEmployeeNames,
+      copiedVehicleNames,
+    ]
+  );
 
-  const actionContextValue: MonthlyAssignmentActionContextValue = {
-    moveAssignmentRow,
-    deleteAssignment,
-    moveSiteMember,
-    addEmployeeToCell,
-    moveVehicleToCell,
-    addVehicleToCell,
-    removeVehicleFromCell,
-    updateDailyInfo,
-    deleteSiteMember,
-    toggleForeman,
-  };
+  const actionContextValue = useMemo<MonthlyAssignmentActionContextValue>(
+    () => ({
+      moveAssignmentRow,
+      deleteAssignment,
+      moveSiteMember,
+      addEmployeeToCell,
+      moveVehicleToCell,
+      addVehicleToCell,
+      removeVehicleFromCell,
+      updateDailyInfo,
+      deleteSiteMember,
+      toggleForeman,
+    }),
+    [
+      moveAssignmentRow,
+      deleteAssignment,
+      moveSiteMember,
+      addEmployeeToCell,
+      moveVehicleToCell,
+      addVehicleToCell,
+      removeVehicleFromCell,
+      updateDailyInfo,
+      deleteSiteMember,
+      toggleForeman,
+    ]
+  );
 
   if (!currentOrganizationId) {
     return <div style={{ padding: 16 }}>読み込み中...</div>;

@@ -1,4 +1,5 @@
-import { useCallback, useState } from "react";
+// app/(system)/admin/assignments/month/hooks/useMonthlyAssignmentData.ts
+import { useCallback, useMemo, useState } from "react";
 
 import { fetchMonthlyAssignmentsAction } from "../actions/fetchMonthlyAssignments";
 
@@ -36,9 +37,13 @@ export function useMonthlyAssignmentData({ days }: Props) {
     ContractorContact[]
   >([]);
 
+  const startDate = useMemo(() => days[0] ?? "", [days]);
+  const endDate = useMemo(() => days[days.length - 1] ?? "", [days]);
+
   const fetchData = useCallback(async () => {
-    const startDate = days[0];
-    const endDate = days[days.length - 1];
+    if (!startDate || !endDate) {
+      return;
+    }
 
     const {
       employeeData,
@@ -64,7 +69,7 @@ export function useMonthlyAssignmentData({ days }: Props) {
     setSiteMembers(memberData);
     setDailyInfos(dailyInfoData);
     setShiftRequests(shiftRequestData);
-  }, [days]);
+  }, [startDate, endDate]);
 
   return {
     assignments,
