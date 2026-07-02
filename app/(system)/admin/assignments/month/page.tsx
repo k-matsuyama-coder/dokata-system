@@ -27,6 +27,7 @@ import { useAddAssignmentForm } from "./hooks/useAddAssignmentForm";
 import { useMonthlyAssignmentRows } from "./hooks/useMonthlyAssignmentRows";
 import type { MonthlyAssignmentContextValue } from "./contexts/monthlyAssignmentContext";
 import { MonthlyAssignmentContext } from "./contexts/monthlyAssignmentContext";
+import { exportMonthlyMatrix } from "./utils/exportMonthlyMatrix";
 import {
   MonthlyAssignmentSelectionContext,
   type MonthlyAssignmentSelectionContextValue,
@@ -426,6 +427,31 @@ export default function MonthlyAssignmentsPage() {
     todayString,
   });
 
+  const exportAssignments = groupedAssignments.flatMap((group) => group.rows);
+
+  const handleExportMonthlyMatrix = async () => {
+    try {
+      await exportMonthlyMatrix({
+        month,
+        assignments: exportAssignments.map((assignment) => ({
+          id: assignment.id,
+          contractor_name: assignment.contractor_name ?? null,
+          site_name: assignment.site_name ?? null,
+          construction_type: assignment.construction_type ?? null,
+          manager_name: assignment.manager_name ?? null,
+          shift_type: assignment.shift_type ?? null,
+        })),
+        dailyInfos: dailyInfos.map((info) => ({
+          assignment_id: info.assignment_id,
+          work_date: info.work_date,
+          planned_count: info.planned_count ?? null,
+        })),
+      });
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Excel出力に失敗しました");
+    }
+  };
+
   const assignmentContextValue = useMemo<MonthlyAssignmentContextValue>(
     () => ({
       days,
@@ -604,6 +630,7 @@ export default function MonthlyAssignmentsPage() {
   creatingPublicLink={creatingPublicLink}
   publicViewMode={publicViewMode}
   setPublicViewMode={setPublicViewMode}
+  onExportExcel={handleExportMonthlyMatrix}
 />
 
         <AddAssignmentModal

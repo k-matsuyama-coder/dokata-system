@@ -9,10 +9,15 @@ type Props = {
   assignmentId: string;
   workDate: string;
   dailyInfo: DailyInfo | undefined;
-
   editingDetails: Record<string, string>;
-  flushDetailSave: (assignmentId: string, workDate: string) => Promise<void>;
-
+  setEditingDetails: React.Dispatch<
+    React.SetStateAction<Record<string, string>>
+  >;
+  saveTimers: Record<string, ReturnType<typeof setTimeout>>;
+  setSaveTimers: React.Dispatch<
+    React.SetStateAction<Record<string, ReturnType<typeof setTimeout>>>
+  >;
+  flushDetailSave?: (assignmentId: string, workDate: string) => void | Promise<void>;
   updateDailyInfo: (
     assignmentId: string,
     workDate: string,
@@ -21,6 +26,35 @@ type Props = {
   ) => void;
 };
 
+function moveDetailFocus(
+  event: React.KeyboardEvent<HTMLTextAreaElement>,
+  direction: "left" | "right"
+) {
+  const currentTextarea = event.currentTarget;
+  const row = currentTextarea.closest("tr");
+
+  if (!row) return;
+
+  const textareas = Array.from(
+    row.querySelectorAll<HTMLTextAreaElement>('textarea[data-detail-input="true"]')
+  ).filter((textarea) => !textarea.disabled);
+
+  const currentIndex = textareas.findIndex(
+    (textarea) => textarea === currentTextarea
+  );
+
+  if (currentIndex === -1) return;
+
+  const nextIndex = direction === "left" ? currentIndex - 1 : currentIndex + 1;
+  const nextTextarea = textareas[nextIndex];
+
+  if (!nextTextarea) return;
+
+  event.preventDefault();
+  nextTextarea.focus();
+  nextTextarea.select?.();
+}
+
 export default function AssignmentDetailTextarea({
   isMobile,
   isOutOfPeriod,
@@ -28,6 +62,9 @@ export default function AssignmentDetailTextarea({
   workDate,
   dailyInfo,
   editingDetails,
+  setEditingDetails,
+  saveTimers,
+  setSaveTimers,
   flushDetailSave,
   updateDailyInfo,
 }: Props) {
@@ -35,12 +72,52 @@ export default function AssignmentDetailTextarea({
 
   return (
     <textarea
+      data-detail-input="true"
       value={key in editingDetails ? editingDetails[key] : dailyInfo?.detail ?? ""}
       onChange={(e) => {
-        updateDailyInfo(assignmentId, workDate, "detail", e.target.value);
+        const value = e.target.value;
+
+        setEditingDetails((prev) => ({
+          ...prev,
+          [key]: value,
+        }));
+
+        if (saveTimers[key]) {
+          clearTimeout(saveTimers[key]);
+        }
+
+        const timer = setTimeout(() => {
+          updateDailyInfo(assignmentId, workDate, "detail", value);
+        }, 500);
+
+        setSaveTimers((prev) => ({
+          ...prev,
+          [key]: timer,
+        }));
       }}
       onBlur={() => {
-        void flushDetailSave(assignmentId, workDate);
+        flushDetailSave?.(assignmentId, workDate);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "ArrowLeft" && !e.shiftKey && !e.nativeEvent.isComposing) {
+          const start = e.currentTarget.selectionStart ?? 0;
+          const end = e.currentTarget.selectionEnd ?? 0;
+
+          if (start === 0 && end === 0) {
+            moveDetailFocus(e, "left");
+          }
+          return;
+        }
+
+        if (e.key === "ArrowRight" && !e.shiftKey && !e.nativeEvent.isComposing) {
+          const valueLength = e.currentTarget.value.length;
+          const start = e.currentTarget.selectionStart ?? 0;
+          const end = e.currentTarget.selectionEnd ?? 0;
+
+          if (start === valueLength && end === valueLength) {
+            moveDetailFocus(e, "right");
+          }
+        }
       }}
       disabled={isOutOfPeriod}
       placeholder="詳細"

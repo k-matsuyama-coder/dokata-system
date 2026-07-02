@@ -16,6 +16,7 @@ type AssignmentToolbarProps = {
   creatingPublicLink?: boolean;
   publicViewMode?: "week" | "next3days";
   setPublicViewMode?: (value: "week" | "next3days") => void;
+  onExportExcel?: () => void;
 };
 
 export default function AssignmentToolbar({
@@ -34,7 +35,9 @@ export default function AssignmentToolbar({
   creatingPublicLink = false,
   publicViewMode = "next3days",
   setPublicViewMode,
+  onExportExcel,
 }: AssignmentToolbarProps) {
+
   const moveMonth = (diff: number) => {
     const [year, monthValue] = month.split("-").map(Number);
     const nextDate = new Date(year, monthValue - 1 + diff, 1);
@@ -209,7 +212,7 @@ export default function AssignmentToolbar({
         </button>
       </div>
 
-      {(setPublicViewMode || onCreatePublicLink) && (
+      {(setPublicViewMode || onCreatePublicLink || onExportExcel) && (
         <div
           style={{
             display: "flex",
@@ -220,6 +223,24 @@ export default function AssignmentToolbar({
             flexWrap: "wrap",
           }}
         >
+
+{onExportExcel && (
+  <button
+    type="button"
+    onClick={onExportExcel}
+    style={{
+      border: "1px solid #d1d5db",
+      backgroundColor: "#fff",
+      borderRadius: 8,
+      padding: "8px 12px",
+      fontWeight: 700,
+      cursor: "pointer",
+      whiteSpace: "nowrap",
+    }}
+  >
+    Excel抽出
+  </button>
+)}
           {setPublicViewMode && (
             <select
               value={publicViewMode}

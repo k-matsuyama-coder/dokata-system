@@ -512,18 +512,52 @@ export default function AssignmentViewPage() {
 
                   return (
                     <div
-                      key={`${workDate}-${assignment.id}`}
-                      style={{
-                        backgroundColor: "#fff",
-                        borderRadius: 14,
-                        padding: 14,
-                        border: "1px solid #e5e7eb",
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.04)",
-                      }}
-                    >
-                      <div style={{ fontSize: 17, fontWeight: 900 }}>
-                        {assignment.site_name || "-"}
-                      </div>
+  key={`${workDate}-${assignment.id}`}
+  style={{
+    backgroundColor:
+    assignment.shift_type === "night" ? "#eff6ff" : "#fff",
+    borderRadius: 14,
+    padding: 14,
+    border:
+      assignment.shift_type === "night"
+      ? "1px solid #bfdbfe"
+      : "1px solid #e5e7eb",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.04)",
+  }}
+>
+<div
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: 8,
+    marginBottom: 2,
+  }}
+>
+  <div style={{ fontSize: 17, fontWeight: 900 }}>
+    {assignment.site_name || "-"}
+  </div>
+
+  <div
+    style={{
+      padding: "4px 8px",
+      borderRadius: 999,
+      fontSize: 11,
+      fontWeight: 800,
+      whiteSpace: "nowrap",
+      backgroundColor:
+  assignment.shift_type === "night" ? "#eff6ff" : "#f9fafb",
+color:
+  assignment.shift_type === "night" ? "#1d4ed8" : "#374151",
+border:
+  assignment.shift_type === "night"
+    ? "1px solid #bfdbfe"
+    : "1px solid #e5e7eb",
+    }}
+  >
+    {assignment.shift_type === "night" ? "夜勤" : "日勤"}
+  </div>
+</div>
 
                       <div style={{ fontSize: 13, color: "#666" }}>
                         元請：{assignment.contractor_name || "-"}
