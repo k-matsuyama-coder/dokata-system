@@ -1,18 +1,21 @@
-import React from "react";
-import { getWeekStart } from "../utils";
+"use client";
 
-type Props = {
+type AssignmentToolbarProps = {
   month: string;
-  setMonth: React.Dispatch<React.SetStateAction<string>>;
+  setMonth: (value: string) => void;
   viewMode: "month" | "week";
-  setViewMode: React.Dispatch<React.SetStateAction<"month" | "week">>;
-  weekStart: Date;
-  setWeekStart: React.Dispatch<React.SetStateAction<Date>>;
+  setViewMode: (value: "month" | "week") => void;
+  weekStart: string;
+  setWeekStart: (value: string) => void;
   sortMode: string;
-  setSortMode: React.Dispatch<React.SetStateAction<string>>;
+  setSortMode: (value: string) => void;
   showFinished: boolean;
-  setShowFinished: React.Dispatch<React.SetStateAction<boolean>>;
-  setShowAddModal: React.Dispatch<React.SetStateAction<boolean>>;
+  setShowFinished: (value: boolean) => void;
+  setShowAddModal: (value: boolean) => void;
+  onCreatePublicLink?: () => void;
+  creatingPublicLink?: boolean;
+  publicViewMode?: "week" | "next3days";
+  setPublicViewMode?: (value: "week" | "next3days") => void;
 };
 
 export default function AssignmentToolbar({
@@ -27,162 +30,161 @@ export default function AssignmentToolbar({
   showFinished,
   setShowFinished,
   setShowAddModal,
-}: Props) {
+  onCreatePublicLink,
+  creatingPublicLink = false,
+  publicViewMode = "next3days",
+  setPublicViewMode,
+}: AssignmentToolbarProps) {
   return (
-    <>
-      <h1>{viewMode === "week" ? "週間番割表" : "月間番割表"}</h1>
-
-      <div
+    <div
+      style={{
+        display: "flex",
+        flexWrap: "wrap",
+        gap: 8,
+        alignItems: "center",
+        marginBottom: 16,
+      }}
+    >
+      <input
+        type="month"
+        value={month}
+        onChange={(e) => setMonth(e.target.value)}
         style={{
-          display: "flex",
-          gap: 12,
+          padding: "8px 10px",
+          border: "1px solid #d1d5db",
+          borderRadius: 8,
+          fontSize: 14,
+        }}
+      />
+
+      <button
+        type="button"
+        onClick={() => setViewMode("month")}
+        style={{
+          border: "none",
+          borderRadius: 8,
+          padding: "8px 12px",
+          fontWeight: 700,
+          cursor: "pointer",
+          backgroundColor: viewMode === "month" ? "#1d4ed8" : "#e5e7eb",
+          color: viewMode === "month" ? "#fff" : "#111827",
+        }}
+      >
+        月間
+      </button>
+
+      <button
+        type="button"
+        onClick={() => setViewMode("week")}
+        style={{
+          border: "none",
+          borderRadius: 8,
+          padding: "8px 12px",
+          fontWeight: 700,
+          cursor: "pointer",
+          backgroundColor: viewMode === "week" ? "#1d4ed8" : "#e5e7eb",
+          color: viewMode === "week" ? "#fff" : "#111827",
+        }}
+      >
+        週間
+      </button>
+
+      {viewMode === "week" && (
+        <input
+          type="date"
+          value={weekStart}
+          onChange={(e) => setWeekStart(e.target.value)}
+          style={{
+            padding: "8px 10px",
+            border: "1px solid #d1d5db",
+            borderRadius: 8,
+            fontSize: 14,
+          }}
+        />
+      )}
+
+      <select
+        value={sortMode}
+        onChange={(e) => setSortMode(e.target.value)}
+        style={{
+          padding: "8px 10px",
+          border: "1px solid #d1d5db",
+          borderRadius: 8,
+          fontSize: 14,
+        }}
+      >
+        <option value="default">標準</option>
+        <option value="contractor">元請順</option>
+        <option value="site">現場順</option>
+      </select>
+
+      <label
+        style={{
+          display: "inline-flex",
           alignItems: "center",
-          flexWrap: "nowrap",
-          marginBottom: 16,
-          overflowX: "auto",
-          position: "relative",
-          zIndex: 5000,
+          gap: 6,
+          fontSize: 14,
+          cursor: "pointer",
         }}
       >
         <input
-          type="month"
-          value={month}
-          onChange={(e) => setMonth(e.target.value)}
-          style={{
-            padding: 10,
-            borderRadius: 8,
-            border: "1px solid #ccc",
-            fontSize: 16,
-            height: 42,
-          }}
+          type="checkbox"
+          checked={showFinished}
+          onChange={(e) => setShowFinished(e.target.checked)}
         />
+        終了現場表示
+      </label>
 
-        <div style={{ display: "flex", gap: 8 }}>
-          <button
-            type="button"
-            onClick={() => setViewMode("month")}
-            style={{
-              padding: "8px 14px",
-              background: viewMode === "month" ? "#2563eb" : "#fff",
-              color: viewMode === "month" ? "#fff" : "#000",
-              border: "1px solid #ccc",
-              borderRadius: 6,
-            }}
-          >
-            月間
-          </button>
+      <button
+        type="button"
+        onClick={() => setShowAddModal(true)}
+        style={{
+          border: "1px solid #d1d5db",
+          backgroundColor: "#fff",
+          borderRadius: 8,
+          padding: "8px 12px",
+          fontWeight: 700,
+          cursor: "pointer",
+        }}
+      >
+        ＋ 現場追加
+      </button>
 
-          <button
-            type="button"
-            onClick={() => setViewMode("week")}
-            style={{
-              padding: "8px 14px",
-              background: viewMode === "week" ? "#2563eb" : "#fff",
-              color: viewMode === "week" ? "#fff" : "#000",
-              border: "1px solid #ccc",
-              borderRadius: 6,
-            }}
-          >
-            週間
-          </button>
-        </div>
-
-        {viewMode === "week" && (
-          <div style={{ display: "flex", gap: 8 }}>
-            <button
-              type="button"
-              onClick={() => {
-                const d = new Date(weekStart);
-                d.setDate(d.getDate() - 7);
-                setWeekStart(d);
-              }}
-            >
-              ← 前週
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                const d = new Date(weekStart);
-                d.setDate(d.getDate() + 7);
-                setWeekStart(d);
-              }}
-            >
-              次週 →
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setWeekStart(getWeekStart());
-              }}
-            >
-              今週
-            </button>
-          </div>
-        )}
-
+      {setPublicViewMode && (
         <select
-          value={sortMode}
-          onChange={(e) => setSortMode(e.target.value)}
+          value={publicViewMode}
+          onChange={(e) => setPublicViewMode(e.target.value as "week" | "next3days")}
           style={{
-            width: 160,
-            height: 42,
-            padding: "8px 12px",
-            border: "1px solid #ccc",
+            padding: "8px 10px",
+            border: "1px solid #d1d5db",
             borderRadius: 8,
-            fontSize: 15,
-            fontWeight: 700,
+            fontSize: 14,
             backgroundColor: "#fff",
-            boxSizing: "border-box",
-            flexShrink: 0,
           }}
         >
-          <option value="manual">標準</option>
-          <option value="site">現場順</option>
-          <option value="contractor">元請順</option>
-          <option value="manager">担当者順</option>
-          <option value="construction">工事区分順</option>
-          <option value="shift">昼夜順</option>
+          <option value="week">1週間</option>
+          <option value="next3days">3日間</option>
         </select>
+      )}
 
-        <label
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            fontWeight: 700,
-            whiteSpace: "nowrap",
-          }}
-        >
-          <input
-            type="checkbox"
-            checked={showFinished}
-            onChange={(e) => setShowFinished(e.target.checked)}
-          />
-          終了現場表示
-        </label>
-
+      {onCreatePublicLink && (
         <button
           type="button"
-          onClick={() => {
-            console.log("現場追加クリック");
-            setShowAddModal(true);
-          }}
+          onClick={onCreatePublicLink}
+          disabled={creatingPublicLink}
           style={{
-            position: "relative",
-            zIndex: 5000,
-            padding: "8px 14px",
+            border: "none",
             borderRadius: 8,
-            border: "1px solid #ccc",
-            backgroundColor: "#fff",
-            fontWeight: 800,
-            cursor: "pointer",
+            padding: "8px 12px",
+            fontWeight: 700,
+            cursor: creatingPublicLink ? "default" : "pointer",
+            backgroundColor: creatingPublicLink ? "#9ca3af" : "#111827",
+            color: "#fff",
           }}
         >
-          ＋ 現場追加
+          {creatingPublicLink ? "公開URL発行中..." : "公開URLを発行"}
         </button>
-      </div>
-    </>
+      )}
+    </div>
   );
 }

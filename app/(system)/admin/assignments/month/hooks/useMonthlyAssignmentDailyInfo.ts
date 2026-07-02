@@ -1,3 +1,4 @@
+// app/(system)/admin/assignments/month/hooks/useMonthlyAssignmentDailyInfo.ts
 import { useEffect, useMemo, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 
@@ -12,12 +13,16 @@ type Props = {
   organizationId: string;
 };
 
+const DETAIL_SAVE_DELAY_MS = 1200;
+
 export function useMonthlyAssignmentDailyInfo({
   organizationId,
   dailyInfos,
   setDailyInfos,
 }: Props) {
-  const [editingDetails, setEditingDetails] = useState<Record<string, string>>({});
+  const [editingDetails, setEditingDetails] = useState<Record<string, string>>(
+    {}
+  );
   const [saveTimers, setSaveTimers] = useState<
     Record<string, ReturnType<typeof setTimeout>>
   >({});
@@ -38,24 +43,38 @@ export function useMonthlyAssignmentDailyInfo({
 
   const getDetailValue = (assignmentId: string, workDate: string) => {
     const key = `${assignmentId}_${workDate}`;
-    return editingDetails[key] ?? getDailyInfo(assignmentId, workDate)?.detail ?? "";
+    return (
+      editingDetails[key] ?? getDailyInfo(assignmentId, workDate)?.detail ?? ""
+    );
   };
 
-  useEffect(() => {
-    setEditingDetails((prev) => {
-      const next = { ...prev };
+  const clearSaveTimer = (key: string) => {
+    setSaveTimers((prev) => {
+      const timer = prev[key];
 
-      for (const key of Object.keys(next)) {
-        if (!(key in saveTimers)) {
-          delete next[key];
-        }
+      if (timer) {
+        clearTimeout(timer);
       }
 
+      const next = { ...prev };
+      delete next[key];
       return next;
     });
-  }, [dailyInfos, saveTimers]);
+  };
 
-  const updateDailyInfo = async (
+  const applySavedDailyInfo = (data: DailyInfo) => {
+    setDailyInfos((prev) => {
+      const exists = prev.some((info) => info.id === data.id);
+
+      if (exists) {
+        return prev.map((info) => (info.id === data.id ? data : info));
+      }
+
+      return [...prev, data];
+    });
+  };
+
+  const saveDailyInfo = async (
     assignmentId: string,
     workDate: string,
     field: Field,
@@ -74,39 +93,87 @@ export function useMonthlyAssignmentDailyInfo({
 
     if (error || !data) {
       alert("更新失敗: " + (error?.message || "取得失敗"));
-      return;
+      return false;
     }
 
-    setDailyInfos((prev) => {
-      const exists = prev.some((info) => info.id === data.id);
-
-      if (exists) {
-        return prev.map((info) => (info.id === data.id ? data : info));
-      }
-
-      return [...prev, data];
-    });
+    applySavedDailyInfo(data);
 
     const key = `${assignmentId}_${workDate}`;
 
-    setEditingDetails((prev) => {
-      const next = { ...prev };
-      delete next[key];
-      return next;
-    });
+    if (field === "detail") {
+      setEditingDetails((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+    }
 
-    setSaveTimers((prev) => {
-      const next = { ...prev };
-      delete next[key];
-      return next;
-    });
+    clearSaveTimer(key);
+    return true;
   };
+
+  const updateDailyInfo = async (
+    assignmentId: string,
+    workDate: string,
+    field: Field,
+    value: string
+  ) => {
+    if (field === "detail") {
+      const key = `${assignmentId}_${workDate}`;
+
+      setEditingDetails((prev) => ({
+        ...prev,
+        [key]: value,
+      }));
+
+      setSaveTimers((prev) => {
+        const current = prev[key];
+
+        if (current) {
+          clearTimeout(current);
+        }
+
+        const timer = setTimeout(() => {
+          void saveDailyInfo(assignmentId, workDate, field, value);
+        }, DETAIL_SAVE_DELAY_MS);
+
+        return {
+          ...prev,
+          [key]: timer,
+        };
+      });
+
+      return;
+    }
+
+    await saveDailyInfo(assignmentId, workDate, field, value);
+  };
+
+  const flushDetailSave = async (assignmentId: string, workDate: string) => {
+    const key = `${assignmentId}_${workDate}`;
+    const value = editingDetails[key];
+
+    clearSaveTimer(key);
+
+    if (value === undefined) {
+      return;
+    }
+
+    await saveDailyInfo(assignmentId, workDate, "detail", value);
+  };
+
+  useEffect(() => {
+    return () => {
+      Object.values(saveTimers).forEach((timer) => clearTimeout(timer));
+    };
+  }, [saveTimers]);
 
   return {
     dailyInfoMap,
     getDailyInfo,
     getDetailValue,
     updateDailyInfo,
+    flushDetailSave,
     editingDetails,
     setEditingDetails,
     saveTimers,

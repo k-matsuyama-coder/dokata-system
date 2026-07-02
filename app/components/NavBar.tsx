@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import MyMonthlyScheduleModal from "@/app/components/MyMonthlyScheduleModal";
 import { hasRole } from "@/app/types/auth";
+import { useLanguage } from "@/app/providers/LanguageProvider";
 
 type Notification = {
   id: string;
@@ -25,6 +26,7 @@ export default function NavBar() {
   const [role, setRole] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
+  const { language, setLanguage, t } = useLanguage();
 
   const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [employeeName, setEmployeeName] = useState("");
@@ -274,7 +276,7 @@ if (employee.organization_id) {
     window.location.href = "/login";
   };
 
-  if (pathname.startsWith("/super-admin")) {
+  if (pathname.startsWith("/super-admin") || pathname.startsWith("/public")) {
     return null;
   }
 
@@ -337,6 +339,22 @@ gap: 12,
     gap: 8,
   }}
 >
+
+<select
+  value={language}
+  onChange={(e) => setLanguage(e.target.value as "ja" | "en")}
+  style={{
+    border: "1px solid #ddd",
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    padding: "8px 10px",
+    cursor: "pointer",
+    fontSize: 13,
+  }}
+>
+  <option value="ja">日本語</option>
+  <option value="en">English</option>
+</select>
   <button
     type="button"
     onClick={() => setShowCalendarModal(true)}
@@ -427,7 +445,7 @@ gap: 12,
     >
       {notifications.length === 0 ? (
         <div style={{ color: "#666", fontSize: 13 }}>
-          通知はありません
+          {t("components_navbar.通知はありません")}
         </div>
       ) : (
         notifications.map((notification) => (
@@ -531,7 +549,7 @@ whiteSpace: "nowrap",
 boxSizing: "border-box",
     }}
   >
-    ← SuperAdminへ戻る
+    {t("components_navbar.super_adminへ戻る")}
   </button>
 )}
             <a
@@ -543,7 +561,7 @@ boxSizing: "border-box",
                 fontWeight: pathname === "/home" ? 700 : 500,
               }}
             >
-              ホーム
+              {t("navbar.home")}
             </a>
 
             <a
@@ -555,7 +573,7 @@ boxSizing: "border-box",
                 fontWeight: pathname.startsWith("/reports") ? 700 : 500,
               }}
             >
-              日報
+              {t("navbar.reports")}
             </a>
 
             <a
@@ -567,7 +585,7 @@ boxSizing: "border-box",
 fontWeight: pathname.startsWith("/admin/assignments/view") ? 700 : 500,
   }}
 >
-  番割
+{t("navbar.assignments")}
 </a>
 
             <a
@@ -579,7 +597,7 @@ fontWeight: pathname.startsWith("/admin/assignments/view") ? 700 : 500,
                 fontWeight: pathname.startsWith("/profile") ? 700 : 500,
               }}
             >
-              マイページ
+              {t("navbar.mypage")}
             </a>
 
             <a
@@ -591,7 +609,7 @@ fontWeight: pathname.startsWith("/admin/assignments/view") ? 700 : 500,
     fontWeight: pathname.startsWith("/admin/analytics") ? 700 : 500,
   }}
 >
-  分析
+{t("navbar.analytics")}
 </a>
 
 {hasRole(role ?? "", "admin") && (
@@ -604,7 +622,7 @@ fontWeight: pathname.startsWith("/admin/assignments/view") ? 700 : 500,
       fontWeight: pathname.startsWith("/admin/assignments/month") ? 700 : 500,
     }}
   >
-    番割作成
+    {t("navbar.assignment_create")}
   </a>
 )}
 
@@ -626,7 +644,7 @@ fontWeight:
     : 500,
                 }}
               >
-                管理
+                {t("navbar.admin")}
               </a>
             )}
 
@@ -642,7 +660,7 @@ fontWeight:
                 padding: 0,
               }}
             >
-              ログアウト
+              {t("navbar.logout")}
             </button>
           </div>
           </>

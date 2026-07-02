@@ -1,0 +1,2903 @@
+{
+  "actions_deleteassignment.ログイン情報なし": "No login information",
+  "actions_deleteassignment.会社情報取得失敗": "organization informationLoad failed",
+  "actions_handleaddsite.元請現場名工期開始を入力してください": "contractor・site名・工期開始をPlease enter",
+  "admin_page.2ヶ月工程の確認編集": "2ヶ月工程の確認・編集",
+  "admin_page.2ヶ月工程表": "2ヶ月工程表",
+  "admin_page.シフト管理表": "シフトmanagement表",
+  "admin_page.会社管理": "organizationmanagement",
+  "admin_page.月別の配置を確認編集": "月別の配置を確認・編集",
+  "admin_page.元請管理": "contractormanagement",
+  "admin_page.元請担当者の管理": "contractor・managerのmanagement",
+  "admin_page.作業員のシフト管理": "作業員のシフトmanagement",
+  "admin_page.使用申請返却申請の確認": "使用申請・返却申請の確認",
+  "admin_page.社員の確認追加": "employeeの確認・add",
+  "admin_page.社員一覧": "Employee List",
+  "admin_page.車両の登録削除": "vehicleのRegister・Delete",
+  "admin_page.車両管理": "Vehicle Management",
+  "admin_page.集計分析": "集計・分析",
+  "admin_page.所属会社の管理": "所属organizationのmanagement",
+  "admin_page.日付ごとの日報確認": "日付ごとのdaily report確認",
+  "admin_page.日別日報確認": "日別daily report確認",
+  "admin_page.日報": "Daily Report",
+  "admin_page.日報の確認管理": "daily reportの確認・management",
+  "admin_page.日報管理": "daily reportmanagement",
+  "admin_page.日報送付確認": "Daily Report Submission Status",
+  "admin_page.番割": "Assignments",
+  "admin_page.番割予定と日報提出状況を確認": "assignment予定とdaily report提出状況を確認",
+  "admin_page.物品の使用履歴を確認": "itemの使用履歴を確認",
+  "admin_page.物品の登録管理": "itemのRegister・management",
+  "admin_page.物品管理": "Item Management",
+  "admin_page.物品使用履歴": "item使用履歴",
+  "admin_page.物品申請確認": "item申請確認",
+  "app_layout.番割日報シフト管理システム": "assignment・daily report・シフトmanagementシステム",
+  "change-password_page.パスワードが一致しません": "passwordが一致しません",
+  "change-password_page.パスワードは8文字以上にしてください": "passwordは8文字以上にしてください",
+  "change-password_page.パスワードを入力してください": "passwordをPlease enter",
+  "change-password_page.パスワードを変更しました": "passwordを変更しました",
+  "change-password_page.パスワード変更失敗": "password変更 failed:",
+  "change-password_page.社員情報更新失敗": "employee informationUpdate failed:",
+  "companies_page.会社名": "Company Name",
+  "companies_page.会社名を入力": "organization名を入力",
+  "companies_page.契約会社情報が取得できません": "契約organization informationがLoadできません",
+  "companies_page.削除しますか": "Deleteしますか？",
+  "company_page.会社情報が取得できません": "Could not load organization information",
+  "company_page.取得失敗": "Fetch failed:",
+  "components_addassignmentmodal.元請": "Contractor",
+  "components_addassignmentmodal.現場名": "Site Name",
+  "components_assignmenteditmodal.この現場を削除しますか_配置メンバーや添付ファイルも削除されます": "このsiteをDeleteしますか？ 配置memberや添付fileもDeleteされます。",
+  "components_assignmenttoolbar.月間番割表": "月間assignment表",
+  "components_assignmenttoolbar.現場追加クリック": "siteaddクリック",
+  "components_assignmenttoolbar.週間番割表": "週間assignment表",
+  "components_header.会社名未取得": "organization名未Load",
+  "components_header.代理ログイン解除に失敗しました": "代理ログイン解除に failedしました",
+  "components_header.代理ログイン状態の取得に失敗しました": "代理ログイン状態のLoadに failedしました",
+  "components_memberpanel.selecteddate_selectedshifttype_night_夜_昼": "${selectedDate} / ${selectedShiftType === \"night\" ? \"夜\" : \"昼\"}",
+  "components_memberpanel.全メンバー": "全member",
+  "components_memberpanel.日付未選択": "日付not selected",
+  "components_memberpanel.未配置メンバー": "未配置member",
+  "components_mymonthlyschedulemodal.予定取得失敗": "予定Load failed:",
+  "components_navbar.superadminへ戻れませんでした": "SuperAdminへ戻れませんでした",
+  "components_navbar.vapid公開キーが設定されていません": "VAPID公開キーが設定されていません",
+  "components_navbar.この端末で通知を受け取れるようになりました": "この端末でnotificationを受け取れるようになりました",
+  "components_navbar.この端末はプッシュ通知未対応です": "この端末はプッシュnotification未対応です",
+  "components_navbar.この端末は通知未対応です": "この端末はnotification未対応です",
+  "components_navbar.社員情報を取得できていません": "employee informationをLoadできていません",
+  "components_navbar.端末登録情報を取得できませんでした": "端末Register情報をLoadできませんでした",
+  "components_navbar.通知が許可されませんでした": "notificationが許可されませんでした",
+  "components_navbar.通知更新失敗": "notificationUpdate failed:",
+  "components_navbar.通知端末登録失敗": "notification端末Register failed:",
+  "components_organizationcreateform.会社と初期管理者を作成": "organizationと初期management者を作成",
+  "components_organizationcreateform.管理者_苗字": "management者 苗字",
+  "components_organizationcreateform.管理者_名前": "management者 name",
+  "components_organizationcreateform.管理者メールアドレス": "management者email address",
+  "components_organizationcreateform.作成中": "作成中...",
+  "components_sidebar.super_admin管理": "Super Adminmanagement",
+  "components_sidebar.ダッシュボード": "ダッシュボード",
+  "components_sidebar.契約管理": "契約management",
+  "components_sidebar.全ユーザー": "全ユーザー",
+  "contractor_page.totalcompanies社": "${totalCompanies}社",
+  "contractor_page.totalpeople人": "${totalPeople}人",
+  "contractor_page.totalvehicles回": "${totalVehicles}回",
+  "contractor_page.会社別集計取得失敗": "organization別集計Load failed:",
+  "contractor_page.社員取得失敗": "employeeLoad failed:",
+  "contractor_page.所属会社数": "所属organization数",
+  "contractors_page.この元請を削除しますか": "このcontractorをDeleteしますか？",
+  "contractors_page.元請csv登録完了": "contractorCSVRegister完了",
+  "contractors_page.元請名": "contractor名",
+  "contractors_page.元請名_〇〇建設_土木_工業": "contractor名 〇〇建設 △△土木 □□工業",
+  "contractors_page.元請名を入力してください": "contractor名をPlease enter",
+  "contractors_page.追加失敗": "Add failed:",
+  "contractors_page.登録できる元請がありません": "Registerできるcontractorがありません",
+  "contracts_page.トライアル中": "トライアル中",
+  "contracts_page.会社名で検索": "organization名で検索",
+  "contracts_page.契約期限切れmathabsremainingdays日経過": "契約期限切れ：${Math.abs(remainingDays)}日経過",
+  "contracts_page.契約情報の取得に失敗しました": "契約情報のLoadに failedしました:",
+  "contracts_page.残りremainingdays日": "残り${remainingDays}日",
+  "create_route.authユーザー作成に失敗しました": "Authユーザー作成に failedしました",
+  "create-organization_route.super_adminのみ実行できます": "Super Adminのみ実行できます",
+  "create-organization_route.会社作成失敗": "organization作成 failed",
+  "create-organization_route.会社名管理者名メールアドレスは必須です": "organization名・management者名・email addressは必須です",
+  "create-user_route.不正な権限です": "不正なroleです",
+  "create-user_route.名前とメールアドレスは必須です": "nameとemail addressは必須です",
+  "current-organization_route.ユーザー認証に失敗しました": "ユーザー認証に failedしました",
+  "current-organization_route.対象会社が未選択です": "target organizationがnot selectedです",
+  "current-organization_route.認証トークンがありません": "認証トークンがありません",
+  "daily_page.すべての確認チェックを入れてください": "すべての確認チェックを入れてください",
+  "delete-user_route.auth削除失敗": "AuthDelete failed:",
+  "delete-user_route.employeeidが必要です": "employeeIdが必要です",
+  "delete-user_route.employees削除失敗": "employeesDelete failed:",
+  "delete-user_route.ログインが必要です": "ログインが必要です",
+  "delete-user_route.管理者のみ実行できます": "management者のみ実行できます",
+  "delete-user_route.社員が見つかりません": "employeeが見つかりません",
+  "delete-user_route.認証情報がありません": "認証情報がありません",
+  "edit_page.メンバー更新失敗": "memberUpdate failed:",
+  "edit_page.更新成功": "Updated successfully",
+  "edit_page.日報が見つかりません": "daily reportが見つかりません",
+  "edit_page.日報を更新": "daily reportをUpdate",
+  "employees_page.totaldays日": "${totalDays}日",
+  "employees_page.totaldrivecount回": "${totalDriveCount}回",
+  "employees_page.totalworkers人": "${totalWorkers}人",
+  "employees_page.社員別集計取得失敗": "employee別集計Load failed:",
+  "get-user-auth_route.authuseridが必要です": "authUserIdが必要です",
+  "get-user-auth_route.ユーザー取得失敗": "ユーザーLoad failed",
+  "get-user-auth_route.対象社員が見つかりません": "対象employeeが見つかりません",
+  "history_page.返却確認待ち": "返却確認待ち",
+  "history_page.履歴取得失敗": "履歴Load failed:",
+  "home_page.adminsummarypendingitemrequests件": "${adminSummary.pendingItemRequests}件",
+  "home_page.adminsummaryreturnitemrequests件": "${adminSummary.returnItemRequests}件",
+  "home_page.adminsummarytodayworkercount人": "${adminSummary.todayWorkerCount}人",
+  "home_page.daily_reports取得失敗": "daily_reportsLoad failed:",
+  "home_page.organization取得失敗": "organizationLoad failed",
+  "home_page.report_members取得失敗": "report_membersLoad failed:",
+  "home_page.ユーザー": "ユーザー",
+  "home_page.現在この会社はご利用いただけません管理者へお問い合わせください": "現在このorganizationはご利用いただけません。management者へお問い合わせください。",
+  "home_page.今月予定人工": "今月予定人工",
+  "home_page.今日の稼働人数": "todayの稼働人数",
+  "home_page.今日の日報": "todayのdaily report",
+  "home_page.社員情報取得失敗": "employee informationLoad failed:",
+  "home_page.進捗人工終着人工": "進捗人工/終着人工",
+  "home_page.未登録": "未Register",
+  "home_page.免許情報取得失敗": "license情報Load failed:",
+  "hooks_useassignmentactions.アップロードに失敗しました": "uploadに failedしました",
+  "hooks_useassignmentactions.この添付ファイルを削除しますか": "この添付fileをDeleteしますか？",
+  "hooks_useassignmentactions.ファイル削除に失敗しました": "fileDeleteに failedしました",
+  "hooks_useassignmentactions.現場追加に失敗しました": "siteaddに failedしました",
+  "hooks_useassignmentactions.更新に失敗しました": "Updateに failedしました",
+  "hooks_useassignmentactions.削除に失敗しました": "Deleteに failedしました",
+  "hooks_useassignmentactions.並び替え保存に失敗しました": "sort orderSaveに failedしました",
+  "hooks_usedailyinfo.現場idが取得できません": "siteIDがLoadできません",
+  "hooks_usedailyinfo.更新失敗": "Update failed",
+  "hooks_usemonthlyassignmentactions.アップロード失敗": "upload failed:",
+  "hooks_usemonthlyassignmentactions.このファイルを削除しますか": "このfileをDeleteしますか？",
+  "hooks_usemonthlyassignmentactions.この現場を削除しますか": "このsiteをDeleteしますか？",
+  "hooks_usemonthlyassignmentactions.ファイル削除失敗": "fileDelete failed:",
+  "hooks_usemonthlyassignmentactions.現場は追加されましたがファイルアップロードに失敗しました": "siteはaddされましたが、fileuploadに failedしました:",
+  "hooks_usemonthlyassignmentactions.現場更新失敗": "siteUpdate failed:",
+  "hooks_usemonthlyassignmentactions.現場削除失敗": "siteDelete failed:",
+  "hooks_usemonthlyassignmentactions.現場追加失敗": "siteadd failed:",
+  "hooks_usemonthlyassignmentadmin.管理者のみ閲覧できます": "Only administrators can view this page",
+  "hooks_usemonthlyassignmentdailyinfo.更新失敗": "Update failed:",
+  "hooks_usemonthlyassignmentdailyinfo.取得失敗": "Fetch failed",
+  "hooks_usemonthlyassignmentmembers.メンバー追加失敗": "memberadd failed:",
+  "hooks_usemonthlyassignmentmembers.移動失敗": "移動 failed:",
+  "hooks_usemonthlyassignmentmembers.削除失敗": "Delete failed:",
+  "hooks_usemonthlyassignmentmembers.職長変更失敗": "foreman変更 failed:",
+  "hooks_usemonthlyassignmentrows.並び替え保存失敗": "sort orderSave failed:",
+  "hooks_usepage.データ取得に失敗しました": "データLoadに failedしました",
+  "hooks_usepage.会社情報の取得に失敗しました": "Failed to load organization information",
+  "hooks_usepage.対象会社が未選択です会社を選択してから開いてください": "target organizationがnot selectedです。organizationを選択してから開いてください。",
+  "id_page.この会社を利用停止にしますか": "このorganizationを利用停止にしますか？",
+  "id_page.メールアドレス": "Email Address",
+  "id_page.メール未設定": "メール未設定",
+  "id_page.ログイン情報更新失敗": "ログイン情報Update failed",
+  "id_page.会社取得失敗": "organizationLoad failed:",
+  "id_page.会社情報の取得に失敗しました": "Failed to load organization information:",
+  "id_page.会社名を入力してください": "organization名をPlease enter",
+  "id_page.社員取得失敗": "employeeLoad failed",
+  "id_page.社員情報の取得に失敗しました": "employee informationのLoadに failedしました:",
+  "id_page.社員情報を更新しました": "employee informationをUpdateしました",
+  "id_page.代理ログイン開始に失敗しました": "代理ログイン開始に failedしました",
+  "id_page.変更する場合のみ入力": "変更する場合のみ入力",
+  "id_page.保存": "Save",
+  "id_page.保存しました": "Saved",
+  "id_page.保存に失敗しました": "Saveに failedしました:",
+  "id_page.保存中": "Saving...",
+  "id_page.名前未設定": "name未設定",
+  "id_page.利用停止にしました": "利用停止にしました",
+  "id_page.利用停止に失敗しました": "利用停止に failedしました:",
+  "items_page.itemitem_nameを削除しますか": "「${item.item_name}」をDeleteしますか？",
+  "items_page.リース": "リース",
+  "items_page.管理者": "management者",
+  "items_page.管理場所": "management場所",
+  "items_page.型番品番": "型番/品番",
+  "items_page.車両備品": "vehicle備品",
+  "items_page.種別と品名を入力してください": "種別と品名をPlease enter",
+  "items_page.物品削除失敗": "itemDelete failed:",
+  "items_page.物品登録エラー": "itemRegisterエラー:",
+  "items_page.物品登録失敗": "itemRegister failed:",
+  "lib_reportfields.高速料金下請け": "高速料金（下請け）",
+  "lib_reportfields.高速料金二次受け": "高速料金（二次受け）",
+  "lib_reportfields.高速料金本体": "高速料金（本体）",
+  "lib_reportfields.車両運転手": "vehicle運転手",
+  "lib_reportfields.車両台数": "vehicle台数",
+  "lib_reportfields.駐車場料金下請け": "駐車場料金（下請け）",
+  "lib_reportfields.駐車場料金二次受け": "駐車場料金（二次受け）",
+  "lib_reportfields.駐車場料金本体": "駐車場料金（本体）",
+  "lib_reportfields.燃料代ガソリン": "燃料代（ガソリン）",
+  "lib_reportfields.燃料代軽油": "燃料代（軽油）",
+  "license_page.ログイン情報が取得できません": "Could not get login information",
+  "license_page.社員情報がありません": "employee informationがありません",
+  "license_page.代理ログイン中は免許情報を登録できません": "代理ログイン中はlicense情報をRegisterできません",
+  "license_page.保存失敗": "Save failed:",
+  "license_page.免許名取得日有効期限を入力してください": "license名・Load日・有効期限をPlease enter",
+  "link-user-auth_route.employeeidとemailが必要です": "employeeIdとemailが必要です",
+  "link-user-auth_route.このメールアドレスのログインアカウントが見つかりません": "このemail addressのログインアカウントが見つかりません",
+  "login_page.ユーザー情報が取得できません": "ユーザー情報がLoadできません",
+  "login_page.ログイン失敗": "Login failed:",
+  "login_page.社員情報がありません管理者に確認してください": "employee informationがありません。management者にPlease check。",
+  "monthly_page.現場": "Site",
+  "my-items_page.employeenameさんが物品の返却申請をしました": "${employeeName}さんがitemの返却申請をしました",
+  "my-items_page.写真アップロード失敗": "写真upload failed:",
+  "my-items_page.貸出状況取得失敗": "貸出状況Load failed:",
+  "my-items_page.物品返却push送信結果": "item返却Push送信結果",
+  "my-items_page.物品返却申請": "item返却申請",
+  "my-items_page.返却写真を選択してください": "返却写真をPlease select",
+  "my-items_page.返却申請を送信しました": "返却申請を送信しました",
+  "my-items_page.返却申請失敗": "返却申請 failed:",
+  "new_page.id取得失敗": "idLoad failed",
+  "new_page.この日の日報は既に登録されています": "この日のdaily reportは既にRegisterされています",
+  "new_page.この日報は既に登録されています": "このdaily reportは既にRegisterされています",
+  "new_page.メンバー保存失敗": "memberSave failed:",
+  "new_page.ログイン情報がありません再ログインしてください": "ログイン情報がありません。再ログインしてください",
+  "new_page.社員作成失敗": "employee作成 failed",
+  "new_page.社員作成成功": "employee作成 succeeded",
+  "new_page.社員名の取得後にもう一度押してください": "employee名のLoad後にもう一度押してください",
+  "new_page.前回の日報が見つかりません": "前回のdaily reportが見つかりません",
+  "new_page.前回の日報をコピーしました": "前回のdaily reportをコピーしました",
+  "new_page.日報を登録しました": "daily reportをRegisterしました",
+  "new_page.日報を保存": "daily reportをSave",
+  "new_page.日報保存失敗": "daily reportSave failed:",
+  "new_page.名前とメールアドレスを入力してください": "nameとemail addressをPlease enter",
+  "organizations_page.会社と初期管理者を作成しました": "organizationと初期management者を作成しました",
+  "organizations_page.会社名管理者名メールアドレスを入力してください": "organization名・management者名・email addressをPlease enter",
+  "password_page.すべて入力してください": "すべてPlease enter",
+  "password_page.パスワードを変更する": "passwordを変更する",
+  "password_page.確認用パスワードが一致しません": "確認用passwordが一致しません",
+  "password_page.変更中": "変更中...",
+  "personal_page.summarydaycount回": "${summary.dayCount}回",
+  "personal_page.summarydrivecount回": "${summary.driveCount}回",
+  "personal_page.summarynightcount回": "${summary.nightCount}回",
+  "personal_page.summaryworkdays日": "${summary.workDays}日",
+  "personal_page.元請別人工": "contractor別人工",
+  "personal_page.現場別人工": "site別人工",
+  "personal_page.個人集計取得失敗": "個人集計Load failed:",
+  "profile_page.資格証表": "certification証表",
+  "profile_page.資格証裏": "certification証裏",
+  "profile_page.資格名で検索": "Search by certification name",
+  "profile_page.資格名未登録": "certification名未Register",
+  "profile_page.免許証表": "license証表",
+  "profile_page.免許証裏": "license証裏",
+  "report-status_page.date_rowassignmentsite_name_の日報を確認してください": "${date} ${row.assignment.site_name} のdaily reportをPlease check",
+  "report-status_page.date_rowassignmentsite_name_の日報を提出してください": "${date} ${row.assignment.site_name} のdaily reportを提出してください",
+  "report-status_page.foremanemployee_name_さんに通知しました_push送信数_p": "${foreman.employee_name} さんにnotificationしました / Push送信数: ${pushResult.sentCount ?? 0}",
+  "report-status_page.sentcount件の通知を送信しました": "${sentCount}件のnotificationを送信しました",
+  "report-status_page.この日のこの現場に職長が設定されていません": "No foreman is assigned for this site on this date",
+  "report-status_page.プッシュ通知失敗": "Push notification failed:",
+  "report-status_page.送信失敗": "Send failed",
+  "report-status_page.通知保存失敗": "Failed to save notification:",
+  "report-status_page.日報確認依頼": "Daily Report Reminder",
+  "report-status_page.日報取得失敗": "Failed to load daily reports:",
+  "report-status_page.番割メンバー取得失敗": "Failed to load assignment members:",
+  "reports_page.csv登録完了": "CSVRegister完了",
+  "reports_page.メンバー": "Members",
+  "reports_page.高速下請": "高速(下請)",
+  "reports_page.高速協力": "高速(協力)",
+  "reports_page.高速元請": "高速(contractor)",
+  "reports_page.車両": "Vehicle",
+  "reports_page.駐車下請": "駐車(下請)",
+  "reports_page.駐車協力": "駐車(協力)",
+  "reports_page.駐車元請": "駐車(contractor)",
+  "reports_page.登録失敗": "Registration failed:",
+  "reports_reportbasicsection.現場を選択してください": "siteをPlease select",
+  "reports_reportbasicsection.担当_smanager_name": "/ 担当: ${s.manager_name}",
+  "reports_reportdriversection.運転手名を入力": "運転手名を入力",
+  "reports_reportheavyequipmentsection.op名を入力": "OP名を入力",
+  "reports_reportheavyequipmentsection.グレーダー": "グレーダー",
+  "reports_reportmembersection.メンバー名を入力": "member名を入力",
+  "reports_reportnotesection.送信中": "Sending...",
+  "reports_usereportvalidation.メンバーを追加してください": "memberをaddしてください",
+  "reports_usereportvalidation.開始時間と終了時間が同じです": "開始時間と終了時間が同じです",
+  "reports_usereportvalidation.開始時間を選択してください": "開始時間をPlease select",
+  "reports_usereportvalidation.元請を入力してください": "contractorをPlease enter",
+  "reports_usereportvalidation.現場名を入力してください": "site名をPlease enter",
+  "reports_usereportvalidation.作業内容を入力してください": "作業内容をPlease enter",
+  "reports_usereportvalidation.終了時間を選択してください": "終了時間をPlease select",
+  "reports_usereportvalidation.昼勤務になっていますが時間が夜勤帯に見えますこのまま保存しますか": "昼勤務になっていますが、時間が夜勤帯に見えます。このままSaveしますか？",
+  "reports_usereportvalidation.番割メンバーを確認してください": "assignmentmemberをPlease check",
+  "reports_usereportvalidation.夜勤務になっていますが時間が昼勤帯に見えますこのまま保存しますか": "夜勤務になっていますが、時間が昼勤帯に見えます。このままSaveしますか？",
+  "request_page.employeenameさんがselecteditemitem_name_物品の": "${employeeName}さんが「${selectedItem?.item_name ?? \"item\"}」の使用申請をしました",
+  "request_page.使用申請しました": "使用申請しました",
+  "request_page.日付を入力してください": "日付をPlease enter",
+  "request_page.物品": "item",
+  "request_page.物品push送信結果": "itemPush送信結果",
+  "request_page.物品を選択してください": "itemをPlease select",
+  "request_page.物品使用申請": "item使用申請",
+  "requests_page.使用申請中": "使用申請中",
+  "requests_page.承認しました": "承認しました",
+  "requests_page.承認失敗": "承認 failed:",
+  "requests_page.申請取得失敗": "申請Load failed:",
+  "requests_page.物品状態更新失敗": "item状態Update failed:",
+  "requests_page.返却確認しました": "返却確認しました",
+  "requests_page.返却確認失敗": "返却確認 failed:",
+  "return_page.貸出中物品の取得失敗": "貸出中itemのLoad failed:",
+  "return_page.返却通知処理開始": "返却notification処理開始",
+  "return_page.履歴保存結果": "履歴Save結果",
+  "select-mode_page.ログイン情報がありません": "No login information",
+  "select-mode_page.会社": "organization",
+  "select-mode_page.会社モードへの切り替えに失敗しました": "organizationモードへの切り替えに failedしました",
+  "select-mode_page.会社情報がありません": "organization informationがありません",
+  "send-push_route.push送信失敗": "push送信 failed",
+  "send-push_route.送信できる端末がありません": "送信できる端末がありません",
+  "send-push_route.端末未登録": "No registered device",
+  "send-push_route.必要な情報が不足しています": "Required information is missing",
+  "shift-management_page.この休み希望を削除しますか": "この休み希望をDeleteしますか？",
+  "shift-management_page.この日はすでに休み希望を出しています": "この日はすでに休み希望を出しています",
+  "shift-management_page.シフト取得失敗": "シフトLoad failed:",
+  "shift-management_page.すでに休み希望があります": "すでに休み希望があります",
+  "shift-management_page.ダブルタップで削除": "ダブルタップでDelete",
+  "shift-management_page.メモ_任意": "メモ 任意",
+  "shift-management_page.一括削除失敗": "一括Delete failed:",
+  "shift-management_page.一括登録失敗": "一括Register failed:",
+  "shift-management_page.管理者表示": "management者表示",
+  "shift-management_page.自分の休み希望": "自分の休み希望",
+  "shift-management_page.社員情報を取得できませんでした": "employee informationをLoadできませんでした",
+  "shift-management_page.日付を選択してください": "日付をPlease select",
+  "start_route.organizationidがありません": "organizationIdがありません",
+  "start_route.super_admin権限がありません": "Super Adminroleがありません",
+  "start_route.会社情報が見つかりません": "organization informationが見つかりません",
+  "summary_page.集計取得失敗": "集計Load failed:",
+  "super-admin_page.activecount社": "${activeCount}社",
+  "super-admin_page.cancelledcount社": "${cancelledCount}社",
+  "super-admin_page.suspendedcount社": "${suspendedCount}社",
+  "super-admin_page.totalcount社": "${totalCount}社",
+  "super-admin_page.trialcount社": "${trialCount}社",
+  "super-admin_page.トライアル": "トライアル",
+  "super-admin_page.契約会社数": "契約organization数",
+  "super-admin-users_page.super_adminを作成": "Super Adminを作成",
+  "super-admin-users_page.super_adminを作成しました": "Super Adminを作成しました",
+  "super-admin-users_page.super_admin一覧取得に失敗しました": "Super Admin一覧Loadに failedしました",
+  "super-admin-users_page.super_admin作成に失敗しました": "Super Admin作成に failedしました",
+  "two-month_api.id取得失敗": "IDLoad failed",
+  "two-month_api.ストレージ削除失敗": "ストレージDelete failed:",
+  "two-month_api.ファイル一覧取得失敗": "file一覧Load failed:",
+  "two-month_api.ファイル取得失敗": "fileLoad failed:",
+  "two-month_api.ファイル登録失敗": "fileRegister failed:",
+  "two-month_api.メンバー削除失敗": "memberDelete failed:",
+  "two-month_api.メンバー取得失敗": "memberLoad failed:",
+  "two-month_api.元請取得失敗": "contractorLoad failed:",
+  "two-month_api.現場取得失敗": "siteLoad failed:",
+  "two-month_api.工程表削除失敗": "工程表Delete failed:",
+  "two-month_api.工程表取得失敗": "工程表Load failed:",
+  "two-month_api.担当者取得失敗": "managerLoad failed:",
+  "update-user-auth_route.メールアドレスが必要です": "email addressが必要です",
+  "update-user-auth_route.ログインアカウント作成失敗": "ログインアカウント作成 failed",
+  "update-user-auth_route.新規ログインアカウント作成にはパスワードが必要です": "新規ログインアカウント作成にはpasswordが必要です",
+  "upload-sites_route.csvデータがありません": "CSVデータがありません",
+  "upload-sites_route.元請登録失敗": "contractorRegister failed:",
+  "upload-sites_route.現場登録失敗": "siteRegister failed:",
+  "users_page.employeename_を完全削除しますか_ログインアカウントも削除されます": "${employee.name} を完全Deleteしますか？ ログインアカウントもDeleteされます。",
+  "users_page.ユーザー取得失敗": "ユーザーLoad failed:",
+  "users_page.会社idがありません": "organizationIDがありません",
+  "users_page.完全削除しました": "完全Deleteしました",
+  "users_page.削除失敗": "Delete failed",
+  "users_page.代理ログインに失敗しました": "代理ログインに failedしました",
+  "users_page.名前で検索": "nameで検索",
+  "users_page.名前会社権限で検索": "name・organization・roleで検索",
+  "vehicles_page.この車両を削除しますか": "このvehicleをDeleteしますか？",
+  "vehicles_page.車両削除失敗": "vehicleDelete failed:",
+  "vehicles_page.車両取得失敗": "vehicleLoad failed:",
+  "vehicles_page.車両追加失敗": "vehicleadd failed:",
+  "vehicles_page.車両名_例3tダンプ": "vehicle名 例：3tダンプ",
+  "vehicles_page.車両名を入力してください": "vehicle名をPlease enter",
+  "vehicles_page.特殊車両": "特殊vehicle",
+  "view_page.今週": "This week",
+  "view_page.今日": "Today",
+  "view_page.前週": "Previous week",
+  "view_page.前日": "Previous day",
+  "view_page.日別情報取得失敗": "日別情報Load failed:",
+  "view_page.番割_datejpg": "assignment_${date}.jpg",
+  "view_page.翌週": "Next week",
+  "view_page.翌日": "Next day",
+  "navbar.home": "Home",
+"navbar.reports": "Reports",
+"navbar.assignments": "Assignments",
+"navbar.mypage": "My Page",
+"navbar.analytics": "Analytics",
+"navbar.assignment_create": "Create Assignments",
+"navbar.admin": "Admin",
+"navbar.logout": "Logout",
+"components_navbar.super_adminへ戻る": "Back to Super Admin",
+"components_navbar.通知はありません": "No notifications",
+  "_meta": {
+    "actions_deleteassignment.ログイン情報なし": {
+      "source": "ログイン情報なし",
+      "files": [
+        "app/(system)/admin/assignments/month/actions/deleteAssignment.ts",
+        "app/(system)/admin/assignments/month/actions/deleteAssignmentFile.ts",
+        "app/(system)/admin/assignments/month/actions/handleAddSite.ts",
+        "app/(system)/admin/assignments/month/actions/updateAssignment.ts",
+        "app/(system)/admin/assignments/month/actions/uploadFiles.ts",
+        "app/(system)/admin/assignments/month/api.ts"
+      ]
+    },
+    "actions_deleteassignment.会社情報取得失敗": {
+      "source": "会社情報取得失敗",
+      "files": [
+        "app/(system)/admin/assignments/month/actions/deleteAssignment.ts",
+        "app/(system)/admin/assignments/month/actions/deleteAssignmentFile.ts",
+        "app/(system)/admin/assignments/month/actions/handleAddSite.ts",
+        "app/(system)/admin/assignments/month/actions/updateAssignment.ts",
+        "app/(system)/admin/assignments/month/actions/uploadFiles.ts",
+        "app/(system)/admin/assignments/month/api.ts"
+      ]
+    },
+    "actions_handleaddsite.元請現場名工期開始を入力してください": {
+      "source": "元請・現場名・工期開始を入力してください",
+      "files": [
+        "app/(system)/admin/assignments/month/actions/handleAddSite.ts",
+        "app/(system)/admin/assignments/two-month/hooks/useAssignmentActions.ts"
+      ]
+    },
+    "admin_page.2ヶ月工程の確認編集": {
+      "source": "2ヶ月工程の確認・編集",
+      "files": [
+        "app/(system)/admin/page.tsx"
+      ]
+    },
+    "admin_page.2ヶ月工程表": {
+      "source": "2ヶ月工程表",
+      "files": [
+        "app/(system)/admin/page.tsx"
+      ]
+    },
+    "admin_page.シフト管理表": {
+      "source": "シフト管理表",
+      "files": [
+        "app/(system)/admin/page.tsx"
+      ]
+    },
+    "admin_page.会社管理": {
+      "source": "会社管理",
+      "files": [
+        "app/(system)/admin/page.tsx",
+        "app/super-admin/components/Sidebar.tsx",
+        "app/super-admin/organizations/page.tsx"
+      ]
+    },
+    "admin_page.月別の配置を確認編集": {
+      "source": "月別の配置を確認・編集",
+      "files": [
+        "app/(system)/admin/page.tsx"
+      ]
+    },
+    "admin_page.元請管理": {
+      "source": "元請管理",
+      "files": [
+        "app/(system)/admin/page.tsx"
+      ]
+    },
+    "admin_page.元請担当者の管理": {
+      "source": "元請・担当者の管理",
+      "files": [
+        "app/(system)/admin/page.tsx"
+      ]
+    },
+    "admin_page.作業員のシフト管理": {
+      "source": "作業員のシフト管理",
+      "files": [
+        "app/(system)/admin/page.tsx"
+      ]
+    },
+    "admin_page.使用申請返却申請の確認": {
+      "source": "使用申請・返却申請の確認",
+      "files": [
+        "app/(system)/admin/page.tsx"
+      ]
+    },
+    "admin_page.社員の確認追加": {
+      "source": "社員の確認・追加",
+      "files": [
+        "app/(system)/admin/page.tsx"
+      ]
+    },
+    "admin_page.社員一覧": {
+      "source": "社員一覧",
+      "files": [
+        "app/(system)/admin/page.tsx"
+      ]
+    },
+    "admin_page.車両の登録削除": {
+      "source": "車両の登録・削除",
+      "files": [
+        "app/(system)/admin/page.tsx"
+      ]
+    },
+    "admin_page.車両管理": {
+      "source": "車両管理",
+      "files": [
+        "app/(system)/admin/page.tsx"
+      ]
+    },
+    "admin_page.集計分析": {
+      "source": "集計・分析",
+      "files": [
+        "app/(system)/admin/page.tsx"
+      ]
+    },
+    "admin_page.所属会社の管理": {
+      "source": "所属会社の管理",
+      "files": [
+        "app/(system)/admin/page.tsx"
+      ]
+    },
+    "admin_page.日付ごとの日報確認": {
+      "source": "日付ごとの日報確認",
+      "files": [
+        "app/(system)/admin/page.tsx"
+      ]
+    },
+    "admin_page.日別日報確認": {
+      "source": "日別日報確認",
+      "files": [
+        "app/(system)/admin/page.tsx"
+      ]
+    },
+    "admin_page.日報": {
+      "source": "日報",
+      "files": [
+        "app/(system)/admin/page.tsx"
+      ]
+    },
+    "admin_page.日報の確認管理": {
+      "source": "日報の確認・管理",
+      "files": [
+        "app/(system)/admin/page.tsx"
+      ]
+    },
+    "admin_page.日報管理": {
+      "source": "日報管理",
+      "files": [
+        "app/(system)/admin/page.tsx"
+      ]
+    },
+    "admin_page.日報送付確認": {
+      "source": "日報送付確認",
+      "files": [
+        "app/(system)/admin/page.tsx"
+      ]
+    },
+    "admin_page.番割": {
+      "source": "番割",
+      "files": [
+        "app/(system)/admin/page.tsx"
+      ]
+    },
+    "admin_page.番割予定と日報提出状況を確認": {
+      "source": "番割予定と日報提出状況を確認",
+      "files": [
+        "app/(system)/admin/page.tsx"
+      ]
+    },
+    "admin_page.物品の使用履歴を確認": {
+      "source": "物品の使用履歴を確認",
+      "files": [
+        "app/(system)/admin/page.tsx"
+      ]
+    },
+    "admin_page.物品の登録管理": {
+      "source": "物品の登録・管理",
+      "files": [
+        "app/(system)/admin/page.tsx"
+      ]
+    },
+    "admin_page.物品管理": {
+      "source": "物品管理",
+      "files": [
+        "app/(system)/admin/page.tsx"
+      ]
+    },
+    "admin_page.物品使用履歴": {
+      "source": "物品使用履歴",
+      "files": [
+        "app/(system)/admin/page.tsx"
+      ]
+    },
+    "admin_page.物品申請確認": {
+      "source": "物品申請確認",
+      "files": [
+        "app/(system)/admin/page.tsx"
+      ]
+    },
+    "app_layout.番割日報シフト管理システム": {
+      "source": "番割・日報・シフト管理システム",
+      "files": [
+        "app/layout.tsx"
+      ]
+    },
+    "change-password_page.パスワードが一致しません": {
+      "source": "パスワードが一致しません",
+      "files": [
+        "app/(system)/change-password/page.tsx"
+      ]
+    },
+    "change-password_page.パスワードは8文字以上にしてください": {
+      "source": "パスワードは8文字以上にしてください",
+      "files": [
+        "app/(system)/change-password/page.tsx",
+        "app/(system)/profile/password/page.tsx"
+      ]
+    },
+    "change-password_page.パスワードを入力してください": {
+      "source": "パスワードを入力してください",
+      "files": [
+        "app/(system)/change-password/page.tsx"
+      ]
+    },
+    "change-password_page.パスワードを変更しました": {
+      "source": "パスワードを変更しました",
+      "files": [
+        "app/(system)/change-password/page.tsx",
+        "app/(system)/profile/password/page.tsx"
+      ]
+    },
+    "change-password_page.パスワード変更失敗": {
+      "source": "パスワード変更失敗:",
+      "files": [
+        "app/(system)/change-password/page.tsx",
+        "app/(system)/profile/password/page.tsx"
+      ]
+    },
+    "change-password_page.社員情報更新失敗": {
+      "source": "社員情報更新失敗:",
+      "files": [
+        "app/(system)/change-password/page.tsx"
+      ]
+    },
+    "companies_page.会社名": {
+      "source": "会社名",
+      "files": [
+        "app/(system)/admin/companies/page.tsx",
+        "app/super-admin/organizations/components/OrganizationCreateForm.tsx"
+      ]
+    },
+    "companies_page.会社名を入力": {
+      "source": "会社名を入力",
+      "files": [
+        "app/(system)/admin/companies/page.tsx"
+      ]
+    },
+    "companies_page.契約会社情報が取得できません": {
+      "source": "契約会社情報が取得できません",
+      "files": [
+        "app/(system)/admin/companies/page.tsx"
+      ]
+    },
+    "companies_page.削除しますか": {
+      "source": "削除しますか？",
+      "files": [
+        "app/(system)/admin/companies/page.tsx"
+      ]
+    },
+    "company_page.会社情報が取得できません": {
+      "source": "会社情報が取得できません",
+      "files": [
+        "app/(system)/admin/analytics/company/page.tsx",
+        "app/(system)/admin/analytics/contractor/page.tsx",
+        "app/(system)/admin/analytics/employees/page.tsx",
+        "app/(system)/admin/analytics/monthly/page.tsx",
+        "app/(system)/admin/analytics/personal/page.tsx",
+        "app/(system)/admin/assignments/month/page.tsx",
+        "app/(system)/admin/assignments/two-month/api.ts",
+        "app/(system)/admin/assignments/two-month/hooks/useAssignmentActions.ts",
+        "app/(system)/admin/assignments/two-month/hooks/useDailyInfo.ts",
+        "app/(system)/admin/assignments/two-month/hooks/usePage.ts",
+        "app/(system)/admin/assignments/view/page.tsx",
+        "app/(system)/admin/contractors/page.tsx",
+        "app/(system)/admin/items/history/page.tsx",
+        "app/(system)/admin/items/my-items/page.tsx",
+        "app/(system)/admin/items/page.tsx",
+        "app/(system)/admin/items/request/page.tsx",
+        "app/(system)/admin/items/requests/page.tsx",
+        "app/(system)/admin/items/return/page.tsx",
+        "app/(system)/admin/report-status/page.tsx",
+        "app/(system)/admin/reports/daily/page.tsx",
+        "app/(system)/admin/reports/page.tsx",
+        "app/(system)/admin/shift-management/page.tsx",
+        "app/(system)/admin/users/[id]/page.tsx",
+        "app/(system)/admin/users/new/page.tsx",
+        "app/(system)/admin/users/page.tsx",
+        "app/(system)/admin/vehicles/page.tsx",
+        "app/(system)/home/page.tsx",
+        "app/(system)/profile/license/page.tsx",
+        "app/(system)/profile/page.tsx",
+        "app/(system)/reports/[id]/edit/page.tsx",
+        "app/(system)/reports/[id]/page.tsx",
+        "app/(system)/reports/new/page.tsx",
+        "app/(system)/reports/page.tsx",
+        "app/api/admin/create-user/route.ts",
+        "app/api/admin/delete-user/route.ts",
+        "app/api/admin/get-user-auth/route.ts",
+        "app/api/admin/link-user-auth/route.ts",
+        "app/api/admin/update-user-auth/route.ts",
+        "app/api/admin/upload-sites/route.ts",
+        "app/components/MyMonthlyScheduleModal.tsx",
+        "app/components/NavBar.tsx",
+        "app/hooks/reports/useReportMasterData.ts"
+      ]
+    },
+    "company_page.取得失敗": {
+      "source": "取得失敗:",
+      "files": [
+        "app/(system)/admin/analytics/company/page.tsx",
+        "app/(system)/admin/analytics/monthly/page.tsx",
+        "app/(system)/reports/page.tsx"
+      ]
+    },
+    "components_addassignmentmodal.元請": {
+      "source": "元請",
+      "files": [
+        "app/(system)/admin/assignments/month/components/AddAssignmentModal.tsx",
+        "app/(system)/admin/assignments/month/components/AssignmentEditModal.tsx",
+        "app/(system)/admin/assignments/two-month/components/AddAssignmentModal.tsx",
+        "app/(system)/admin/assignments/two-month/components/EditAssignmentModal.tsx"
+      ]
+    },
+    "components_addassignmentmodal.現場名": {
+      "source": "現場名",
+      "files": [
+        "app/(system)/admin/assignments/month/components/AddAssignmentModal.tsx",
+        "app/(system)/admin/assignments/month/components/AssignmentEditModal.tsx",
+        "app/(system)/admin/assignments/two-month/components/AddAssignmentModal.tsx",
+        "app/(system)/admin/assignments/two-month/components/EditAssignmentModal.tsx",
+        "lib/reportFields.ts"
+      ]
+    },
+    "components_assignmenteditmodal.この現場を削除しますか_配置メンバーや添付ファイルも削除されます": {
+      "source": "この現場を削除しますか？ 配置メンバーや添付ファイルも削除されます。",
+      "files": [
+        "app/(system)/admin/assignments/month/components/AssignmentEditModal.tsx",
+        "app/(system)/admin/assignments/two-month/components/EditAssignmentModal.tsx"
+      ]
+    },
+    "components_assignmenttoolbar.月間番割表": {
+      "source": "月間番割表",
+      "files": [
+        "app/(system)/admin/assignments/month/components/AssignmentToolbar.tsx"
+      ]
+    },
+    "components_assignmenttoolbar.現場追加クリック": {
+      "source": "現場追加クリック",
+      "files": [
+        "app/(system)/admin/assignments/month/components/AssignmentToolbar.tsx"
+      ]
+    },
+    "components_assignmenttoolbar.週間番割表": {
+      "source": "週間番割表",
+      "files": [
+        "app/(system)/admin/assignments/month/components/AssignmentToolbar.tsx"
+      ]
+    },
+    "components_header.会社名未取得": {
+      "source": "会社名未取得",
+      "files": [
+        "app/super-admin/components/Header.tsx"
+      ]
+    },
+    "components_header.代理ログイン解除に失敗しました": {
+      "source": "代理ログイン解除に失敗しました",
+      "files": [
+        "app/super-admin/components/Header.tsx"
+      ]
+    },
+    "components_header.代理ログイン状態の取得に失敗しました": {
+      "source": "代理ログイン状態の取得に失敗しました",
+      "files": [
+        "app/super-admin/components/Header.tsx"
+      ]
+    },
+    "components_memberpanel.selecteddate_selectedshifttype_night_夜_昼": {
+      "source": "${selectedDate} / ${selectedShiftType === \"night\" ? \"夜\" : \"昼\"}",
+      "files": [
+        "app/(system)/admin/assignments/month/components/MemberPanel.tsx"
+      ]
+    },
+    "components_memberpanel.全メンバー": {
+      "source": "全メンバー",
+      "files": [
+        "app/(system)/admin/assignments/month/components/MemberPanel.tsx",
+        "app/(system)/admin/assignments/month/components/MobileMemberModal.tsx"
+      ]
+    },
+    "components_memberpanel.日付未選択": {
+      "source": "日付未選択",
+      "files": [
+        "app/(system)/admin/assignments/month/components/MemberPanel.tsx"
+      ]
+    },
+    "components_memberpanel.未配置メンバー": {
+      "source": "未配置メンバー",
+      "files": [
+        "app/(system)/admin/assignments/month/components/MemberPanel.tsx",
+        "app/(system)/admin/assignments/month/components/MobileMemberModal.tsx"
+      ]
+    },
+    "components_mymonthlyschedulemodal.予定取得失敗": {
+      "source": "予定取得失敗:",
+      "files": [
+        "app/components/MyMonthlyScheduleModal.tsx"
+      ]
+    },
+    "components_navbar.superadminへ戻れませんでした": {
+      "source": "SuperAdminへ戻れませんでした",
+      "files": [
+        "app/components/NavBar.tsx"
+      ]
+    },
+    "components_navbar.vapid公開キーが設定されていません": {
+      "source": "VAPID公開キーが設定されていません",
+      "files": [
+        "app/components/NavBar.tsx"
+      ]
+    },
+    "components_navbar.この端末で通知を受け取れるようになりました": {
+      "source": "この端末で通知を受け取れるようになりました",
+      "files": [
+        "app/components/NavBar.tsx"
+      ]
+    },
+    "components_navbar.この端末はプッシュ通知未対応です": {
+      "source": "この端末はプッシュ通知未対応です",
+      "files": [
+        "app/components/NavBar.tsx"
+      ]
+    },
+    "components_navbar.この端末は通知未対応です": {
+      "source": "この端末は通知未対応です",
+      "files": [
+        "app/components/NavBar.tsx"
+      ]
+    },
+    "components_navbar.社員情報を取得できていません": {
+      "source": "社員情報を取得できていません",
+      "files": [
+        "app/components/NavBar.tsx"
+      ]
+    },
+    "components_navbar.端末登録情報を取得できませんでした": {
+      "source": "端末登録情報を取得できませんでした",
+      "files": [
+        "app/components/NavBar.tsx"
+      ]
+    },
+    "components_navbar.通知が許可されませんでした": {
+      "source": "通知が許可されませんでした",
+      "files": [
+        "app/components/NavBar.tsx"
+      ]
+    },
+    "components_navbar.通知更新失敗": {
+      "source": "通知更新失敗:",
+      "files": [
+        "app/components/NavBar.tsx"
+      ]
+    },
+    "components_navbar.通知端末登録失敗": {
+      "source": "通知端末登録失敗:",
+      "files": [
+        "app/components/NavBar.tsx"
+      ]
+    },
+    "components_organizationcreateform.会社と初期管理者を作成": {
+      "source": "会社と初期管理者を作成",
+      "files": [
+        "app/super-admin/organizations/components/OrganizationCreateForm.tsx"
+      ]
+    },
+    "components_organizationcreateform.管理者_苗字": {
+      "source": "管理者 苗字",
+      "files": [
+        "app/super-admin/organizations/components/OrganizationCreateForm.tsx"
+      ]
+    },
+    "components_organizationcreateform.管理者_名前": {
+      "source": "管理者 名前",
+      "files": [
+        "app/super-admin/organizations/components/OrganizationCreateForm.tsx"
+      ]
+    },
+    "components_organizationcreateform.管理者メールアドレス": {
+      "source": "管理者メールアドレス",
+      "files": [
+        "app/super-admin/organizations/components/OrganizationCreateForm.tsx"
+      ]
+    },
+    "components_organizationcreateform.作成中": {
+      "source": "作成中...",
+      "files": [
+        "app/super-admin/organizations/components/OrganizationCreateForm.tsx",
+        "app/super-admin/super-admin-users/page.tsx"
+      ]
+    },
+    "components_sidebar.super_admin管理": {
+      "source": "Super Admin管理",
+      "files": [
+        "app/super-admin/components/Sidebar.tsx"
+      ]
+    },
+    "components_sidebar.ダッシュボード": {
+      "source": "ダッシュボード",
+      "files": [
+        "app/super-admin/components/Sidebar.tsx"
+      ]
+    },
+    "components_sidebar.契約管理": {
+      "source": "契約管理",
+      "files": [
+        "app/super-admin/components/Sidebar.tsx"
+      ]
+    },
+    "components_sidebar.全ユーザー": {
+      "source": "全ユーザー",
+      "files": [
+        "app/super-admin/components/Sidebar.tsx"
+      ]
+    },
+    "contractor_page.totalcompanies社": {
+      "source": "${totalCompanies}社",
+      "files": [
+        "app/(system)/admin/analytics/contractor/page.tsx"
+      ]
+    },
+    "contractor_page.totalpeople人": {
+      "source": "${totalPeople}人",
+      "files": [
+        "app/(system)/admin/analytics/contractor/page.tsx"
+      ]
+    },
+    "contractor_page.totalvehicles回": {
+      "source": "${totalVehicles}回",
+      "files": [
+        "app/(system)/admin/analytics/contractor/page.tsx"
+      ]
+    },
+    "contractor_page.会社別集計取得失敗": {
+      "source": "会社別集計取得失敗:",
+      "files": [
+        "app/(system)/admin/analytics/contractor/page.tsx"
+      ]
+    },
+    "contractor_page.社員取得失敗": {
+      "source": "社員取得失敗:",
+      "files": [
+        "app/(system)/admin/analytics/contractor/page.tsx",
+        "app/(system)/admin/assignments/two-month/api.ts",
+        "app/(system)/admin/users/page.tsx"
+      ]
+    },
+    "contractor_page.所属会社数": {
+      "source": "所属会社数",
+      "files": [
+        "app/(system)/admin/analytics/contractor/page.tsx"
+      ]
+    },
+    "contractors_page.この元請を削除しますか": {
+      "source": "この元請を削除しますか？",
+      "files": [
+        "app/(system)/admin/contractors/page.tsx"
+      ]
+    },
+    "contractors_page.元請csv登録完了": {
+      "source": "元請CSV登録完了",
+      "files": [
+        "app/(system)/admin/contractors/page.tsx"
+      ]
+    },
+    "contractors_page.元請名": {
+      "source": "元請名",
+      "files": [
+        "app/(system)/admin/contractors/page.tsx"
+      ]
+    },
+    "contractors_page.元請名_〇〇建設_土木_工業": {
+      "source": "元請名 〇〇建設 △△土木 □□工業",
+      "files": [
+        "app/(system)/admin/contractors/page.tsx"
+      ]
+    },
+    "contractors_page.元請名を入力してください": {
+      "source": "元請名を入力してください",
+      "files": [
+        "app/(system)/admin/contractors/page.tsx"
+      ]
+    },
+    "contractors_page.追加失敗": {
+      "source": "追加失敗:",
+      "files": [
+        "app/(system)/admin/contractors/page.tsx"
+      ]
+    },
+    "contractors_page.登録できる元請がありません": {
+      "source": "登録できる元請がありません",
+      "files": [
+        "app/(system)/admin/contractors/page.tsx"
+      ]
+    },
+    "contracts_page.トライアル中": {
+      "source": "トライアル中",
+      "files": [
+        "app/super-admin/contracts/page.tsx"
+      ]
+    },
+    "contracts_page.会社名で検索": {
+      "source": "会社名で検索",
+      "files": [
+        "app/super-admin/contracts/page.tsx"
+      ]
+    },
+    "contracts_page.契約期限切れmathabsremainingdays日経過": {
+      "source": "契約期限切れ：${Math.abs(remainingDays)}日経過",
+      "files": [
+        "app/super-admin/contracts/page.tsx"
+      ]
+    },
+    "contracts_page.契約情報の取得に失敗しました": {
+      "source": "契約情報の取得に失敗しました:",
+      "files": [
+        "app/super-admin/contracts/page.tsx"
+      ]
+    },
+    "contracts_page.残りremainingdays日": {
+      "source": "残り${remainingDays}日",
+      "files": [
+        "app/super-admin/contracts/page.tsx"
+      ]
+    },
+    "create_route.authユーザー作成に失敗しました": {
+      "source": "Authユーザー作成に失敗しました",
+      "files": [
+        "app/api/super-admin/users/create/route.ts"
+      ]
+    },
+    "create-organization_route.super_adminのみ実行できます": {
+      "source": "Super Adminのみ実行できます",
+      "files": [
+        "app/api/super-admin/create-organization/route.ts"
+      ]
+    },
+    "create-organization_route.会社作成失敗": {
+      "source": "会社作成失敗",
+      "files": [
+        "app/api/super-admin/create-organization/route.ts",
+        "app/super-admin/organizations/page.tsx"
+      ]
+    },
+    "create-organization_route.会社名管理者名メールアドレスは必須です": {
+      "source": "会社名・管理者名・メールアドレスは必須です",
+      "files": [
+        "app/api/super-admin/create-organization/route.ts"
+      ]
+    },
+    "create-user_route.不正な権限です": {
+      "source": "不正な権限です",
+      "files": [
+        "app/api/admin/create-user/route.ts"
+      ]
+    },
+    "create-user_route.名前とメールアドレスは必須です": {
+      "source": "名前とメールアドレスは必須です",
+      "files": [
+        "app/api/admin/create-user/route.ts",
+        "app/api/super-admin/users/create/route.ts"
+      ]
+    },
+    "current-organization_route.ユーザー認証に失敗しました": {
+      "source": "ユーザー認証に失敗しました",
+      "files": [
+        "app/api/current-organization/route.ts"
+      ]
+    },
+    "current-organization_route.対象会社が未選択です": {
+      "source": "対象会社が未選択です",
+      "files": [
+        "app/api/current-organization/route.ts"
+      ]
+    },
+    "current-organization_route.認証トークンがありません": {
+      "source": "認証トークンがありません",
+      "files": [
+        "app/api/current-organization/route.ts"
+      ]
+    },
+    "daily_page.すべての確認チェックを入れてください": {
+      "source": "すべての確認チェックを入れてください",
+      "files": [
+        "app/(system)/admin/reports/daily/page.tsx"
+      ]
+    },
+    "delete-user_route.auth削除失敗": {
+      "source": "Auth削除失敗:",
+      "files": [
+        "app/api/admin/delete-user/route.ts"
+      ]
+    },
+    "delete-user_route.employeeidが必要です": {
+      "source": "employeeIdが必要です",
+      "files": [
+        "app/api/admin/delete-user/route.ts",
+        "app/api/admin/update-user-auth/route.ts"
+      ]
+    },
+    "delete-user_route.employees削除失敗": {
+      "source": "employees削除失敗:",
+      "files": [
+        "app/api/admin/delete-user/route.ts"
+      ]
+    },
+    "delete-user_route.ログインが必要です": {
+      "source": "ログインが必要です",
+      "files": [
+        "app/api/admin/delete-user/route.ts",
+        "app/api/admin/get-user-auth/route.ts",
+        "app/api/admin/link-user-auth/route.ts",
+        "app/api/admin/update-user-auth/route.ts",
+        "app/api/admin/upload-sites/route.ts",
+        "app/api/super-admin/create-organization/route.ts"
+      ]
+    },
+    "delete-user_route.管理者のみ実行できます": {
+      "source": "管理者のみ実行できます",
+      "files": [
+        "app/api/admin/delete-user/route.ts",
+        "app/api/admin/get-user-auth/route.ts",
+        "app/api/admin/link-user-auth/route.ts",
+        "app/api/admin/update-user-auth/route.ts",
+        "app/api/admin/upload-sites/route.ts"
+      ]
+    },
+    "delete-user_route.社員が見つかりません": {
+      "source": "社員が見つかりません",
+      "files": [
+        "app/api/admin/delete-user/route.ts"
+      ]
+    },
+    "delete-user_route.認証情報がありません": {
+      "source": "認証情報がありません",
+      "files": [
+        "app/api/admin/delete-user/route.ts",
+        "app/api/admin/get-user-auth/route.ts",
+        "app/api/admin/link-user-auth/route.ts",
+        "app/api/admin/update-user-auth/route.ts",
+        "app/api/admin/upload-sites/route.ts",
+        "app/api/super-admin/create-organization/route.ts"
+      ]
+    },
+    "edit_page.メンバー更新失敗": {
+      "source": "メンバー更新失敗:",
+      "files": [
+        "app/(system)/reports/[id]/edit/page.tsx"
+      ]
+    },
+    "edit_page.更新成功": {
+      "source": "更新成功",
+      "files": [
+        "app/(system)/reports/[id]/edit/page.tsx"
+      ]
+    },
+    "edit_page.日報が見つかりません": {
+      "source": "日報が見つかりません",
+      "files": [
+        "app/(system)/reports/[id]/edit/page.tsx"
+      ]
+    },
+    "edit_page.日報を更新": {
+      "source": "日報を更新",
+      "files": [
+        "app/(system)/reports/[id]/edit/page.tsx"
+      ]
+    },
+    "employees_page.totaldays日": {
+      "source": "${totalDays}日",
+      "files": [
+        "app/(system)/admin/analytics/employees/page.tsx"
+      ]
+    },
+    "employees_page.totaldrivecount回": {
+      "source": "${totalDriveCount}回",
+      "files": [
+        "app/(system)/admin/analytics/employees/page.tsx"
+      ]
+    },
+    "employees_page.totalworkers人": {
+      "source": "${totalWorkers}人",
+      "files": [
+        "app/(system)/admin/analytics/employees/page.tsx"
+      ]
+    },
+    "employees_page.社員別集計取得失敗": {
+      "source": "社員別集計取得失敗:",
+      "files": [
+        "app/(system)/admin/analytics/employees/page.tsx"
+      ]
+    },
+    "get-user-auth_route.authuseridが必要です": {
+      "source": "authUserIdが必要です",
+      "files": [
+        "app/api/admin/get-user-auth/route.ts"
+      ]
+    },
+    "get-user-auth_route.ユーザー取得失敗": {
+      "source": "ユーザー取得失敗",
+      "files": [
+        "app/api/admin/get-user-auth/route.ts"
+      ]
+    },
+    "get-user-auth_route.対象社員が見つかりません": {
+      "source": "対象社員が見つかりません",
+      "files": [
+        "app/api/admin/get-user-auth/route.ts",
+        "app/api/admin/link-user-auth/route.ts",
+        "app/api/admin/update-user-auth/route.ts"
+      ]
+    },
+    "history_page.返却確認待ち": {
+      "source": "返却確認待ち",
+      "files": [
+        "app/(system)/admin/items/history/page.tsx",
+        "app/(system)/admin/items/my-items/page.tsx",
+        "app/(system)/admin/items/requests/page.tsx",
+        "app/(system)/home/page.tsx"
+      ]
+    },
+    "history_page.履歴取得失敗": {
+      "source": "履歴取得失敗:",
+      "files": [
+        "app/(system)/admin/items/history/page.tsx"
+      ]
+    },
+    "home_page.adminsummarypendingitemrequests件": {
+      "source": "${adminSummary.pendingItemRequests}件",
+      "files": [
+        "app/(system)/home/page.tsx"
+      ]
+    },
+    "home_page.adminsummaryreturnitemrequests件": {
+      "source": "${adminSummary.returnItemRequests}件",
+      "files": [
+        "app/(system)/home/page.tsx"
+      ]
+    },
+    "home_page.adminsummarytodayworkercount人": {
+      "source": "${adminSummary.todayWorkerCount}人",
+      "files": [
+        "app/(system)/home/page.tsx"
+      ]
+    },
+    "home_page.daily_reports取得失敗": {
+      "source": "daily_reports取得失敗:",
+      "files": [
+        "app/(system)/home/page.tsx"
+      ]
+    },
+    "home_page.organization取得失敗": {
+      "source": "organization取得失敗",
+      "files": [
+        "app/(system)/home/page.tsx",
+        "app/(system)/reports/[id]/edit/page.tsx",
+        "app/(system)/reports/[id]/page.tsx",
+        "app/(system)/reports/new/page.tsx",
+        "app/(system)/reports/page.tsx"
+      ]
+    },
+    "home_page.report_members取得失敗": {
+      "source": "report_members取得失敗:",
+      "files": [
+        "app/(system)/home/page.tsx"
+      ]
+    },
+    "home_page.ユーザー": {
+      "source": "ユーザー",
+      "files": [
+        "app/(system)/home/page.tsx"
+      ]
+    },
+    "home_page.現在この会社はご利用いただけません管理者へお問い合わせください": {
+      "source": "現在この会社はご利用いただけません。管理者へお問い合わせください。",
+      "files": [
+        "app/(system)/home/page.tsx"
+      ]
+    },
+    "home_page.今月予定人工": {
+      "source": "今月予定人工",
+      "files": [
+        "app/(system)/home/page.tsx"
+      ]
+    },
+    "home_page.今日の稼働人数": {
+      "source": "今日の稼働人数",
+      "files": [
+        "app/(system)/home/page.tsx"
+      ]
+    },
+    "home_page.今日の日報": {
+      "source": "今日の日報",
+      "files": [
+        "app/(system)/home/page.tsx"
+      ]
+    },
+    "home_page.社員情報取得失敗": {
+      "source": "社員情報取得失敗:",
+      "files": [
+        "app/(system)/home/page.tsx",
+        "app/api/admin/create-user/route.ts"
+      ]
+    },
+    "home_page.進捗人工終着人工": {
+      "source": "進捗人工/終着人工",
+      "files": [
+        "app/(system)/home/page.tsx"
+      ]
+    },
+    "home_page.未登録": {
+      "source": "未登録",
+      "files": [
+        "app/(system)/home/page.tsx"
+      ]
+    },
+    "home_page.免許情報取得失敗": {
+      "source": "免許情報取得失敗:",
+      "files": [
+        "app/(system)/home/page.tsx"
+      ]
+    },
+    "hooks_useassignmentactions.アップロードに失敗しました": {
+      "source": "アップロードに失敗しました",
+      "files": [
+        "app/(system)/admin/assignments/two-month/hooks/useAssignmentActions.ts"
+      ]
+    },
+    "hooks_useassignmentactions.この添付ファイルを削除しますか": {
+      "source": "この添付ファイルを削除しますか？",
+      "files": [
+        "app/(system)/admin/assignments/two-month/hooks/useAssignmentActions.ts"
+      ]
+    },
+    "hooks_useassignmentactions.ファイル削除に失敗しました": {
+      "source": "ファイル削除に失敗しました",
+      "files": [
+        "app/(system)/admin/assignments/two-month/hooks/useAssignmentActions.ts"
+      ]
+    },
+    "hooks_useassignmentactions.現場追加に失敗しました": {
+      "source": "現場追加に失敗しました",
+      "files": [
+        "app/(system)/admin/assignments/two-month/hooks/useAssignmentActions.ts"
+      ]
+    },
+    "hooks_useassignmentactions.更新に失敗しました": {
+      "source": "更新に失敗しました",
+      "files": [
+        "app/(system)/admin/assignments/two-month/hooks/useAssignmentActions.ts"
+      ]
+    },
+    "hooks_useassignmentactions.削除に失敗しました": {
+      "source": "削除に失敗しました",
+      "files": [
+        "app/(system)/admin/assignments/two-month/hooks/useAssignmentActions.ts"
+      ]
+    },
+    "hooks_useassignmentactions.並び替え保存に失敗しました": {
+      "source": "並び替え保存に失敗しました",
+      "files": [
+        "app/(system)/admin/assignments/two-month/hooks/useAssignmentActions.ts"
+      ]
+    },
+    "hooks_usedailyinfo.現場idが取得できません": {
+      "source": "現場IDが取得できません",
+      "files": [
+        "app/(system)/admin/assignments/two-month/hooks/useDailyInfo.ts"
+      ]
+    },
+    "hooks_usedailyinfo.更新失敗": {
+      "source": "更新失敗",
+      "files": [
+        "app/(system)/admin/assignments/two-month/hooks/useDailyInfo.ts"
+      ]
+    },
+    "hooks_usemonthlyassignmentactions.アップロード失敗": {
+      "source": "アップロード失敗:",
+      "files": [
+        "app/(system)/admin/assignments/month/hooks/useMonthlyAssignmentActions.ts",
+        "app/(system)/admin/assignments/two-month/api.ts",
+        "app/(system)/admin/contractors/page.tsx",
+        "app/(system)/profile/license/page.tsx"
+      ]
+    },
+    "hooks_usemonthlyassignmentactions.このファイルを削除しますか": {
+      "source": "このファイルを削除しますか？",
+      "files": [
+        "app/(system)/admin/assignments/month/hooks/useMonthlyAssignmentActions.ts"
+      ]
+    },
+    "hooks_usemonthlyassignmentactions.この現場を削除しますか": {
+      "source": "この現場を削除しますか？",
+      "files": [
+        "app/(system)/admin/assignments/month/hooks/useMonthlyAssignmentActions.ts",
+        "app/(system)/admin/assignments/two-month/hooks/useAssignmentActions.ts"
+      ]
+    },
+    "hooks_usemonthlyassignmentactions.ファイル削除失敗": {
+      "source": "ファイル削除失敗:",
+      "files": [
+        "app/(system)/admin/assignments/month/hooks/useMonthlyAssignmentActions.ts",
+        "app/(system)/admin/assignments/two-month/api.ts"
+      ]
+    },
+    "hooks_usemonthlyassignmentactions.現場は追加されましたがファイルアップロードに失敗しました": {
+      "source": "現場は追加されましたが、ファイルアップロードに失敗しました:",
+      "files": [
+        "app/(system)/admin/assignments/month/hooks/useMonthlyAssignmentActions.ts"
+      ]
+    },
+    "hooks_usemonthlyassignmentactions.現場更新失敗": {
+      "source": "現場更新失敗:",
+      "files": [
+        "app/(system)/admin/assignments/month/hooks/useMonthlyAssignmentActions.ts",
+        "app/(system)/admin/assignments/two-month/api.ts"
+      ]
+    },
+    "hooks_usemonthlyassignmentactions.現場削除失敗": {
+      "source": "現場削除失敗:",
+      "files": [
+        "app/(system)/admin/assignments/month/hooks/useMonthlyAssignmentActions.ts",
+        "app/(system)/admin/assignments/two-month/api.ts"
+      ]
+    },
+    "hooks_usemonthlyassignmentactions.現場追加失敗": {
+      "source": "現場追加失敗:",
+      "files": [
+        "app/(system)/admin/assignments/month/hooks/useMonthlyAssignmentActions.ts",
+        "app/(system)/admin/assignments/two-month/api.ts"
+      ]
+    },
+    "hooks_usemonthlyassignmentadmin.管理者のみ閲覧できます": {
+      "source": "管理者のみ閲覧できます",
+      "files": [
+        "app/(system)/admin/assignments/month/hooks/useMonthlyAssignmentAdmin.ts",
+        "app/(system)/admin/assignments/two-month/hooks/usePage.ts",
+        "app/(system)/admin/reports/daily/page.tsx",
+        "app/(system)/admin/users/[id]/page.tsx",
+        "app/(system)/admin/users/page.tsx",
+        "app/(system)/reports/summary/page.tsx"
+      ]
+    },
+    "hooks_usemonthlyassignmentdailyinfo.更新失敗": {
+      "source": "更新失敗:",
+      "files": [
+        "app/(system)/admin/assignments/month/hooks/useMonthlyAssignmentDailyInfo.ts",
+        "app/(system)/admin/assignments/two-month/hooks/useDailyInfo.ts",
+        "app/(system)/admin/reports/daily/page.tsx",
+        "app/(system)/admin/users/[id]/page.tsx",
+        "app/(system)/reports/[id]/edit/page.tsx"
+      ]
+    },
+    "hooks_usemonthlyassignmentdailyinfo.取得失敗": {
+      "source": "取得失敗",
+      "files": [
+        "app/(system)/admin/assignments/month/hooks/useMonthlyAssignmentDailyInfo.ts",
+        "app/(system)/admin/assignments/month/hooks/useMonthlyAssignmentMembers.ts",
+        "app/(system)/admin/assignments/two-month/api.ts"
+      ]
+    },
+    "hooks_usemonthlyassignmentmembers.メンバー追加失敗": {
+      "source": "メンバー追加失敗:",
+      "files": [
+        "app/(system)/admin/assignments/month/hooks/useMonthlyAssignmentMembers.ts"
+      ]
+    },
+    "hooks_usemonthlyassignmentmembers.移動失敗": {
+      "source": "移動失敗:",
+      "files": [
+        "app/(system)/admin/assignments/month/hooks/useMonthlyAssignmentMembers.ts"
+      ]
+    },
+    "hooks_usemonthlyassignmentmembers.削除失敗": {
+      "source": "削除失敗:",
+      "files": [
+        "app/(system)/admin/assignments/month/hooks/useMonthlyAssignmentMembers.ts",
+        "app/(system)/admin/contractors/page.tsx",
+        "app/(system)/admin/shift-management/page.tsx"
+      ]
+    },
+    "hooks_usemonthlyassignmentmembers.職長変更失敗": {
+      "source": "職長変更失敗:",
+      "files": [
+        "app/(system)/admin/assignments/month/hooks/useMonthlyAssignmentMembers.ts"
+      ]
+    },
+    "hooks_usemonthlyassignmentrows.並び替え保存失敗": {
+      "source": "並び替え保存失敗:",
+      "files": [
+        "app/(system)/admin/assignments/month/hooks/useMonthlyAssignmentRows.ts",
+        "app/(system)/admin/assignments/two-month/api.ts"
+      ]
+    },
+    "hooks_usepage.データ取得に失敗しました": {
+      "source": "データ取得に失敗しました",
+      "files": [
+        "app/(system)/admin/assignments/two-month/hooks/usePage.ts"
+      ]
+    },
+    "hooks_usepage.会社情報の取得に失敗しました": {
+      "source": "会社情報の取得に失敗しました",
+      "files": [
+        "app/(system)/admin/assignments/two-month/hooks/usePage.ts"
+      ]
+    },
+    "hooks_usepage.対象会社が未選択です会社を選択してから開いてください": {
+      "source": "対象会社が未選択です。会社を選択してから開いてください。",
+      "files": [
+        "app/(system)/admin/assignments/two-month/hooks/usePage.ts"
+      ]
+    },
+    "id_page.この会社を利用停止にしますか": {
+      "source": "この会社を利用停止にしますか？",
+      "files": [
+        "app/super-admin/organizations/[id]/page.tsx"
+      ]
+    },
+    "id_page.メールアドレス": {
+      "source": "メールアドレス",
+      "files": [
+        "app/(system)/admin/users/[id]/page.tsx",
+        "app/super-admin/super-admin-users/page.tsx"
+      ]
+    },
+    "id_page.メール未設定": {
+      "source": "メール未設定",
+      "files": [
+        "app/super-admin/organizations/[id]/page.tsx"
+      ]
+    },
+    "id_page.ログイン情報更新失敗": {
+      "source": "ログイン情報更新失敗",
+      "files": [
+        "app/(system)/admin/users/[id]/page.tsx"
+      ]
+    },
+    "id_page.会社取得失敗": {
+      "source": "会社取得失敗:",
+      "files": [
+        "app/(system)/admin/users/[id]/page.tsx",
+        "app/(system)/admin/users/new/page.tsx",
+        "app/super-admin/organizations/page.tsx"
+      ]
+    },
+    "id_page.会社情報の取得に失敗しました": {
+      "source": "会社情報の取得に失敗しました:",
+      "files": [
+        "app/super-admin/organizations/[id]/page.tsx",
+        "app/super-admin/page.tsx"
+      ]
+    },
+    "id_page.会社名を入力してください": {
+      "source": "会社名を入力してください",
+      "files": [
+        "app/super-admin/organizations/[id]/page.tsx"
+      ]
+    },
+    "id_page.社員取得失敗": {
+      "source": "社員取得失敗",
+      "files": [
+        "app/(system)/admin/users/[id]/page.tsx"
+      ]
+    },
+    "id_page.社員情報の取得に失敗しました": {
+      "source": "社員情報の取得に失敗しました:",
+      "files": [
+        "app/super-admin/organizations/[id]/page.tsx"
+      ]
+    },
+    "id_page.社員情報を更新しました": {
+      "source": "社員情報を更新しました",
+      "files": [
+        "app/(system)/admin/users/[id]/page.tsx"
+      ]
+    },
+    "id_page.代理ログイン開始に失敗しました": {
+      "source": "代理ログイン開始に失敗しました",
+      "files": [
+        "app/super-admin/organizations/[id]/page.tsx"
+      ]
+    },
+    "id_page.変更する場合のみ入力": {
+      "source": "変更する場合のみ入力",
+      "files": [
+        "app/(system)/admin/users/[id]/page.tsx"
+      ]
+    },
+    "id_page.保存": {
+      "source": "保存",
+      "files": [
+        "app/super-admin/organizations/[id]/page.tsx"
+      ]
+    },
+    "id_page.保存しました": {
+      "source": "保存しました",
+      "files": [
+        "app/super-admin/organizations/[id]/page.tsx"
+      ]
+    },
+    "id_page.保存に失敗しました": {
+      "source": "保存に失敗しました:",
+      "files": [
+        "app/super-admin/organizations/[id]/page.tsx"
+      ]
+    },
+    "id_page.保存中": {
+      "source": "保存中...",
+      "files": [
+        "app/super-admin/organizations/[id]/page.tsx"
+      ]
+    },
+    "id_page.名前未設定": {
+      "source": "名前未設定",
+      "files": [
+        "app/super-admin/organizations/[id]/page.tsx",
+        "app/super-admin/super-admin-users/page.tsx"
+      ]
+    },
+    "id_page.利用停止にしました": {
+      "source": "利用停止にしました",
+      "files": [
+        "app/super-admin/organizations/[id]/page.tsx"
+      ]
+    },
+    "id_page.利用停止に失敗しました": {
+      "source": "利用停止に失敗しました:",
+      "files": [
+        "app/super-admin/organizations/[id]/page.tsx"
+      ]
+    },
+    "items_page.itemitem_nameを削除しますか": {
+      "source": "「${item.item_name}」を削除しますか？",
+      "files": [
+        "app/(system)/admin/items/page.tsx"
+      ]
+    },
+    "items_page.リース": {
+      "source": "リース",
+      "files": [
+        "app/(system)/admin/items/page.tsx"
+      ]
+    },
+    "items_page.管理者": {
+      "source": "管理者",
+      "files": [
+        "app/(system)/admin/items/page.tsx"
+      ]
+    },
+    "items_page.管理場所": {
+      "source": "管理場所",
+      "files": [
+        "app/(system)/admin/items/page.tsx"
+      ]
+    },
+    "items_page.型番品番": {
+      "source": "型番/品番",
+      "files": [
+        "app/(system)/admin/items/page.tsx"
+      ]
+    },
+    "items_page.車両備品": {
+      "source": "車両備品",
+      "files": [
+        "app/(system)/admin/items/page.tsx"
+      ]
+    },
+    "items_page.種別と品名を入力してください": {
+      "source": "種別と品名を入力してください",
+      "files": [
+        "app/(system)/admin/items/page.tsx"
+      ]
+    },
+    "items_page.物品削除失敗": {
+      "source": "物品削除失敗:",
+      "files": [
+        "app/(system)/admin/items/page.tsx"
+      ]
+    },
+    "items_page.物品登録エラー": {
+      "source": "物品登録エラー:",
+      "files": [
+        "app/(system)/admin/items/page.tsx"
+      ]
+    },
+    "items_page.物品登録失敗": {
+      "source": "物品登録失敗:",
+      "files": [
+        "app/(system)/admin/items/page.tsx"
+      ]
+    },
+    "lib_reportfields.高速料金下請け": {
+      "source": "高速料金（下請け）",
+      "files": [
+        "lib/reportFields.ts"
+      ]
+    },
+    "lib_reportfields.高速料金二次受け": {
+      "source": "高速料金（二次受け）",
+      "files": [
+        "lib/reportFields.ts"
+      ]
+    },
+    "lib_reportfields.高速料金本体": {
+      "source": "高速料金（本体）",
+      "files": [
+        "lib/reportFields.ts"
+      ]
+    },
+    "lib_reportfields.車両運転手": {
+      "source": "車両運転手",
+      "files": [
+        "lib/reportFields.ts"
+      ]
+    },
+    "lib_reportfields.車両台数": {
+      "source": "車両台数",
+      "files": [
+        "lib/reportFields.ts"
+      ]
+    },
+    "lib_reportfields.駐車場料金下請け": {
+      "source": "駐車場料金（下請け）",
+      "files": [
+        "lib/reportFields.ts"
+      ]
+    },
+    "lib_reportfields.駐車場料金二次受け": {
+      "source": "駐車場料金（二次受け）",
+      "files": [
+        "lib/reportFields.ts"
+      ]
+    },
+    "lib_reportfields.駐車場料金本体": {
+      "source": "駐車場料金（本体）",
+      "files": [
+        "lib/reportFields.ts"
+      ]
+    },
+    "lib_reportfields.燃料代ガソリン": {
+      "source": "燃料代（ガソリン）",
+      "files": [
+        "lib/reportFields.ts"
+      ]
+    },
+    "lib_reportfields.燃料代軽油": {
+      "source": "燃料代（軽油）",
+      "files": [
+        "lib/reportFields.ts"
+      ]
+    },
+    "license_page.ログイン情報が取得できません": {
+      "source": "ログイン情報が取得できません",
+      "files": [
+        "app/(system)/profile/license/page.tsx",
+        "app/components/NavBar.tsx"
+      ]
+    },
+    "license_page.社員情報がありません": {
+      "source": "社員情報がありません",
+      "files": [
+        "app/(system)/profile/license/page.tsx"
+      ]
+    },
+    "license_page.代理ログイン中は免許情報を登録できません": {
+      "source": "代理ログイン中は免許情報を登録できません",
+      "files": [
+        "app/(system)/profile/license/page.tsx"
+      ]
+    },
+    "license_page.保存失敗": {
+      "source": "保存失敗:",
+      "files": [
+        "app/(system)/profile/license/page.tsx"
+      ]
+    },
+    "license_page.免許名取得日有効期限を入力してください": {
+      "source": "免許名・取得日・有効期限を入力してください",
+      "files": [
+        "app/(system)/profile/license/page.tsx"
+      ]
+    },
+    "link-user-auth_route.employeeidとemailが必要です": {
+      "source": "employeeIdとemailが必要です",
+      "files": [
+        "app/api/admin/link-user-auth/route.ts"
+      ]
+    },
+    "link-user-auth_route.このメールアドレスのログインアカウントが見つかりません": {
+      "source": "このメールアドレスのログインアカウントが見つかりません",
+      "files": [
+        "app/api/admin/link-user-auth/route.ts"
+      ]
+    },
+    "login_page.ユーザー情報が取得できません": {
+      "source": "ユーザー情報が取得できません",
+      "files": [
+        "app/(public)/login/page.tsx"
+      ]
+    },
+    "login_page.ログイン失敗": {
+      "source": "ログイン失敗:",
+      "files": [
+        "app/(public)/login/page.tsx"
+      ]
+    },
+    "login_page.社員情報がありません管理者に確認してください": {
+      "source": "社員情報がありません。管理者に確認してください。",
+      "files": [
+        "app/(public)/login/page.tsx"
+      ]
+    },
+    "monthly_page.現場": {
+      "source": "現場",
+      "files": [
+        "app/(system)/admin/analytics/monthly/page.tsx",
+        "app/(system)/admin/reports/page.tsx"
+      ]
+    },
+    "my-items_page.employeenameさんが物品の返却申請をしました": {
+      "source": "${employeeName}さんが物品の返却申請をしました",
+      "files": [
+        "app/(system)/admin/items/my-items/page.tsx",
+        "app/(system)/admin/items/return/page.tsx"
+      ]
+    },
+    "my-items_page.写真アップロード失敗": {
+      "source": "写真アップロード失敗:",
+      "files": [
+        "app/(system)/admin/items/my-items/page.tsx",
+        "app/(system)/admin/items/return/page.tsx"
+      ]
+    },
+    "my-items_page.貸出状況取得失敗": {
+      "source": "貸出状況取得失敗:",
+      "files": [
+        "app/(system)/admin/items/my-items/page.tsx"
+      ]
+    },
+    "my-items_page.物品返却push送信結果": {
+      "source": "物品返却Push送信結果",
+      "files": [
+        "app/(system)/admin/items/my-items/page.tsx",
+        "app/(system)/admin/items/return/page.tsx"
+      ]
+    },
+    "my-items_page.物品返却申請": {
+      "source": "物品返却申請",
+      "files": [
+        "app/(system)/admin/items/my-items/page.tsx",
+        "app/(system)/admin/items/return/page.tsx"
+      ]
+    },
+    "my-items_page.返却写真を選択してください": {
+      "source": "返却写真を選択してください",
+      "files": [
+        "app/(system)/admin/items/my-items/page.tsx",
+        "app/(system)/admin/items/return/page.tsx"
+      ]
+    },
+    "my-items_page.返却申請を送信しました": {
+      "source": "返却申請を送信しました",
+      "files": [
+        "app/(system)/admin/items/my-items/page.tsx",
+        "app/(system)/admin/items/return/page.tsx"
+      ]
+    },
+    "my-items_page.返却申請失敗": {
+      "source": "返却申請失敗:",
+      "files": [
+        "app/(system)/admin/items/my-items/page.tsx",
+        "app/(system)/admin/items/return/page.tsx"
+      ]
+    },
+    "new_page.id取得失敗": {
+      "source": "id取得失敗",
+      "files": [
+        "app/(system)/reports/new/page.tsx"
+      ]
+    },
+    "new_page.この日の日報は既に登録されています": {
+      "source": "この日の日報は既に登録されています",
+      "files": [
+        "app/(system)/reports/new/page.tsx"
+      ]
+    },
+    "new_page.この日報は既に登録されています": {
+      "source": "この日報は既に登録されています",
+      "files": [
+        "app/(system)/reports/new/page.tsx"
+      ]
+    },
+    "new_page.メンバー保存失敗": {
+      "source": "メンバー保存失敗:",
+      "files": [
+        "app/(system)/reports/new/page.tsx"
+      ]
+    },
+    "new_page.ログイン情報がありません再ログインしてください": {
+      "source": "ログイン情報がありません。再ログインしてください",
+      "files": [
+        "app/(system)/admin/users/new/page.tsx"
+      ]
+    },
+    "new_page.社員作成失敗": {
+      "source": "社員作成失敗",
+      "files": [
+        "app/(system)/admin/users/new/page.tsx"
+      ]
+    },
+    "new_page.社員作成成功": {
+      "source": "社員作成成功",
+      "files": [
+        "app/(system)/admin/users/new/page.tsx"
+      ]
+    },
+    "new_page.社員名の取得後にもう一度押してください": {
+      "source": "社員名の取得後にもう一度押してください",
+      "files": [
+        "app/(system)/reports/new/page.tsx"
+      ]
+    },
+    "new_page.前回の日報が見つかりません": {
+      "source": "前回の日報が見つかりません",
+      "files": [
+        "app/(system)/reports/new/page.tsx"
+      ]
+    },
+    "new_page.前回の日報をコピーしました": {
+      "source": "前回の日報をコピーしました",
+      "files": [
+        "app/(system)/reports/new/page.tsx"
+      ]
+    },
+    "new_page.日報を登録しました": {
+      "source": "日報を登録しました",
+      "files": [
+        "app/(system)/reports/new/page.tsx"
+      ]
+    },
+    "new_page.日報を保存": {
+      "source": "日報を保存",
+      "files": [
+        "app/(system)/reports/new/page.tsx"
+      ]
+    },
+    "new_page.日報保存失敗": {
+      "source": "日報保存失敗:",
+      "files": [
+        "app/(system)/reports/new/page.tsx"
+      ]
+    },
+    "new_page.名前とメールアドレスを入力してください": {
+      "source": "名前とメールアドレスを入力してください",
+      "files": [
+        "app/(system)/admin/users/new/page.tsx",
+        "app/super-admin/super-admin-users/page.tsx"
+      ]
+    },
+    "organizations_page.会社と初期管理者を作成しました": {
+      "source": "会社と初期管理者を作成しました",
+      "files": [
+        "app/super-admin/organizations/page.tsx"
+      ]
+    },
+    "organizations_page.会社名管理者名メールアドレスを入力してください": {
+      "source": "会社名・管理者名・メールアドレスを入力してください",
+      "files": [
+        "app/super-admin/organizations/page.tsx"
+      ]
+    },
+    "password_page.すべて入力してください": {
+      "source": "すべて入力してください",
+      "files": [
+        "app/(system)/profile/password/page.tsx"
+      ]
+    },
+    "password_page.パスワードを変更する": {
+      "source": "パスワードを変更する",
+      "files": [
+        "app/(system)/profile/password/page.tsx"
+      ]
+    },
+    "password_page.確認用パスワードが一致しません": {
+      "source": "確認用パスワードが一致しません",
+      "files": [
+        "app/(system)/profile/password/page.tsx"
+      ]
+    },
+    "password_page.変更中": {
+      "source": "変更中...",
+      "files": [
+        "app/(system)/profile/password/page.tsx"
+      ]
+    },
+    "personal_page.summarydaycount回": {
+      "source": "${summary.dayCount}回",
+      "files": [
+        "app/(system)/admin/analytics/personal/page.tsx"
+      ]
+    },
+    "personal_page.summarydrivecount回": {
+      "source": "${summary.driveCount}回",
+      "files": [
+        "app/(system)/admin/analytics/personal/page.tsx"
+      ]
+    },
+    "personal_page.summarynightcount回": {
+      "source": "${summary.nightCount}回",
+      "files": [
+        "app/(system)/admin/analytics/personal/page.tsx"
+      ]
+    },
+    "personal_page.summaryworkdays日": {
+      "source": "${summary.workDays}日",
+      "files": [
+        "app/(system)/admin/analytics/personal/page.tsx"
+      ]
+    },
+    "personal_page.元請別人工": {
+      "source": "元請別人工",
+      "files": [
+        "app/(system)/admin/analytics/personal/page.tsx"
+      ]
+    },
+    "personal_page.現場別人工": {
+      "source": "現場別人工",
+      "files": [
+        "app/(system)/admin/analytics/personal/page.tsx"
+      ]
+    },
+    "personal_page.個人集計取得失敗": {
+      "source": "個人集計取得失敗:",
+      "files": [
+        "app/(system)/admin/analytics/personal/page.tsx"
+      ]
+    },
+    "profile_page.資格証表": {
+      "source": "資格証表",
+      "files": [
+        "app/(system)/profile/page.tsx"
+      ]
+    },
+    "profile_page.資格証裏": {
+      "source": "資格証裏",
+      "files": [
+        "app/(system)/profile/page.tsx"
+      ]
+    },
+    "profile_page.資格名で検索": {
+      "source": "資格名で検索",
+      "files": [
+        "app/(system)/profile/page.tsx"
+      ]
+    },
+    "profile_page.資格名未登録": {
+      "source": "資格名未登録",
+      "files": [
+        "app/(system)/profile/page.tsx"
+      ]
+    },
+    "profile_page.免許証表": {
+      "source": "免許証表",
+      "files": [
+        "app/(system)/profile/page.tsx"
+      ]
+    },
+    "profile_page.免許証裏": {
+      "source": "免許証裏",
+      "files": [
+        "app/(system)/profile/page.tsx"
+      ]
+    },
+    "report-status_page.date_rowassignmentsite_name_の日報を確認してください": {
+      "source": "${date} ${row.assignment.site_name} の日報を確認してください",
+      "files": [
+        "app/(system)/admin/report-status/page.tsx"
+      ]
+    },
+    "report-status_page.date_rowassignmentsite_name_の日報を提出してください": {
+      "source": "${date} ${row.assignment.site_name} の日報を提出してください",
+      "files": [
+        "app/(system)/admin/report-status/page.tsx"
+      ]
+    },
+    "report-status_page.foremanemployee_name_さんに通知しました_push送信数_p": {
+      "source": "${foreman.employee_name} さんに通知しました / Push送信数: ${pushResult.sentCount ?? 0}",
+      "files": [
+        "app/(system)/admin/report-status/page.tsx"
+      ]
+    },
+    "report-status_page.sentcount件の通知を送信しました": {
+      "source": "${sentCount}件の通知を送信しました",
+      "files": [
+        "app/(system)/admin/report-status/page.tsx"
+      ]
+    },
+    "report-status_page.この日のこの現場に職長が設定されていません": {
+      "source": "この日のこの現場に職長が設定されていません",
+      "files": [
+        "app/(system)/admin/report-status/page.tsx"
+      ]
+    },
+    "report-status_page.プッシュ通知失敗": {
+      "source": "プッシュ通知失敗:",
+      "files": [
+        "app/(system)/admin/report-status/page.tsx"
+      ]
+    },
+    "report-status_page.送信失敗": {
+      "source": "送信失敗",
+      "files": [
+        "app/(system)/admin/report-status/page.tsx"
+      ]
+    },
+    "report-status_page.通知保存失敗": {
+      "source": "通知保存失敗:",
+      "files": [
+        "app/(system)/admin/report-status/page.tsx"
+      ]
+    },
+    "report-status_page.日報確認依頼": {
+      "source": "日報確認依頼",
+      "files": [
+        "app/(system)/admin/report-status/page.tsx"
+      ]
+    },
+    "report-status_page.日報取得失敗": {
+      "source": "日報取得失敗:",
+      "files": [
+        "app/(system)/admin/report-status/page.tsx",
+        "app/(system)/admin/reports/daily/page.tsx",
+        "app/(system)/reports/[id]/page.tsx"
+      ]
+    },
+    "report-status_page.番割メンバー取得失敗": {
+      "source": "番割メンバー取得失敗:",
+      "files": [
+        "app/(system)/admin/report-status/page.tsx"
+      ]
+    },
+    "reports_page.csv登録完了": {
+      "source": "CSV登録完了",
+      "files": [
+        "app/(system)/admin/reports/page.tsx"
+      ]
+    },
+    "reports_page.メンバー": {
+      "source": "メンバー",
+      "files": [
+        "app/(system)/admin/reports/page.tsx",
+        "lib/reportFields.ts"
+      ]
+    },
+    "reports_page.高速下請": {
+      "source": "高速(下請)",
+      "files": [
+        "app/(system)/admin/reports/page.tsx"
+      ]
+    },
+    "reports_page.高速協力": {
+      "source": "高速(協力)",
+      "files": [
+        "app/(system)/admin/reports/page.tsx"
+      ]
+    },
+    "reports_page.高速元請": {
+      "source": "高速(元請)",
+      "files": [
+        "app/(system)/admin/reports/page.tsx"
+      ]
+    },
+    "reports_page.車両": {
+      "source": "車両",
+      "files": [
+        "app/(system)/admin/reports/page.tsx"
+      ]
+    },
+    "reports_page.駐車下請": {
+      "source": "駐車(下請)",
+      "files": [
+        "app/(system)/admin/reports/page.tsx"
+      ]
+    },
+    "reports_page.駐車協力": {
+      "source": "駐車(協力)",
+      "files": [
+        "app/(system)/admin/reports/page.tsx"
+      ]
+    },
+    "reports_page.駐車元請": {
+      "source": "駐車(元請)",
+      "files": [
+        "app/(system)/admin/reports/page.tsx"
+      ]
+    },
+    "reports_page.登録失敗": {
+      "source": "登録失敗:",
+      "files": [
+        "app/(system)/admin/reports/page.tsx",
+        "app/(system)/admin/shift-management/page.tsx"
+      ]
+    },
+    "reports_reportbasicsection.現場を選択してください": {
+      "source": "現場を選択してください",
+      "files": [
+        "app/components/reports/ReportBasicSection.tsx"
+      ]
+    },
+    "reports_reportbasicsection.担当_smanager_name": {
+      "source": "/ 担当: ${s.manager_name}",
+      "files": [
+        "app/components/reports/ReportBasicSection.tsx"
+      ]
+    },
+    "reports_reportdriversection.運転手名を入力": {
+      "source": "運転手名を入力",
+      "files": [
+        "app/components/reports/ReportDriverSection.tsx"
+      ]
+    },
+    "reports_reportheavyequipmentsection.op名を入力": {
+      "source": "OP名を入力",
+      "files": [
+        "app/components/reports/ReportHeavyEquipmentSection.tsx"
+      ]
+    },
+    "reports_reportheavyequipmentsection.グレーダー": {
+      "source": "グレーダー",
+      "files": [
+        "app/components/reports/ReportHeavyEquipmentSection.tsx"
+      ]
+    },
+    "reports_reportmembersection.メンバー名を入力": {
+      "source": "メンバー名を入力",
+      "files": [
+        "app/components/reports/ReportMemberSection.tsx"
+      ]
+    },
+    "reports_reportnotesection.送信中": {
+      "source": "送信中...",
+      "files": [
+        "app/components/reports/ReportNoteSection.tsx"
+      ]
+    },
+    "reports_usereportvalidation.メンバーを追加してください": {
+      "source": "メンバーを追加してください",
+      "files": [
+        "app/hooks/reports/useReportValidation.ts"
+      ]
+    },
+    "reports_usereportvalidation.開始時間と終了時間が同じです": {
+      "source": "開始時間と終了時間が同じです",
+      "files": [
+        "app/hooks/reports/useReportValidation.ts"
+      ]
+    },
+    "reports_usereportvalidation.開始時間を選択してください": {
+      "source": "開始時間を選択してください",
+      "files": [
+        "app/hooks/reports/useReportValidation.ts"
+      ]
+    },
+    "reports_usereportvalidation.元請を入力してください": {
+      "source": "元請を入力してください",
+      "files": [
+        "app/hooks/reports/useReportValidation.ts"
+      ]
+    },
+    "reports_usereportvalidation.現場名を入力してください": {
+      "source": "現場名を入力してください",
+      "files": [
+        "app/hooks/reports/useReportValidation.ts"
+      ]
+    },
+    "reports_usereportvalidation.作業内容を入力してください": {
+      "source": "作業内容を入力してください",
+      "files": [
+        "app/hooks/reports/useReportValidation.ts"
+      ]
+    },
+    "reports_usereportvalidation.終了時間を選択してください": {
+      "source": "終了時間を選択してください",
+      "files": [
+        "app/hooks/reports/useReportValidation.ts"
+      ]
+    },
+    "reports_usereportvalidation.昼勤務になっていますが時間が夜勤帯に見えますこのまま保存しますか": {
+      "source": "昼勤務になっていますが、時間が夜勤帯に見えます。このまま保存しますか？",
+      "files": [
+        "app/hooks/reports/useReportValidation.ts"
+      ]
+    },
+    "reports_usereportvalidation.番割メンバーを確認してください": {
+      "source": "番割メンバーを確認してください",
+      "files": [
+        "app/hooks/reports/useReportValidation.ts"
+      ]
+    },
+    "reports_usereportvalidation.夜勤務になっていますが時間が昼勤帯に見えますこのまま保存しますか": {
+      "source": "夜勤務になっていますが、時間が昼勤帯に見えます。このまま保存しますか？",
+      "files": [
+        "app/hooks/reports/useReportValidation.ts"
+      ]
+    },
+    "request_page.employeenameさんがselecteditemitem_name_物品の": {
+      "source": "${employeeName}さんが「${selectedItem?.item_name ?? \"物品\"}」の使用申請をしました",
+      "files": [
+        "app/(system)/admin/items/request/page.tsx"
+      ]
+    },
+    "request_page.使用申請しました": {
+      "source": "使用申請しました",
+      "files": [
+        "app/(system)/admin/items/request/page.tsx"
+      ]
+    },
+    "request_page.日付を入力してください": {
+      "source": "日付を入力してください",
+      "files": [
+        "app/(system)/admin/items/request/page.tsx",
+        "app/hooks/reports/useReportValidation.ts"
+      ]
+    },
+    "request_page.物品": {
+      "source": "物品",
+      "files": [
+        "app/(system)/admin/items/request/page.tsx"
+      ]
+    },
+    "request_page.物品push送信結果": {
+      "source": "物品Push送信結果",
+      "files": [
+        "app/(system)/admin/items/request/page.tsx"
+      ]
+    },
+    "request_page.物品を選択してください": {
+      "source": "物品を選択してください",
+      "files": [
+        "app/(system)/admin/items/request/page.tsx"
+      ]
+    },
+    "request_page.物品使用申請": {
+      "source": "物品使用申請",
+      "files": [
+        "app/(system)/admin/items/request/page.tsx",
+        "app/(system)/home/page.tsx"
+      ]
+    },
+    "requests_page.使用申請中": {
+      "source": "使用申請中",
+      "files": [
+        "app/(system)/admin/items/requests/page.tsx"
+      ]
+    },
+    "requests_page.承認しました": {
+      "source": "承認しました",
+      "files": [
+        "app/(system)/admin/items/requests/page.tsx"
+      ]
+    },
+    "requests_page.承認失敗": {
+      "source": "承認失敗:",
+      "files": [
+        "app/(system)/admin/items/requests/page.tsx"
+      ]
+    },
+    "requests_page.申請取得失敗": {
+      "source": "申請取得失敗:",
+      "files": [
+        "app/(system)/admin/items/requests/page.tsx"
+      ]
+    },
+    "requests_page.物品状態更新失敗": {
+      "source": "物品状態更新失敗:",
+      "files": [
+        "app/(system)/admin/items/requests/page.tsx"
+      ]
+    },
+    "requests_page.返却確認しました": {
+      "source": "返却確認しました",
+      "files": [
+        "app/(system)/admin/items/requests/page.tsx"
+      ]
+    },
+    "requests_page.返却確認失敗": {
+      "source": "返却確認失敗:",
+      "files": [
+        "app/(system)/admin/items/requests/page.tsx"
+      ]
+    },
+    "return_page.貸出中物品の取得失敗": {
+      "source": "貸出中物品の取得失敗:",
+      "files": [
+        "app/(system)/admin/items/return/page.tsx"
+      ]
+    },
+    "return_page.返却通知処理開始": {
+      "source": "返却通知処理開始",
+      "files": [
+        "app/(system)/admin/items/return/page.tsx"
+      ]
+    },
+    "return_page.履歴保存結果": {
+      "source": "履歴保存結果",
+      "files": [
+        "app/(system)/admin/items/return/page.tsx"
+      ]
+    },
+    "select-mode_page.ログイン情報がありません": {
+      "source": "ログイン情報がありません",
+      "files": [
+        "app/(public)/login/select-mode/page.tsx",
+        "app/(system)/admin/users/[id]/page.tsx",
+        "app/(system)/admin/users/page.tsx",
+        "app/(system)/change-password/page.tsx",
+        "app/super-admin/components/Header.tsx",
+        "app/super-admin/organizations/[id]/page.tsx",
+        "app/super-admin/organizations/page.tsx",
+        "app/super-admin/super-admin-users/page.tsx",
+        "app/super-admin/users/page.tsx"
+      ]
+    },
+    "select-mode_page.会社": {
+      "source": "会社",
+      "files": [
+        "app/(public)/login/select-mode/page.tsx",
+        "app/(system)/admin/analytics/monthly/page.tsx",
+        "app/(system)/admin/users/page.tsx"
+      ]
+    },
+    "select-mode_page.会社モードへの切り替えに失敗しました": {
+      "source": "会社モードへの切り替えに失敗しました",
+      "files": [
+        "app/(public)/login/select-mode/page.tsx"
+      ]
+    },
+    "select-mode_page.会社情報がありません": {
+      "source": "会社情報がありません",
+      "files": [
+        "app/(public)/login/select-mode/page.tsx"
+      ]
+    },
+    "send-push_route.push送信失敗": {
+      "source": "push送信失敗",
+      "files": [
+        "app/api/send-push/route.ts"
+      ]
+    },
+    "send-push_route.送信できる端末がありません": {
+      "source": "送信できる端末がありません",
+      "files": [
+        "app/api/send-push/route.ts"
+      ]
+    },
+    "send-push_route.端末未登録": {
+      "source": "端末未登録",
+      "files": [
+        "app/api/send-push/route.ts"
+      ]
+    },
+    "send-push_route.必要な情報が不足しています": {
+      "source": "必要な情報が不足しています",
+      "files": [
+        "app/api/send-push/route.ts"
+      ]
+    },
+    "shift-management_page.この休み希望を削除しますか": {
+      "source": "この休み希望を削除しますか？",
+      "files": [
+        "app/(system)/admin/shift-management/page.tsx"
+      ]
+    },
+    "shift-management_page.この日はすでに休み希望を出しています": {
+      "source": "この日はすでに休み希望を出しています",
+      "files": [
+        "app/(system)/admin/shift-management/page.tsx"
+      ]
+    },
+    "shift-management_page.シフト取得失敗": {
+      "source": "シフト取得失敗:",
+      "files": [
+        "app/(system)/admin/shift-management/page.tsx"
+      ]
+    },
+    "shift-management_page.すでに休み希望があります": {
+      "source": "すでに休み希望があります",
+      "files": [
+        "app/(system)/admin/shift-management/page.tsx"
+      ]
+    },
+    "shift-management_page.ダブルタップで削除": {
+      "source": "ダブルタップで削除",
+      "files": [
+        "app/(system)/admin/shift-management/page.tsx"
+      ]
+    },
+    "shift-management_page.メモ_任意": {
+      "source": "メモ 任意",
+      "files": [
+        "app/(system)/admin/shift-management/page.tsx"
+      ]
+    },
+    "shift-management_page.一括削除失敗": {
+      "source": "一括削除失敗:",
+      "files": [
+        "app/(system)/admin/shift-management/page.tsx"
+      ]
+    },
+    "shift-management_page.一括登録失敗": {
+      "source": "一括登録失敗:",
+      "files": [
+        "app/(system)/admin/shift-management/page.tsx"
+      ]
+    },
+    "shift-management_page.管理者表示": {
+      "source": "管理者表示",
+      "files": [
+        "app/(system)/admin/shift-management/page.tsx"
+      ]
+    },
+    "shift-management_page.自分の休み希望": {
+      "source": "自分の休み希望",
+      "files": [
+        "app/(system)/admin/shift-management/page.tsx"
+      ]
+    },
+    "shift-management_page.社員情報を取得できませんでした": {
+      "source": "社員情報を取得できませんでした",
+      "files": [
+        "app/(system)/admin/shift-management/page.tsx"
+      ]
+    },
+    "shift-management_page.日付を選択してください": {
+      "source": "日付を選択してください",
+      "files": [
+        "app/(system)/admin/shift-management/page.tsx"
+      ]
+    },
+    "start_route.organizationidがありません": {
+      "source": "organizationIdがありません",
+      "files": [
+        "app/api/super-admin/impersonate/start/route.ts"
+      ]
+    },
+    "start_route.super_admin権限がありません": {
+      "source": "Super Admin権限がありません",
+      "files": [
+        "app/api/super-admin/impersonate/start/route.ts"
+      ]
+    },
+    "start_route.会社情報が見つかりません": {
+      "source": "会社情報が見つかりません",
+      "files": [
+        "app/api/super-admin/impersonate/start/route.ts"
+      ]
+    },
+    "summary_page.集計取得失敗": {
+      "source": "集計取得失敗:",
+      "files": [
+        "app/(system)/reports/summary/page.tsx"
+      ]
+    },
+    "super-admin_page.activecount社": {
+      "source": "${activeCount}社",
+      "files": [
+        "app/super-admin/page.tsx"
+      ]
+    },
+    "super-admin_page.cancelledcount社": {
+      "source": "${cancelledCount}社",
+      "files": [
+        "app/super-admin/page.tsx"
+      ]
+    },
+    "super-admin_page.suspendedcount社": {
+      "source": "${suspendedCount}社",
+      "files": [
+        "app/super-admin/page.tsx"
+      ]
+    },
+    "super-admin_page.totalcount社": {
+      "source": "${totalCount}社",
+      "files": [
+        "app/super-admin/page.tsx"
+      ]
+    },
+    "super-admin_page.trialcount社": {
+      "source": "${trialCount}社",
+      "files": [
+        "app/super-admin/page.tsx"
+      ]
+    },
+    "super-admin_page.トライアル": {
+      "source": "トライアル",
+      "files": [
+        "app/super-admin/page.tsx"
+      ]
+    },
+    "super-admin_page.契約会社数": {
+      "source": "契約会社数",
+      "files": [
+        "app/super-admin/page.tsx"
+      ]
+    },
+    "super-admin-users_page.super_adminを作成": {
+      "source": "Super Adminを作成",
+      "files": [
+        "app/super-admin/super-admin-users/page.tsx"
+      ]
+    },
+    "super-admin-users_page.super_adminを作成しました": {
+      "source": "Super Adminを作成しました",
+      "files": [
+        "app/super-admin/super-admin-users/page.tsx"
+      ]
+    },
+    "super-admin-users_page.super_admin一覧取得に失敗しました": {
+      "source": "Super Admin一覧取得に失敗しました",
+      "files": [
+        "app/super-admin/super-admin-users/page.tsx"
+      ]
+    },
+    "super-admin-users_page.super_admin作成に失敗しました": {
+      "source": "Super Admin作成に失敗しました",
+      "files": [
+        "app/super-admin/super-admin-users/page.tsx"
+      ]
+    },
+    "two-month_api.id取得失敗": {
+      "source": "ID取得失敗",
+      "files": [
+        "app/(system)/admin/assignments/two-month/api.ts"
+      ]
+    },
+    "two-month_api.ストレージ削除失敗": {
+      "source": "ストレージ削除失敗:",
+      "files": [
+        "app/(system)/admin/assignments/two-month/api.ts"
+      ]
+    },
+    "two-month_api.ファイル一覧取得失敗": {
+      "source": "ファイル一覧取得失敗:",
+      "files": [
+        "app/(system)/admin/assignments/two-month/api.ts"
+      ]
+    },
+    "two-month_api.ファイル取得失敗": {
+      "source": "ファイル取得失敗:",
+      "files": [
+        "app/(system)/admin/assignments/two-month/api.ts"
+      ]
+    },
+    "two-month_api.ファイル登録失敗": {
+      "source": "ファイル登録失敗:",
+      "files": [
+        "app/(system)/admin/assignments/two-month/api.ts"
+      ]
+    },
+    "two-month_api.メンバー削除失敗": {
+      "source": "メンバー削除失敗:",
+      "files": [
+        "app/(system)/admin/assignments/two-month/api.ts"
+      ]
+    },
+    "two-month_api.メンバー取得失敗": {
+      "source": "メンバー取得失敗:",
+      "files": [
+        "app/(system)/admin/assignments/two-month/api.ts",
+        "app/(system)/admin/assignments/view/page.tsx"
+      ]
+    },
+    "two-month_api.元請取得失敗": {
+      "source": "元請取得失敗:",
+      "files": [
+        "app/(system)/admin/assignments/two-month/api.ts",
+        "app/(system)/admin/contractors/page.tsx"
+      ]
+    },
+    "two-month_api.現場取得失敗": {
+      "source": "現場取得失敗:",
+      "files": [
+        "app/(system)/admin/assignments/two-month/api.ts",
+        "app/(system)/admin/assignments/view/page.tsx",
+        "app/(system)/admin/report-status/page.tsx",
+        "app/components/MyMonthlyScheduleModal.tsx"
+      ]
+    },
+    "two-month_api.工程表削除失敗": {
+      "source": "工程表削除失敗:",
+      "files": [
+        "app/(system)/admin/assignments/two-month/api.ts"
+      ]
+    },
+    "two-month_api.工程表取得失敗": {
+      "source": "工程表取得失敗:",
+      "files": [
+        "app/(system)/admin/assignments/two-month/api.ts"
+      ]
+    },
+    "two-month_api.担当者取得失敗": {
+      "source": "担当者取得失敗:",
+      "files": [
+        "app/(system)/admin/assignments/two-month/api.ts"
+      ]
+    },
+    "update-user-auth_route.メールアドレスが必要です": {
+      "source": "メールアドレスが必要です",
+      "files": [
+        "app/api/admin/update-user-auth/route.ts"
+      ]
+    },
+    "update-user-auth_route.ログインアカウント作成失敗": {
+      "source": "ログインアカウント作成失敗",
+      "files": [
+        "app/api/admin/update-user-auth/route.ts",
+        "app/api/super-admin/create-organization/route.ts"
+      ]
+    },
+    "update-user-auth_route.新規ログインアカウント作成にはパスワードが必要です": {
+      "source": "新規ログインアカウント作成にはパスワードが必要です",
+      "files": [
+        "app/api/admin/update-user-auth/route.ts"
+      ]
+    },
+    "upload-sites_route.csvデータがありません": {
+      "source": "CSVデータがありません",
+      "files": [
+        "app/api/admin/upload-sites/route.ts"
+      ]
+    },
+    "upload-sites_route.元請登録失敗": {
+      "source": "元請登録失敗:",
+      "files": [
+        "app/api/admin/upload-sites/route.ts"
+      ]
+    },
+    "upload-sites_route.現場登録失敗": {
+      "source": "現場登録失敗:",
+      "files": [
+        "app/api/admin/upload-sites/route.ts"
+      ]
+    },
+    "users_page.employeename_を完全削除しますか_ログインアカウントも削除されます": {
+      "source": "${employee.name} を完全削除しますか？ ログインアカウントも削除されます。",
+      "files": [
+        "app/(system)/admin/users/page.tsx"
+      ]
+    },
+    "users_page.ユーザー取得失敗": {
+      "source": "ユーザー取得失敗:",
+      "files": [
+        "app/super-admin/users/page.tsx"
+      ]
+    },
+    "users_page.会社idがありません": {
+      "source": "会社IDがありません",
+      "files": [
+        "app/super-admin/users/page.tsx"
+      ]
+    },
+    "users_page.完全削除しました": {
+      "source": "完全削除しました",
+      "files": [
+        "app/(system)/admin/users/page.tsx"
+      ]
+    },
+    "users_page.削除失敗": {
+      "source": "削除失敗",
+      "files": [
+        "app/(system)/admin/users/page.tsx"
+      ]
+    },
+    "users_page.代理ログインに失敗しました": {
+      "source": "代理ログインに失敗しました",
+      "files": [
+        "app/super-admin/users/page.tsx"
+      ]
+    },
+    "users_page.名前で検索": {
+      "source": "名前で検索",
+      "files": [
+        "app/(system)/admin/users/page.tsx"
+      ]
+    },
+    "users_page.名前会社権限で検索": {
+      "source": "名前・会社・権限で検索",
+      "files": [
+        "app/super-admin/users/page.tsx"
+      ]
+    },
+    "vehicles_page.この車両を削除しますか": {
+      "source": "この車両を削除しますか？",
+      "files": [
+        "app/(system)/admin/vehicles/page.tsx"
+      ]
+    },
+    "vehicles_page.車両削除失敗": {
+      "source": "車両削除失敗:",
+      "files": [
+        "app/(system)/admin/vehicles/page.tsx"
+      ]
+    },
+    "vehicles_page.車両取得失敗": {
+      "source": "車両取得失敗:",
+      "files": [
+        "app/(system)/admin/vehicles/page.tsx"
+      ]
+    },
+    "vehicles_page.車両追加失敗": {
+      "source": "車両追加失敗:",
+      "files": [
+        "app/(system)/admin/vehicles/page.tsx"
+      ]
+    },
+    "vehicles_page.車両名_例3tダンプ": {
+      "source": "車両名 例：3tダンプ",
+      "files": [
+        "app/(system)/admin/vehicles/page.tsx"
+      ]
+    },
+    "vehicles_page.車両名を入力してください": {
+      "source": "車両名を入力してください",
+      "files": [
+        "app/(system)/admin/vehicles/page.tsx"
+      ]
+    },
+    "vehicles_page.特殊車両": {
+      "source": "特殊車両",
+      "files": [
+        "app/(system)/admin/vehicles/page.tsx"
+      ]
+    },
+    "view_page.今週": {
+      "source": "今週",
+      "files": [
+        "app/(system)/admin/assignments/view/page.tsx"
+      ]
+    },
+    "view_page.今日": {
+      "source": "今日",
+      "files": [
+        "app/(system)/admin/assignments/view/page.tsx"
+      ]
+    },
+    "view_page.前週": {
+      "source": "前週",
+      "files": [
+        "app/(system)/admin/assignments/view/page.tsx"
+      ]
+    },
+    "view_page.前日": {
+      "source": "前日",
+      "files": [
+        "app/(system)/admin/assignments/view/page.tsx"
+      ]
+    },
+    "view_page.日別情報取得失敗": {
+      "source": "日別情報取得失敗:",
+      "files": [
+        "app/(system)/admin/assignments/view/page.tsx"
+      ]
+    },
+    "view_page.番割_datejpg": {
+      "source": "番割_${date}.jpg",
+      "files": [
+        "app/(system)/admin/assignments/view/page.tsx"
+      ]
+    },
+    "view_page.翌週": {
+      "source": "翌週",
+      "files": [
+        "app/(system)/admin/assignments/view/page.tsx"
+      ]
+    },
+    "view_page.翌日": {
+      "source": "翌日",
+      "files": [
+        "app/(system)/admin/assignments/view/page.tsx"
+      ]
+    }
+  }
+}

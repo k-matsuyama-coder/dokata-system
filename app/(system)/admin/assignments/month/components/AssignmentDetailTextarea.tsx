@@ -11,14 +11,7 @@ type Props = {
   dailyInfo: DailyInfo | undefined;
 
   editingDetails: Record<string, string>;
-  setEditingDetails: React.Dispatch<
-    React.SetStateAction<Record<string, string>>
-  >;
-
-  saveTimers: Record<string, ReturnType<typeof setTimeout>>;
-  setSaveTimers: React.Dispatch<
-    React.SetStateAction<Record<string, ReturnType<typeof setTimeout>>>
-  >;
+  flushDetailSave: (assignmentId: string, workDate: string) => Promise<void>;
 
   updateDailyInfo: (
     assignmentId: string,
@@ -35,9 +28,7 @@ export default function AssignmentDetailTextarea({
   workDate,
   dailyInfo,
   editingDetails,
-  setEditingDetails,
-  saveTimers,
-  setSaveTimers,
+  flushDetailSave,
   updateDailyInfo,
 }: Props) {
   const key = `${assignmentId}_${workDate}`;
@@ -46,25 +37,10 @@ export default function AssignmentDetailTextarea({
     <textarea
       value={key in editingDetails ? editingDetails[key] : dailyInfo?.detail ?? ""}
       onChange={(e) => {
-        const value = e.target.value;
-
-        setEditingDetails((prev) => ({
-          ...prev,
-          [key]: value,
-        }));
-
-        if (saveTimers[key]) {
-          clearTimeout(saveTimers[key]);
-        }
-
-        const timer = setTimeout(() => {
-          updateDailyInfo(assignmentId, workDate, "detail", value);
-        }, 500);
-
-        setSaveTimers((prev) => ({
-          ...prev,
-          [key]: timer,
-        }));
+        updateDailyInfo(assignmentId, workDate, "detail", e.target.value);
+      }}
+      onBlur={() => {
+        void flushDetailSave(assignmentId, workDate);
       }}
       disabled={isOutOfPeriod}
       placeholder="詳細"

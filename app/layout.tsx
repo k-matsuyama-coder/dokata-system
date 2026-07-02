@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import NavBar from "./components/NavBar";
 import { Toaster } from "react-hot-toast";
+import { LanguageProvider } from "@/app/providers/LanguageProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,9 +18,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "DOKATA-System",
   description: "番割・日報・シフト管理システム",
-
   manifest: "/manifest.json",
-
   appleWebApp: {
     capable: true,
     title: "DOKATA-System",
@@ -33,13 +32,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="ja">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <NavBar />
-<main style={{ padding: "76px 16px 16px" }}>{children}</main>
-<Toaster position="top-center" />
+        <LanguageProvider>
+          <NavBar />
+          <main style={{ padding: "76px 16px 16px" }}>{children}</main>
+          <Toaster position="top-center" />
+        </LanguageProvider>
       </body>
     </html>
   );

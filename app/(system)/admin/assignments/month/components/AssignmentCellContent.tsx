@@ -58,6 +58,11 @@ type Props = {
     value: string
   ) => void;
 
+  flushDetailSave: (
+    assignmentId: string,
+    workDate: string
+  ) => Promise<void>;
+
   removeVehicleFromCell: (
     vehicleName: string,
     assignmentId: string,
@@ -94,6 +99,7 @@ function AssignmentCellContent({
   setSelectedEmployeeName,
 
   updateDailyInfo,
+  flushDetailSave,
   removeVehicleFromCell,
   deleteSiteMember,
   toggleForeman,
@@ -118,9 +124,7 @@ function AssignmentCellContent({
         workDate={date}
         dailyInfo={dailyInfo}
         editingDetails={editingDetails}
-        setEditingDetails={setEditingDetails}
-        saveTimers={saveTimers}
-        setSaveTimers={setSaveTimers}
+        flushDetailSave={flushDetailSave}
         updateDailyInfo={updateDailyInfo}
       />
 
