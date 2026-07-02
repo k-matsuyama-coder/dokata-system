@@ -1,7 +1,18 @@
 // app/(system)/admin/assignments/month/hooks/useMonthlyAssignmentData.ts
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { fetchMonthlyAssignmentsAction } from "../actions/fetchMonthlyAssignments";
+import {
+  getAssignments,
+  getAssignmentFiles,
+  getContractorContacts,
+  getContractors,
+  getCurrentOrganization,
+  getDailyInfos,
+  getEmployees,
+  getShiftRequests,
+  getSiteMembers,
+  getVehicles,
+} from "../api";
 
 import type {
   Assignment,
@@ -36,40 +47,80 @@ export function useMonthlyAssignmentData({ days }: Props) {
   const [contractorContacts, setContractorContacts] = useState<
     ContractorContact[]
   >([]);
+  const [organizationId, setOrganizationId] = useState<string | null>(null);
 
   const startDate = useMemo(() => days[0] ?? "", [days]);
   const endDate = useMemo(() => days[days.length - 1] ?? "", [days]);
 
-  const fetchData = useCallback(async () => {
-    if (!startDate || !endDate) {
-      return;
-    }
+  useEffect(() => {
+    let active = true;
 
-    const {
-      employeeData,
-      vehicleData,
-      contractorData,
-      contactData,
-      assignmentData,
-      fileData,
-      memberData,
-      dailyInfoData,
-      shiftRequestData,
-    } = await fetchMonthlyAssignmentsAction({
-      startDate,
-      endDate,
-    });
+    const loadOrganizationId = async () => {
+      const currentOrganizationId = await getCurrentOrganization();
+      if (!active) return;
+      setOrganizationId(currentOrganizationId);
+    };
+
+    void loadOrganizationId();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const fetchMasterData = useCallback(async () => {
+    if (!organizationId) return;
+
+    const [employeeData, vehicleData, contractorData, contactData] =
+      await Promise.all([
+        getEmployees(organizationId),
+        getVehicles(organizationId),
+        getContractors(organizationId),
+        getContractorContacts(organizationId),
+      ]);
 
     setEmployees(employeeData);
     setVehicles(vehicleData);
     setContractors(contractorData);
     setContractorContacts(contactData);
+  }, [organizationId]);
+
+  const fetchScheduleData = useCallback(async () => {
+    if (!organizationId || !startDate || !endDate) {
+      return;
+    }
+
+    const assignmentData = await getAssignments(organizationId);
+    const assignmentIds = (assignmentData ?? []).map((assignment) => assignment.id);
+
     setAssignments(assignmentData);
+
+    if (assignmentIds.length === 0) {
+      setAssignmentFiles([]);
+      setSiteMembers([]);
+      setDailyInfos([]);
+      setShiftRequests([]);
+      return;
+    }
+
+    const [fileData, memberData, dailyInfoData, shiftRequestData] =
+      await Promise.all([
+        getAssignmentFiles(organizationId, assignmentIds),
+        getSiteMembers(organizationId, assignmentIds, startDate, endDate),
+        getDailyInfos(organizationId, assignmentIds, startDate, endDate),
+        getShiftRequests(organizationId, startDate, endDate),
+      ]);
+
     setAssignmentFiles(fileData);
     setSiteMembers(memberData);
     setDailyInfos(dailyInfoData);
     setShiftRequests(shiftRequestData);
-  }, [startDate, endDate]);
+  }, [organizationId, startDate, endDate]);
+
+  const fetchData = useCallback(async () => {
+    await fetchMasterData();
+    await fetchScheduleData();
+  }, [fetchMasterData, fetchScheduleData]);
 
   return {
     assignments,
@@ -90,6 +141,8 @@ export function useMonthlyAssignmentData({ days }: Props) {
     setContractors,
     contractorContacts,
     setContractorContacts,
+    fetchMasterData,
+    fetchScheduleData,
     fetchData,
   };
 }

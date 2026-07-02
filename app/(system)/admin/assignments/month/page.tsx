@@ -234,10 +234,16 @@ export default function MonthlyAssignmentsPage() {
     vehicles,
     contractors,
     contractorContacts,
+    fetchMasterData,
+    fetchScheduleData,
     fetchData,
   } = useMonthlyAssignmentData({
     days,
   });
+
+  useEffect(() => {
+    void fetchMasterData();
+  }, [fetchMasterData]);
 
   const {
     assignmentMap,
@@ -299,14 +305,14 @@ export default function MonthlyAssignmentsPage() {
     month,
     viewMode,
     weekStart,
-    fetchData,
+    fetchData: fetchScheduleData,
   });
 
   useMonthlyAssignmentRealtime({
     month,
     viewMode,
     weekStart,
-    fetchData,
+    fetchData: fetchScheduleData,
   });
 
   useEffect(() => {
