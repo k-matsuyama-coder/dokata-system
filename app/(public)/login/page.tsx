@@ -8,56 +8,63 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
 
   const handleLogin = async () => {
+    console.log("SUPABASE_URL", process.env.NEXT_PUBLIC_SUPABASE_URL);
+    console.log(
+      "SUPABASE_KEY_PREFIX",
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.slice(0, 20)
+    );
+
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
-  
+
     if (error) {
+      console.error("login error", error);
       alert("ログイン失敗: " + error.message);
       return;
     }
-  
+
     const user = data.user;
-  
+
     if (!user) {
       alert("ユーザー情報が取得できません");
       return;
     }
-  
+
     const { data: superAdminUser } = await supabase
       .from("super_admin_users")
       .select("id")
       .eq("auth_user_id", user.id)
       .maybeSingle();
-  
+
     const { data: employee } = await supabase
       .from("employees")
       .select("id, role, must_change_password, organization_id")
       .eq("auth_user_id", user.id)
       .maybeSingle();
-  
+
     if (superAdminUser && employee) {
       window.location.href = "/login/select-mode";
       return;
     }
-  
+
     if (superAdminUser && !employee) {
       window.location.href = "/super-admin";
       return;
     }
-  
+
     if (!employee) {
       alert("社員情報がありません。管理者に確認してください。");
       await supabase.auth.signOut();
       return;
     }
-  
+
     if (employee.must_change_password) {
       window.location.href = "/change-password";
       return;
     }
-  
+
     window.location.href = "/home";
   };
 
