@@ -37,7 +37,6 @@ export default function AssignmentToolbar({
   setPublicViewMode,
   onExportExcel,
 }: AssignmentToolbarProps) {
-
   const moveMonth = (diff: number) => {
     const [year, monthValue] = month.split("-").map(Number);
     const nextDate = new Date(year, monthValue - 1 + diff, 1);
@@ -60,40 +59,59 @@ export default function AssignmentToolbar({
     border: "1px solid #d1d5db",
     backgroundColor: "#fff",
     borderRadius: 8,
-    padding: "8px 12px",
+    padding: "10px 12px",
     fontWeight: 700,
     cursor: "pointer",
+    flexShrink: 0,
+    whiteSpace: "nowrap",
   };
 
+  const primaryToggleStyle = (active: boolean): React.CSSProperties => ({
+    border: "none",
+    borderRadius: 8,
+    padding: "10px 12px",
+    fontWeight: 700,
+    cursor: "pointer",
+    backgroundColor: active ? "#1d4ed8" : "#e5e7eb",
+    color: active ? "#fff" : "#111827",
+    flexShrink: 0,
+    whiteSpace: "nowrap",
+  });
+
   const inputBoxStyle: React.CSSProperties = {
-    padding: "8px 10px",
+    padding: "10px 12px",
     border: "1px solid #d1d5db",
     borderRadius: 8,
     fontSize: 14,
     backgroundColor: "#fff",
+    flexShrink: 0,
+    whiteSpace: "nowrap",
+  };
+
+  const scrollRowStyle: React.CSSProperties = {
+    display: "flex",
+    gap: 8,
+    alignItems: "center",
+    flexWrap: "nowrap",
+    overflowX: "auto",
+    overflowY: "hidden",
+    WebkitOverflowScrolling: "touch",
+    width: "100%",
+    maxWidth: "100%",
+    paddingBottom: 4,
   };
 
   return (
     <div
       style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "flex-start",
-        gap: 12,
+        display: "grid",
+        gap: 8,
         marginBottom: 16,
-        flexWrap: "wrap",
+        width: "100%",
+        maxWidth: "100%",
       }}
     >
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 8,
-          alignItems: "center",
-          flex: 1,
-          minWidth: 0,
-        }}
-      >
+      <div style={scrollRowStyle}>
         <button
           type="button"
           onClick={() => moveMonth(-1)}
@@ -120,15 +138,7 @@ export default function AssignmentToolbar({
         <button
           type="button"
           onClick={() => setViewMode("month")}
-          style={{
-            border: "none",
-            borderRadius: 8,
-            padding: "8px 12px",
-            fontWeight: 700,
-            cursor: "pointer",
-            backgroundColor: viewMode === "month" ? "#1d4ed8" : "#e5e7eb",
-            color: viewMode === "month" ? "#fff" : "#111827",
-          }}
+          style={primaryToggleStyle(viewMode === "month")}
         >
           月間
         </button>
@@ -136,15 +146,7 @@ export default function AssignmentToolbar({
         <button
           type="button"
           onClick={() => setViewMode("week")}
-          style={{
-            border: "none",
-            borderRadius: 8,
-            padding: "8px 12px",
-            fontWeight: 700,
-            cursor: "pointer",
-            backgroundColor: viewMode === "week" ? "#1d4ed8" : "#e5e7eb",
-            color: viewMode === "week" ? "#fff" : "#111827",
-          }}
+          style={primaryToggleStyle(viewMode === "week")}
         >
           週間
         </button>
@@ -193,6 +195,8 @@ export default function AssignmentToolbar({
             gap: 6,
             fontSize: 14,
             cursor: "pointer",
+            flexShrink: 0,
+            whiteSpace: "nowrap",
           }}
         >
           <input
@@ -213,34 +217,17 @@ export default function AssignmentToolbar({
       </div>
 
       {(setPublicViewMode || onCreatePublicLink || onExportExcel) && (
-        <div
-          style={{
-            display: "flex",
-            gap: 8,
-            alignItems: "center",
-            justifyContent: "flex-end",
-            marginLeft: "auto",
-            flexWrap: "wrap",
-          }}
-        >
+        <div style={scrollRowStyle}>
+          {onExportExcel && (
+            <button
+              type="button"
+              onClick={onExportExcel}
+              style={secondaryButtonStyle}
+            >
+              Excel抽出
+            </button>
+          )}
 
-{onExportExcel && (
-  <button
-    type="button"
-    onClick={onExportExcel}
-    style={{
-      border: "1px solid #d1d5db",
-      backgroundColor: "#fff",
-      borderRadius: 8,
-      padding: "8px 12px",
-      fontWeight: 700,
-      cursor: "pointer",
-      whiteSpace: "nowrap",
-    }}
-  >
-    Excel抽出
-  </button>
-)}
           {setPublicViewMode && (
             <select
               value={publicViewMode}
@@ -262,12 +249,13 @@ export default function AssignmentToolbar({
               style={{
                 border: "none",
                 borderRadius: 8,
-                padding: "8px 12px",
+                padding: "10px 12px",
                 fontWeight: 700,
                 cursor: creatingPublicLink ? "default" : "pointer",
                 backgroundColor: creatingPublicLink ? "#9ca3af" : "#111827",
                 color: "#fff",
                 whiteSpace: "nowrap",
+                flexShrink: 0,
               }}
             >
               {creatingPublicLink ? "公開URL発行中..." : "公開URLを発行"}
