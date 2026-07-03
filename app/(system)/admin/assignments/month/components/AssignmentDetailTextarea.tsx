@@ -98,21 +98,7 @@ export default function AssignmentDetailTextarea({
       [key]: timer,
     }));
   }}
-  onBlur={(e) => {
-    const value = e.target.value;
-
-    if (saveTimers[key]) {
-      clearTimeout(saveTimers[key]);
-    }
-
-    updateDailyInfo(assignmentId, workDate, "detail", value);
-
-    setSaveTimers((prev) => {
-      const next = { ...prev };
-      delete next[key];
-      return next;
-    });
-
+  onBlur={() => {
     flushDetailSave?.(assignmentId, workDate);
   }}
   onKeyDown={(e) => {
@@ -136,7 +122,7 @@ export default function AssignmentDetailTextarea({
       }
     }
   }}
-  disabled={false}
+  disabled={isOutOfPeriod}
   placeholder="詳細"
   style={{
     width: "100%",

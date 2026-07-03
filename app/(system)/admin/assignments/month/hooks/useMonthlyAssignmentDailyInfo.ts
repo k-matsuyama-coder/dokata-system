@@ -100,14 +100,6 @@ export function useMonthlyAssignmentDailyInfo({
 
     const key = `${assignmentId}_${workDate}`;
 
-    if (field === "detail") {
-      setEditingDetails((prev) => {
-        const next = { ...prev };
-        delete next[key];
-        return next;
-      });
-    }
-
     clearSaveTimer(key);
     return true;
   };
@@ -152,14 +144,24 @@ export function useMonthlyAssignmentDailyInfo({
   const flushDetailSave = async (assignmentId: string, workDate: string) => {
     const key = `${assignmentId}_${workDate}`;
     const value = editingDetails[key];
-
+  
     clearSaveTimer(key);
-
+  
     if (value === undefined) {
       return;
     }
-
-    await saveDailyInfo(assignmentId, workDate, "detail", value);
+  
+    const ok = await saveDailyInfo(assignmentId, workDate, "detail", value);
+  
+    if (!ok) {
+      return;
+    }
+  
+    setEditingDetails((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
   };
 
   useEffect(() => {
