@@ -26,7 +26,15 @@ export async function POST(req: NextRequest) {
   }
 
   const data = JSON.parse(body);
-  console.log("LINE webhook:", JSON.stringify(data, null, 2));
+const firstEvent = data?.events?.[0];
+const lineUserId = firstEvent?.source?.userId ?? null;
+const eventType = firstEvent?.type ?? null;
+const messageText = firstEvent?.message?.text ?? null;
+
+console.log("LINE webhook event type:", eventType);
+console.log("LINE webhook userId:", lineUserId);
+console.log("LINE webhook message:", messageText);
+console.log("LINE webhook payload:", JSON.stringify(data, null, 2));
 
   return NextResponse.json({ ok: true });
 }
