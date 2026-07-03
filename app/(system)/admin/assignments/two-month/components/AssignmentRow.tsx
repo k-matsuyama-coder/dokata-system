@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { getDateAccentColors } from "../../month/utils/dateColors";
 import type { Assignment, AssignmentGroupKey } from "../types";
+import { isOutOfAssignmentPeriod } from "../../month/utils";
 import {
   stickyTd,
   stickyTotalTd1,
@@ -145,6 +146,13 @@ export default function TwoMonthAssignmentRow({
         const count = getPlannedCount(assignment.id, date);
         const colors = getDateAccentColors(date);
         const hasPlannedCount = count !== "";
+
+        const isOutOfPeriod = isOutOfAssignmentPeriod(
+          date,
+          assignment.start_date,
+          assignment.end_date
+        );
+
         const detailValue = getDetailTags(assignment.id, date).join(",");
         const detailKey = `${assignment.id}_${date}`;
         const textareaValue =
@@ -156,18 +164,27 @@ export default function TwoMonthAssignmentRow({
           <td
             key={date}
             style={{
-              ...td,
-              backgroundColor: hasPlannedCount ? "#dcfce7" : colors.cellBackground,
-              borderTop: hasPlannedCount ? "5px solid #22c55e" : td.border,
-            }}
+  ...td,
+  backgroundColor: isOutOfPeriod
+    ? "#d1d5db"
+    : hasPlannedCount
+      ? "#dcfce7"
+      : colors.cellBackground,
+  backgroundImage: isOutOfPeriod
+    ? "repeating-linear-gradient(135deg, rgba(255,255,255,0.18) 0px, rgba(255,255,255,0.18) 8px, transparent 8px, transparent 16px)"
+    : "none",
+  borderTop:
+    !isOutOfPeriod && hasPlannedCount ? "5px solid #22c55e" : td.border,
+}}
           >
             <div
-              style={{
-                display: "grid",
-                gap: 4,
-                justifyItems: "center",
-              }}
-            >
+  style={{
+    display: "grid",
+    gap: 4,
+    justifyItems: "center",
+    opacity: isOutOfPeriod ? 0.55 : 1,
+  }}
+>
               <div
                 style={{
                   position: "relative",
