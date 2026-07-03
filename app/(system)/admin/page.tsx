@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import BackButton from "@/app/components/BackButton";
 import { supabase } from "@/lib/supabase";
+import { hasRole } from "@/app/types/auth";
 
 const menuGroups = [
   {
@@ -38,6 +39,8 @@ const menuGroups = [
       { label: "物品申請確認", href: "/admin/items/requests", icon: "✅", desc: "使用申請・返却申請の確認" },
       { label: "物品使用履歴", href: "/admin/items/history", icon: "📋", desc: "物品の使用履歴を確認" },
       { label: "分析", href: "/admin/analysis", icon: "📊", desc: "集計・分析" },
+      { label: "給与計算", href: "/admin/payroll@", icon: "💴", desc: "日報から月次給与を集計" },
+      { label: "設定", href: "/admin/settings", icon: "⚙️", desc: "グループ名やON/OFFを設定" },
     ],
   },
 ];

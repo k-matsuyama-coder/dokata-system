@@ -6,6 +6,7 @@ import { handleAddSiteAction } from "../actions/handleAddSite";
 import { deleteAssignmentAction } from "../actions/deleteAssignment";
 import { uploadFilesAction } from "../actions/uploadFiles";
 import { deleteAssignmentFileAction } from "../actions/deleteAssignmentFile";
+import type { AssignmentGroupKey } from "../types";
 
 import type {
   Assignment,
@@ -61,6 +62,9 @@ setAddFiles: React.Dispatch<
 
   setShowAddModal: Dispatch<SetStateAction<boolean>>;
 
+  groupKey: AssignmentGroupKey;
+setGroupKey: Dispatch<SetStateAction<AssignmentGroupKey>>;
+
   fetchData: () => Promise<void>;
 };
 
@@ -110,6 +114,9 @@ export function useMonthlyAssignmentActions({
 setAddFiles,
 
   setShowAddModal,
+
+  groupKey,
+setGroupKey,
 
   fetchData,
 }: Props) {
@@ -175,7 +182,7 @@ setAddFiles,
       contactPhone,
       address,
       meetingTime,
-      constructionType,
+      groupKey,
     });
 
     if (error) {
@@ -195,17 +202,17 @@ setAddFiles,
     }
 
     setSiteName("");
-    setContractorName("");
-    setManagerName("");
-    setContactPhone("");
-    setAddress("");
-    setShiftType("day");
-    setConstructionType("第一工事");
-    setMeetingTime("08:00");
-    setStartDate("");
-    setEndDate("");
-    setAddFiles(null);
-    setShowAddModal(false);
+setContractorName("");
+setManagerName("");
+setContactPhone("");
+setAddress("");
+setShiftType("day");
+setGroupKey("group1");
+setMeetingTime("08:00");
+setStartDate("");
+setEndDate("");
+setAddFiles(null);
+setShowAddModal(false);
 
     fetchData();
   };

@@ -1,6 +1,7 @@
 // app/(system)/admin/assignments/two-month/components/AssignmentRow.tsx
 import { useEffect, useState } from "react";
-import type { Assignment } from "../types";
+import { getDateAccentColors } from "../../month/utils/dateColors";
+import type { Assignment, AssignmentGroupKey } from "../types";
 import {
   stickyTd,
   stickyTotalTd1,
@@ -37,6 +38,7 @@ type Props = {
     field: "planned_count" | "detail",
     value: string
   ) => void | Promise<void>;
+  groupNameMap: Map<AssignmentGroupKey, string>;
 };
 
 export default function TwoMonthAssignmentRow({
@@ -53,6 +55,7 @@ export default function TwoMonthAssignmentRow({
   getBandColor,
   getDetailTags,
   updateDailyInfo,
+  groupNameMap,
 }: Props) {
   const [editingDetails, setEditingDetails] = useState<Record<string, string>>(
     {}
@@ -67,6 +70,11 @@ export default function TwoMonthAssignmentRow({
       Object.values(saveTimers).forEach((timer) => clearTimeout(timer));
     };
   }, [saveTimers]);
+
+  const groupLabel =
+    groupNameMap.get(
+      (assignment.group_key ?? "group1") as AssignmentGroupKey
+    ) ?? "未設定グループ";
 
   return (
     <tr>
@@ -116,7 +124,7 @@ export default function TwoMonthAssignmentRow({
         </button>
 
         <div style={{ fontSize: 11, color: "#555", fontWeight: 700 }}>
-          {assignment.construction_type || "第一工事"}
+          {groupLabel}
         </div>
 
         <div style={{ fontSize: 11, color: "#666" }}>
@@ -135,6 +143,8 @@ export default function TwoMonthAssignmentRow({
 
       {days.map((date) => {
         const count = getPlannedCount(assignment.id, date);
+        const colors = getDateAccentColors(date);
+        const hasPlannedCount = count !== "";
         const detailValue = getDetailTags(assignment.id, date).join(",");
         const detailKey = `${assignment.id}_${date}`;
         const textareaValue =
@@ -147,15 +157,8 @@ export default function TwoMonthAssignmentRow({
             key={date}
             style={{
               ...td,
-              backgroundColor:
-                count !== ""
-                  ? getBandColor(assignment)
-                  : new Date(date).getDay() === 0
-                    ? "#fff7f7"
-                    : new Date(date).getDay() === 6
-                      ? "#f7fbff"
-                      : "#fff",
-              borderTop: count !== "" ? "5px solid #22c55e" : td.border,
+              backgroundColor: hasPlannedCount ? "#dcfce7" : colors.cellBackground,
+              borderTop: hasPlannedCount ? "5px solid #22c55e" : td.border,
             }}
           >
             <div
@@ -172,6 +175,7 @@ export default function TwoMonthAssignmentRow({
                 }}
               >
                 <textarea
+                className="detail-textarea"
                   value={textareaValue}
                   onChange={(e) => {
                     const value = e.target.value;
@@ -229,15 +233,15 @@ export default function TwoMonthAssignmentRow({
                   placeholder="詳細"
                   style={{
                     width: "100%",
-                    height: 24,
-                    minHeight: 24,
-                    maxHeight: 24,
+                    height: 28,
+                    minHeight: 28,
+                    maxHeight: 28,
                     overflowY: "hidden",
-                    padding: "10px 3px 3px 3px",
+                    padding: "0 4px",
                     border: "1px solid #ccc",
                     borderRadius: 4,
                     fontSize: 10,
-                    lineHeight: 1.2,
+                    lineHeight: "28px",
                     resize: "none",
                     backgroundColor: "#fff",
                     boxSizing: "border-box",
@@ -267,82 +271,82 @@ export default function TwoMonthAssignmentRow({
               </div>
 
               <input
-  data-planned-input="true"
-  data-assignment-id={assignment.id}
-  data-work-date={date}
-  type="number"
-  min={0}
-  inputMode="numeric"
-  defaultValue={count}
-  onKeyDown={(e) => {
-    const inputs = Array.from(
-      document.querySelectorAll<HTMLInputElement>(
-        'input[data-planned-input="true"]'
-      )
-    );
+                data-planned-input="true"
+                data-assignment-id={assignment.id}
+                data-work-date={date}
+                type="number"
+                min={0}
+                inputMode="numeric"
+                defaultValue={count}
+                onKeyDown={(e) => {
+                  const inputs = Array.from(
+                    document.querySelectorAll<HTMLInputElement>(
+                      'input[data-planned-input="true"]'
+                    )
+                  );
 
-    const currentIndex = inputs.indexOf(e.currentTarget);
+                  const currentIndex = inputs.indexOf(e.currentTarget);
 
-    if (currentIndex === -1) return;
+                  if (currentIndex === -1) return;
 
-    if (e.key === "Tab") {
-      e.preventDefault();
+                  if (e.key === "Tab") {
+                    e.preventDefault();
 
-      const nextIndex = e.shiftKey
-        ? currentIndex - 1
-        : currentIndex + 1;
+                    const nextIndex = e.shiftKey
+                      ? currentIndex - 1
+                      : currentIndex + 1;
 
-      inputs[nextIndex]?.focus();
-      inputs[nextIndex]?.select();
-    }
+                    inputs[nextIndex]?.focus();
+                    inputs[nextIndex]?.select();
+                  }
 
-    if (e.key === "ArrowRight") {
-      e.preventDefault();
-      inputs[currentIndex + 1]?.focus();
-      inputs[currentIndex + 1]?.select();
-    }
+                  if (e.key === "ArrowRight") {
+                    e.preventDefault();
+                    inputs[currentIndex + 1]?.focus();
+                    inputs[currentIndex + 1]?.select();
+                  }
 
-    if (e.key === "ArrowLeft") {
-      e.preventDefault();
-      inputs[currentIndex - 1]?.focus();
-      inputs[currentIndex - 1]?.select();
-    }
-  }}
-  onBlur={(e) => {
-    const rawValue = e.target.value;
+                  if (e.key === "ArrowLeft") {
+                    e.preventDefault();
+                    inputs[currentIndex - 1]?.focus();
+                    inputs[currentIndex - 1]?.select();
+                  }
+                }}
+                onBlur={(e) => {
+                  const rawValue = e.target.value;
 
-    if (rawValue === "") {
-      updateDailyInfo(
-        assignment.id,
-        date,
-        "planned_count",
-        ""
-      );
-      return;
-    }
+                  if (rawValue === "") {
+                    updateDailyInfo(
+                      assignment.id,
+                      date,
+                      "planned_count",
+                      ""
+                    );
+                    return;
+                  }
 
-    const safeValue = String(Math.max(0, Number(rawValue)));
-    e.currentTarget.value = safeValue;
+                  const safeValue = String(Math.max(0, Number(rawValue)));
+                  e.currentTarget.value = safeValue;
 
-    updateDailyInfo(
-      assignment.id,
-      date,
-      "planned_count",
-      safeValue
-    );
-  }}
-  style={{
-    width: 44,
-    padding: 4,
-    border: "1px solid #ccc",
-    borderRadius: 4,
-    textAlign: "center",
-    fontSize: 12,
-    backgroundColor: "#fff",
-    appearance: "textfield",
-    MozAppearance: "textfield",
-  }}
-/>
+                  updateDailyInfo(
+                    assignment.id,
+                    date,
+                    "planned_count",
+                    safeValue
+                  );
+                }}
+                style={{
+                  width: 44,
+                  padding: 4,
+                  border: "1px solid #ccc",
+                  borderRadius: 4,
+                  textAlign: "center",
+                  fontSize: 12,
+                  backgroundColor: "#fff",
+                  appearance: "textfield",
+                  MozAppearance: "textfield",
+                }}
+              />
             </div>
           </td>
         );

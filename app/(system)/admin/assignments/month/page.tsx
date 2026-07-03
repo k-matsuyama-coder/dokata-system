@@ -28,6 +28,7 @@ import { useMonthlyAssignmentRows } from "./hooks/useMonthlyAssignmentRows";
 import type { MonthlyAssignmentContextValue } from "./contexts/monthlyAssignmentContext";
 import { MonthlyAssignmentContext } from "./contexts/monthlyAssignmentContext";
 import { exportMonthlyMatrix } from "./utils/exportMonthlyMatrix";
+import { useAssignmentGroups } from "./hooks/useAssignmentGroups";
 import {
   MonthlyAssignmentSelectionContext,
   type MonthlyAssignmentSelectionContextValue,
@@ -46,6 +47,7 @@ export default function MonthlyAssignmentsPage() {
 
   const [creatingPublicLink, setCreatingPublicLink] = useState(false);
   const [publicViewMode, setPublicViewMode] = useState<"week" | "next3days">("next3days");
+  const { groupSettings, enabledGroups, groupNameMap } = useAssignmentGroups();
 
   const getCurrentOrganization = async () => {
     const { data: sessionData } = await supabase.auth.getSession();
@@ -134,6 +136,8 @@ export default function MonthlyAssignmentsPage() {
     setSiteName,
     contractorName,
     setContractorName,
+    groupKey,
+    setGroupKey,
     shiftType,
     setShiftType,
     managerName,
@@ -148,8 +152,6 @@ export default function MonthlyAssignmentsPage() {
     setStartDate,
     endDate,
     setEndDate,
-    constructionType,
-    setConstructionType,
     addFiles,
     setAddFiles,
   } = useAddAssignmentForm();
@@ -332,8 +334,8 @@ export default function MonthlyAssignmentsPage() {
     setStartDate,
     endDate,
     setEndDate,
-    constructionType,
-    setConstructionType,
+    groupKey,
+    setGroupKey,
     addFiles,
     setAddFiles,
     editingAssignment,
@@ -425,6 +427,8 @@ export default function MonthlyAssignmentsPage() {
     showFinished,
     days,
     todayString,
+    groupNameMap,
+    groupSettings,
   });
 
   const exportAssignments = groupedAssignments.flatMap((group) => group.rows);
@@ -437,7 +441,8 @@ export default function MonthlyAssignmentsPage() {
           id: assignment.id,
           contractor_name: assignment.contractor_name ?? null,
           site_name: assignment.site_name ?? null,
-          construction_type: assignment.construction_type ?? null,
+          group_name:
+            groupNameMap.get(assignment.group_key ?? "group1") ?? "",
           manager_name: assignment.manager_name ?? null,
           shift_type: assignment.shift_type ?? null,
         })),
@@ -633,47 +638,49 @@ export default function MonthlyAssignmentsPage() {
   onExportExcel={handleExportMonthlyMatrix}
 />
 
-        <AddAssignmentModal
-          showAddModal={showAddModal}
-          setShowAddModal={setShowAddModal}
-          contractors={contractors}
-          contractorContacts={contractorContacts}
-          contractorName={contractorName}
-          setContractorName={setContractorName}
-          siteName={siteName}
-          setSiteName={setSiteName}
-          constructionType={constructionType}
-          setConstructionType={setConstructionType}
-          managerName={managerName}
-          setManagerName={setManagerName}
-          contactPhone={contactPhone}
-          setContactPhone={setContactPhone}
-          address={address}
-          setAddress={setAddress}
-          startDate={startDate}
-          setStartDate={setStartDate}
-          endDate={endDate}
-          setEndDate={setEndDate}
-          shiftType={shiftType}
-          setShiftType={setShiftType}
-          meetingTime={meetingTime}
-          setMeetingTime={setMeetingTime}
-          addFiles={addFiles}
-          setAddFiles={setAddFiles}
-          inputStyle={inputStyle}
-          handleAddSite={handleAddSite}
-        />
+<AddAssignmentModal
+  showAddModal={showAddModal}
+  setShowAddModal={setShowAddModal}
+  contractors={contractors}
+  contractorContacts={contractorContacts}
+  contractorName={contractorName}
+  setContractorName={setContractorName}
+  siteName={siteName}
+  setSiteName={setSiteName}
+  groupKey={groupKey}
+  setGroupKey={setGroupKey}
+  enabledGroups={enabledGroups}
+  managerName={managerName}
+  setManagerName={setManagerName}
+  contactPhone={contactPhone}
+  setContactPhone={setContactPhone}
+  address={address}
+  setAddress={setAddress}
+  startDate={startDate}
+  setStartDate={setStartDate}
+  endDate={endDate}
+  setEndDate={setEndDate}
+  shiftType={shiftType}
+  setShiftType={setShiftType}
+  meetingTime={meetingTime}
+  setMeetingTime={setMeetingTime}
+  addFiles={addFiles}
+  setAddFiles={setAddFiles}
+  inputStyle={inputStyle}
+  handleAddSite={handleAddSite}
+/>
 
-        <AssignmentEditModal
-          editingAssignment={editingAssignment}
-          setEditingAssignment={setEditingAssignment}
-          inputStyle={inputStyle}
-          assignmentFiles={assignmentFiles}
-          updateAssignment={updateAssignment}
-          uploadFiles={uploadFiles}
-          deleteAssignmentFile={deleteAssignmentFile}
-          deleteAssignment={deleteAssignment}
-        />
+<AssignmentEditModal
+  editingAssignment={editingAssignment}
+  setEditingAssignment={setEditingAssignment}
+  inputStyle={inputStyle}
+  assignmentFiles={assignmentFiles}
+  enabledGroups={enabledGroups}
+  updateAssignment={updateAssignment}
+  uploadFiles={uploadFiles}
+  deleteAssignmentFile={deleteAssignmentFile}
+  deleteAssignment={deleteAssignment}
+/>
 
         <MonthlyAssignmentContext.Provider value={assignmentContextValue}>
           <MonthlyAssignmentSelectionContext.Provider value={selectionContextValue}>
@@ -685,6 +692,8 @@ export default function MonthlyAssignmentsPage() {
   days={days}
   dailySummaryMap={dailySummaryMap}
   assignmentMap={assignmentMap}
+  enabledGroups={enabledGroups}
+  groupNameMap={groupNameMap}
   getDateHeaderStyle={getDateHeaderStyle}
 >
                 <tbody>

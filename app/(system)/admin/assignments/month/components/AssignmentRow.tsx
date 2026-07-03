@@ -1,4 +1,5 @@
 import React from "react";
+import { getDateAccentColors } from "../../month/utils/dateColors";
 
 type Props = React.HTMLAttributes<HTMLTableRowElement> & {
   children: React.ReactNode;

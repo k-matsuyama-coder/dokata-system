@@ -1,7 +1,8 @@
 import { useMemo } from "react";
 
 import { th, cellTd } from "../styles";
-import { getDayType, toDateString } from "../utils";
+import { toDateString } from "../utils";
+import { getDateAccentColors } from "../utils/dateColors";
 
 type Props = {
   month: string;
@@ -21,7 +22,6 @@ export function useMonthlyAssignmentCalendar({
       return Array.from({ length: 7 }, (_, i) => {
         const d = new Date(weekStart);
         d.setDate(d.getDate() + i);
-
         return toDateString(d);
       });
     }
@@ -51,25 +51,14 @@ export function useMonthlyAssignmentCalendar({
   const todayString = new Date().toISOString().slice(0, 10);
 
   const getDateHeaderStyle = (date: string) => {
-    const dayType = getDayType(date);
+    const colors = getDateAccentColors(date);
     const isToday = date === todayString;
 
     return {
       ...th,
       boxShadow: "0 2px 4px rgba(0,0,0,0.08)",
-      backgroundColor: isToday
-        ? "#fff3cd"
-        : dayType === "sunday"
-        ? "#ffe5e5"
-        : dayType === "saturday"
-        ? "#e5f0ff"
-        : "#f5f5f5",
-      color:
-        dayType === "sunday"
-          ? "#d11a2a"
-          : dayType === "saturday"
-          ? "#0a66c2"
-          : "#111",
+      backgroundColor: isToday ? "#fff3cd" : colors.headerBackground,
+      color: colors.headerColor,
       fontWeight: 800,
     };
   };
@@ -80,7 +69,7 @@ export function useMonthlyAssignmentCalendar({
     memberCount: number,
     shiftType: string | null
   ) => {
-    const dayType = getDayType(date);
+    const colors = getDateAccentColors(date);
     const isToday = date === todayString;
 
     const isShort =
@@ -103,24 +92,20 @@ export function useMonthlyAssignmentCalendar({
             ? 160
             : 220
           : isMobile
-          ? 120
-          : 150,
+            ? 120
+            : 150,
       height: isMobile ? 120 : 140,
       padding: isMobile ? 4 : 6,
       backgroundColor:
-        shiftType === "night"
-          ? "#e5e7eb"
-          : isShort
-          ? "#ffe5e5"
-          : isPerfect
-          ? "#e8f7e8"
-          : isToday
+  isShort
+    ? "#fee2e2"
+    : isPerfect
+      ? "#e8f7e8"
+      : shiftType === "night"
+        ? "#c3d1e6"
+        : isToday
           ? "#fffdf0"
-          : dayType === "sunday"
-          ? "#fff7f7"
-          : dayType === "saturday"
-          ? "#f7fbff"
-          : "#fcfcfc",
+          : colors.cellBackground,
     };
   };
 

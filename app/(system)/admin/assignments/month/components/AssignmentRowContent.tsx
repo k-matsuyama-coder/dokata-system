@@ -108,14 +108,14 @@ function AssignmentRowContent({ assignment }: Props) {
   const rowDropHighlight =
     canDragRow && draggingAssignmentId && draggingAssignmentId !== assignment.id;
 
-  const fixedCellBackground =
+    const fixedCellBackground =
     draggingAssignmentId === assignment.id
       ? "#dbeafe"
       : rowDropHighlight
-      ? "#eff6ff"
-      : assignment.shift_type === "night"
-      ? "#e5e7eb"
-      : "#fff";
+        ? "#eff6ff"
+        : assignment.shift_type === "night"
+          ? "#c3d1e6"
+          : "#fff";
 
   return (
     <AssignmentRow
@@ -271,6 +271,10 @@ function AssignmentRowContent({ assignment }: Props) {
         const plannedCount = dailyInfo?.planned_count ?? null;
         const memberCount = cellMembers.length;
 
+        const isPlannedCountEmpty =
+  plannedCount === null || plannedCount === undefined;
+const shouldFadeText = isOutOfPeriod || isPlannedCountEmpty;
+
         const baseCellStyle = getCellStyle(
           date,
           plannedCount,
@@ -362,38 +366,49 @@ function AssignmentRowContent({ assignment }: Props) {
             style={{
               ...baseCellStyle,
               backgroundColor: isOutOfPeriod
-                ? "#e5e7eb"
+                ? "#d1d5db"
                 : baseCellStyle.backgroundColor,
-              opacity: isOutOfPeriod ? 0.6 : 1,
+              backgroundImage: isOutOfPeriod
+                ? "repeating-linear-gradient(135deg, rgba(255,255,255,0.28) 0px, rgba(255,255,255,0.28) 8px, transparent 8px, transparent 16px)"
+                : "none",
+              opacity: 1,
             }}
           >
-            <AssignmentCellContent
-              isMobile={isMobile}
-              assignment={assignment}
-              date={date}
-              dailyInfo={dailyInfo}
-              cellMembers={cellMembers}
-              plannedCount={plannedCount}
-              memberCount={memberCount}
-              isOutOfPeriod={isOutOfPeriod}
-              editingDetails={editingDetails}
-              setEditingDetails={setEditingDetails}
-              saveTimers={saveTimers}
-              setSaveTimers={setSaveTimers}
-              copiedVehicleNames={copiedVehicleNames}
-              setCopiedVehicleNames={setCopiedVehicleNames}
-              setDraggingVehicleFrom={setDraggingVehicleFrom}
-              copiedEmployeeNames={copiedEmployeeNames}
-              setDraggingSiteMemberId={setDraggingSiteMemberId}
-              setCopiedEmployeeNames={setCopiedEmployeeNames}
-              setSelectedSiteMemberId={setSelectedSiteMemberId}
-              setSelectedEmployeeName={setSelectedEmployeeName}
-              updateDailyInfo={updateDailyInfo}
-              flushDetailSave={flushDetailSave}
-              removeVehicleFromCell={removeVehicleFromCell}
-              deleteSiteMember={deleteSiteMember}
-              toggleForeman={toggleForeman}
-            />
+      
+<div
+  style={{
+    opacity: shouldFadeText ? 0.45 : 1,
+  }}
+>
+  <AssignmentCellContent
+    isMobile={isMobile}
+    assignment={assignment}
+    date={date}
+    dailyInfo={dailyInfo}
+    cellMembers={cellMembers}
+    plannedCount={plannedCount}
+    memberCount={memberCount}
+    isOutOfPeriod={isOutOfPeriod}
+    editingDetails={editingDetails}
+    setEditingDetails={setEditingDetails}
+    saveTimers={saveTimers}
+    setSaveTimers={setSaveTimers}
+    copiedVehicleNames={copiedVehicleNames}
+    setCopiedVehicleNames={setCopiedVehicleNames}
+    setDraggingVehicleFrom={setDraggingVehicleFrom}
+    copiedEmployeeNames={copiedEmployeeNames}
+    setDraggingSiteMemberId={setDraggingSiteMemberId}
+    setCopiedEmployeeNames={setCopiedEmployeeNames}
+    setSelectedSiteMemberId={setSelectedSiteMemberId}
+    setSelectedEmployeeName={setSelectedEmployeeName}
+    updateDailyInfo={updateDailyInfo}
+    flushDetailSave={flushDetailSave}
+    removeVehicleFromCell={removeVehicleFromCell}
+    deleteSiteMember={deleteSiteMember}
+    toggleForeman={toggleForeman}
+  />
+</div>
+
           </AssignmentCell>
         );
       })}

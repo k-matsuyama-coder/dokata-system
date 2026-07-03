@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
-import { supabase } from "@/lib/supabase";
+import { useMemo } from "react";
 import BackButton from "@/app/components/BackButton";
 import AddTwoMonthAssignmentModal from "./components/AddAssignmentModal";
 import EditTwoMonthAssignmentModal from "./components/EditAssignmentModal";
@@ -15,17 +14,7 @@ import { useAssignmentActions } from "./hooks/useAssignmentActions";
 import { useDetailTags } from "./hooks/useDetailTags";
 import { useDetailHistory } from "./hooks/useDetailHistory";
 import MobileView from "./components/MobileView";
-
-import {
-  fetchTwoMonthData,
-  uploadAssignmentFiles,
-  deleteAssignmentApi,
-  deleteAssignmentFileApi,
-  updateAssignmentApi,
-  addAssignmentApi,
-  updateDailyInfoApi,
-  updateAssignmentSortOrderApi,
-} from "./api";
+import { useAssignmentGroups } from "../month/hooks/useAssignmentGroups";
 
 import {
   getBandColor,
@@ -35,18 +24,7 @@ import {
   getGroupedAssignments,
 } from "./utils/tableUtils";
 
-import type {
-  Assignment,
-  AssignmentFile,
-  DailyInfo,
-} from "./types";
-
-import { presetDetails } from "./constants";
-
-import {
-  inputStyle,
-  smallButton,
-} from "./styles";
+import { inputStyle, smallButton } from "./styles";
 
 export default function TwoMonthPage() {
   const {
@@ -59,17 +37,14 @@ export default function TwoMonthPage() {
     siteMembers,
     setSiteMembers,
     employees,
-    setEmployees,
     contractors,
-    setContractors,
     contractorContacts,
-    setContractorContacts,
     organizationId,
     baseMonth,
     setBaseMonth,
     days,
     fetchData,
-  
+
     siteName,
     setSiteName,
     contractorName,
@@ -94,13 +69,13 @@ export default function TwoMonthPage() {
     setEditingAssignment,
     newFiles,
     setNewFiles,
-    constructionType,
-    setConstructionType,
+    groupKey,
+    setGroupKey,
     sortMode,
     setSortMode,
     draggingAssignmentId,
     setDraggingAssignmentId,
-  
+
     undoStack,
     setUndoStack,
     redoStack,
@@ -109,17 +84,19 @@ export default function TwoMonthPage() {
     setIsUndoRedo,
   } = useTwoMonthPage();
 
+  const { enabledGroups, groupSettings, groupNameMap } = useAssignmentGroups();
+
   useRealtime(fetchData, baseMonth);
 
   const detailHistory = useDetailHistory(dailyInfos);
 
-  const sortedAssignments = getSortedAssignments(
-    assignments,
-    days,
-    sortMode
+  const sortedAssignments = getSortedAssignments(assignments, days, sortMode);
+
+  const groupedAssignments = getGroupedAssignments(
+    sortedAssignments,
+    groupNameMap,
+    groupSettings
   );
-  
-  const groupedAssignments = getGroupedAssignments(sortedAssignments);
 
   const {
     uploadFiles,
@@ -140,7 +117,7 @@ export default function TwoMonthPage() {
     meetingTime,
     startDate,
     endDate,
-    constructionType,
+    groupKey,
     newFiles,
     editingAssignment,
     sortedAssignments,
@@ -151,7 +128,7 @@ export default function TwoMonthPage() {
     setAddress,
     setShiftType,
     setMeetingTime,
-    setConstructionType,
+    setGroupKey,
     setStartDate,
     setEndDate,
     setShowAddModal,
@@ -173,15 +150,15 @@ export default function TwoMonthPage() {
     setRedoStack,
   });
 
-    const {
-      getPlannedCount,
-      getDetailTags,
-      addDetailTag,
-      removeDetailTag,
-    } = useDetailTags({
-      dailyInfos,
-      updateDailyInfo,
-    });
+  const {
+    getPlannedCount,
+    getDetailTags,
+    addDetailTag,
+    removeDetailTag,
+  } = useDetailTags({
+    dailyInfos,
+    updateDailyInfo,
+  });
 
   useUndoRedo({
     undoStack,
@@ -199,109 +176,113 @@ export default function TwoMonthPage() {
       <h1>2ヶ月工程表</h1>
 
       <datalist id="detail-history">
-  {detailHistory.map((detail) => (
-    <option key={detail} value={detail} />
-  ))}
-</datalist>
-      
-<TwoMonthToolbar
-  baseMonth={baseMonth}
-  setBaseMonth={setBaseMonth}
-  sortMode={sortMode}
-  setSortMode={setSortMode}
-  setShowAddModal={setShowAddModal}
-  smallButton={smallButton}
-/>
+        {detailHistory.map((detail) => (
+          <option key={detail} value={detail} />
+        ))}
+      </datalist>
 
-<AddTwoMonthAssignmentModal
-  showAddModal={showAddModal}
-  setShowAddModal={setShowAddModal}
-  contractors={contractors}
-  contractorContacts={contractorContacts}
-  contractorName={contractorName}
-  setContractorName={setContractorName}
-  siteName={siteName}
-  setSiteName={setSiteName}
-  constructionType={constructionType}
-  setConstructionType={setConstructionType}
-  managerName={managerName}
-  setManagerName={setManagerName}
-  contactPhone={contactPhone}
-  setContactPhone={setContactPhone}
-  address={address}
-  setAddress={setAddress}
-  startDate={startDate}
-  setStartDate={setStartDate}
-  endDate={endDate}
-  setEndDate={setEndDate}
-  shiftType={shiftType}
-  setShiftType={setShiftType}
-  meetingTime={meetingTime}
-  setMeetingTime={setMeetingTime}
-  addFiles={newFiles}
-  setAddFiles={setNewFiles}
-  inputStyle={inputStyle}
-  handleAddSite={handleAddSite}
-/>
+      <TwoMonthToolbar
+        baseMonth={baseMonth}
+        setBaseMonth={setBaseMonth}
+        sortMode={sortMode}
+        setSortMode={setSortMode}
+        setShowAddModal={setShowAddModal}
+        smallButton={smallButton}
+      />
 
-<EditTwoMonthAssignmentModal
-  editingAssignment={editingAssignment}
-  setEditingAssignment={setEditingAssignment}
-  inputStyle={inputStyle}
-  assignmentFiles={assignmentFiles}
-  updateAssignment={updateAssignment}
-  uploadFiles={uploadFiles}
-  deleteAssignmentFile={deleteAssignmentFile}
-  deleteAssignment={deleteAssignment}
-/>
+      <AddTwoMonthAssignmentModal
+        showAddModal={showAddModal}
+        setShowAddModal={setShowAddModal}
+        contractors={contractors}
+        contractorContacts={contractorContacts}
+        contractorName={contractorName}
+        setContractorName={setContractorName}
+        siteName={siteName}
+        setSiteName={setSiteName}
+        groupKey={groupKey}
+        setGroupKey={setGroupKey}
+        enabledGroups={enabledGroups}
+        managerName={managerName}
+        setManagerName={setManagerName}
+        contactPhone={contactPhone}
+        setContactPhone={setContactPhone}
+        address={address}
+        setAddress={setAddress}
+        startDate={startDate}
+        setStartDate={setStartDate}
+        endDate={endDate}
+        setEndDate={setEndDate}
+        shiftType={shiftType}
+        setShiftType={setShiftType}
+        meetingTime={meetingTime}
+        setMeetingTime={setMeetingTime}
+        addFiles={newFiles}
+        setAddFiles={setNewFiles}
+        inputStyle={inputStyle}
+        handleAddSite={handleAddSite}
+      />
 
-<div className="desktop-view">
-  <TwoMonthTable
-    days={days}
-    employees={employees}
-    groupedAssignments={groupedAssignments}
-    sortMode={sortMode}
-    draggingAssignmentId={draggingAssignmentId}
-    setDraggingAssignmentId={setDraggingAssignmentId}
-    setEditingAssignment={setEditingAssignment}
-    moveAssignmentRow={moveAssignmentRow}
-    deleteAssignment={deleteAssignment}
-    getDailyTotal={(date) => getDailyTotal(dailyInfos, date)}
-    getMonthlyTotal={(assignmentId, index) =>
-      getMonthlyTotal(dailyInfos, baseMonth, assignmentId, index)
-    }
-    getPlannedCount={getPlannedCount}
-    getBandColor={getBandColor}
-    getDetailTags={getDetailTags}
-    removeDetailTag={removeDetailTag}
-    addDetailTag={addDetailTag}
-    updateDailyInfo={updateDailyInfo}
-  />
-</div>
+      <EditTwoMonthAssignmentModal
+        editingAssignment={editingAssignment}
+        setEditingAssignment={setEditingAssignment}
+        inputStyle={inputStyle}
+        assignmentFiles={assignmentFiles}
+        enabledGroups={enabledGroups}
+        updateAssignment={updateAssignment}
+        uploadFiles={uploadFiles}
+        deleteAssignmentFile={deleteAssignmentFile}
+        deleteAssignment={deleteAssignment}
+      />
 
-<div className="mobile-view">
-<MobileView
+      <div className="desktop-view">
+      <TwoMonthTable
   days={days}
+  employees={employees}
   groupedAssignments={groupedAssignments}
+  sortMode={sortMode}
+  draggingAssignmentId={draggingAssignmentId}
+  setDraggingAssignmentId={setDraggingAssignmentId}
+  setEditingAssignment={setEditingAssignment}
+  moveAssignmentRow={moveAssignmentRow}
+  deleteAssignment={deleteAssignment}
+  getDailyTotal={(date) => getDailyTotal(dailyInfos, date)}
+  getMonthlyTotal={(assignmentId, index) =>
+    getMonthlyTotal(dailyInfos, baseMonth, assignmentId, index)
+  }
   getPlannedCount={getPlannedCount}
+  getBandColor={(assignment) => getBandColor(assignment, groupSettings)}
+  getDetailTags={getDetailTags}
+  removeDetailTag={removeDetailTag}
+  addDetailTag={addDetailTag}
   updateDailyInfo={updateDailyInfo}
+  groupNameMap={groupNameMap}
 />
-</div>
-<style jsx>{`
-  .mobile-view {
-    display: none;
-  }
+      </div>
 
-  @media (max-width: 768px) {
-    .desktop-view {
-      display: none;
-    }
+      <div className="mobile-view">
+        <MobileView
+          days={days}
+          groupedAssignments={groupedAssignments}
+          getPlannedCount={getPlannedCount}
+          updateDailyInfo={updateDailyInfo}
+        />
+      </div>
 
-    .mobile-view {
-      display: block;
-    }
-  }
-`}</style>
+      <style jsx>{`
+        .mobile-view {
+          display: none;
+        }
+
+        @media (max-width: 768px) {
+          .desktop-view {
+            display: none;
+          }
+
+          .mobile-view {
+            display: block;
+          }
+        }
+      `}</style>
     </div>
   );
 }

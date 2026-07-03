@@ -1,5 +1,9 @@
 import { useMemo } from "react";
-import type { Assignment } from "../types";
+import type {
+  Assignment,
+  AssignmentGroupKey,
+  AssignmentGroupSetting,
+} from "../types";
 
 type Props = {
   assignments: Assignment[];
@@ -7,6 +11,8 @@ type Props = {
   showFinished: boolean;
   days: string[];
   todayString: string;
+  groupNameMap: Map<AssignmentGroupKey, string>;
+  groupSettings: AssignmentGroupSetting[];
 };
 
 export function useGroupedAssignments({
@@ -15,73 +21,44 @@ export function useGroupedAssignments({
   showFinished,
   days,
   todayString,
+  groupNameMap,
+  groupSettings,
 }: Props) {
-  const sortedAssignments = useMemo(() => {
-    return [...assignments].sort((a, b) => {
-      switch (sortMode) {
-        case "site":
-          return (a.site_name || "").localeCompare(b.site_name || "", "ja");
-
-        case "contractor":
-          return (a.contractor_name || "").localeCompare(
-            b.contractor_name || "",
-            "ja"
-          );
-
-        case "manager":
-          return (a.manager_name || "").localeCompare(
-            b.manager_name || "",
-            "ja"
-          );
-
-        case "construction":
-          return (a.construction_type || "").localeCompare(
-            b.construction_type || "",
-            "ja"
-          );
-
-        case "shift":
-          return (a.shift_type || "").localeCompare(b.shift_type || "", "ja");
-
-        default:
-          return 0;
-      }
-    });
-  }, [assignments, sortMode]);
-
-  const visibleAssignments = useMemo(() => {
-    return sortedAssignments.filter((assignment) => {
+  return useMemo(() => {
+    const filtered = assignments.filter((assignment) => {
       if (showFinished) return true;
+      if (!assignment.end_date) return true;
+      return assignment.end_date >= todayString;
+    });
 
-      if (!assignment.start_date || !assignment.end_date) {
-        return true;
+    const groupedMap = new Map<
+      string,
+      {
+        label: string;
+        rows: Assignment[];
+        color: string;
+      }
+    >();
+
+    filtered.forEach((assignment) => {
+      const groupKey = (assignment.group_key ?? "group1") as AssignmentGroupKey;
+      const label = groupNameMap.get(groupKey) ?? "未設定グループ";
+      const group = groupSettings.find((item) => item.group_key === groupKey);
+      const color = group?.header_color || "#f3f4f6";
+
+      if (!groupedMap.has(groupKey)) {
+        groupedMap.set(groupKey, {
+          label,
+          rows: [],
+          color,
+        });
       }
 
-      return (
-        assignment.start_date <= days[days.length - 1] &&
-        assignment.end_date >= todayString
-      );
+      groupedMap.get(groupKey)!.rows.push(assignment);
     });
-  }, [sortedAssignments, showFinished, days, todayString]);
 
-  const groupedAssignments = useMemo(() => {
-    return [
-      {
-        label: "第一工事",
-        rows: visibleAssignments.filter(
-          (a) => a.construction_type === "第一工事"
-        ),
-        color: "#eef6ff",
-      },
-      {
-        label: "第二工事",
-        rows: visibleAssignments.filter(
-          (a) => a.construction_type === "第二工事"
-        ),
-        color: "#fff8e6",
-      },
-    ];
-  }, [visibleAssignments]);
-
-  return groupedAssignments;
+    return Array.from(groupedMap.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([, value]) => value);
+    }, [assignments, showFinished, todayString, groupNameMap, groupSettings]);
 }

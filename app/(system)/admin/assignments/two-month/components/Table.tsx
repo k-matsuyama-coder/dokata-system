@@ -1,7 +1,8 @@
+// app/(system)/admin/assignments/two-month/components/Table.tsx
 import React from "react";
 import TwoMonthTableHeader from "./TableHeader";
 import TwoMonthAssignmentRow from "./AssignmentRow";
-import type { Assignment, Employee } from "../types";
+import type { Assignment, AssignmentGroupKey, Employee } from "../types";
 
 type GroupedAssignment = {
   label: string;
@@ -40,6 +41,7 @@ type Props = {
     field: "planned_count" | "detail",
     value: string
   ) => void;
+  groupNameMap: Map<AssignmentGroupKey, string>;
 };
 
 export default function TwoMonthTable({
@@ -60,6 +62,7 @@ export default function TwoMonthTable({
   removeDetailTag,
   addDetailTag,
   updateDailyInfo,
+  groupNameMap,
 }: Props) {
   return (
     <div
@@ -127,6 +130,7 @@ export default function TwoMonthTable({
                   removeDetailTag={removeDetailTag}
                   addDetailTag={addDetailTag}
                   updateDailyInfo={updateDailyInfo}
+                  groupNameMap={groupNameMap}
                 />
               ))}
             </React.Fragment>

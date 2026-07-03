@@ -1,4 +1,10 @@
-import type { Assignment, DailyInfo, SiteMember } from "../types";
+import type {
+  Assignment,
+  AssignmentGroupKey,
+  AssignmentGroupSetting,
+  DailyInfo,
+  SiteMember,
+} from "../types";
 
 type Props = {
   date: string;
@@ -9,6 +15,8 @@ type Props = {
       }
     | undefined;
   assignmentMap: Map<string, Assignment>;
+  enabledGroups: AssignmentGroupSetting[];
+  groupNameMap: Map<AssignmentGroupKey, string>;
   getDateHeaderStyle: (date: string) => React.CSSProperties;
 };
 
@@ -16,6 +24,8 @@ export default function AssignmentDateHeader({
   date,
   summary,
   assignmentMap,
+  enabledGroups,
+  groupNameMap,
   getDateHeaderStyle,
 }: Props) {
   const infosOfDate = summary?.infos ?? [];
@@ -26,31 +36,28 @@ export default function AssignmentDateHeader({
     0
   );
 
-  const plannedFirst = infosOfDate
-    .filter((info) => {
-      const assignment = assignmentMap.get(info.assignment_id);
-      return assignment?.construction_type === "第一工事";
-    })
-    .reduce((sum, info) => sum + (info.planned_count ?? 0), 0);
-
-  const plannedSecond = infosOfDate
-    .filter((info) => {
-      const assignment = assignmentMap.get(info.assignment_id);
-      return assignment?.construction_type === "第二工事";
-    })
-    .reduce((sum, info) => sum + (info.planned_count ?? 0), 0);
-
   const totalAll = membersOfDate.length;
 
-  const totalFirst = membersOfDate.filter((member) => {
-    const assignment = assignmentMap.get(member.assignment_id);
-    return assignment?.construction_type === "第一工事";
-  }).length;
+  const groupSummaries = enabledGroups.map((group) => {
+    const planned = infosOfDate
+      .filter((info) => {
+        const assignment = assignmentMap.get(info.assignment_id);
+        return (assignment?.group_key ?? "group1") === group.group_key;
+      })
+      .reduce((sum, info) => sum + (info.planned_count ?? 0), 0);
 
-  const totalSecond = membersOfDate.filter((member) => {
-    const assignment = assignmentMap.get(member.assignment_id);
-    return assignment?.construction_type === "第二工事";
-  }).length;
+    const total = membersOfDate.filter((member) => {
+      const assignment = assignmentMap.get(member.assignment_id);
+      return (assignment?.group_key ?? "group1") === group.group_key;
+    }).length;
+
+    return {
+      key: group.group_key,
+      label: groupNameMap.get(group.group_key) ?? group.display_name,
+      planned,
+      total,
+    };
+  });
 
   return (
     <th style={getDateHeaderStyle(date)}>
@@ -72,8 +79,11 @@ export default function AssignmentDateHeader({
         }}
       >
         <div>全 {plannedAll}/{totalAll}</div>
-        <div>一 {plannedFirst}/{totalFirst}</div>
-        <div>二 {plannedSecond}/{totalSecond}</div>
+        {groupSummaries.map((group) => (
+          <div key={group.key}>
+            {group.label} {group.planned}/{group.total}
+          </div>
+        ))}
       </div>
     </th>
   );

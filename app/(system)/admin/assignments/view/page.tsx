@@ -1,8 +1,25 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
+import { getDateAccentColors } from "@/app/(system)/admin/assignments/month/utils/dateColors";
+
+type AssignmentGroupKey =
+  | "group1"
+  | "group2"
+  | "group3"
+  | "group4"
+  | "group5";
+
+type AssignmentGroupSetting = {
+  id: string;
+  group_key: AssignmentGroupKey;
+  display_name: string;
+  is_enabled: boolean;
+  sort_order: number;
+  header_color: string | null;
+};
 
 type Assignment = {
   id: string;
@@ -13,7 +30,7 @@ type Assignment = {
   address: string | null;
   meeting_time: string | null;
   shift_type: string | null;
-  construction_type: string | null;
+  group_key: AssignmentGroupKey | null;
 };
 
 type SiteMember = {
@@ -36,7 +53,52 @@ type DailyInfo = {
   vehicle_names: string[] | null;
 };
 
-type FilterMode = "all" | "first" | "second";
+type FilterMode = "all" | AssignmentGroupKey;
+
+function defaultGroupSettings(): AssignmentGroupSetting[] {
+  return [
+    {
+      id: "group1",
+      group_key: "group1",
+      display_name: "グループ①",
+      is_enabled: true,
+      sort_order: 0,
+      header_color: "#e5e7eb",
+    },
+    {
+      id: "group2",
+      group_key: "group2",
+      display_name: "グループ②",
+      is_enabled: true,
+      sort_order: 1,
+      header_color: "#dbeafe",
+    },
+    {
+      id: "group3",
+      group_key: "group3",
+      display_name: "グループ③",
+      is_enabled: false,
+      sort_order: 2,
+      header_color: "#dcfce7",
+    },
+    {
+      id: "group4",
+      group_key: "group4",
+      display_name: "グループ④",
+      is_enabled: false,
+      sort_order: 3,
+      header_color: "#fef3c7",
+    },
+    {
+      id: "group5",
+      group_key: "group5",
+      display_name: "グループ⑤",
+      is_enabled: false,
+      sort_order: 4,
+      header_color: "#fce7f3",
+    },
+  ];
+}
 
 export default function AssignmentViewPage() {
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
@@ -44,29 +106,44 @@ export default function AssignmentViewPage() {
   const [siteMembers, setSiteMembers] = useState<SiteMember[]>([]);
   const [dailyInfos, setDailyInfos] = useState<DailyInfo[]>([]);
   const [viewMode, setViewMode] = useState<"day" | "3days" | "week">("day");
-  const [filterMode, setFilterMode] = useState<FilterMode>("first");
+  const [filterMode, setFilterMode] = useState<FilterMode>("all");
+  const [groupSettings, setGroupSettings] = useState<AssignmentGroupSetting[]>(
+    defaultGroupSettings()
+  );
 
   const pdfRef = useRef<HTMLDivElement>(null);
 
+  const enabledGroups = useMemo(() => {
+    return [...groupSettings]
+      .filter((group) => group.is_enabled)
+      .sort((a, b) => a.sort_order - b.sort_order);
+  }, [groupSettings]);
+
+  const groupNameMap = useMemo(() => {
+    return new Map(
+      groupSettings.map((group) => [group.group_key, group.display_name])
+    );
+  }, [groupSettings]);
+
   const getDisplayDates = () => {
     if (viewMode === "3days") {
-      return Array.from({ length: 3 }, (_, i) => {
-        const d = new Date(date);
-        d.setDate(d.getDate() + i);
-        return d.toISOString().slice(0, 10);
+      return Array.from({ length: 3 }, (_, index) => {
+        const nextDate = new Date(date);
+        nextDate.setDate(nextDate.getDate() + index);
+        return nextDate.toISOString().slice(0, 10);
       });
     }
 
     if (viewMode === "week") {
-      const d = new Date(date);
-      const day = d.getDay();
+      const start = new Date(date);
+      const day = start.getDay();
       const diffToMonday = day === 0 ? -6 : 1 - day;
-      d.setDate(d.getDate() + diffToMonday);
+      start.setDate(start.getDate() + diffToMonday);
 
-      return Array.from({ length: 7 }, (_, i) => {
-        const x = new Date(d);
-        x.setDate(d.getDate() + i);
-        return x.toISOString().slice(0, 10);
+      return Array.from({ length: 7 }, (_, index) => {
+        const nextDate = new Date(start);
+        nextDate.setDate(start.getDate() + index);
+        return nextDate.toISOString().slice(0, 10);
       });
     }
 
@@ -104,6 +181,18 @@ export default function AssignmentViewPage() {
     const startDate = displayDates[0];
     const endDate = displayDates[displayDates.length - 1];
 
+    const { data: groupData, error: groupError } = await supabase
+      .from("assignment_groups")
+      .select("id, group_key, display_name, is_enabled, sort_order, header_color")
+      .eq("organization_id", organizationId)
+      .order("sort_order", { ascending: true });
+
+    if (!groupError && groupData && groupData.length > 0) {
+      setGroupSettings(groupData as AssignmentGroupSetting[]);
+    } else {
+      setGroupSettings(defaultGroupSettings());
+    }
+
     const { data: assignmentData, error: assignmentError } = await supabase
       .from("assignments")
       .select(`
@@ -115,7 +204,7 @@ export default function AssignmentViewPage() {
         address,
         meeting_time,
         shift_type,
-        construction_type
+        group_key
       `)
       .eq("organization_id", organizationId)
       .order("sort_order", { ascending: true })
@@ -126,7 +215,7 @@ export default function AssignmentViewPage() {
       return;
     }
 
-    const assignmentIds = assignmentData?.map((a) => a.id) ?? [];
+    const assignmentIds = assignmentData?.map((assignment) => assignment.id) ?? [];
 
     if (assignmentIds.length === 0) {
       setAssignments([]);
@@ -177,9 +266,9 @@ export default function AssignmentViewPage() {
       return;
     }
 
-    setAssignments(assignmentData ?? []);
-    setSiteMembers(memberData ?? []);
-    setDailyInfos(dailyInfoData ?? []);
+    setAssignments((assignmentData ?? []) as Assignment[]);
+    setSiteMembers((memberData ?? []) as SiteMember[]);
+    setDailyInfos((dailyInfoData ?? []) as DailyInfo[]);
   };
 
   useEffect(() => {
@@ -222,6 +311,17 @@ export default function AssignmentViewPage() {
           void fetchData();
         }
       )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "assignment_groups",
+        },
+        () => {
+          void fetchData();
+        }
+      )
       .subscribe();
 
     return () => {
@@ -231,31 +331,24 @@ export default function AssignmentViewPage() {
 
   const getMembers = (assignmentId: string, workDate: string) => {
     return siteMembers.filter(
-      (m) => m.assignment_id === assignmentId && m.work_date === workDate
+      (member) =>
+        member.assignment_id === assignmentId && member.work_date === workDate
     );
   };
 
   const getDailyInfo = (assignmentId: string, workDate: string) => {
     return dailyInfos.find(
-      (d) => d.assignment_id === assignmentId && d.work_date === workDate
+      (dailyInfo) =>
+        dailyInfo.assignment_id === assignmentId && dailyInfo.work_date === workDate
     );
   };
 
-  const matchesConstructionFilter = (assignment: Assignment) => {
-    const value = assignment.construction_type ?? "";
-
+  const matchesGroupFilter = (assignment: Assignment) => {
     if (filterMode === "all") return true;
-    if (filterMode === "first") {
-      return value.includes("第一工事") || value === "第一" || value === "第一工区";
-    }
-    if (filterMode === "second") {
-      return value.includes("第二工事") || value === "第二" || value === "第二工区";
-    }
-
-    return true;
+    return (assignment.group_key ?? "group1") === filterMode;
   };
 
-  const filteredAssignments = assignments.filter(matchesConstructionFilter);
+  const filteredAssignments = assignments.filter(matchesGroupFilter);
 
   const visibleAssignments = filteredAssignments.filter((assignment) => {
     const displayDates = getDisplayDates();
@@ -267,24 +360,29 @@ export default function AssignmentViewPage() {
       return (
         members.length > 0 ||
         (dailyInfo?.planned_count ?? 0) > 0 ||
-        !!dailyInfo?.detail ||
-        !!dailyInfo?.vehicle_names?.length
+        Boolean(dailyInfo?.detail) ||
+        Boolean(dailyInfo?.vehicle_names?.length)
       );
     });
   });
 
+  const groupedVisibleAssignments = enabledGroups
+    .map((group) => ({
+      ...group,
+      rows: visibleAssignments.filter(
+        (assignment) => (assignment.group_key ?? "group1") === group.group_key
+      ),
+    }))
+    .filter((group) => group.rows.length > 0);
+
   const moveDate = (amount: number) => {
-    const d = new Date(date);
-    d.setDate(d.getDate() + amount);
-    setDate(d.toISOString().slice(0, 10));
+    const nextDate = new Date(date);
+    nextDate.setDate(nextDate.getDate() + amount);
+    setDate(nextDate.toISOString().slice(0, 10));
   };
 
   const toTelHref = (phone: string) => {
     return `tel:${phone.replace(/[^\d+]/g, "")}`;
-  };
-  
-  const toGoogleMapsSearchUrl = (address: string) => {
-    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
   };
 
   const downloadImage = async () => {
@@ -383,7 +481,8 @@ export default function AssignmentViewPage() {
             ...buttonStyle,
             backgroundColor: viewMode === "3days" ? "#2563eb" : "#fff",
             color: viewMode === "3days" ? "#fff" : "#111",
-            border: viewMode === "3days" ? "1px solid #2563eb" : "1px solid #d1d5db",
+            border:
+              viewMode === "3days" ? "1px solid #2563eb" : "1px solid #d1d5db",
           }}
         >
           3日
@@ -411,14 +510,17 @@ export default function AssignmentViewPage() {
         </button>
 
         <select
-  value={filterMode}
-  onChange={(e) => setFilterMode(e.target.value as FilterMode)}
-  style={inputStyle}
->
-  <option value="all">全体表示</option>
-  <option value="first">第一工事のみ</option>
-  <option value="second">第二工事のみ</option>
-</select>
+          value={filterMode}
+          onChange={(e) => setFilterMode(e.target.value as FilterMode)}
+          style={inputStyle}
+        >
+          <option value="all">全体表示</option>
+          {enabledGroups.map((group) => (
+            <option key={group.group_key} value={group.group_key}>
+              {group.display_name}のみ
+            </option>
+          ))}
+        </select>
 
         <button type="button" onClick={downloadImage} style={buttonStyle}>
           画像保存
@@ -439,6 +541,7 @@ export default function AssignmentViewPage() {
       >
         {getDisplayDates().map((workDate, index) => {
           const day = new Date(workDate).getDay();
+          const colors = getDateAccentColors(workDate);
 
           const title =
             viewMode === "3days"
@@ -451,17 +554,22 @@ export default function AssignmentViewPage() {
               ? ["月", "火", "水", "木", "金", "土", "日"][index]
               : "今日";
 
-          const dayAssignments = visibleAssignments.filter((assignment) => {
-            const members = getMembers(assignment.id, workDate);
-            const dailyInfo = getDailyInfo(assignment.id, workDate);
+          const dayGroups = groupedVisibleAssignments
+            .map((group) => ({
+              ...group,
+              rows: group.rows.filter((assignment) => {
+                const members = getMembers(assignment.id, workDate);
+                const dailyInfo = getDailyInfo(assignment.id, workDate);
 
-            return (
-              members.length > 0 ||
-              (dailyInfo?.planned_count ?? 0) > 0 ||
-              !!dailyInfo?.detail ||
-              !!dailyInfo?.vehicle_names?.length
-            );
-          });
+                return (
+                  members.length > 0 ||
+                  (dailyInfo?.planned_count ?? 0) > 0 ||
+                  Boolean(dailyInfo?.detail) ||
+                  Boolean(dailyInfo?.vehicle_names?.length)
+                );
+              }),
+            }))
+            .filter((group) => group.rows.length > 0);
 
           return (
             <div key={workDate}>
@@ -470,10 +578,8 @@ export default function AssignmentViewPage() {
                   fontWeight: 900,
                   fontSize: 18,
                   marginBottom: 8,
-                  backgroundColor:
-                    day === 0 ? "#fee2e2" : day === 6 ? "#dbeafe" : "#f3f4f6",
-                  color:
-                    day === 0 ? "#dc2626" : day === 6 ? "#2563eb" : "#111827",
+                  backgroundColor: colors.headerBackground,
+                  color: colors.headerColor,
                   border: "1px solid #d1d5db",
                   borderRadius: 10,
                   padding: 10,
@@ -493,7 +599,7 @@ export default function AssignmentViewPage() {
               </div>
 
               <div style={{ display: "grid", gap: 12 }}>
-                {dayAssignments.length === 0 && (
+                {dayGroups.length === 0 && (
                   <div
                     style={{
                       backgroundColor: "#fff",
@@ -506,164 +612,197 @@ export default function AssignmentViewPage() {
                   </div>
                 )}
 
-                {dayAssignments.map((assignment) => {
-                  const members = getMembers(assignment.id, workDate);
-                  const dailyInfo = getDailyInfo(assignment.id, workDate);
-
-                  return (
+                {dayGroups.map((group) => (
+                  <div key={`${workDate}-${group.group_key}`} style={{ display: "grid", gap: 10 }}>
                     <div
-  key={`${workDate}-${assignment.id}`}
-  style={{
-    backgroundColor:
-    assignment.shift_type === "night" ? "#eff6ff" : "#fff",
-    borderRadius: 14,
-    padding: 14,
-    border:
-      assignment.shift_type === "night"
-      ? "1px solid #bfdbfe"
-      : "1px solid #e5e7eb",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.04)",
-  }}
->
-<div
-  style={{
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    gap: 8,
-    marginBottom: 2,
-  }}
->
-  <div style={{ fontSize: 17, fontWeight: 900 }}>
-    {assignment.site_name || "-"}
-  </div>
+                      style={{
+                        fontWeight: 900,
+                        padding: "8px 10px",
+                        backgroundColor: group.header_color || "#e5e7eb",
+                        borderRadius: 10,
+                        border: "1px solid #d1d5db",
+                      }}
+                    >
+                      {group.display_name}
+                    </div>
 
-  <div
-    style={{
-      padding: "4px 8px",
-      borderRadius: 999,
-      fontSize: 11,
-      fontWeight: 800,
-      whiteSpace: "nowrap",
-      backgroundColor:
-  assignment.shift_type === "night" ? "#eff6ff" : "#f9fafb",
-color:
-  assignment.shift_type === "night" ? "#1d4ed8" : "#374151",
-border:
-  assignment.shift_type === "night"
-    ? "1px solid #bfdbfe"
-    : "1px solid #e5e7eb",
-    }}
-  >
-    {assignment.shift_type === "night" ? "夜勤" : "日勤"}
-  </div>
-</div>
+                    {group.rows.map((assignment) => {
+                      const members = getMembers(assignment.id, workDate);
+                      const dailyInfo = getDailyInfo(assignment.id, workDate);
+                      const groupName =
+                        groupNameMap.get(
+                          (assignment.group_key ?? "group1") as AssignmentGroupKey
+                        ) ?? "未設定グループ";
 
-                      <div style={{ fontSize: 13, color: "#666" }}>
-                        元請：{assignment.contractor_name || "-"}
-                      </div>
-
-                      <div style={{ marginTop: 8, display: "grid", gap: 4 }}>
-                        <div>集合：{assignment.meeting_time || "-"}</div>
-                        <div>担当：{assignment.manager_name || "-"}</div>
-                        <div>
-  連絡先：
-  {assignment.contact_phone ? (
-    <a
-      href={toTelHref(assignment.contact_phone)}
-      style={{
-        color: "#2563eb",
-        textDecoration: "underline",
-        fontWeight: 700,
-      }}
-    >
-      {assignment.contact_phone}
-    </a>
-  ) : (
-    "-"
-  )}
-</div>
-                        <div>
-                          住所：
-                          {assignment.address ? (
-                            <a
-                              href={
-                                assignment.address.startsWith("http")
-                                  ? assignment.address
-                                  : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                                      assignment.address
-                                    )}`
-                              }
-                              target="_blank"
-                              rel="noreferrer"
-                              style={{
-                                color: "#2563eb",
-                                textDecoration: "underline",
-                                fontWeight: 700,
-                              }}
-                            >
-                              {assignment.address.startsWith("http")
-                                ? "📍GoogleMap"
-                                : assignment.address}
-                            </a>
-                          ) : (
-                            "-"
-                          )}
-                        </div>
-                      </div>
-
-                      {dailyInfo?.detail && (
+                      return (
                         <div
+                          key={`${workDate}-${assignment.id}`}
                           style={{
-                            marginTop: 10,
-                            padding: 8,
-                            borderRadius: 8,
-                            backgroundColor: "#ecfdf5",
-                            color: "#166534",
-                            fontWeight: 800,
+                            backgroundColor:
+                              assignment.shift_type === "night" ? "#eff6ff" : "#fff",
+                            borderRadius: 14,
+                            padding: 14,
+                            border:
+                              assignment.shift_type === "night"
+                                ? "1px solid #bfdbfe"
+                                : "1px solid #e5e7eb",
+                            boxShadow: "0 4px 12px rgba(0,0,0,0.04)",
                           }}
                         >
-                          作業：{dailyInfo.detail}
-                        </div>
-                      )}
-
-                      {dailyInfo?.vehicle_names?.length ? (
-                        <div style={{ marginTop: 10 }}>
-                          🚚 {dailyInfo.vehicle_names.join(" / ")}
-                        </div>
-                      ) : null}
-
-                      <div style={{ marginTop: 12 }}>
-                        <div style={{ fontWeight: 900, marginBottom: 6 }}>
-                          人員 {members.length}人
-                        </div>
-
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                          {[...members]
-                            .sort((a, b) => Number(b.is_foreman) - Number(a.is_foreman))
-                            .map((member) => (
-                              <div
-                                key={member.id}
-                                style={{
-                                  padding: "6px 10px",
-                                  borderRadius: 999,
-                                  backgroundColor: "#fff7ed",
-                                  border: "1px solid #fed7aa",
-                                  fontWeight: 800,
-                                }}
-                              >
-                                {member.is_foreman ? "👷 " : ""}
-                                {member.employee_name}
-                                {member.is_driver ? " 🚚" : ""}
-                                {member.is_operator ? " OP" : ""}
-                                {member.heavy_equipment ? ` ${member.heavy_equipment}` : ""}
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "flex-start",
+                              gap: 8,
+                              marginBottom: 2,
+                            }}
+                          >
+                            <div>
+                              <div style={{ fontSize: 17, fontWeight: 900 }}>
+                                {assignment.site_name || "-"}
                               </div>
-                            ))}
+                              <div style={{ fontSize: 11, color: "#666", marginTop: 2 }}>
+                                {groupName}
+                              </div>
+                            </div>
+
+                            <div
+                              style={{
+                                padding: "4px 8px",
+                                borderRadius: 999,
+                                fontSize: 11,
+                                fontWeight: 800,
+                                whiteSpace: "nowrap",
+                                backgroundColor:
+                                  assignment.shift_type === "night"
+                                    ? "#eff6ff"
+                                    : "#f9fafb",
+                                color:
+                                  assignment.shift_type === "night"
+                                    ? "#1d4ed8"
+                                    : "#374151",
+                                border:
+                                  assignment.shift_type === "night"
+                                    ? "1px solid #bfdbfe"
+                                    : "1px solid #e5e7eb",
+                              }}
+                            >
+                              {assignment.shift_type === "night" ? "夜勤" : "日勤"}
+                            </div>
+                          </div>
+
+                          <div style={{ fontSize: 13, color: "#666" }}>
+                            元請：{assignment.contractor_name || "-"}
+                          </div>
+
+                          <div style={{ marginTop: 8, display: "grid", gap: 4 }}>
+                            <div>集合：{assignment.meeting_time || "-"}</div>
+                            <div>担当：{assignment.manager_name || "-"}</div>
+                            <div>
+                              連絡先：
+                              {assignment.contact_phone ? (
+                                <a
+                                  href={toTelHref(assignment.contact_phone)}
+                                  style={{
+                                    color: "#2563eb",
+                                    textDecoration: "underline",
+                                    fontWeight: 700,
+                                  }}
+                                >
+                                  {assignment.contact_phone}
+                                </a>
+                              ) : (
+                                "-"
+                              )}
+                            </div>
+                            <div>
+                              住所：
+                              {assignment.address ? (
+                                <a
+                                  href={
+                                    assignment.address.startsWith("http")
+                                      ? assignment.address
+                                      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                                          assignment.address
+                                        )}`
+                                  }
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  style={{
+                                    color: "#2563eb",
+                                    textDecoration: "underline",
+                                    fontWeight: 700,
+                                  }}
+                                >
+                                  {assignment.address.startsWith("http")
+                                    ? "📍GoogleMap"
+                                    : assignment.address}
+                                </a>
+                              ) : (
+                                "-"
+                              )}
+                            </div>
+                          </div>
+
+                          {dailyInfo?.detail && (
+                            <div
+                              style={{
+                                marginTop: 10,
+                                padding: 8,
+                                borderRadius: 8,
+                                backgroundColor: "#ecfdf5",
+                                color: "#166534",
+                                fontWeight: 800,
+                              }}
+                            >
+                              作業：{dailyInfo.detail}
+                            </div>
+                          )}
+
+                          {dailyInfo?.vehicle_names?.length ? (
+                            <div style={{ marginTop: 10 }}>
+                              🚚 {dailyInfo.vehicle_names.join(" / ")}
+                            </div>
+                          ) : null}
+
+                          <div style={{ marginTop: 12 }}>
+                            <div style={{ fontWeight: 900, marginBottom: 6 }}>
+                              人員 {members.length}人
+                            </div>
+
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                              {[...members]
+                                .sort(
+                                  (a, b) => Number(b.is_foreman) - Number(a.is_foreman)
+                                )
+                                .map((member) => (
+                                  <div
+                                    key={member.id}
+                                    style={{
+                                      padding: "6px 10px",
+                                      borderRadius: 999,
+                                      backgroundColor: "#fff7ed",
+                                      border: "1px solid #fed7aa",
+                                      fontWeight: 800,
+                                    }}
+                                  >
+                                    {member.is_foreman ? "👷 " : ""}
+                                    {member.employee_name}
+                                    {member.is_driver ? " 🚚" : ""}
+                                    {member.is_operator ? " OP" : ""}
+                                    {member.heavy_equipment
+                                      ? ` ${member.heavy_equipment}`
+                                      : ""}
+                                  </div>
+                                ))}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                      );
+                    })}
+                  </div>
+                ))}
               </div>
             </div>
           );
@@ -673,7 +812,7 @@ border:
   );
 }
 
-const buttonStyle = {
+const buttonStyle: React.CSSProperties = {
   padding: "9px 12px",
   borderRadius: 8,
   border: "1px solid #ccc",
@@ -682,7 +821,7 @@ const buttonStyle = {
   cursor: "pointer",
 };
 
-const inputStyle = {
+const inputStyle: React.CSSProperties = {
   padding: 9,
   borderRadius: 8,
   border: "1px solid #ccc",

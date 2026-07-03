@@ -1,6 +1,21 @@
 export type ShiftType = "day" | "night";
 
-export type ConstructionType = "第一工事" | "第二工事";
+export type AssignmentGroupKey =
+  | "group1"
+  | "group2"
+  | "group3"
+  | "group4"
+  | "group5";
+
+export type AssignmentGroupSetting = {
+  id: string;
+  organization_id: string;
+  group_key: AssignmentGroupKey;
+  display_name: string;
+  is_enabled: boolean;
+  sort_order: number;
+  header_color: string | null;
+};
 
 export type Vehicle = {
   id: string;
@@ -20,7 +35,7 @@ export type Assignment = {
   contact_phone: string | null;
   address: string | null;
   meeting_time: string | null;
-  construction_type: ConstructionType | null;
+  group_key: AssignmentGroupKey | null;
   start_date: string | null;
   end_date: string | null;
 };

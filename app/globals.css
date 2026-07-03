@@ -49,3 +49,7 @@ input[type="number"] {
   appearance: textfield;
   -moz-appearance: textfield;
 }
+
+.detail-textarea::placeholder {
+  color: #c5cbd3;
+}

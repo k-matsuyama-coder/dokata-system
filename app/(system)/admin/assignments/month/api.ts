@@ -75,7 +75,7 @@ export async function getAssignments(organizationId: string) {
   const { data, error } = await supabase
     .from("assignments")
     .select(
-      "id, assignment_date, site_name, contractor_name, construction_type, shift_type, start_time, end_time, manager_name, contact_phone, address, meeting_time, start_date, end_date"
+      "id, assignment_date, site_name, contractor_name, construction_type, group_key, shift_type, start_time, end_time, manager_name, contact_phone, address, meeting_time, start_date, end_date"
     )
     .eq("organization_id", organizationId)
     .order("sort_order", { ascending: true })

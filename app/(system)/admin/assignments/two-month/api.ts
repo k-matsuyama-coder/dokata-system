@@ -1,6 +1,6 @@
 // app/(system)/admin/assignments/two-month/api.ts
 import { supabase } from "@/lib/supabase";
-import type { Assignment, ConstructionType, ShiftType } from "./types";
+import type { Assignment, AssignmentGroupKey } from "./types";
 
 type TwoMonthDataParams = {
   days: string[];
@@ -60,6 +60,7 @@ export async function fetchTwoMonthData({
       site_name,
       contractor_name,
       construction_type,
+      group_key,
       manager_name,
       contact_phone,
       address,
@@ -291,7 +292,7 @@ export async function updateAssignmentApi(
     .update({
       contractor_name: assignment.contractor_name,
       site_name: assignment.site_name,
-      construction_type: assignment.construction_type,
+      group_key: assignment.group_key,
       manager_name: assignment.manager_name,
       contact_phone: assignment.contact_phone,
       address: assignment.address,
@@ -336,11 +337,11 @@ export async function addAssignmentApi(
     assignment_date: string;
     contractor_name: string;
     site_name: string;
-    construction_type: ConstructionType;
+    group_key: AssignmentGroupKey;
     manager_name: string;
     contact_phone: string;
     address: string;
-    shift_type: ShiftType;
+    shift_type: string;
     meeting_time: string;
     start_date: string;
     end_date: string | null;
@@ -354,7 +355,17 @@ export async function addAssignmentApi(
     .from("assignments")
     .insert({
       organization_id: safeOrganizationId,
-      ...data,
+      assignment_date: data.assignment_date,
+      contractor_name: data.contractor_name,
+      site_name: data.site_name,
+      group_key: data.group_key,
+      manager_name: data.manager_name,
+      contact_phone: data.contact_phone,
+      address: data.address,
+      shift_type: data.shift_type,
+      meeting_time: data.meeting_time,
+      start_date: data.start_date,
+      end_date: data.end_date,
       sort_order: sortOrder,
       start_time: data.shift_type === "night" ? "20:00" : "08:00",
       end_time: data.shift_type === "night" ? "05:00" : "17:00",
@@ -423,15 +434,3 @@ export async function updateAssignmentSortOrderApi(
     throw new Error("並び替え保存失敗: " + failed.error.message);
   }
 }
-
-// app/(system)/admin/assignments/two-month/hooks/usePage.ts
-// この1行だけ確認して修正
-import type {
-  Assignment,
-  AssignmentFile,
-  Contractor,
-  ContractorContact,
-  DailyInfo,
-  Employee,
-  SiteMember,
-} from "../types";

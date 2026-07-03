@@ -11,9 +11,8 @@ import {
 import type {
   Assignment,
   AssignmentFile,
-  ConstructionType,
+  AssignmentGroupKey,
   DailyInfo,
-  ShiftType,
   SiteMember,
 } from "../types";
 
@@ -26,11 +25,11 @@ type Props = {
   managerName: string;
   contactPhone: string;
   address: string;
-  shiftType: ShiftType;
+  shiftType: string;
   meetingTime: string;
   startDate: string;
   endDate: string;
-  constructionType: ConstructionType;
+  groupKey: AssignmentGroupKey;
   newFiles: FileList | null;
   editingAssignment: Assignment | null;
   sortedAssignments: Assignment[];
@@ -40,9 +39,9 @@ type Props = {
   setManagerName: React.Dispatch<React.SetStateAction<string>>;
   setContactPhone: React.Dispatch<React.SetStateAction<string>>;
   setAddress: React.Dispatch<React.SetStateAction<string>>;
-  setShiftType: React.Dispatch<React.SetStateAction<ShiftType>>;
+  setShiftType: React.Dispatch<React.SetStateAction<string>>;
   setMeetingTime: React.Dispatch<React.SetStateAction<string>>;
-  setConstructionType: React.Dispatch<React.SetStateAction<ConstructionType>>;
+  setGroupKey: React.Dispatch<React.SetStateAction<AssignmentGroupKey>>;
   setStartDate: React.Dispatch<React.SetStateAction<string>>;
   setEndDate: React.Dispatch<React.SetStateAction<string>>;
   setShowAddModal: React.Dispatch<React.SetStateAction<boolean>>;
@@ -76,7 +75,7 @@ export function useAssignmentActions({
   meetingTime,
   startDate,
   endDate,
-  constructionType,
+  groupKey,
   newFiles,
   editingAssignment,
   sortedAssignments,
@@ -87,7 +86,7 @@ export function useAssignmentActions({
   setAddress,
   setShiftType,
   setMeetingTime,
-  setConstructionType,
+  setGroupKey,
   setStartDate,
   setEndDate,
   setShowAddModal,
@@ -118,7 +117,6 @@ export function useAssignmentActions({
     try {
       const safeOrganizationId = ensureOrganizationId(organizationId);
       await updateAssignmentApi(editingAssignment, safeOrganizationId);
-
       setEditingAssignment(null);
       await fetchData();
     } catch (error) {
@@ -134,10 +132,10 @@ export function useAssignmentActions({
       const safeOrganizationId = ensureOrganizationId(organizationId);
       await deleteAssignmentApi(id, safeOrganizationId);
 
-      setAssignments((prev) => prev.filter((a) => a.id !== id));
-      setDailyInfos((prev) => prev.filter((d) => d.assignment_id !== id));
-      setSiteMembers((prev) => prev.filter((m) => m.assignment_id !== id));
-      setAssignmentFiles((prev) => prev.filter((f) => f.assignment_id !== id));
+      setAssignments((prev) => prev.filter((assignment) => assignment.id !== id));
+      setDailyInfos((prev) => prev.filter((dailyInfo) => dailyInfo.assignment_id !== id));
+      setSiteMembers((prev) => prev.filter((member) => member.assignment_id !== id));
+      setAssignmentFiles((prev) => prev.filter((file) => file.assignment_id !== id));
     } catch (error) {
       alert(error instanceof Error ? error.message : "削除に失敗しました");
     }
@@ -150,7 +148,6 @@ export function useAssignmentActions({
     try {
       const safeOrganizationId = ensureOrganizationId(organizationId);
       await deleteAssignmentFileApi(file.id, safeOrganizationId);
-
       setAssignmentFiles((prev) => prev.filter((item) => item.id !== file.id));
     } catch (error) {
       alert(error instanceof Error ? error.message : "ファイル削除に失敗しました");
@@ -163,14 +160,18 @@ export function useAssignmentActions({
   ) => {
     if (fromAssignmentId === toAssignmentId) return;
 
-    const fromIndex = sortedAssignments.findIndex((a) => a.id === fromAssignmentId);
-    const toIndex = sortedAssignments.findIndex((a) => a.id === toAssignmentId);
+    const fromIndex = sortedAssignments.findIndex(
+      (assignment) => assignment.id === fromAssignmentId
+    );
+    const toIndex = sortedAssignments.findIndex(
+      (assignment) => assignment.id === toAssignmentId
+    );
 
     if (fromIndex === -1 || toIndex === -1) return;
 
     const nextAssignments = [...sortedAssignments];
-    const [moved] = nextAssignments.splice(fromIndex, 1);
-    nextAssignments.splice(toIndex, 0, moved);
+    const [movedAssignment] = nextAssignments.splice(fromIndex, 1);
+    nextAssignments.splice(toIndex, 0, movedAssignment);
 
     setAssignments(nextAssignments);
 
@@ -197,7 +198,7 @@ export function useAssignmentActions({
           assignment_date: days[0],
           contractor_name: contractorName,
           site_name: siteName,
-          construction_type: constructionType,
+          group_key: groupKey,
           manager_name: managerName,
           contact_phone: contactPhone,
           address,
@@ -218,7 +219,7 @@ export function useAssignmentActions({
       setAddress("");
       setShiftType("day");
       setMeetingTime("08:00");
-      setConstructionType("第一工事");
+      setGroupKey("group1");
       setStartDate("");
       setEndDate("");
       setShowAddModal(false);

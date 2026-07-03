@@ -6,6 +6,7 @@ import { hasRole } from "@/app/types/auth";
 import type {
   Assignment,
   AssignmentFile,
+  AssignmentGroupKey,
   Contractor,
   ContractorContact,
   DailyInfo,
@@ -64,7 +65,7 @@ export function useTwoMonthPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
   const [newFiles, setNewFiles] = useState<FileList | null>(null);
-  const [constructionType, setConstructionType] = useState("第一工事");
+  const [groupKey, setGroupKey] = useState<AssignmentGroupKey>("group1");
   const [sortMode, setSortMode] = useState("manual");
   const [draggingAssignmentId, setDraggingAssignmentId] = useState<string | null>(null);
 
@@ -135,13 +136,13 @@ export function useTwoMonthPage() {
         return;
       }
 
-      const organizationId = orgResult.organizationId;
-      setOrganizationId(organizationId);
+      const nextOrganizationId = orgResult.organizationId;
+      setOrganizationId(nextOrganizationId);
 
       const { data: employee, error: employeeError } = await supabase
         .from("employees")
         .select("role")
-        .eq("organization_id", organizationId)
+        .eq("organization_id", nextOrganizationId)
         .eq("auth_user_id", user.id)
         .maybeSingle();
 
@@ -157,7 +158,7 @@ export function useTwoMonthPage() {
 
       const resultData = await fetchTwoMonthData({
         days,
-        organizationId,
+        organizationId: nextOrganizationId,
       });
 
       setEmployees(resultData.employees ?? []);
@@ -218,8 +219,8 @@ export function useTwoMonthPage() {
     setEditingAssignment,
     newFiles,
     setNewFiles,
-    constructionType,
-    setConstructionType,
+    groupKey,
+    setGroupKey,
     sortMode,
     setSortMode,
     draggingAssignmentId,

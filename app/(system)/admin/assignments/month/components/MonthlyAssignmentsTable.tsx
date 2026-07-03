@@ -5,6 +5,8 @@ import AssignmentDateHeader from "./AssignmentDateHeader";
 
 import type {
   Assignment,
+  AssignmentGroupKey,
+  AssignmentGroupSetting,
   DailyInfo,
   SiteMember,
 } from "../types";
@@ -27,6 +29,8 @@ type Props = {
   days: string[];
   dailySummaryMap: Map<string, DailySummary>;
   assignmentMap: Map<string, Assignment>;
+  enabledGroups: AssignmentGroupSetting[];
+  groupNameMap: Map<AssignmentGroupKey, string>;
   getDateHeaderStyle: (date: string) => React.CSSProperties;
   children: React.ReactNode;
 };
@@ -39,6 +43,8 @@ const MonthlyAssignmentsTable = React.forwardRef<HTMLDivElement, Props>(
       days,
       dailySummaryMap,
       assignmentMap,
+      enabledGroups,
+      groupNameMap,
       getDateHeaderStyle,
       children,
     },
@@ -67,8 +73,8 @@ const MonthlyAssignmentsTable = React.forwardRef<HTMLDivElement, Props>(
                   ? 900
                   : 1200
                 : isMobile
-                ? 950
-                : 1700,
+                  ? 950
+                  : 1700,
             width: "100%",
             backgroundColor: "#fff",
             fontSize: isMobile ? 10 : 12,
@@ -98,6 +104,8 @@ const MonthlyAssignmentsTable = React.forwardRef<HTMLDivElement, Props>(
                   date={date}
                   summary={dailySummaryMap.get(date)}
                   assignmentMap={assignmentMap}
+                  enabledGroups={enabledGroups}
+                  groupNameMap={groupNameMap}
                   getDateHeaderStyle={getDateHeaderStyle}
                 />
               ))}

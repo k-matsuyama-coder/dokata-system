@@ -1,5 +1,10 @@
 import React, { useState } from "react";
-import type { Contractor, ContractorContact } from "../types";
+import type {
+  Contractor,
+  ContractorContact,
+  AssignmentGroupKey,
+  AssignmentGroupSetting,
+} from "../types";
 
 type Props = {
   showAddModal: boolean;
@@ -10,8 +15,9 @@ type Props = {
   setContractorName: React.Dispatch<React.SetStateAction<string>>;
   siteName: string;
   setSiteName: React.Dispatch<React.SetStateAction<string>>;
-  constructionType: string;
-  setConstructionType: React.Dispatch<React.SetStateAction<string>>;
+  groupKey: AssignmentGroupKey;
+  setGroupKey: React.Dispatch<React.SetStateAction<AssignmentGroupKey>>;
+  enabledGroups: AssignmentGroupSetting[];
   managerName: string;
   setManagerName: React.Dispatch<React.SetStateAction<string>>;
   contactPhone: string;
@@ -27,9 +33,7 @@ type Props = {
   meetingTime: string;
   setMeetingTime: React.Dispatch<React.SetStateAction<string>>;
   addFiles: FileList | null;
-setAddFiles: React.Dispatch<
-  React.SetStateAction<FileList | null>
->;
+  setAddFiles: React.Dispatch<React.SetStateAction<FileList | null>>;
   inputStyle: React.CSSProperties;
   handleAddSite: () => void;
 };
@@ -43,8 +47,9 @@ export default function AddAssignmentModal({
   setContractorName,
   siteName,
   setSiteName,
-  constructionType,
-  setConstructionType,
+  groupKey,
+  setGroupKey,
+  enabledGroups,
   managerName,
   setManagerName,
   contactPhone,
@@ -58,9 +63,9 @@ export default function AddAssignmentModal({
   shiftType,
   setShiftType,
   meetingTime,
-  addFiles,
   setMeetingTime,
-setAddFiles,
+  addFiles,
+  setAddFiles,
   inputStyle,
   handleAddSite,
 }: Props) {
@@ -129,14 +134,17 @@ setAddFiles,
           style={inputStyle}
         />
 
-        <select
-          value={constructionType}
-          onChange={(e) => setConstructionType(e.target.value)}
-          style={inputStyle}
-        >
-          <option value="第一工事">第一工事</option>
-          <option value="第二工事">第二工事</option>
-        </select>
+<select
+  value={groupKey}
+  onChange={(e) => setGroupKey(e.target.value as AssignmentGroupKey)}
+  style={inputStyle}
+>
+  {enabledGroups.map((group) => (
+    <option key={group.group_key} value={group.group_key}>
+      {group.display_name}
+    </option>
+  ))}
+</select>
 
         <div>
           <input

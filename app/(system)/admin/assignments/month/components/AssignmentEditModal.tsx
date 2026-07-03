@@ -1,11 +1,17 @@
 import React, { useState } from "react";
-import type { Assignment, AssignmentFile } from "../types";
+import type {
+  Assignment,
+  AssignmentFile,
+  AssignmentGroupKey,
+  AssignmentGroupSetting,
+} from "../types";
 
 type Props = {
   editingAssignment: Assignment | null;
   setEditingAssignment: React.Dispatch<React.SetStateAction<Assignment | null>>;
   inputStyle: React.CSSProperties;
   assignmentFiles: AssignmentFile[];
+  enabledGroups: AssignmentGroupSetting[];
   updateAssignment: () => void;
   uploadFiles: (assignmentId: string, files: FileList | null) => void;
   deleteAssignmentFile: (file: AssignmentFile) => void;
@@ -17,6 +23,7 @@ export default function AssignmentEditModal({
   setEditingAssignment,
   inputStyle,
   assignmentFiles,
+  enabledGroups,
   updateAssignment,
   uploadFiles,
   deleteAssignmentFile,
@@ -88,17 +95,20 @@ export default function AssignmentEditModal({
         />
 
         <select
-          value={editingAssignment.construction_type ?? "第一工事"}
+          value={editingAssignment.group_key ?? "group1"}
           onChange={(e) =>
             setEditingAssignment({
               ...editingAssignment,
-              construction_type: e.target.value,
+              group_key: e.target.value as AssignmentGroupKey,
             })
           }
           style={inputStyle}
         >
-          <option value="第一工事">第一工事</option>
-          <option value="第二工事">第二工事</option>
+          {enabledGroups.map((group) => (
+            <option key={group.group_key} value={group.group_key}>
+              {group.display_name}
+            </option>
+          ))}
         </select>
 
         <input
@@ -268,18 +278,18 @@ export default function AssignmentEditModal({
                 >
                   {isImageFile(file.file_name) ? (
                     <img
-                    src={file.file_url}
-                    alt={file.file_name}
-                    onClick={() => setPreviewImage(file.file_url)}
-                    style={{
-                      width: 56,
-                      height: 56,
-                      objectFit: "cover",
-                      borderRadius: 6,
-                      border: "1px solid #ddd",
-                      cursor: "zoom-in",
-                    }}
-                  />
+                      src={file.file_url}
+                      alt={file.file_name}
+                      onClick={() => setPreviewImage(file.file_url)}
+                      style={{
+                        width: 56,
+                        height: 56,
+                        objectFit: "cover",
+                        borderRadius: 6,
+                        border: "1px solid #ddd",
+                        cursor: "zoom-in",
+                      }}
+                    />
                   ) : (
                     <div
                       style={{
@@ -297,30 +307,30 @@ export default function AssignmentEditModal({
                     </div>
                   )}
 
-<a
-  href={isImageFile(file.file_name) ? "#" : file.file_url}
-  onClick={(e) => {
-    if (isImageFile(file.file_name)) {
-      e.preventDefault();
-      setPreviewImage(file.file_url);
-    }
-  }}
-  target={isImageFile(file.file_name) ? undefined : "_blank"}
-  rel="noreferrer"
-  style={{
-    flex: 1,
-    minWidth: 0,
-    color: "#111",
-    textDecoration: "none",
-    fontWeight: 700,
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
-    cursor: "pointer",
-  }}
->
-  {file.file_name}
-</a>
+                  <a
+                    href={isImageFile(file.file_name) ? "#" : file.file_url}
+                    onClick={(e) => {
+                      if (isImageFile(file.file_name)) {
+                        e.preventDefault();
+                        setPreviewImage(file.file_url);
+                      }
+                    }}
+                    target={isImageFile(file.file_name) ? undefined : "_blank"}
+                    rel="noreferrer"
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                      color: "#111",
+                      textDecoration: "none",
+                      fontWeight: 700,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {file.file_name}
+                  </a>
 
                   <button
                     type="button"
@@ -343,33 +353,33 @@ export default function AssignmentEditModal({
             </div>
           )}
         </div>
+
         <button
-  type="button"
-  onClick={() => {
-    if (!editingAssignment) return;
+          type="button"
+          onClick={() => {
+            const ok = window.confirm(
+              "この現場を削除しますか？\n配置メンバーや添付ファイルも削除されます。"
+            );
 
-    const ok = window.confirm(
-      "この現場を削除しますか？\n配置メンバーや添付ファイルも削除されます。"
-    );
+            if (!ok) return;
 
-    if (!ok) return;
+            deleteAssignment(editingAssignment.id);
+            setEditingAssignment(null);
+          }}
+          style={{
+            width: "100%",
+            padding: 12,
+            border: "none",
+            borderRadius: 8,
+            backgroundColor: "#dc2626",
+            color: "#fff",
+            fontWeight: 800,
+            cursor: "pointer",
+          }}
+        >
+          この現場を削除
+        </button>
 
-    deleteAssignment(editingAssignment.id);
-    setEditingAssignment(null);
-  }}
-  style={{
-    width: "100%",
-    padding: 12,
-    border: "none",
-    borderRadius: 8,
-    backgroundColor: "#dc2626",
-    color: "#fff",
-    fontWeight: 800,
-    cursor: "pointer",
-  }}
->
-  この現場を削除
-</button>
         <div style={{ display: "flex", gap: 8 }}>
           <button
             type="button"
@@ -401,60 +411,60 @@ export default function AssignmentEditModal({
             保存
           </button>
         </div>
+      </div>
+
+      {previewImage && (
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            setPreviewImage(null);
+          }}
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor: "rgba(0,0,0,0.75)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 100000,
+            padding: 20,
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => setPreviewImage(null)}
+            style={{
+              position: "absolute",
+              top: 20,
+              right: 20,
+              border: "none",
+              backgroundColor: "#fff",
+              color: "#111",
+              borderRadius: 999,
+              width: 40,
+              height: 40,
+              fontSize: 22,
+              fontWeight: 900,
+              cursor: "pointer",
+            }}
+          >
+            ×
+          </button>
+
+          <img
+            src={previewImage}
+            alt="preview"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: "95vw",
+              maxHeight: "90vh",
+              objectFit: "contain",
+              borderRadius: 12,
+              backgroundColor: "#fff",
+            }}
+          />
         </div>
-
-{previewImage && (
-  <div
-    onClick={(e) => {
-      e.stopPropagation();
-      setPreviewImage(null);
-    }}
-    style={{
-      position: "fixed",
-      inset: 0,
-      backgroundColor: "rgba(0,0,0,0.75)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      zIndex: 100000,
-      padding: 20,
-    }}
-  >
-    <button
-      type="button"
-      onClick={() => setPreviewImage(null)}
-      style={{
-        position: "absolute",
-        top: 20,
-        right: 20,
-        border: "none",
-        backgroundColor: "#fff",
-        color: "#111",
-        borderRadius: 999,
-        width: 40,
-        height: 40,
-        fontSize: 22,
-        fontWeight: 900,
-        cursor: "pointer",
-      }}
-    >
-      ×
-    </button>
-
-    <img
-      src={previewImage}
-      alt="preview"
-      onClick={(e) => e.stopPropagation()}
-      style={{
-        maxWidth: "95vw",
-        maxHeight: "90vh",
-        objectFit: "contain",
-        borderRadius: 12,
-        backgroundColor: "#fff",
-      }}
-    />
-  </div>
-)}
-</div>
-);
+      )}
+    </div>
+  );
 }

@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import type { AssignmentGroupKey } from "../types";
 
 async function getCurrentOrganization() {
   const { data: sessionData } = await supabase.auth.getSession();
@@ -34,7 +35,7 @@ type Props = {
   contactPhone: string;
   address: string;
   meetingTime: string;
-  constructionType: string;
+  groupKey: AssignmentGroupKey;
 };
 
 async function getTopSortOrder(organizationId: string) {
@@ -67,7 +68,7 @@ export async function handleAddSiteAction({
   contactPhone,
   address,
   meetingTime,
-  constructionType,
+  groupKey,
 }: Props) {
   if (!siteName || !contractorName || !startDate) {
     return {
@@ -83,26 +84,26 @@ export async function handleAddSiteAction({
     const sortOrder = await getTopSortOrder(organizationId);
 
     const { data, error } = await supabase
-      .from("assignments")
-      .insert({
-        organization_id: organizationId,
-        assignment_date: `${month}-01`,
-        start_date: startDate,
-        end_date: endDate || null,
-        contractor_name: contractorName,
-        site_name: siteName,
-        shift_type: shiftType,
-        start_time: shiftType === "night" ? "20:00" : "08:00",
-        end_time: shiftType === "night" ? "05:00" : "17:00",
-        manager_name: managerName,
-        contact_phone: contactPhone,
-        address,
-        meeting_time: meetingTime,
-        construction_type: constructionType,
-        sort_order: sortOrder,
-      })
-      .select("id")
-      .single();
+  .from("assignments")
+  .insert({
+    organization_id: organizationId,
+    assignment_date: `${month}-01`,
+    start_date: startDate,
+    end_date: endDate || null,
+    contractor_name: contractorName,
+    site_name: siteName,
+    group_key: groupKey,
+    sort_order: sortOrder,
+    shift_type: shiftType,
+    start_time: shiftType === "night" ? "20:00" : "08:00",
+    end_time: shiftType === "night" ? "05:00" : "17:00",
+    manager_name: managerName,
+    contact_phone: contactPhone,
+    address,
+    meeting_time: meetingTime,
+  })
+  .select("id")
+  .single();
 
     if (error || !data) {
       return { data, error };

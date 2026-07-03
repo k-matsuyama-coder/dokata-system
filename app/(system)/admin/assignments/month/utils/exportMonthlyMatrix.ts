@@ -4,7 +4,7 @@ type Assignment = {
   id: string;
   contractor_name: string | null;
   site_name: string | null;
-  construction_type: string | null;
+  group_name: string | null;
   manager_name: string | null;
   shift_type: string | null;
 };
@@ -112,7 +112,7 @@ export async function exportMonthlyMatrix(params: {
   const headerLabels = [
     "元請会社名",
     "現場名",
-    "工事区分",
+    "グループ",
     "担当者",
     "昼/夜",
     "日付",
@@ -135,7 +135,7 @@ export async function exportMonthlyMatrix(params: {
 
     sheet.getCell(1, col).value = assignment.contractor_name ?? "";
     sheet.getCell(2, col).value = assignment.site_name ?? "";
-    sheet.getCell(3, col).value = assignment.construction_type ?? "";
+    sheet.getCell(3, col).value = assignment.group_name ?? "";
     sheet.getCell(4, col).value = assignment.manager_name ?? "";
     sheet.getCell(5, col).value =
       assignment.shift_type === "night" ? "夜" : "昼";
