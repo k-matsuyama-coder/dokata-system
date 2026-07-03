@@ -117,16 +117,19 @@ function AssignmentCellContent({
         updateDailyInfo={updateDailyInfo}
       />
 
-      <AssignmentDetailTextarea
-        isMobile={isMobile}
-        isOutOfPeriod={isOutOfPeriod}
-        assignmentId={assignment.id}
-        workDate={date}
-        dailyInfo={dailyInfo}
-        editingDetails={editingDetails}
-        flushDetailSave={flushDetailSave}
-        updateDailyInfo={updateDailyInfo}
-      />
+<AssignmentDetailTextarea
+  isMobile={isMobile}
+  isOutOfPeriod={isOutOfPeriod}
+  assignmentId={assignment.id}
+  workDate={date}
+  dailyInfo={dailyInfo}
+  editingDetails={editingDetails}
+  setEditingDetails={setEditingDetails}
+  saveTimers={saveTimers}
+  setSaveTimers={setSaveTimers}
+  flushDetailSave={flushDetailSave}
+  updateDailyInfo={updateDailyInfo}
+/>
 
       <AssignmentVehicleSection
         isMobile={isMobile}

@@ -72,64 +72,67 @@ export default function AssignmentDetailTextarea({
 
   return (
     <textarea
-      data-detail-input="true"
-      value={key in editingDetails ? editingDetails[key] : dailyInfo?.detail ?? ""}
-      onChange={(e) => {
-        const value = e.target.value;
+  data-detail-input="true"
+  value={key in editingDetails ? editingDetails[key] : dailyInfo?.detail ?? ""}
+  onClick={(e) => e.stopPropagation()}
+  onMouseDown={(e) => e.stopPropagation()}
+  onFocus={(e) => e.stopPropagation()}
+  onChange={(e) => {
+    const value = e.target.value;
 
-        setEditingDetails((prev) => ({
-          ...prev,
-          [key]: value,
-        }));
+    setEditingDetails((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
 
-        if (saveTimers[key]) {
-          clearTimeout(saveTimers[key]);
-        }
+    if (saveTimers[key]) {
+      clearTimeout(saveTimers[key]);
+    }
 
-        const timer = setTimeout(() => {
-          updateDailyInfo(assignmentId, workDate, "detail", value);
-        }, 500);
+    const timer = setTimeout(() => {
+      updateDailyInfo(assignmentId, workDate, "detail", value);
+    }, 500);
 
-        setSaveTimers((prev) => ({
-          ...prev,
-          [key]: timer,
-        }));
-      }}
-      onBlur={() => {
-        flushDetailSave?.(assignmentId, workDate);
-      }}
-      onKeyDown={(e) => {
-        if (e.key === "ArrowLeft" && !e.shiftKey && !e.nativeEvent.isComposing) {
-          const start = e.currentTarget.selectionStart ?? 0;
-          const end = e.currentTarget.selectionEnd ?? 0;
+    setSaveTimers((prev) => ({
+      ...prev,
+      [key]: timer,
+    }));
+  }}
+  onBlur={() => {
+    flushDetailSave?.(assignmentId, workDate);
+  }}
+  onKeyDown={(e) => {
+    if (e.key === "ArrowLeft" && !e.shiftKey && !e.nativeEvent.isComposing) {
+      const start = e.currentTarget.selectionStart ?? 0;
+      const end = e.currentTarget.selectionEnd ?? 0;
 
-          if (start === 0 && end === 0) {
-            moveDetailFocus(e, "left");
-          }
-          return;
-        }
+      if (start === 0 && end === 0) {
+        moveDetailFocus(e, "left");
+      }
+      return;
+    }
 
-        if (e.key === "ArrowRight" && !e.shiftKey && !e.nativeEvent.isComposing) {
-          const valueLength = e.currentTarget.value.length;
-          const start = e.currentTarget.selectionStart ?? 0;
-          const end = e.currentTarget.selectionEnd ?? 0;
+    if (e.key === "ArrowRight" && !e.shiftKey && !e.nativeEvent.isComposing) {
+      const valueLength = e.currentTarget.value.length;
+      const start = e.currentTarget.selectionStart ?? 0;
+      const end = e.currentTarget.selectionEnd ?? 0;
 
-          if (start === valueLength && end === valueLength) {
-            moveDetailFocus(e, "right");
-          }
-        }
-      }}
-      disabled={isOutOfPeriod}
-      placeholder="詳細"
-      style={{
-        width: "100%",
-        padding: "4px 6px",
-        border: "1px solid #e5e7eb",
-        borderRadius: 6,
-        fontSize: isMobile ? 10 : 11,
-        backgroundColor: "#fff",
-        boxSizing: "border-box",
-      }}
-    />
+      if (start === valueLength && end === valueLength) {
+        moveDetailFocus(e, "right");
+      }
+    }
+  }}
+  disabled={false}
+  placeholder="詳細"
+  style={{
+    width: "100%",
+    padding: "4px 6px",
+    border: "1px solid #e5e7eb",
+    borderRadius: 6,
+    fontSize: isMobile ? 10 : 11,
+    backgroundColor: "#fff",
+    boxSizing: "border-box",
+  }}
+/>
   );
 }
