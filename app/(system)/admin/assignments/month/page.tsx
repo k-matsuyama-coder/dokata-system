@@ -48,6 +48,8 @@ export default function MonthlyAssignmentsPage() {
   const [creatingPublicLink, setCreatingPublicLink] = useState(false);
   const [publicViewMode, setPublicViewMode] = useState<"week" | "next3days">("next3days");
   const { groupSettings, enabledGroups, groupNameMap } = useAssignmentGroups();
+  const mobileActionButtonBottom = "calc(env(safe-area-inset-bottom, 0px) + 16px)";
+const mobileSelectionBottom = "calc(env(safe-area-inset-bottom, 0px) + 84px)";
 
   const getCurrentOrganization = async () => {
     const { data: sessionData } = await supabase.auth.getSession();
@@ -609,16 +611,30 @@ export default function MonthlyAssignmentsPage() {
   }
 
   return (
-    <div style={{ padding: isMobile ? 8 : 16 }}>
+    <div
+      style={{
+        padding: isMobile
+          ? "8px 8px calc(env(safe-area-inset-bottom, 0px) + 8px)"
+          : 16,
+        backgroundColor: "#f5f6f8",
+        minHeight: "100dvh",
+        overflowX: "hidden",
+      }}
+    >
       <BackButton />
 
       <div
-        style={{
-          width: "100%",
-          paddingRight: isMobile ? 0 : 190,
-          paddingBottom: isMobile ? 110 : 0,
-        }}
-      >
+  style={{
+    width: "100%",
+    maxWidth: "100%",
+    boxSizing: "border-box",
+    overflowX: "hidden",
+    paddingRight: isMobile ? 0 : 190,
+    paddingBottom: isMobile
+      ? "calc(env(safe-area-inset-bottom, 0px) + 140px)"
+      : 0,
+  }}
+>
         <AssignmentToolbar
   month={month}
   setMonth={setMonth}
@@ -708,9 +724,11 @@ export default function MonthlyAssignmentsPage() {
           <div
             style={{
               position: "fixed",
-              left: 16,
-              right: 16,
-              bottom: 72,
+              left: 12,
+right: 12,
+bottom: mobileSelectionBottom,
+maxWidth: "calc(100vw - 24px)",
+boxSizing: "border-box",
               padding: 10,
               borderRadius: 12,
               backgroundColor: "#fff",
@@ -734,9 +752,11 @@ export default function MonthlyAssignmentsPage() {
             onClick={() => setShowMemberModal(true)}
             style={{
               position: "fixed",
-              left: 16,
-              right: 16,
-              bottom: 16,
+              left: 12,
+right: 12,
+bottom: mobileActionButtonBottom,
+maxWidth: "calc(100vw - 24px)",
+boxSizing: "border-box",
               padding: 14,
               borderRadius: 999,
               border: "none",
