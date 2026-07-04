@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 
 type PublicAssignmentMember = {
@@ -18,7 +18,7 @@ type PublicAssignmentRow = {
   address: string | null;
   meeting_time: string | null;
   notes: string | null;
-  members: PublicAssignmentMember[];
+  members?: PublicAssignmentMember[] | null;
 };
 
 type PublicAssignmentsDay = {
@@ -195,10 +195,10 @@ export default function PublicAssignmentsPage() {
     return data.days.reduce(
       (sum, day) =>
         sum +
-        day.assignments.reduce(
-          (innerSum, assignment) => innerSum + assignment.members.length,
-          0
-        ),
+        day.assignments.reduce((innerSum, assignment) => {
+          const members = Array.isArray(assignment.members) ? assignment.members : [];
+          return innerSum + members.length;
+        }, 0),
       0
     );
   }, [data]);
@@ -284,102 +284,104 @@ export default function PublicAssignmentsPage() {
                       <div style={emptyDayStyle}>番割はありません</div>
                     ) : (
                       <div style={cardsColumnStyle}>
-                        {day.assignments.map((row) => (
-                          <article
-                            key={`${day.date}-${row.assignment_id}`}
-                            style={row.shift_type === "night" ? nightCardStyle : cardStyle}
-                          >
-                            <div
-                              style={{
-                                display: "flex",
-                                alignItems: "flex-start",
-                                justifyContent: "space-between",
-                                gap: 8,
-                                marginBottom: 10,
-                              }}
-                            >
-                              <div style={siteTitleStyle}>
-                                {row.site_name || "現場名未設定"}
-                              </div>
+  {day.assignments.map((row) => {
+    const members = Array.isArray(row.members) ? row.members : [];
 
-                              <div
-                                style={
-                                  row.shift_type === "night"
-                                    ? softNightShiftBadgeStyle
-                                    : dayShiftBadgeStyle
-                                }
-                              >
-                                {row.shift_type === "night" ? "夜勤" : "昼勤"}
-                              </div>
-                            </div>
+    return (
+      <article
+        key={`${day.date}-${row.assignment_id}`}
+        style={row.shift_type === "night" ? nightCardStyle : cardStyle}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+            gap: 8,
+            marginBottom: 10,
+          }}
+        >
+          <div style={siteTitleStyle}>
+            {row.site_name || "現場名未設定"}
+          </div>
 
-                            <div style={contractorTextStyle}>
-                              元請：{row.contractor_name || "-"}
-                            </div>
+          <div
+            style={
+              row.shift_type === "night"
+                ? softNightShiftBadgeStyle
+                : dayShiftBadgeStyle
+            }
+          >
+            {row.shift_type === "night" ? "夜勤" : "昼勤"}
+          </div>
+        </div>
 
-                            <div style={infoLineStyle}>
-                              集合：{row.meeting_time || "-"}
-                            </div>
-                            <div style={infoLineStyle}>
-                              担当：{row.manager_name || "-"}
-                            </div>
-                            <div style={infoLineStyle}>
-  連絡先：
-  {row.contact_phone ? (
-    <a href={toTelHref(row.contact_phone)} style={infoLinkStyle}>
-      {row.contact_phone}
-    </a>
-  ) : (
-    " -"
-  )}
+        <div style={contractorTextStyle}>
+          元請：{row.contractor_name || "-"}
+        </div>
+
+        <div style={infoLineStyle}>集合：{row.meeting_time || "-"}</div>
+        <div style={infoLineStyle}>担当：{row.manager_name || "-"}</div>
+
+        <div style={infoLineStyle}>
+          連絡先：
+          {row.contact_phone ? (
+            <a href={toTelHref(row.contact_phone)} style={infoLinkStyle}>
+              {row.contact_phone}
+            </a>
+          ) : (
+            " -"
+          )}
+        </div>
+
+        <div style={infoLineStyle}>
+          住所：
+          {row.address ? (
+            <a
+              href={
+                isUrl(row.address)
+                  ? row.address
+                  : toGoogleMapsSearchUrl(row.address)
+              }
+              target="_blank"
+              rel="noreferrer"
+              style={addressLinkStyle}
+            >
+              {row.address}
+            </a>
+          ) : (
+            " -"
+          )}
+        </div>
+
+        {row.notes ? (
+          <div style={notesBarStyle}>作業：{row.notes}</div>
+        ) : null}
+
+        <div style={memberCountStyle}>人員 {members.length}人</div>
+
+        <div style={membersWrapStyle}>
+          {[...members]
+            .sort((a, b) => {
+              if (a.is_foreman === b.is_foreman) return 0;
+              return a.is_foreman ? -1 : 1;
+            })
+            .map((member, index) => (
+              <div
+                key={`${day.date}-${row.assignment_id}-${member.employee_name}-${index}`}
+                style={memberChipStyle}
+              >
+                <span>{member.employee_name}</span>
+                {member.is_foreman ? (
+                  <span style={foremanBadgeStyle}>職長</span>
+                ) : null}
+              </div>
+            ))}
+        </div>
+      </article>
+    );
+  })}
 </div>
-<div style={infoLineStyle}>
-  住所：
-  {row.address ? (
-    <a
-      href={
-        isUrl(row.address)
-          ? row.address
-          : toGoogleMapsSearchUrl(row.address)
-      }
-      target="_blank"
-      rel="noreferrer"
-      style={addressLinkStyle}
-    >
-      {row.address}
-    </a>
-  ) : (
-    " -"
-  )}
-</div>
-
-                            {row.notes ? (
-                              <div style={notesBarStyle}>作業：{row.notes}</div>
-                            ) : null}
-
-                            <div style={memberCountStyle}>人員 {row.members.length}人</div>
-
-                            <div style={membersWrapStyle}>
-                              {[...row.members]
-                                .sort((a, b) => {
-                                  if (a.is_foreman === b.is_foreman) return 0;
-                                  return a.is_foreman ? -1 : 1;
-                                })
-                                .map((member, index) => (
-                                  <div
-                                    key={`${day.date}-${row.assignment_id}-${member.employee_name}-${index}`}
-                                    style={memberChipStyle}
-                                  >
-                                    <span>{member.employee_name}</span>
-                                    {member.is_foreman ? (
-                                      <span style={foremanBadgeStyle}>職長</span>
-                                    ) : null}
-                                  </div>
-                                ))}
-                            </div>
-                          </article>
-                        ))}
-                      </div>
                     )}
                   </section>
                 ))}
@@ -713,4 +715,10 @@ const softNightShiftBadgeStyle: React.CSSProperties = {
   fontSize: 12,
   fontWeight: 800,
   lineHeight: 1,
+};
+
+const infoLinkStyle: React.CSSProperties = {
+  color: "#2563eb",
+  textDecoration: "underline",
+  marginLeft: 2,
 };
