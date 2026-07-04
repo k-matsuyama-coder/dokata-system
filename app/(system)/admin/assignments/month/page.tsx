@@ -751,12 +751,14 @@ stopEditing,
   days={days}
   dailySummaryMap={dailySummaryMap}
   assignmentMap={assignmentMap}
+  enabledGroups={enabledGroups}
+  groupNameMap={groupNameMap}
   getDateHeaderStyle={getDateHeaderStyle}
 >
-                <tbody>
-                  <AssignmentGroups groupedAssignments={groupedAssignments} />
-                </tbody>
-              </MonthlyAssignmentsTable>
+  <tbody>
+    <AssignmentGroups groupedAssignments={groupedAssignments} />
+  </tbody>
+</MonthlyAssignmentsTable>
             </MonthlyAssignmentActionContext.Provider>
           </MonthlyAssignmentSelectionContext.Provider>
         </MonthlyAssignmentContext.Provider>
