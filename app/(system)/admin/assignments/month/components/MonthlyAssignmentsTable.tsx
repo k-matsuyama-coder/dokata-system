@@ -16,6 +16,7 @@ import {
   stickyTh1,
   stickyTh2,
   stickyTh3,
+  stickyTh4,
 } from "../styles";
 
 type DailySummary = {
@@ -88,7 +89,7 @@ const MonthlyAssignmentsTable = React.forwardRef<HTMLDivElement, Props>(
                 style={{
                   ...th,
                   ...stickyTh2,
-                  left: isMobile ? 0 : 70,
+                  left: isMobile ? 0 : 90,
                 }}
               >
                 現場名
@@ -96,7 +97,7 @@ const MonthlyAssignmentsTable = React.forwardRef<HTMLDivElement, Props>(
 
               {!isMobile && <th style={{ ...th, ...stickyTh3 }}>担当者</th>}
 
-              <th style={th}>昼/夜</th>
+              <th style={{ ...th, ...stickyTh4 }}>昼/夜</th>
 
               {days.map((date) => (
                 <AssignmentDateHeader

@@ -18,6 +18,7 @@ import {
   stickyTd1,
   stickyTd2,
   stickyTd3,
+  stickyTd4,
 } from "../styles";
 
 import { isOutOfAssignmentPeriod } from "../utils";
@@ -25,6 +26,11 @@ import { isOutOfAssignmentPeriod } from "../utils";
 type Props = {
   assignment: Assignment;
 };
+
+function formatContractorName(value: string | null | undefined) {
+  if (!value) return "-";
+  return value.replace(/\s*\(/g, "\n(");
+}
 
 function AssignmentRowContent({ assignment }: Props) {
   const {
@@ -112,13 +118,13 @@ function AssignmentRowContent({ assignment }: Props) {
     canDragRow && draggingAssignmentId && draggingAssignmentId !== assignment.id;
 
     const fixedCellBackground =
-    draggingAssignmentId === assignment.id
-      ? "#dbeafe"
-      : rowDropHighlight
-        ? "#eff6ff"
-        : assignment.shift_type === "night"
-          ? "#c3d1e6"
-          : "#fff";
+  draggingAssignmentId === assignment.id
+    ? "#dbeafe"
+    : rowDropHighlight
+      ? "#eff6ff"
+      : assignment.shift_type === "night"
+        ? "#d8e2f0"
+        : "#f8fafc";
 
   return (
     <AssignmentRow
@@ -145,8 +151,21 @@ function AssignmentRowContent({ assignment }: Props) {
             lineHeight: 1.4,
             cursor: canDragRow ? "grab" : "default",
           }}
-        >
-          {assignment.contractor_name || "-"}
+          >
+          <div
+            style={{
+              whiteSpace: "pre-line",
+              lineHeight: 1.25,
+              wordBreak: "break-word",
+              textAlign: "center",
+              display: "-webkit-box",
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+            }}
+          >
+            {formatContractorName(assignment.contractor_name)}
+          </div>
         </td>
       )}
 
@@ -159,7 +178,7 @@ function AssignmentRowContent({ assignment }: Props) {
         style={{
           ...td,
           ...stickyTd2,
-          left: isMobile ? 0 : 70,
+          left: isMobile ? 0 : 90,
           fontWeight: 800,
           cursor: canDragRow ? "grab" : "pointer",
           backgroundColor: fixedCellBackground,
@@ -193,19 +212,27 @@ function AssignmentRowContent({ assignment }: Props) {
             </span>
           )}
 
-          <span
-            onClick={() => setEditingAssignment(assignment)}
-            style={{
-              cursor: "pointer",
-              textDecoration: "underline",
-              fontSize: 17,
-              fontWeight: 900,
-              lineHeight: 1.4,
-              textAlign: "center",
-            }}
-          >
-            {assignment.site_name || "-"}
-          </span>
+<span
+  onClick={() => setEditingAssignment(assignment)}
+  style={{
+    cursor: "pointer",
+    textDecoration: "underline",
+    fontSize: 16,
+    fontWeight: 900,
+    lineHeight: 1.3,
+    textAlign: "center",
+    display: "-webkit-box",
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: "vertical",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "normal",
+    wordBreak: "break-word",
+    maxWidth: "100%",
+  }}
+>
+  {assignment.site_name || "-"}
+</span>
         </div>
       </td>
 
@@ -241,9 +268,9 @@ function AssignmentRowContent({ assignment }: Props) {
         onDrop={handleAssignmentDrop}
         style={{
           ...td,
-          position: "sticky",
-          left: isMobile ? 0 : 310,
-          zIndex: 15,
+          ...stickyTd4,
+          left: isMobile ? 0 : 350,
+          zIndex: 64,
           fontWeight: 800,
           color: assignment.shift_type === "night" ? "#fff" : "#111",
           backgroundColor:
