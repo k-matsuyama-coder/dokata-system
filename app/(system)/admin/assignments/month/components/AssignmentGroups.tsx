@@ -19,8 +19,8 @@ type Props = {
 function AssignmentGroups({ groupedAssignments }: Props) {
   return (
     <>
-      {groupedAssignments.map((group) => (
-        <Fragment key={group.label}>
+      {groupedAssignments.map((group, index) => (
+        <Fragment key={`${group.label}-${index}`}>
           <tr>
             <td
               colSpan={100}

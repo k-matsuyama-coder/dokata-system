@@ -8,12 +8,19 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
 
   const handleLogin = async () => {
+    console.log("SUPABASE_URL", process.env.NEXT_PUBLIC_SUPABASE_URL);
+    console.log(
+      "SUPABASE_KEY_PREFIX",
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.slice(0, 20)
+    );
+
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (error) {
+      console.error("login error full", error);
       alert("ログイン失敗: " + error.message);
       return;
     }

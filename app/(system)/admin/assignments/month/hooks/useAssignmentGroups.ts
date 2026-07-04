@@ -7,35 +7,29 @@ import type {
   AssignmentGroupSetting,
 } from "../types";
 
-export function useAssignmentGroups() {
+type Props = {
+  organizationId: string | null;
+};
+
+export function useAssignmentGroups({ organizationId }: Props) {
   const [groupSettings, setGroupSettings] = useState<AssignmentGroupSetting[]>([]);
 
   useEffect(() => {
-    void fetchGroups();
-  }, []);
-
-  const fetchGroups = async () => {
-    const { data: sessionData } = await supabase.auth.getSession();
-    const token = sessionData.session?.access_token;
-
-    if (!token) return;
-
-    const res = await fetch("/api/current-organization", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    const result = await res.json();
-
-    if (!res.ok || !result.organizationId) {
+    if (!organizationId) {
+      setGroupSettings([]);
       return;
     }
 
+    void fetchGroups(organizationId);
+  }, [organizationId]);
+
+  const fetchGroups = async (targetOrganizationId: string) => {
     const { data, error } = await supabase
       .from("assignment_groups")
-      .select("id, organization_id, group_key, display_name, is_enabled, sort_order, header_color")
-      .eq("organization_id", result.organizationId)
+      .select(
+        "id, organization_id, group_key, display_name, is_enabled, sort_order, header_color"
+      )
+      .eq("organization_id", targetOrganizationId)
       .order("sort_order", { ascending: true });
 
     if (error) {

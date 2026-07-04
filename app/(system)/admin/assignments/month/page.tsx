@@ -50,7 +50,9 @@ const [currentEmployeeName, setCurrentEmployeeName] = useState<string>("");
 
   const [creatingPublicLink, setCreatingPublicLink] = useState(false);
   const [publicViewMode, setPublicViewMode] = useState<"week" | "next3days">("next3days");
-  const { groupSettings, enabledGroups, groupNameMap } = useAssignmentGroups();
+  const { groupSettings, enabledGroups, groupNameMap } = useAssignmentGroups({
+    organizationId: currentOrganizationId,
+  });
   const mobileActionButtonBottom = "calc(env(safe-area-inset-bottom, 0px) + 16px)";
 const mobileSelectionBottom = "calc(env(safe-area-inset-bottom, 0px) + 84px)";
 
@@ -63,39 +65,6 @@ const {
   userId: currentAuthUserId,
   userName: currentEmployeeName,
 });
-
-  const getCurrentOrganization = async () => {
-    const { data: sessionData } = await supabase.auth.getSession();
-    const token = sessionData.session?.access_token;
-  
-    if (token) {
-      const res = await fetch("/api/current-organization", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-  
-      if (res.ok) {
-        const result = await res.json();
-        if (result.organizationId) {
-          return result.organizationId as string;
-        }
-      }
-    }
-  
-    const { data: userData } = await supabase.auth.getUser();
-    const user = userData.user;
-  
-    if (!user) return null;
-  
-    const { data: employee } = await supabase
-      .from("employees")
-      .select("organization_id")
-      .eq("auth_user_id", user.id)
-      .single();
-  
-    return employee?.organization_id ?? null;
-  };
 
   const getAccessToken = async () => {
     const { data: sessionData } = await supabase.auth.getSession();
@@ -252,41 +221,34 @@ const {
   }, [draggingAssignmentId]);
 
   useEffect(() => {
-    const fetchOrganization = async () => {
-      const organizationId = await getCurrentOrganization();
-
-      if (!organizationId) {
-        alert("会社情報が取得できません");
-        return;
-      }
-
-      setCurrentOrganizationId(organizationId);
-    };
-
-    fetchOrganization();
-  }, []);
-
-  useEffect(() => {
-    const fetchCurrentUser = async () => {
+    const fetchCurrentUserAndOrganization = async () => {
       const { data } = await supabase.auth.getUser();
       const authUser = data.user;
   
-      if (!authUser || !currentOrganizationId) return;
+      if (!authUser) {
+        alert("ログイン情報が取得できません");
+        return;
+      }
   
       setCurrentAuthUserId(authUser.id);
   
-      const { data: employee } = await supabase
+      const { data: employee, error } = await supabase
         .from("employees")
-        .select("name")
-        .eq("organization_id", currentOrganizationId)
+        .select("name, organization_id")
         .eq("auth_user_id", authUser.id)
         .maybeSingle();
   
-      setCurrentEmployeeName(employee?.name ?? "");
+      if (error || !employee?.organization_id) {
+        alert("会社情報が取得できません");
+        return;
+      }
+  
+      setCurrentOrganizationId(employee.organization_id);
+      setCurrentEmployeeName(employee.name ?? "");
     };
   
-    void fetchCurrentUser();
-  }, [currentOrganizationId]);
+    void fetchCurrentUserAndOrganization();
+  }, []);
 
   const { isMobile } = useResponsive();
 
