@@ -434,6 +434,26 @@ const {
 
   const handleExportMonthlyMatrix = async () => {
     try {
+      const memberCountMap = new Map<string, number>();
+  
+      siteMembers.forEach((member) => {
+        const key = `${member.assignment_id}_${member.work_date}`;
+        memberCountMap.set(key, (memberCountMap.get(key) ?? 0) + 1);
+      });
+  
+      const exportedDailyInfos = exportAssignments.flatMap((assignment) => {
+        return days.map((date) => {
+          const key = `${assignment.id}_${date}`;
+          const count = memberCountMap.get(key) ?? 0;
+  
+          return {
+            assignment_id: assignment.id,
+            work_date: date,
+            planned_count: count,
+          };
+        });
+      });
+  
       await exportMonthlyMatrix({
         month,
         assignments: exportAssignments.map((assignment) => ({
@@ -445,11 +465,7 @@ const {
           manager_name: assignment.manager_name ?? null,
           shift_type: assignment.shift_type ?? null,
         })),
-        dailyInfos: dailyInfos.map((info) => ({
-          assignment_id: info.assignment_id,
-          work_date: info.work_date,
-          planned_count: info.planned_count ?? null,
-        })),
+        dailyInfos: exportedDailyInfos,
       });
     } catch (error) {
       alert(error instanceof Error ? error.message : "Excel出力に失敗しました");
