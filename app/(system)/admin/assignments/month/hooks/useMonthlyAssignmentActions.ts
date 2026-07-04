@@ -8,10 +8,7 @@ import { uploadFilesAction } from "../actions/uploadFiles";
 import { deleteAssignmentFileAction } from "../actions/deleteAssignmentFile";
 import type { AssignmentGroupKey } from "../types";
 
-import type {
-  Assignment,
-  AssignmentFile,
-} from "../types";
+import type { Assignment, AssignmentFile } from "../types";
 
 type Props = {
   month: string;
@@ -43,9 +40,6 @@ type Props = {
   endDate: string;
   setEndDate: Dispatch<SetStateAction<string>>;
 
-  constructionType: string;
-  setConstructionType: Dispatch<SetStateAction<string>>;
-
   editingAssignment: Assignment | null;
   setEditingAssignment: Dispatch<SetStateAction<Assignment | null>>;
 
@@ -56,69 +50,48 @@ type Props = {
   setSiteMembers: Dispatch<SetStateAction<any[]>>;
 
   addFiles: FileList | null;
-setAddFiles: React.Dispatch<
-  React.SetStateAction<FileList | null>
->;
+  setAddFiles: React.Dispatch<React.SetStateAction<FileList | null>>;
 
   setShowAddModal: Dispatch<SetStateAction<boolean>>;
 
   groupKey: AssignmentGroupKey;
-setGroupKey: Dispatch<SetStateAction<AssignmentGroupKey>>;
+  setGroupKey: Dispatch<SetStateAction<AssignmentGroupKey>>;
 
-  fetchData: () => Promise<void>;
+  fetchScheduleData: () => Promise<void>;
 };
 
 export function useMonthlyAssignmentActions({
   month,
-
   siteName,
   setSiteName,
-
   contractorName,
   setContractorName,
-
   shiftType,
   setShiftType,
-
   managerName,
   setManagerName,
-
   contactPhone,
   setContactPhone,
-
   address,
   setAddress,
-
   meetingTime,
   setMeetingTime,
-
   startDate,
   setStartDate,
-
   endDate,
   setEndDate,
-
-  constructionType,
-  setConstructionType,
-
   editingAssignment,
   setEditingAssignment,
-
   assignmentFiles,
   setAssignmentFiles,
-
   setAssignments,
   setSiteMembers,
-
   addFiles,
-setAddFiles,
-
+  setAddFiles,
   setShowAddModal,
-
   groupKey,
-setGroupKey,
-
-  fetchData,
+  setGroupKey,
+  fetchScheduleData,
 }: Props) {
   const updateAssignment = async () => {
     const { error } = await updateAssignmentAction({
@@ -131,24 +104,21 @@ setGroupKey,
     }
 
     setEditingAssignment(null);
-    fetchData();
+    await fetchScheduleData();
   };
 
   const uploadFiles = async (
     assignmentId: string,
     files: FileList | null
   ) => {
-    const { error } = await uploadFilesAction(
-      assignmentId,
-      files
-    );
+    const { error } = await uploadFilesAction(assignmentId, files);
 
     if (error) {
       alert("アップロード失敗: " + error.message);
       return;
     }
 
-    fetchData();
+    await fetchScheduleData();
   };
 
   const deleteAssignmentFile = async (file: AssignmentFile) => {
@@ -165,9 +135,7 @@ setGroupKey,
       return;
     }
 
-    setAssignmentFiles((prev) =>
-      prev.filter((item) => item.id !== file.id)
-    );
+    setAssignmentFiles((prev) => prev.filter((item) => item.id !== file.id));
   };
 
   const handleAddSite = async () => {
@@ -191,30 +159,30 @@ setGroupKey,
     }
 
     if (data?.id && addFiles && addFiles.length > 0) {
-      const { error: uploadError } = await uploadFilesAction(
-        data.id,
-        addFiles
-      );
-    
+      const { error: uploadError } = await uploadFilesAction(data.id, addFiles);
+
       if (uploadError) {
-        alert("現場は追加されましたが、ファイルアップロードに失敗しました: " + uploadError.message);
+        alert(
+          "現場は追加されましたが、ファイルアップロードに失敗しました: " +
+            uploadError.message
+        );
       }
     }
 
     setSiteName("");
-setContractorName("");
-setManagerName("");
-setContactPhone("");
-setAddress("");
-setShiftType("day");
-setGroupKey("group1");
-setMeetingTime("08:00");
-setStartDate("");
-setEndDate("");
-setAddFiles(null);
-setShowAddModal(false);
+    setContractorName("");
+    setManagerName("");
+    setContactPhone("");
+    setAddress("");
+    setShiftType("day");
+    setGroupKey("group1");
+    setMeetingTime("08:00");
+    setStartDate("");
+    setEndDate("");
+    setAddFiles(null);
+    setShowAddModal(false);
 
-    fetchData();
+    await fetchScheduleData();
   };
 
   const deleteAssignment = async (id: string) => {
@@ -232,17 +200,9 @@ setShowAddModal(false);
       return;
     }
 
-    setAssignments((prev) =>
-      prev.filter((a) => a.id !== id)
-    );
-
-    setSiteMembers((prev) =>
-      prev.filter((m) => m.assignment_id !== id)
-    );
-
-    setAssignmentFiles((prev) =>
-      prev.filter((f) => f.assignment_id !== id)
-    );
+    setAssignments((prev) => prev.filter((a) => a.id !== id));
+    setSiteMembers((prev) => prev.filter((m) => m.assignment_id !== id));
+    setAssignmentFiles((prev) => prev.filter((f) => f.assignment_id !== id));
   };
 
   return {

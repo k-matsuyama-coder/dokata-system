@@ -6,7 +6,7 @@ type Props = {
   month: string;
   viewMode: "month" | "week";
   weekStart: string;
-  fetchData: () => Promise<void>;
+  fetchScheduleData: () => Promise<void>;
 };
 
 const REALTIME_FETCH_DEBOUNCE_MS = 300;
@@ -15,7 +15,7 @@ export function useMonthlyAssignmentRealtime({
   month,
   viewMode,
   weekStart,
-  fetchData,
+  fetchScheduleData,
 }: Props) {
   const fetchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -26,7 +26,7 @@ export function useMonthlyAssignmentRealtime({
       }
 
       fetchTimeoutRef.current = setTimeout(() => {
-        void fetchData();
+        void fetchScheduleData();
       }, REALTIME_FETCH_DEBOUNCE_MS);
     };
 
@@ -77,9 +77,9 @@ export function useMonthlyAssignmentRealtime({
 
       void supabase.removeChannel(channel);
     };
-  }, [fetchData]);
+  }, [fetchScheduleData]);
 
   useEffect(() => {
-    void fetchData();
-  }, [month, viewMode, weekStart, fetchData]);
+    void fetchScheduleData();
+  }, [month, viewMode, weekStart, fetchScheduleData]);
 }

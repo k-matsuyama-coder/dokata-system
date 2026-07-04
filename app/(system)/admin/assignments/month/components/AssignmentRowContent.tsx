@@ -42,6 +42,9 @@ function AssignmentRowContent({ assignment }: Props) {
     setSaveTimers,
     setEditingAssignment,
     flushDetailSave,
+    getEditingUsers,
+    startEditing,
+    stopEditing,
   } = useMonthlyAssignmentContext();
 
   const {
@@ -262,6 +265,7 @@ function AssignmentRowContent({ assignment }: Props) {
       {days.map((date) => {
         const cellMembers = getCellMembers(assignment.id, date);
         const dailyInfo = getDailyInfo(assignment.id, date);
+        const detailCellKey = `${assignment.id}_${date}_detail`;
         const isOutOfPeriod = isOutOfAssignmentPeriod(
           date,
           assignment.start_date,
@@ -406,6 +410,9 @@ const shouldFadeText = isOutOfPeriod || isPlannedCountEmpty;
     removeVehicleFromCell={removeVehicleFromCell}
     deleteSiteMember={deleteSiteMember}
     toggleForeman={toggleForeman}
+    editingUsers={getEditingUsers(detailCellKey)}
+startEditing={startEditing}
+stopEditing={stopEditing}
   />
 </div>
 

@@ -118,8 +118,22 @@ export type MonthlyAssignmentContextValue = {
     value: string
   ) => void;
 
+  flushDetailSave: (
+    assignmentId: string,
+    workDate: string
+  ) => Promise<void>;
+
   deleteSiteMember: (id: string) => void;
   toggleForeman: (member: SiteMember) => void;
+
+  getEditingUsers: (cellKey: string) => {
+    userId: string;
+    userName: string;
+    cellKey: string;
+    startedAt: string;
+  }[];
+  startEditing: (cellKey: string) => void | Promise<void>;
+  stopEditing: () => void | Promise<void>;
 };
 
 export const MonthlyAssignmentContext =

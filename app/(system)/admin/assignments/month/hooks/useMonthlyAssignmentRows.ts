@@ -8,14 +8,14 @@ type Props = {
   organizationId: string;
   assignments: Assignment[];
   setAssignments: Dispatch<SetStateAction<Assignment[]>>;
-  fetchData: () => Promise<void>;
+  fetchScheduleData: () => Promise<void>;
 };
 
 export function useMonthlyAssignmentRows({
   organizationId,
   assignments,
   setAssignments,
-  fetchData,
+  fetchScheduleData,
 }: Props) {
   const moveAssignmentRow = async (
     fromAssignmentId: string,
@@ -28,12 +28,13 @@ export function useMonthlyAssignmentRows({
       toAssignmentId,
     });
 
-    setAssignments(nextAssignments);
-
     if (error) {
       alert("並び替え保存失敗: " + error.message);
-      fetchData();
+      await fetchScheduleData();
+      return;
     }
+
+    setAssignments(nextAssignments);
   };
 
   return {

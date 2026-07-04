@@ -29,6 +29,7 @@ import type { MonthlyAssignmentContextValue } from "./contexts/monthlyAssignment
 import { MonthlyAssignmentContext } from "./contexts/monthlyAssignmentContext";
 import { exportMonthlyMatrix } from "./utils/exportMonthlyMatrix";
 import { useAssignmentGroups } from "./hooks/useAssignmentGroups";
+import { useAssignmentEditPresence } from "./hooks/useAssignmentEditPresence";
 import {
   MonthlyAssignmentSelectionContext,
   type MonthlyAssignmentSelectionContextValue,
@@ -44,12 +45,24 @@ export default function MonthlyAssignmentsPage() {
   const [viewMode, setViewMode] = useState<"month" | "week">("month");
   const [weekStart, setWeekStart] = useState(getWeekStart);
   const [currentOrganizationId, setCurrentOrganizationId] = useState<string | null>(null);
+  const [currentAuthUserId, setCurrentAuthUserId] = useState<string>("");
+const [currentEmployeeName, setCurrentEmployeeName] = useState<string>("");
 
   const [creatingPublicLink, setCreatingPublicLink] = useState(false);
   const [publicViewMode, setPublicViewMode] = useState<"week" | "next3days">("next3days");
   const { groupSettings, enabledGroups, groupNameMap } = useAssignmentGroups();
   const mobileActionButtonBottom = "calc(env(safe-area-inset-bottom, 0px) + 16px)";
 const mobileSelectionBottom = "calc(env(safe-area-inset-bottom, 0px) + 84px)";
+
+const {
+  getEditingUsers,
+  startEditing,
+  stopEditing,
+} = useAssignmentEditPresence({
+  organizationId: currentOrganizationId ?? "",
+  userId: currentAuthUserId,
+  userName: currentEmployeeName,
+});
 
   const getCurrentOrganization = async () => {
     const { data: sessionData } = await supabase.auth.getSession();
@@ -253,6 +266,28 @@ const mobileSelectionBottom = "calc(env(safe-area-inset-bottom, 0px) + 84px)";
     fetchOrganization();
   }, []);
 
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      const authUser = data.user;
+  
+      if (!authUser || !currentOrganizationId) return;
+  
+      setCurrentAuthUserId(authUser.id);
+  
+      const { data: employee } = await supabase
+        .from("employees")
+        .select("name")
+        .eq("organization_id", currentOrganizationId)
+        .eq("auth_user_id", authUser.id)
+        .maybeSingle();
+  
+      setCurrentEmployeeName(employee?.name ?? "");
+    };
+  
+    void fetchCurrentUser();
+  }, [currentOrganizationId]);
+
   const { isMobile } = useResponsive();
 
   const {
@@ -283,7 +318,6 @@ const mobileSelectionBottom = "calc(env(safe-area-inset-bottom, 0px) + 84px)";
     contractorContacts,
     fetchMasterData,
     fetchScheduleData,
-    fetchData,
   } = useMonthlyAssignmentData({
     days,
     organizationId: currentOrganizationId,
@@ -347,21 +381,21 @@ const mobileSelectionBottom = "calc(env(safe-area-inset-bottom, 0px) + 84px)";
     setAssignments,
     setSiteMembers,
     setShowAddModal,
-    fetchData,
+    fetchScheduleData,
   });
 
   useMonthlyAssignmentAdmin({
     month,
     viewMode,
     weekStart,
-    fetchData: fetchScheduleData,
+    fetchScheduleData,
   });
 
   useMonthlyAssignmentRealtime({
     month,
     viewMode,
     weekStart,
-    fetchData: fetchScheduleData,
+    fetchScheduleData,
   });
 
   useEffect(() => {
@@ -373,12 +407,13 @@ const mobileSelectionBottom = "calc(env(safe-area-inset-bottom, 0px) + 84px)";
     organizationId: currentOrganizationId ?? "",
     assignments,
     setAssignments,
-    fetchData,
+    fetchScheduleData,
   });
 
   const {
     getDailyInfo,
     updateDailyInfo,
+    flushDetailSave,
     editingDetails,
     setEditingDetails,
     saveTimers,
@@ -402,7 +437,7 @@ const mobileSelectionBottom = "calc(env(safe-area-inset-bottom, 0px) + 84px)";
     setDraggingEmployeeName,
     setDraggingSiteMemberId,
     setSelectedSiteMemberId,
-    fetchData,
+    fetchScheduleData,
   });
 
   const {
@@ -502,8 +537,12 @@ const mobileSelectionBottom = "calc(env(safe-area-inset-bottom, 0px) + 84px)";
       addVehicleToCell,
       removeVehicleFromCell,
       updateDailyInfo,
+      flushDetailSave,
       deleteSiteMember,
       toggleForeman,
+      getEditingUsers,
+startEditing,
+stopEditing,
     }),
     [
       days,
@@ -532,10 +571,14 @@ const mobileSelectionBottom = "calc(env(safe-area-inset-bottom, 0px) + 84px)";
       addVehicleToCell,
       removeVehicleFromCell,
       updateDailyInfo,
+      flushDetailSave,
       deleteSiteMember,
       toggleForeman,
       setShowMemberModal,
       setEditingAssignment,
+      getEditingUsers,
+startEditing,
+stopEditing,
     ]
   );
 
@@ -708,8 +751,6 @@ const mobileSelectionBottom = "calc(env(safe-area-inset-bottom, 0px) + 84px)";
   days={days}
   dailySummaryMap={dailySummaryMap}
   assignmentMap={assignmentMap}
-  enabledGroups={enabledGroups}
-  groupNameMap={groupNameMap}
   getDateHeaderStyle={getDateHeaderStyle}
 >
                 <tbody>

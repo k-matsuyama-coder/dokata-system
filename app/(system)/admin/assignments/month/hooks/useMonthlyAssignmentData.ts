@@ -54,6 +54,8 @@ export function useMonthlyAssignmentData({ days, organizationId }: Props) {
   const fetchMasterData = useCallback(async () => {
     if (!organizationId) return;
 
+    console.time("fetchMasterData");
+
     const [employeeData, vehicleData, contractorData, contactData] =
       await Promise.all([
         getEmployees(organizationId),
@@ -66,6 +68,8 @@ export function useMonthlyAssignmentData({ days, organizationId }: Props) {
     setVehicles(vehicleData);
     setContractors(contractorData);
     setContractorContacts(contactData);
+
+    console.timeEnd("fetchMasterData");
   }, [organizationId]);
 
   const fetchScheduleData = useCallback(async () => {
@@ -73,8 +77,13 @@ export function useMonthlyAssignmentData({ days, organizationId }: Props) {
       return;
     }
 
+    console.time("fetchScheduleData");
+    console.time("getAssignments");
+
     const assignmentData = await getAssignments(organizationId);
     const assignmentIds = (assignmentData ?? []).map((assignment) => assignment.id);
+
+    console.timeEnd("getAssignments");
 
     setAssignments(assignmentData);
 
@@ -83,8 +92,11 @@ export function useMonthlyAssignmentData({ days, organizationId }: Props) {
       setSiteMembers([]);
       setDailyInfos([]);
       setShiftRequests([]);
+      console.timeEnd("fetchScheduleData");
       return;
     }
+
+    console.time("scheduleChildren");
 
     const [fileData, memberData, dailyInfoData, shiftRequestData] =
       await Promise.all([
@@ -94,15 +106,18 @@ export function useMonthlyAssignmentData({ days, organizationId }: Props) {
         getShiftRequests(organizationId, startDate, endDate),
       ]);
 
+    console.timeEnd("scheduleChildren");
+
     setAssignmentFiles(fileData);
     setSiteMembers(memberData);
     setDailyInfos(dailyInfoData);
     setShiftRequests(shiftRequestData);
+
+    console.timeEnd("fetchScheduleData");
   }, [organizationId, startDate, endDate]);
 
   const fetchData = useCallback(async () => {
-    await fetchMasterData();
-    await fetchScheduleData();
+    await Promise.all([fetchMasterData(), fetchScheduleData()]);
   }, [fetchMasterData, fetchScheduleData]);
 
   return {

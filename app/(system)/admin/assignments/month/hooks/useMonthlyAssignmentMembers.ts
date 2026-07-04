@@ -21,7 +21,7 @@ type Props = {
   setDraggingSiteMemberId: Dispatch<SetStateAction<string | null>>;
   setSelectedSiteMemberId: Dispatch<SetStateAction<string | null>>;
 
-  fetchData: () => Promise<void>;
+  fetchScheduleData: () => Promise<void>;
 };
 
 export function useMonthlyAssignmentMembers({
@@ -32,7 +32,7 @@ export function useMonthlyAssignmentMembers({
   setDraggingEmployeeName,
   setDraggingSiteMemberId,
   setSelectedSiteMemberId,
-  fetchData,
+  fetchScheduleData,
 }: Props) {
   const addEmployeeToCell = async (
     employeeName: string,
@@ -89,7 +89,7 @@ export function useMonthlyAssignmentMembers({
     setDraggingSiteMemberId(null);
     setSelectedSiteMemberId(null);
 
-    fetchData();
+    await fetchScheduleData();
   };
 
   const deleteSiteMember = async (id: string) => {

@@ -7,14 +7,14 @@ type Props = {
   month: string;
   viewMode: "month" | "week";
   weekStart: string;
-  fetchData: () => Promise<void>;
+  fetchScheduleData: () => Promise<void>;
 };
 
 export function useMonthlyAssignmentAdmin({
   month,
   viewMode,
   weekStart,
-  fetchData,
+  fetchScheduleData,
 }: Props) {
   const [isAdminChecked, setIsAdminChecked] = useState(false);
 
@@ -43,11 +43,11 @@ export function useMonthlyAssignmentAdmin({
       setIsAdminChecked(true);
     };
 
-    checkAdmin();
+    void checkAdmin();
   }, []);
 
   useEffect(() => {
     if (!isAdminChecked) return;
-    void fetchData();
-  }, [isAdminChecked, month, viewMode, weekStart, fetchData]);
+    void fetchScheduleData();
+  }, [isAdminChecked, month, viewMode, weekStart, fetchScheduleData]);
 }
