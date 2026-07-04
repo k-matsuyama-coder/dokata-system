@@ -54,7 +54,7 @@ export function useMonthlyAssignmentData({ days, organizationId }: Props) {
   const fetchMasterData = useCallback(async () => {
     if (!organizationId) return;
 
-    console.time("fetchMasterData");
+    const startedAt = performance.now();
 
     const [employeeData, vehicleData, contractorData, contactData] =
       await Promise.all([
@@ -69,7 +69,7 @@ export function useMonthlyAssignmentData({ days, organizationId }: Props) {
     setContractors(contractorData);
     setContractorContacts(contactData);
 
-    console.timeEnd("fetchMasterData");
+    console.log("fetchMasterData ms", performance.now() - startedAt);
   }, [organizationId]);
 
   const fetchScheduleData = useCallback(async () => {
@@ -77,13 +77,12 @@ export function useMonthlyAssignmentData({ days, organizationId }: Props) {
       return;
     }
 
-    console.time("fetchScheduleData");
-    console.time("getAssignments");
+    const scheduleStartedAt = performance.now();
 
+    const assignmentsStartedAt = performance.now();
     const assignmentData = await getAssignments(organizationId);
     const assignmentIds = (assignmentData ?? []).map((assignment) => assignment.id);
-
-    console.timeEnd("getAssignments");
+    console.log("getAssignments ms", performance.now() - assignmentsStartedAt);
 
     setAssignments(assignmentData);
 
@@ -92,28 +91,62 @@ export function useMonthlyAssignmentData({ days, organizationId }: Props) {
       setSiteMembers([]);
       setDailyInfos([]);
       setShiftRequests([]);
-      console.timeEnd("fetchScheduleData");
+      console.log("fetchScheduleData ms", performance.now() - scheduleStartedAt);
       return;
     }
 
-    console.time("scheduleChildren");
+    const filesStartedAt = performance.now();
+    const filesPromise = getAssignmentFiles(organizationId, assignmentIds).then((data) => {
+      console.log("getAssignmentFiles ms", performance.now() - filesStartedAt);
+      return data;
+    });
+
+    const membersStartedAt = performance.now();
+    const membersPromise = getSiteMembers(
+      organizationId,
+      assignmentIds,
+      startDate,
+      endDate
+    ).then((data) => {
+      console.log("getSiteMembers ms", performance.now() - membersStartedAt);
+      return data;
+    });
+
+    const dailyInfosStartedAt = performance.now();
+    const dailyInfosPromise = getDailyInfos(
+      organizationId,
+      assignmentIds,
+      startDate,
+      endDate
+    ).then((data) => {
+      console.log("getDailyInfos ms", performance.now() - dailyInfosStartedAt);
+      return data;
+    });
+
+    const shiftRequestsStartedAt = performance.now();
+    const shiftRequestsPromise = getShiftRequests(
+      organizationId,
+      startDate,
+      endDate
+    ).then((data) => {
+      console.log("getShiftRequests ms", performance.now() - shiftRequestsStartedAt);
+      return data;
+    });
 
     const [fileData, memberData, dailyInfoData, shiftRequestData] =
       await Promise.all([
-        getAssignmentFiles(organizationId, assignmentIds),
-        getSiteMembers(organizationId, assignmentIds, startDate, endDate),
-        getDailyInfos(organizationId, assignmentIds, startDate, endDate),
-        getShiftRequests(organizationId, startDate, endDate),
+        filesPromise,
+        membersPromise,
+        dailyInfosPromise,
+        shiftRequestsPromise,
       ]);
-
-    console.timeEnd("scheduleChildren");
 
     setAssignmentFiles(fileData);
     setSiteMembers(memberData);
     setDailyInfos(dailyInfoData);
     setShiftRequests(shiftRequestData);
 
-    console.timeEnd("fetchScheduleData");
+    console.log("fetchScheduleData ms", performance.now() - scheduleStartedAt);
   }, [organizationId, startDate, endDate]);
 
   const fetchData = useCallback(async () => {
