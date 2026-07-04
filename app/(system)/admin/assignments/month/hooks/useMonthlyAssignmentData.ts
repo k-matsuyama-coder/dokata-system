@@ -3,6 +3,7 @@ import { useCallback, useMemo, useState } from "react";
 
 import {
   getAssignments,
+  getAssignmentFiles,
   getContractorContacts,
   getContractors,
   getDailyInfos,
@@ -53,7 +54,7 @@ export function useMonthlyAssignmentData({ days, organizationId }: Props) {
   const fetchMasterData = useCallback(async () => {
     if (!organizationId) return;
 
-    const startedAt = performance.now();
+    console.time("fetchMasterData");
 
     const [employeeData, vehicleData, contractorData, contactData] =
       await Promise.all([
@@ -68,7 +69,7 @@ export function useMonthlyAssignmentData({ days, organizationId }: Props) {
     setContractors(contractorData);
     setContractorContacts(contactData);
 
-    console.log("fetchMasterData ms", performance.now() - startedAt);
+    console.timeEnd("fetchMasterData");
   }, [organizationId]);
 
   const fetchScheduleData = useCallback(async () => {
@@ -76,12 +77,13 @@ export function useMonthlyAssignmentData({ days, organizationId }: Props) {
       return;
     }
 
-    const scheduleStartedAt = performance.now();
+    console.time("fetchScheduleData");
+    console.time("getAssignments");
 
-    const assignmentsStartedAt = performance.now();
     const assignmentData = await getAssignments(organizationId);
     const assignmentIds = (assignmentData ?? []).map((assignment) => assignment.id);
-    console.log("getAssignments ms", performance.now() - assignmentsStartedAt);
+
+    console.timeEnd("getAssignments");
 
     setAssignments(assignmentData);
 
@@ -90,61 +92,28 @@ export function useMonthlyAssignmentData({ days, organizationId }: Props) {
       setSiteMembers([]);
       setDailyInfos([]);
       setShiftRequests([]);
-      console.log("fetchScheduleData ms", performance.now() - scheduleStartedAt);
+      console.timeEnd("fetchScheduleData");
       return;
     }
 
-    const filesStartedAt = performance.now();
-    const filesPromise = getAssignmentFiles(organizationId, assignmentIds).then((data) => {
-      console.log("getAssignmentFiles ms", performance.now() - filesStartedAt);
-      return data;
-    });
+    console.time("scheduleChildren");
 
-    const membersStartedAt = performance.now();
-    const membersPromise = getSiteMembers(
-      organizationId,
-      assignmentIds,
-      startDate,
-      endDate
-    ).then((data) => {
-      console.log("getSiteMembers ms", performance.now() - membersStartedAt);
-      return data;
-    });
+    const [fileData, memberData, dailyInfoData, shiftRequestData] =
+      await Promise.all([
+        getAssignmentFiles(organizationId, assignmentIds),
+        getSiteMembers(organizationId, assignmentIds, startDate, endDate),
+        getDailyInfos(organizationId, assignmentIds, startDate, endDate),
+        getShiftRequests(organizationId, startDate, endDate),
+      ]);
 
-    const dailyInfosStartedAt = performance.now();
-    const dailyInfosPromise = getDailyInfos(
-      organizationId,
-      assignmentIds,
-      startDate,
-      endDate
-    ).then((data) => {
-      console.log("getDailyInfos ms", performance.now() - dailyInfosStartedAt);
-      return data;
-    });
+    console.timeEnd("scheduleChildren");
 
-    const shiftRequestsStartedAt = performance.now();
-    const shiftRequestsPromise = getShiftRequests(
-      organizationId,
-      startDate,
-      endDate
-    ).then((data) => {
-      console.log("getShiftRequests ms", performance.now() - shiftRequestsStartedAt);
-      return data;
-    });
+    setAssignmentFiles(fileData);
+    setSiteMembers(memberData);
+    setDailyInfos(dailyInfoData);
+    setShiftRequests(shiftRequestData);
 
-    const [memberData, dailyInfoData, shiftRequestData] =
-  await Promise.all([
-    getSiteMembers(organizationId, assignmentIds, startDate, endDate),
-    getDailyInfos(organizationId, assignmentIds, startDate, endDate),
-    getShiftRequests(organizationId, startDate, endDate),
-  ]);
-
-setAssignmentFiles([]);
-setSiteMembers(memberData);
-setDailyInfos(dailyInfoData);
-setShiftRequests(shiftRequestData);
-
-    console.log("fetchScheduleData ms", performance.now() - scheduleStartedAt);
+    console.timeEnd("fetchScheduleData");
   }, [organizationId, startDate, endDate]);
 
   const fetchData = useCallback(async () => {
