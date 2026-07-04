@@ -84,7 +84,9 @@ export default function TwoMonthPage() {
     setIsUndoRedo,
   } = useTwoMonthPage();
 
-  const { enabledGroups, groupSettings, groupNameMap } = useAssignmentGroups();
+  const { enabledGroups, groupSettings, groupNameMap } = useAssignmentGroups({
+    organizationId,
+  });
 
   useRealtime(fetchData, baseMonth);
 
