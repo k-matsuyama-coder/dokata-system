@@ -383,15 +383,27 @@ const shouldFadeText = isOutOfPeriod || isPlannedCountEmpty;
               }
 
               if (copiedVehicleNames.length > 0) {
-                copiedVehicleNames.forEach((name) => {
-                  addVehicleToCell(name, assignment.id, date);
-                });
-
-                setCopiedVehicleNames([]);
-
-                if (isMobile) {
+                const currentVehicleNames = dailyInfo?.vehicle_names ?? [];
+                const mergedVehicleNames = Array.from(
+                  new Set([...currentVehicleNames, ...copiedVehicleNames])
+                );
+              
+                updateDailyInfo(
+                  assignment.id,
+                  date,
+                  "vehicle_names",
+                  mergedVehicleNames.join(",")
+                );
+              
+                if (!e.shiftKey) {
+                  setCopiedVehicleNames([]);
+                }
+              
+                if (isMobile && !e.shiftKey) {
                   setShowMemberModal(false);
                 }
+              
+                return;
               }
             }}
             style={{
