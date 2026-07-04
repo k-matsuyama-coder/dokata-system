@@ -3,7 +3,6 @@ import { useCallback, useMemo, useState } from "react";
 
 import {
   getAssignments,
-  getAssignmentFiles,
   getContractorContacts,
   getContractors,
   getDailyInfos,
@@ -133,18 +132,17 @@ export function useMonthlyAssignmentData({ days, organizationId }: Props) {
       return data;
     });
 
-    const [fileData, memberData, dailyInfoData, shiftRequestData] =
-      await Promise.all([
-        filesPromise,
-        membersPromise,
-        dailyInfosPromise,
-        shiftRequestsPromise,
-      ]);
+    const [memberData, dailyInfoData, shiftRequestData] =
+  await Promise.all([
+    getSiteMembers(organizationId, assignmentIds, startDate, endDate),
+    getDailyInfos(organizationId, assignmentIds, startDate, endDate),
+    getShiftRequests(organizationId, startDate, endDate),
+  ]);
 
-    setAssignmentFiles(fileData);
-    setSiteMembers(memberData);
-    setDailyInfos(dailyInfoData);
-    setShiftRequests(shiftRequestData);
+setAssignmentFiles([]);
+setSiteMembers(memberData);
+setDailyInfos(dailyInfoData);
+setShiftRequests(shiftRequestData);
 
     console.log("fetchScheduleData ms", performance.now() - scheduleStartedAt);
   }, [organizationId, startDate, endDate]);
