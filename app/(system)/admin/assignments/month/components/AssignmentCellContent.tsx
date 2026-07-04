@@ -10,6 +10,7 @@ import AssignmentMemberSection from "./AssignmentMemberSection";
 import type {
   Assignment,
   DailyInfo,
+  Employee,
   SiteMember,
 } from "../types";
 
@@ -28,6 +29,7 @@ type Props = {
   plannedCount: number | null;
   memberCount: number;
   isOutOfPeriod: boolean;
+  employees: Employee[];
 
   editingDetails: Record<string, string>;
   setEditingDetails: React.Dispatch<
@@ -82,6 +84,7 @@ function AssignmentCellContent({
   plannedCount,
   memberCount,
   isOutOfPeriod,
+  employees,
 
   editingDetails,
   setEditingDetails,
@@ -145,6 +148,7 @@ function AssignmentCellContent({
       <AssignmentMemberSection
         isMobile={isMobile}
         cellMembers={cellMembers}
+        employees={employees}
         copiedEmployeeNames={copiedEmployeeNames}
         setDraggingSiteMemberId={setDraggingSiteMemberId}
         setCopiedEmployeeNames={setCopiedEmployeeNames}

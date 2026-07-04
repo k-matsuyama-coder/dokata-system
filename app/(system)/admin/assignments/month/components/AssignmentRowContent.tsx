@@ -40,6 +40,7 @@ function AssignmentRowContent({ assignment }: Props) {
     sortMode,
     editingDetails,
     saveTimers,
+    employees,
     getCellMembers,
     getDailyInfo,
     getCellStyle,
@@ -452,6 +453,7 @@ const shouldFadeText = isOutOfPeriod || isPlannedCountEmpty;
     editingUsers={getEditingUsers(detailCellKey)}
 startEditing={startEditing}
 stopEditing={stopEditing}
+employees={employees}
   />
 </div>
 

@@ -6,6 +6,7 @@ import type React from "react";
 import type {
   Assignment,
   DailyInfo,
+  Employee,
   SiteMember,
 } from "../types";
 
@@ -35,6 +36,8 @@ export type MonthlyAssignmentContextValue = {
 
   editingDetails: Record<string, string>;
   saveTimers: Record<string, ReturnType<typeof setTimeout>>;
+
+  employees: Employee[];
 
   getCellMembers: (assignmentId: string, workDate: string) => SiteMember[];
   getDailyInfo: (assignmentId: string, workDate: string) => DailyInfo | undefined;

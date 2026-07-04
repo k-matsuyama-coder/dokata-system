@@ -1,11 +1,12 @@
 "use client";
 
-import type { SiteMember } from "../types";
+import type { Employee, SiteMember } from "../types";
 import AssignmentMemberChip from "./AssignmentMemberChip";
 
 type Props = {
   isMobile: boolean;
   cellMembers: SiteMember[];
+  employees: Employee[];
   copiedEmployeeNames: string[];
   setDraggingSiteMemberId: (id: string | null) => void;
   setCopiedEmployeeNames: React.Dispatch<React.SetStateAction<string[]>>;
@@ -18,6 +19,7 @@ type Props = {
 export default function AssignmentMemberSection({
   isMobile,
   cellMembers,
+  employees,
   copiedEmployeeNames,
   setDraggingSiteMemberId,
   setCopiedEmployeeNames,
@@ -27,6 +29,25 @@ export default function AssignmentMemberSection({
   toggleForeman,
 }: Props) {
   const hasForeman = cellMembers.some((member) => member.is_foreman);
+
+  const employeeOrderMap = new Map(
+    employees.map((employee, index) => [employee.name, index])
+  );
+
+  const sortedMembers = [...cellMembers].sort((a, b) => {
+    if (a.is_foreman !== b.is_foreman) {
+      return a.is_foreman ? -1 : 1;
+    }
+
+    const aOrder = employeeOrderMap.get(a.employee_name) ?? Number.MAX_SAFE_INTEGER;
+    const bOrder = employeeOrderMap.get(b.employee_name) ?? Number.MAX_SAFE_INTEGER;
+
+    if (aOrder !== bOrder) {
+      return aOrder - bOrder;
+    }
+
+    return a.employee_name.localeCompare(b.employee_name, "ja");
+  });
 
   return (
     <div
@@ -38,23 +59,21 @@ export default function AssignmentMemberSection({
         marginTop: 4,
       }}
     >
-      {[...cellMembers]
-        .sort((a, b) => Number(b.is_foreman) - Number(a.is_foreman))
-        .map((member) => (
-          <AssignmentMemberChip
-            key={member.id}
-            member={member}
-            isMobile={isMobile}
-            isCopied={copiedEmployeeNames.includes(member.employee_name)}
-            hasForeman={hasForeman}
-            setDraggingSiteMemberId={setDraggingSiteMemberId}
-            setCopiedEmployeeNames={setCopiedEmployeeNames}
-            setSelectedSiteMemberId={setSelectedSiteMemberId}
-            setSelectedEmployeeName={setSelectedEmployeeName}
-            deleteSiteMember={deleteSiteMember}
-            toggleForeman={toggleForeman}
-          />
-        ))}
+      {sortedMembers.map((member) => (
+        <AssignmentMemberChip
+          key={member.id}
+          member={member}
+          isMobile={isMobile}
+          isCopied={copiedEmployeeNames.includes(member.employee_name)}
+          hasForeman={hasForeman}
+          setDraggingSiteMemberId={setDraggingSiteMemberId}
+          setCopiedEmployeeNames={setCopiedEmployeeNames}
+          setSelectedSiteMemberId={setSelectedSiteMemberId}
+          setSelectedEmployeeName={setSelectedEmployeeName}
+          deleteSiteMember={deleteSiteMember}
+          toggleForeman={toggleForeman}
+        />
+      ))}
     </div>
   );
 }
