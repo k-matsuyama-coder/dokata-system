@@ -1,18 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async () => {
-    console.log("SUPABASE_URL", process.env.NEXT_PUBLIC_SUPABASE_URL);
-    console.log(
-      "SUPABASE_KEY_PREFIX",
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.slice(0, 20)
-    );
+    if (isLoading) return;
+    setIsLoading(true);
 
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
@@ -20,7 +20,7 @@ export default function LoginPage() {
     });
 
     if (error) {
-      console.error("login error full", error);
+      setIsLoading(false);
       alert("ログイン失敗: " + error.message);
       return;
     }
@@ -28,44 +28,50 @@ export default function LoginPage() {
     const user = data.user;
 
     if (!user) {
+      setIsLoading(false);
       alert("ユーザー情報が取得できません");
       return;
     }
 
-    const { data: superAdminUser } = await supabase
-      .from("super_admin_users")
-      .select("id")
-      .eq("auth_user_id", user.id)
-      .maybeSingle();
+    const [superAdminResult, employeeResult] = await Promise.all([
+      supabase
+        .from("super_admin_users")
+        .select("id")
+        .eq("auth_user_id", user.id)
+        .maybeSingle(),
+      supabase
+        .from("employees")
+        .select("id, role, must_change_password, organization_id")
+        .eq("auth_user_id", user.id)
+        .maybeSingle(),
+    ]);
 
-    const { data: employee } = await supabase
-      .from("employees")
-      .select("id, role, must_change_password, organization_id")
-      .eq("auth_user_id", user.id)
-      .maybeSingle();
+    const superAdminUser = superAdminResult.data;
+    const employee = employeeResult.data;
 
     if (superAdminUser && employee) {
-      window.location.href = "/login/select-mode";
+      router.replace("/login/select-mode");
       return;
     }
 
     if (superAdminUser && !employee) {
-      window.location.href = "/super-admin";
+      router.replace("/super-admin");
       return;
     }
 
     if (!employee) {
-      alert("社員情報がありません。管理者に確認してください。");
       await supabase.auth.signOut();
+      setIsLoading(false);
+      alert("社員情報がありません。管理者に確認してください。");
       return;
     }
 
     if (employee.must_change_password) {
-      window.location.href = "/change-password";
+      router.replace("/change-password");
       return;
     }
 
-    window.location.href = "/home";
+    router.replace("/home");
   };
 
   return (
@@ -77,6 +83,7 @@ export default function LoginPage() {
         type="email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
+        disabled={isLoading}
         style={{
           width: "100%",
           padding: 12,
@@ -91,6 +98,7 @@ export default function LoginPage() {
         type="password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
+        disabled={isLoading}
         style={{
           width: "100%",
           padding: 12,
@@ -103,6 +111,7 @@ export default function LoginPage() {
       <button
         type="button"
         onClick={handleLogin}
+        disabled={isLoading}
         style={{
           width: "100%",
           padding: 12,
@@ -111,10 +120,11 @@ export default function LoginPage() {
           color: "#fff",
           border: "none",
           borderRadius: 8,
-          cursor: "pointer",
+          cursor: isLoading ? "not-allowed" : "pointer",
+          opacity: isLoading ? 0.7 : 1,
         }}
       >
-        ログイン
+        {isLoading ? "ログイン中..." : "ログイン"}
       </button>
     </div>
   );
