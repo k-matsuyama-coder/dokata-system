@@ -1,4 +1,3 @@
-// app/public/assignments/[token]/page.tsx
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
@@ -138,9 +137,9 @@ function getDateHeaderStyle(date: string): React.CSSProperties {
     ...dateHeaderStyleBase,
     background:
       "linear-gradient(180deg, rgba(248,250,252,1) 0%, rgba(255,255,255,1) 100%)",
-    color: "#111827",
-    borderColor: "#e5e7eb",
-  };
+      color: "#111827",
+      borderColor: "#e5e7eb",
+    };
 }
 
 export default function PublicAssignmentsPage() {
@@ -150,6 +149,20 @@ export default function PublicAssignmentsPage() {
   const [data, setData] = useState<PublicAssignmentsResponse | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const updateIsMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    updateIsMobile();
+    window.addEventListener("resize", updateIsMobile);
+
+    return () => {
+      window.removeEventListener("resize", updateIsMobile);
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -329,14 +342,14 @@ export default function PublicAssignmentsPage() {
             <div style={sectionTitleWrapStyle}>
               <div style={sectionPillDayStyle}>日勤</div>
             </div>
-            <BoardTable rows={groupedRows.dayRows} days={data.days} />
+            <BoardTable rows={groupedRows.dayRows} days={data.days} isMobile={isMobile} />
 
             {groupedRows.nightRows.length > 0 && (
               <>
                 <div style={{ ...sectionTitleWrapStyle, marginTop: 22 }}>
                   <div style={sectionPillNightStyle}>夜勤</div>
                 </div>
-                <BoardTable rows={groupedRows.nightRows} days={data.days} />
+                <BoardTable rows={groupedRows.nightRows} days={data.days} isMobile={isMobile} />
               </>
             )}
           </div>
@@ -349,24 +362,59 @@ export default function PublicAssignmentsPage() {
 function BoardTable({
   rows,
   days,
+  isMobile,
 }: {
   rows: AggregatedRow[];
   days: PublicAssignmentsDay[];
+  isMobile: boolean;
 }) {
+  const siteColumnWidth = isMobile ? 116 : 180;
+  const shiftColumnWidth = isMobile ? 54 : 64;
+  const dayColumnWidth = isMobile ? 118 : 150;
+
   return (
     <div style={boardTableOuterStyle}>
-      <table style={boardTableStyle}>
+      <table
+        style={{
+          ...boardTableStyle,
+          minWidth: siteColumnWidth + shiftColumnWidth + dayColumnWidth * days.length,
+        }}
+      >
         <thead>
           <tr>
-            <th style={{ ...stickyHeaderCellStyle, ...stickySiteHeaderStyle }}>
+            <th
+              style={{
+                ...stickyHeaderCellStyle,
+                ...stickySiteHeaderStyle,
+                minWidth: siteColumnWidth,
+                width: siteColumnWidth,
+              }}
+            >
               現場
             </th>
-            <th style={{ ...stickyHeaderCellStyle, ...stickyShiftHeaderStyle }}>
+
+            <th
+              style={{
+                ...stickyHeaderCellStyle,
+                ...stickyShiftHeaderStyle,
+                left: siteColumnWidth,
+                minWidth: shiftColumnWidth,
+                width: shiftColumnWidth,
+              }}
+            >
               区分
             </th>
 
             {days.map((day) => (
-              <th key={day.date} style={getDateHeaderStyle(day.date)}>
+              <th
+                key={day.date}
+                style={{
+                  ...getDateHeaderStyle(day.date),
+                  minWidth: dayColumnWidth,
+                  width: dayColumnWidth,
+                  padding: isMobile ? "8px 4px" : "10px 6px",
+                }}
+              >
                 <div style={dateHeaderTopTextStyle}>{day.label}</div>
                 <div style={dateHeaderWeekTextStyle}>{getJapaneseWeekday(day.date)}</div>
                 <div style={dateHeaderBottomTextStyle}>{formatDateCompact(day.date)}</div>
@@ -398,23 +446,52 @@ function BoardTable({
                     style={{
                       ...stickySiteBodyStyle,
                       ...rowSurfaceStyle,
+                      minWidth: siteColumnWidth,
+                      width: siteColumnWidth,
+                      padding: isMobile ? "8px 8px" : "10px 10px",
                     }}
                   >
-                    <div style={siteTitleStyleEnhanced}>
+                    <div
+                      style={{
+                        ...siteTitleStyleEnhanced,
+                        fontSize: isMobile ? 12 : 14,
+                        lineHeight: isMobile ? 1.2 : 1.3,
+                      }}
+                    >
                       {row.site_name || "現場名未設定"}
                     </div>
 
                     <div style={siteMetaStackStyle}>
-                      <div style={contractorBadgeStyle}>
+                      <div
+                        style={{
+                          ...contractorBadgeStyle,
+                          fontSize: isMobile ? 10 : 11,
+                          padding: isMobile ? "3px 6px" : "4px 8px",
+                        }}
+                      >
                         {row.contractor_name || "-"}
                       </div>
 
                       {row.manager_name ? (
-                        <div style={siteMetaTextStyle}>担当：{row.manager_name}</div>
+                        <div
+                          style={{
+                            ...siteMetaTextStyle,
+                            fontSize: isMobile ? 10 : 11,
+                            lineHeight: isMobile ? 1.25 : 1.35,
+                          }}
+                        >
+                          担当：{row.manager_name}
+                        </div>
                       ) : null}
 
                       {row.contact_phone ? (
-                        <div style={siteMetaTextStyle}>
+                        <div
+                          style={{
+                            ...siteMetaTextStyle,
+                            fontSize: isMobile ? 10 : 11,
+                            lineHeight: isMobile ? 1.25 : 1.35,
+                          }}
+                        >
                           連絡先：
                           <a href={toTelHref(row.contact_phone)} style={inlineLinkStyle}>
                             {row.contact_phone}
@@ -423,7 +500,13 @@ function BoardTable({
                       ) : null}
 
                       {row.address ? (
-                        <div style={siteMetaTextStyle}>
+                        <div
+                          style={{
+                            ...siteMetaTextStyle,
+                            fontSize: isMobile ? 10 : 11,
+                            lineHeight: isMobile ? 1.25 : 1.35,
+                          }}
+                        >
                           住所：
                           <a
                             href={
@@ -446,9 +529,19 @@ function BoardTable({
                     style={{
                       ...stickyShiftBodyStyle,
                       ...rowSurfaceStyle,
+                      left: siteColumnWidth,
+                      minWidth: shiftColumnWidth,
+                      width: shiftColumnWidth,
+                      padding: isMobile ? "8px 4px" : "10px 6px",
                     }}
                   >
-                    <div style={shiftBadgeStyle}>
+                    <div
+                      style={{
+                        ...shiftBadgeStyle,
+                        fontSize: isMobile ? 11 : 13,
+                        padding: isMobile ? "5px 8px" : "6px 10px",
+                      }}
+                    >
                       {isNight ? "夜勤" : "日勤"}
                     </div>
                   </td>
@@ -464,18 +557,45 @@ function BoardTable({
                         style={{
                           ...boardBodyCellStyle,
                           ...rowSurfaceStyle,
+                          minWidth: dayColumnWidth,
+                          width: dayColumnWidth,
+                          padding: isMobile ? "8px 4px" : "10px 6px",
                         }}
                       >
                         <div style={cellCardStyle}>
                           {meetingTime ? (
-                            <div style={miniInfoPillStyle}>集合 {meetingTime}</div>
+                            <div
+                              style={{
+                                ...miniInfoPillStyle,
+                                fontSize: isMobile ? 10 : 12,
+                                padding: isMobile ? "4px 8px" : "5px 10px",
+                              }}
+                            >
+                              集合 {meetingTime}
+                            </div>
                           ) : null}
 
-                          {notes ? <div style={notesBlockStyle}>{notes}</div> : null}
+                          {notes ? (
+                            <div
+                              style={{
+                                ...notesBlockStyle,
+                                fontSize: isMobile ? 10 : 12,
+                              }}
+                            >
+                              {notes}
+                            </div>
+                          ) : null}
 
                           {members.length > 0 ? (
                             <div style={membersBlockWrapStyle}>
-                              <div style={memberCountLabelStyle}>人員 {members.length}人</div>
+                              <div
+                                style={{
+                                  ...memberCountLabelStyle,
+                                  fontSize: isMobile ? 10 : 12,
+                                }}
+                              >
+                                人員 {members.length}人
+                              </div>
 
                               <div style={membersChipWrapStyle}>
                                 {[...members]
@@ -486,7 +606,11 @@ function BoardTable({
                                   .map((member, index) => (
                                     <div
                                       key={`${day.date}-${row.assignment_id}-${member.employee_name}-${index}`}
-                                      style={memberChipElevatedStyle}
+                                      style={{
+                                        ...memberChipElevatedStyle,
+                                        fontSize: isMobile ? 10 : 12,
+                                        padding: isMobile ? "5px 8px" : "7px 11px",
+                                      }}
                                     >
                                       <span>{member.employee_name}</span>
                                       {member.is_foreman ? (
@@ -657,6 +781,7 @@ const sectionPillNightStyle: React.CSSProperties = {
 
 const boardTableOuterStyle: React.CSSProperties = {
   overflowX: "auto",
+  WebkitOverflowScrolling: "touch",
   border: "1px solid #dbe2ea",
   borderRadius: 20,
   background: "rgba(255,255,255,0.88)",
@@ -667,7 +792,6 @@ const boardTableOuterStyle: React.CSSProperties = {
 const boardTableStyle: React.CSSProperties = {
   borderCollapse: "separate",
   borderSpacing: 0,
-  minWidth: 760,
   width: "100%",
 };
 
@@ -675,7 +799,7 @@ const stickyHeaderCellStyle: React.CSSProperties = {
   position: "sticky",
   top: 0,
   zIndex: 50,
-  padding: "12px 10px",
+  padding: "10px 6px",
   textAlign: "center",
   fontSize: 12,
   fontWeight: 900,
@@ -688,16 +812,16 @@ const stickyHeaderCellStyle: React.CSSProperties = {
 const stickySiteHeaderStyle: React.CSSProperties = {
   left: 0,
   zIndex: 70,
-  minWidth: 180,
-  width: 180,
+  minWidth: 116,
+  width: 116,
   boxShadow: "2px 0 0 #dbe2ea, 10px 0 24px rgba(15,23,42,0.06)",
 };
 
 const stickyShiftHeaderStyle: React.CSSProperties = {
-  left: 180,
+  left: 116,
   zIndex: 71,
-  minWidth: 64,
-  width: 64,
+  minWidth: 54,
+  width: 54,
   boxShadow: "2px 0 0 #dbe2ea, 10px 0 24px rgba(15,23,42,0.06)",
 };
 
@@ -705,30 +829,30 @@ const dateHeaderStyleBase: React.CSSProperties = {
   position: "sticky",
   top: 0,
   zIndex: 40,
-  minWidth: 150,
-  width: 150,
-  padding: "10px 6px",
+  minWidth: 118,
+  width: 118,
+  padding: "8px 4px",
   textAlign: "center",
   borderBottom: "1px solid #dbe2ea",
   borderLeft: "1px solid #eef2f7",
 };
 
 const dateHeaderTopTextStyle: React.CSSProperties = {
-  fontSize: 14,
+  fontSize: 11,
   fontWeight: 900,
   lineHeight: 1.15,
 };
 
 const dateHeaderWeekTextStyle: React.CSSProperties = {
-  marginTop: 6,
-  fontSize: 28,
+  marginTop: 4,
+  fontSize: 20,
   fontWeight: 900,
   lineHeight: 1,
 };
 
 const dateHeaderBottomTextStyle: React.CSSProperties = {
-  marginTop: 6,
-  fontSize: 12,
+  marginTop: 4,
+  fontSize: 11,
   fontWeight: 700,
   opacity: 0.92,
 };
@@ -737,9 +861,9 @@ const stickySiteBodyStyle: React.CSSProperties = {
   position: "sticky",
   left: 0,
   zIndex: 20,
-  minWidth: 180,
-  width: 180,
-  padding: "10px 10px",
+  minWidth: 116,
+  width: 116,
+  padding: "8px 8px",
   borderBottom: "1px solid #edf2f7",
   boxShadow: "2px 0 0 #dbe2ea, 10px 0 24px rgba(15,23,42,0.06)",
   verticalAlign: "top",
@@ -747,11 +871,11 @@ const stickySiteBodyStyle: React.CSSProperties = {
 
 const stickyShiftBodyStyle: React.CSSProperties = {
   position: "sticky",
-  left: 180,
+  left: 116,
   zIndex: 21,
-  minWidth: 64,
-  width: 64,
-  padding: "10px 6px",
+  minWidth: 54,
+  width: 54,
+  padding: "8px 4px",
   borderBottom: "1px solid #edf2f7",
   boxShadow: "2px 0 0 #dbe2ea, 10px 0 24px rgba(15,23,42,0.06)",
   textAlign: "center",
@@ -770,12 +894,12 @@ const publicShiftBadgeDayStyle: React.CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  padding: "6px 10px",
+  padding: "5px 8px",
   borderRadius: 999,
   backgroundColor: "#ecfdf5",
   color: "#166534",
   border: "1px solid #86efac",
-  fontSize: 13,
+  fontSize: 11,
   fontWeight: 900,
   whiteSpace: "nowrap",
 };
@@ -784,21 +908,21 @@ const publicShiftBadgeNightStyleGray: React.CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  padding: "6px 10px",
+  padding: "5px 8px",
   borderRadius: 999,
   background: "linear-gradient(180deg, #374151 0%, #111827 100%)",
   color: "#ffffff",
   border: "1px solid #1f2937",
   boxShadow: "0 6px 14px rgba(17,24,39,0.22)",
-  fontSize: 13,
+  fontSize: 11,
   fontWeight: 900,
   whiteSpace: "nowrap",
 };
 
 const boardBodyCellStyle: React.CSSProperties = {
-  minWidth: 150,
-  width: 150,
-  padding: "10px 6px",
+  minWidth: 118,
+  width: 118,
+  padding: "8px 4px",
   borderBottom: "1px solid #edf2f7",
   borderLeft: "1px solid #f1f5f9",
   verticalAlign: "top",
@@ -806,37 +930,37 @@ const boardBodyCellStyle: React.CSSProperties = {
 };
 
 const siteTitleStyleEnhanced: React.CSSProperties = {
-  fontSize: 14,
+  fontSize: 12,
   fontWeight: 900,
-  lineHeight: 1.3,
+  lineHeight: 1.2,
   color: "#0f172a",
   letterSpacing: 0,
   wordBreak: "break-word",
 };
 
 const siteMetaStackStyle: React.CSSProperties = {
-  marginTop: 10,
+  marginTop: 8,
   display: "grid",
-  gap: 6,
+  gap: 4,
 };
 
 const contractorBadgeStyle: React.CSSProperties = {
   display: "inline-flex",
   width: "fit-content",
   maxWidth: "100%",
-  padding: "4px 8px",
+  padding: "3px 6px",
   borderRadius: 999,
   backgroundColor: "#eef2ff",
   color: "#4338ca",
-  fontSize: 11,
+  fontSize: 10,
   fontWeight: 800,
   wordBreak: "break-word",
 };
 
 const siteMetaTextStyle: React.CSSProperties = {
-  fontSize: 11,
+  fontSize: 10,
   color: "#475569",
-  lineHeight: 1.35,
+  lineHeight: 1.25,
   wordBreak: "break-word",
 };
 
@@ -849,40 +973,40 @@ const inlineLinkStyle: React.CSSProperties = {
 
 const cellCardStyle: React.CSSProperties = {
   display: "grid",
-  gap: 8,
+  gap: 6,
 };
 
 const miniInfoPillStyle: React.CSSProperties = {
   display: "inline-flex",
   width: "fit-content",
-  padding: "5px 10px",
+  padding: "4px 8px",
   borderRadius: 999,
   backgroundColor: "#ffffff",
   border: "1px solid #cbd5e1",
   color: "#1e293b",
-  fontSize: 12,
+  fontSize: 10,
   fontWeight: 800,
 };
 
 const notesBlockStyle: React.CSSProperties = {
-  padding: "10px 12px",
+  padding: "8px 9px",
   borderRadius: 12,
   background: "linear-gradient(180deg, #f3f4f6 0%, #ffffff 100%)",
   border: "1px solid #d1d5db",
   color: "#374151",
-  fontSize: 12,
+  fontSize: 10,
   fontWeight: 800,
-  lineHeight: 1.5,
+  lineHeight: 1.4,
   wordBreak: "break-word",
 };
 
 const membersBlockWrapStyle: React.CSSProperties = {
   display: "grid",
-  gap: 8,
+  gap: 6,
 };
 
 const memberCountLabelStyle: React.CSSProperties = {
-  fontSize: 12,
+  fontSize: 10,
   fontWeight: 900,
   color: "#0f172a",
 };
@@ -890,19 +1014,19 @@ const memberCountLabelStyle: React.CSSProperties = {
 const membersChipWrapStyle: React.CSSProperties = {
   display: "flex",
   flexWrap: "wrap",
-  gap: 6,
+  gap: 4,
 };
 
 const memberChipElevatedStyle: React.CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
-  gap: 6,
-  padding: "7px 11px",
+  gap: 4,
+  padding: "5px 8px",
   borderRadius: 999,
   background: "linear-gradient(180deg, #fff7ed 0%, #fffbeb 100%)",
   border: "1px solid #fed7aa",
   color: "#111827",
-  fontSize: 12,
+  fontSize: 10,
   fontWeight: 800,
   lineHeight: 1.2,
   boxShadow: "0 4px 10px rgba(251,146,60,0.08)",

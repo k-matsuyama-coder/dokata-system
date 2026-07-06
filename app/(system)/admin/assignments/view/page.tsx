@@ -1,4 +1,3 @@
-// app/(system)/admin/assignments/view/page.tsx
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
@@ -106,9 +105,15 @@ function getWeekday(date: string) {
   return ["日", "月", "火", "水", "木", "金", "土"][day] ?? "";
 }
 
-function FragmentWithKey({ children }: { children: React.ReactNode }) {
+function FragmentWithKey({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return <>{children}</>;
 }
+
+type BoardRow = Assignment;
 
 export default function AssignmentViewPage() {
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
@@ -120,13 +125,33 @@ export default function AssignmentViewPage() {
   const [groupSettings, setGroupSettings] = useState<AssignmentGroupSetting[]>(
     defaultGroupSettings()
   );
+  const [isMobile, setIsMobile] = useState(false);
 
   const pdfRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const updateIsMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    updateIsMobile();
+    window.addEventListener("resize", updateIsMobile);
+
+    return () => {
+      window.removeEventListener("resize", updateIsMobile);
+    };
+  }, []);
 
   const enabledGroups = useMemo(() => {
     return [...groupSettings]
       .filter((group) => group.is_enabled)
       .sort((a, b) => a.sort_order - b.sort_order);
+  }, [groupSettings]);
+
+  const groupNameMap = useMemo(() => {
+    return new Map(
+      groupSettings.map((group) => [group.group_key, group.display_name])
+    );
   }, [groupSettings]);
 
   const getDisplayDates = () => {
@@ -384,7 +409,7 @@ export default function AssignmentViewPage() {
   return (
     <div
       style={{
-        padding: 16,
+        padding: isMobile ? 10 : 16,
         background: "linear-gradient(180deg, #f3f4f6 0%, #eef2f7 100%)",
         minHeight: "100vh",
       }}
@@ -502,6 +527,7 @@ export default function AssignmentViewPage() {
         ref={pdfRef}
         style={{
           overflowX: "auto",
+          WebkitOverflowScrolling: "touch",
           border: "1px solid #dbe2ea",
           borderRadius: 20,
           background: "rgba(255,255,255,0.88)",
@@ -513,7 +539,7 @@ export default function AssignmentViewPage() {
           style={{
             borderCollapse: "separate",
             borderSpacing: 0,
-            minWidth: 760,
+            minWidth: 0,
             width: "100%",
             backgroundColor: "#fff",
           }}
@@ -565,11 +591,12 @@ export default function AssignmentViewPage() {
                   <td
                     colSpan={2 + displayDates.length}
                     style={{
-                      padding: "10px 14px",
+                      padding: isMobile ? "8px 10px" : "10px 14px",
                       background: `linear-gradient(180deg, ${group.header_color || "#e5e7eb"} 0%, #ffffff 180%)`,
                       borderTop: "1px solid #dbe2ea",
                       borderBottom: "1px solid #dbe2ea",
                       fontWeight: 900,
+                      fontSize: isMobile ? 12 : 14,
                     }}
                   >
                     {group.display_name}
@@ -584,7 +611,6 @@ export default function AssignmentViewPage() {
                   const shiftBadgeStyle = isNight
                     ? shiftBadgeNightStyleGray
                     : shiftBadgeDayStyle;
-                  const rowTextStyle = isNight ? nightRowTextStyle : undefined;
 
                   return (
                     <tr key={assignment.id}>
@@ -592,23 +618,46 @@ export default function AssignmentViewPage() {
                         style={{
                           ...stickySiteBodyStyle,
                           ...rowSurfaceStyle,
-                          ...rowTextStyle,
                         }}
                       >
-                        <div style={siteTitleStyleEnhanced}>
+                        <div
+                          style={{
+                            ...siteTitleStyleEnhanced,
+                            fontSize: isMobile ? 12 : 14,
+                            lineHeight: isMobile ? 1.2 : 1.3,
+                          }}
+                        >
                           {assignment.site_name || "-"}
                         </div>
 
                         <div style={siteMetaStackStyle}>
-                          <div style={contractorBadgeStyle}>
+                          <div
+                            style={{
+                              ...contractorBadgeStyle,
+                              fontSize: isMobile ? 10 : 11,
+                              padding: isMobile ? "3px 6px" : "4px 8px",
+                            }}
+                          >
                             {assignment.contractor_name || "-"}
                           </div>
 
-                          <div style={siteMetaTextStyle}>
+                          <div
+                            style={{
+                              ...siteMetaTextStyle,
+                              fontSize: isMobile ? 10 : 11,
+                              lineHeight: isMobile ? 1.25 : 1.35,
+                            }}
+                          >
                             担当：{assignment.manager_name || "-"}
                           </div>
 
-                          <div style={siteMetaTextStyle}>
+                          <div
+                            style={{
+                              ...siteMetaTextStyle,
+                              fontSize: isMobile ? 10 : 11,
+                              lineHeight: isMobile ? 1.25 : 1.35,
+                            }}
+                          >
                             連絡先：
                             {assignment.contact_phone ? (
                               <a
@@ -622,7 +671,13 @@ export default function AssignmentViewPage() {
                             )}
                           </div>
 
-                          <div style={siteMetaTextStyle}>
+                          <div
+                            style={{
+                              ...siteMetaTextStyle,
+                              fontSize: isMobile ? 10 : 11,
+                              lineHeight: isMobile ? 1.25 : 1.35,
+                            }}
+                          >
                             住所：
                             {assignment.address ? (
                               <a
@@ -652,10 +707,15 @@ export default function AssignmentViewPage() {
                         style={{
                           ...stickyShiftBodyStyle,
                           ...rowSurfaceStyle,
-                          ...rowTextStyle,
                         }}
                       >
-                        <div style={shiftBadgeStyle}>
+                        <div
+                          style={{
+                            ...shiftBadgeStyle,
+                            fontSize: isMobile ? 11 : 13,
+                            padding: isMobile ? "5px 8px" : "6px 10px",
+                          }}
+                        >
                           {isNight ? "夜勤" : "日勤"}
                         </div>
                       </td>
@@ -670,27 +730,49 @@ export default function AssignmentViewPage() {
                             style={{
                               ...boardBodyCellStyle,
                               ...rowSurfaceStyle,
-                              ...rowTextStyle,
                             }}
                           >
                             <div style={cellCardStyle}>
-                              <div style={miniInfoPillStyle}>
+                              <div
+                                style={{
+                                  ...miniInfoPillStyle,
+                                  fontSize: isMobile ? 10 : 12,
+                                  padding: isMobile ? "4px 8px" : "5px 10px",
+                                }}
+                              >
                                 集合：{assignment.meeting_time || "-"}
                               </div>
 
                               {dailyInfo?.detail ? (
-                                <div style={notesBlockStyle}>作業：{dailyInfo.detail}</div>
+                                <div
+                                  style={{
+                                    ...notesBlockStyle,
+                                    fontSize: isMobile ? 10 : 12,
+                                  }}
+                                >
+                                  作業：{dailyInfo.detail}
+                                </div>
                               ) : null}
 
                               {dailyInfo?.vehicle_names?.length ? (
-                                <div style={vehicleBlockStyle}>
+                                <div
+                                  style={{
+                                    ...vehicleBlockStyle,
+                                    fontSize: isMobile ? 10 : 12,
+                                  }}
+                                >
                                   🚚 {dailyInfo.vehicle_names.join(" / ")}
                                 </div>
                               ) : null}
 
                               {members.length > 0 ? (
                                 <div style={membersBlockWrapStyle}>
-                                  <div style={memberCountLabelStyle}>
+                                  <div
+                                    style={{
+                                      ...memberCountLabelStyle,
+                                      fontSize: isMobile ? 10 : 12,
+                                    }}
+                                  >
                                     人員 {members.length}人
                                   </div>
 
@@ -702,7 +784,11 @@ export default function AssignmentViewPage() {
                                       .map((member) => (
                                         <div
                                           key={member.id}
-                                          style={memberChipElevatedStyle}
+                                          style={{
+                                            ...memberChipElevatedStyle,
+                                            fontSize: isMobile ? 10 : 12,
+                                            padding: isMobile ? "5px 8px" : "7px 11px",
+                                          }}
                                         >
                                           <span>{member.is_foreman ? "👷 " : ""}</span>
                                           <span>{member.employee_name}</span>
@@ -755,7 +841,7 @@ const stickyHeaderCellStyle: React.CSSProperties = {
   position: "sticky",
   top: 0,
   zIndex: 50,
-  padding: "12px 10px",
+  padding: "10px 6px",
   textAlign: "center",
   fontSize: 12,
   fontWeight: 900,
@@ -768,16 +854,16 @@ const stickyHeaderCellStyle: React.CSSProperties = {
 const stickySiteHeaderStyle: React.CSSProperties = {
   left: 0,
   zIndex: 70,
-  minWidth: 180,
-  width: 180,
+  minWidth: 116,
+  width: 116,
   boxShadow: "2px 0 0 #dbe2ea, 10px 0 24px rgba(15,23,42,0.06)",
 };
 
 const stickyShiftHeaderStyle: React.CSSProperties = {
-  left: 180,
+  left: 116,
   zIndex: 71,
-  minWidth: 64,
-  width: 64,
+  minWidth: 54,
+  width: 54,
   boxShadow: "2px 0 0 #dbe2ea, 10px 0 24px rgba(15,23,42,0.06)",
 };
 
@@ -785,23 +871,23 @@ const dateHeaderStyleBase: React.CSSProperties = {
   position: "sticky",
   top: 0,
   zIndex: 40,
-  minWidth: 150,
-  width: 150,
-  padding: "10px 6px",
+  minWidth: 118,
+  width: 118,
+  padding: "8px 4px",
   textAlign: "center",
   borderBottom: "1px solid #dbe2ea",
   borderLeft: "1px solid #eef2f7",
 };
 
 const dateHeaderTopTextStyle: React.CSSProperties = {
-  fontSize: 14,
+  fontSize: 11,
   fontWeight: 900,
   lineHeight: 1.15,
 };
 
 const dateHeaderBottomTextStyle: React.CSSProperties = {
-  marginTop: 6,
-  fontSize: 12,
+  marginTop: 4,
+  fontSize: 11,
   fontWeight: 700,
   opacity: 0.92,
 };
@@ -810,9 +896,9 @@ const stickySiteBodyStyle: React.CSSProperties = {
   position: "sticky",
   left: 0,
   zIndex: 20,
-  minWidth: 180,
-  width: 180,
-  padding: "10px 10px",
+  minWidth: 116,
+  width: 116,
+  padding: "8px 8px",
   borderBottom: "1px solid #edf2f7",
   boxShadow: "2px 0 0 #dbe2ea, 10px 0 24px rgba(15,23,42,0.06)",
   verticalAlign: "top",
@@ -820,11 +906,11 @@ const stickySiteBodyStyle: React.CSSProperties = {
 
 const stickyShiftBodyStyle: React.CSSProperties = {
   position: "sticky",
-  left: 180,
+  left: 116,
   zIndex: 21,
-  minWidth: 64,
-  width: 64,
-  padding: "10px 6px",
+  minWidth: 54,
+  width: 54,
+  padding: "8px 4px",
   borderBottom: "1px solid #edf2f7",
   boxShadow: "2px 0 0 #dbe2ea, 10px 0 24px rgba(15,23,42,0.06)",
   textAlign: "center",
@@ -839,20 +925,16 @@ const nightRowSurfaceStyleGray: React.CSSProperties = {
   background: "linear-gradient(180deg, #bcc3cc 0%, #d1d5db 42%, #e5e7eb 100%)",
 };
 
-const nightRowTextStyle: React.CSSProperties = {
-  color: "#111827",
-};
-
 const shiftBadgeDayStyle: React.CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  padding: "6px 10px",
+  padding: "5px 8px",
   borderRadius: 999,
   backgroundColor: "#ecfdf5",
   color: "#166534",
   border: "1px solid #86efac",
-  fontSize: 13,
+  fontSize: 11,
   fontWeight: 900,
   whiteSpace: "nowrap",
 };
@@ -861,21 +943,21 @@ const shiftBadgeNightStyleGray: React.CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  padding: "6px 10px",
+  padding: "5px 8px",
   borderRadius: 999,
   background: "linear-gradient(180deg, #374151 0%, #111827 100%)",
   color: "#ffffff",
   border: "1px solid #1f2937",
   boxShadow: "0 6px 14px rgba(17,24,39,0.22)",
-  fontSize: 13,
+  fontSize: 11,
   fontWeight: 900,
   whiteSpace: "nowrap",
 };
 
 const boardBodyCellStyle: React.CSSProperties = {
-  minWidth: 150,
-  width: 150,
-  padding: "10px 6px",
+  minWidth: 118,
+  width: 118,
+  padding: "8px 4px",
   borderBottom: "1px solid #edf2f7",
   borderLeft: "1px solid #f1f5f9",
   verticalAlign: "top",
@@ -883,37 +965,37 @@ const boardBodyCellStyle: React.CSSProperties = {
 };
 
 const siteTitleStyleEnhanced: React.CSSProperties = {
-  fontSize: 14,
+  fontSize: 12,
   fontWeight: 900,
-  lineHeight: 1.3,
+  lineHeight: 1.2,
   color: "#0f172a",
   letterSpacing: 0,
   wordBreak: "break-word",
 };
 
 const siteMetaStackStyle: React.CSSProperties = {
-  marginTop: 10,
+  marginTop: 8,
   display: "grid",
-  gap: 6,
+  gap: 4,
 };
 
 const contractorBadgeStyle: React.CSSProperties = {
   display: "inline-flex",
   width: "fit-content",
   maxWidth: "100%",
-  padding: "4px 8px",
+  padding: "3px 6px",
   borderRadius: 999,
   backgroundColor: "#eef2ff",
   color: "#4338ca",
-  fontSize: 11,
+  fontSize: 10,
   fontWeight: 800,
   wordBreak: "break-word",
 };
 
 const siteMetaTextStyle: React.CSSProperties = {
-  fontSize: 11,
+  fontSize: 10,
   color: "#475569",
-  lineHeight: 1.35,
+  lineHeight: 1.25,
   wordBreak: "break-word",
 };
 
@@ -926,52 +1008,52 @@ const inlineLinkStyle: React.CSSProperties = {
 
 const cellCardStyle: React.CSSProperties = {
   display: "grid",
-  gap: 8,
+  gap: 6,
 };
 
 const miniInfoPillStyle: React.CSSProperties = {
   display: "inline-flex",
   width: "fit-content",
-  padding: "5px 10px",
+  padding: "4px 8px",
   borderRadius: 999,
   backgroundColor: "#ffffff",
   border: "1px solid #cbd5e1",
   color: "#1e293b",
-  fontSize: 12,
+  fontSize: 10,
   fontWeight: 800,
 };
 
 const notesBlockStyle: React.CSSProperties = {
-  padding: "10px 12px",
+  padding: "8px 9px",
   borderRadius: 12,
   background: "linear-gradient(180deg, #f3f4f6 0%, #ffffff 100%)",
   border: "1px solid #d1d5db",
   color: "#374151",
-  fontSize: 12,
+  fontSize: 10,
   fontWeight: 800,
-  lineHeight: 1.5,
+  lineHeight: 1.4,
   wordBreak: "break-word",
 };
 
 const vehicleBlockStyle: React.CSSProperties = {
-  padding: "8px 10px",
+  padding: "8px 9px",
   borderRadius: 12,
   background: "linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)",
   border: "1px solid #e5e7eb",
   color: "#334155",
-  fontSize: 12,
+  fontSize: 10,
   fontWeight: 700,
-  lineHeight: 1.45,
+  lineHeight: 1.4,
   wordBreak: "break-word",
 };
 
 const membersBlockWrapStyle: React.CSSProperties = {
   display: "grid",
-  gap: 8,
+  gap: 6,
 };
 
 const memberCountLabelStyle: React.CSSProperties = {
-  fontSize: 12,
+  fontSize: 10,
   fontWeight: 900,
   color: "#0f172a",
 };
@@ -979,19 +1061,19 @@ const memberCountLabelStyle: React.CSSProperties = {
 const membersChipWrapStyle: React.CSSProperties = {
   display: "flex",
   flexWrap: "wrap",
-  gap: 6,
+  gap: 4,
 };
 
 const memberChipElevatedStyle: React.CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
-  gap: 6,
-  padding: "7px 11px",
+  gap: 4,
+  padding: "5px 8px",
   borderRadius: 999,
   background: "linear-gradient(180deg, #fff7ed 0%, #fffbeb 100%)",
   border: "1px solid #fed7aa",
   color: "#111827",
-  fontSize: 12,
+  fontSize: 10,
   fontWeight: 800,
   lineHeight: 1.2,
   boxShadow: "0 4px 10px rgba(251,146,60,0.08)",
