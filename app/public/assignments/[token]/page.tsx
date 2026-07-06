@@ -137,9 +137,13 @@ function getDateHeaderStyle(date: string): React.CSSProperties {
     ...dateHeaderStyleBase,
     background:
       "linear-gradient(180deg, rgba(248,250,252,1) 0%, rgba(255,255,255,1) 100%)",
-      color: "#111827",
-      borderColor: "#e5e7eb",
-    };
+    color: "#111827",
+    borderColor: "#e5e7eb",
+  };
+}
+
+function pickDisplayValue(current: string | null, next: string | null) {
+  return current?.trim() ? current : next;
 }
 
 export default function PublicAssignmentsPage() {
@@ -262,6 +266,32 @@ export default function PublicAssignmentsPage() {
         }
 
         const current = rowMap.get(key)!;
+
+        current.contractor_name = pickDisplayValue(
+          current.contractor_name,
+          assignment.contractor_name
+        );
+
+        current.site_name = pickDisplayValue(
+          current.site_name,
+          assignment.site_name
+        );
+
+        current.manager_name = pickDisplayValue(
+          current.manager_name,
+          assignment.manager_name
+        );
+
+        current.contact_phone = pickDisplayValue(
+          current.contact_phone,
+          assignment.contact_phone
+        );
+
+        current.address = pickDisplayValue(
+          current.address,
+          assignment.address
+        );
+
         current.meeting_time_by_date[day.date] = assignment.meeting_time;
         current.notes_by_date[day.date] = assignment.notes;
         current.members_by_date[day.date] = members;
@@ -278,17 +308,17 @@ export default function PublicAssignmentsPage() {
         "ja"
       );
       if (contractorCompare !== 0) return contractorCompare;
-  
+
       const siteCompare = (a.site_name ?? "").localeCompare(
         b.site_name ?? "",
         "ja"
       );
       if (siteCompare !== 0) return siteCompare;
-  
+
       if (a.shift_type === b.shift_type) return 0;
       return a.shift_type === "night" ? 1 : -1;
     };
-  
+
     return [...rows].sort(sorter);
   }, [rows]);
 
@@ -339,11 +369,11 @@ export default function PublicAssignmentsPage() {
           </div>
         )}
 
-{!loading && !error && data && (
-  <div style={boardWrapStyle}>
-    <BoardTable rows={sortedRows} days={data.days} isMobile={isMobile} />
-  </div>
-)}
+        {!loading && !error && data && (
+          <div style={boardWrapStyle}>
+            <BoardTable rows={sortedRows} days={data.days} isMobile={isMobile} />
+          </div>
+        )}
       </div>
     </div>
   );
