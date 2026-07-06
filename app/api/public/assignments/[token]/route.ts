@@ -1,3 +1,4 @@
+// app/api/public/assignments/[token]/route.ts
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
@@ -38,6 +39,13 @@ type AssignmentSiteMemberRow = {
   employee_name: string;
   is_foreman: boolean | null;
   work_date: string;
+};
+
+type DailyInfoRow = {
+  assignment_id: string;
+  work_date: string;
+  notes: string | null;
+  meeting_time: string | null;
 };
 
 type PublicAssignmentMember = {
@@ -139,10 +147,15 @@ function buildDayLabel(date: string, index: number, viewMode: ViewMode) {
   return ["月", "火", "水", "木", "金", "土", "日"][index] ?? "";
 }
 
+function buildAssignmentDateKey(assignmentId: string, workDate: string) {
+  return `${assignmentId}__${workDate}`;
+}
+
 function buildAssignmentsForDate(
   date: string,
   assignments: AssignmentRow[],
-  members: AssignmentSiteMemberRow[]
+  members: AssignmentSiteMemberRow[],
+  dailyInfosByAssignmentDate: Map<string, DailyInfoRow>
 ): PublicAssignmentRow[] {
   const membersByAssignment = new Map<string, PublicAssignmentMember[]>();
 
@@ -166,8 +179,12 @@ function buildAssignmentsForDate(
     membersByAssignment.set(assignmentId, sorted);
   }
 
-  return assignments
-    .map((assignment) => ({
+  return assignments.map((assignment) => {
+    const dailyInfo = dailyInfosByAssignmentDate.get(
+      buildAssignmentDateKey(assignment.id, date)
+    );
+
+    return {
       assignment_id: assignment.id,
       contractor_name: assignment.contractor_name,
       site_name: assignment.site_name,
@@ -175,11 +192,11 @@ function buildAssignmentsForDate(
       manager_name: assignment.manager_name,
       contact_phone: assignment.contact_phone,
       address: assignment.address,
-      meeting_time: assignment.meeting_time,
-      notes: null,
+      meeting_time: dailyInfo?.meeting_time ?? assignment.meeting_time,
+      notes: dailyInfo?.notes ?? null,
       members: membersByAssignment.get(assignment.id) ?? [],
-    }))
-    .filter((assignment) => assignment.members.length > 0);
+    };
+  });
 }
 
 export async function GET(
@@ -188,8 +205,6 @@ export async function GET(
 ) {
   try {
     const { token } = await params;
-
-    console.log("public token:", token);
 
     if (!token || typeof token !== "string") {
       return NextResponse.json(
@@ -210,8 +225,6 @@ export async function GET(
       )
       .eq("token", token)
       .maybeSingle<PublicLinkRow>();
-
-      console.log("publicLink:", publicLink);
 
     if (publicLinkError) {
       return NextResponse.json(
@@ -258,8 +271,6 @@ export async function GET(
       publicLink.view_mode ?? "next3days"
     );
 
-    console.log("targetDates:", targetDates);
-
     const { data: organization, error: organizationError } = await supabase
       .from("organizations")
       .select("name")
@@ -277,53 +288,66 @@ export async function GET(
     }
 
     const [
-        { data: assignments, error: assignmentsError },
-        { data: members, error: membersError },
-      ] = await Promise.all([
-        supabase
-          .from("assignments")
-          .select(
-            "id, contractor_name, site_name, shift_type, manager_name, contact_phone, address, meeting_time, sort_order, created_at"
-          )
-          .eq("organization_id", publicLink.organization_id)
-          .order("sort_order", { ascending: true })
-          .order("created_at", { ascending: true })
-          .returns<AssignmentRow[]>(),
-        supabase
-          .from("assignment_site_members")
-          .select("assignment_id, employee_name, is_foreman, work_date")
-          .eq("organization_id", publicLink.organization_id)
-          .in("work_date", targetDates)
-          .returns<AssignmentSiteMemberRow[]>(),
-      ]);
+      { data: assignments, error: assignmentsError },
+      { data: members, error: membersError },
+      { data: dailyInfos, error: dailyInfosError },
+    ] = await Promise.all([
+      supabase
+        .from("assignments")
+        .select(
+          "id, contractor_name, site_name, shift_type, manager_name, contact_phone, address, meeting_time, sort_order, created_at"
+        )
+        .eq("organization_id", publicLink.organization_id)
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: true })
+        .returns<AssignmentRow[]>(),
+      supabase
+        .from("assignment_site_members")
+        .select("assignment_id, employee_name, is_foreman, work_date")
+        .eq("organization_id", publicLink.organization_id)
+        .in("work_date", targetDates)
+        .returns<AssignmentSiteMemberRow[]>(),
+      supabase
+        .from("daily_infos")
+        .select("assignment_id, work_date, notes, meeting_time")
+        .eq("organization_id", publicLink.organization_id)
+        .in("work_date", targetDates)
+        .returns<DailyInfoRow[]>(),
+    ]);
 
-      console.log("assignmentsError:", assignmentsError);
-      console.log("membersError:", membersError);
-      console.log("assignments count:", assignments?.length ?? 0);
-      console.log("members count:", members?.length ?? 0);
+    if (assignmentsError || membersError || dailyInfosError) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error:
+            assignmentsError?.message ??
+            membersError?.message ??
+            dailyInfosError?.message ??
+            "公開ページ用データの取得に失敗しました",
+        },
+        { status: 500 }
+      );
+    }
 
-      if (assignmentsError || membersError) {
-        return NextResponse.json(
-          {
-            ok: false,
-            error:
-              assignmentsError?.message ??
-              membersError?.message ??
-              "公開ページ用データの取得に失敗しました",
-          },
-          { status: 500 }
-        );
-      }
+    const dailyInfosByAssignmentDate = new Map<string, DailyInfoRow>();
 
-      const days: PublicAssignmentsDay[] = targetDates.map((date, index) => ({
+    for (const dailyInfo of dailyInfos ?? []) {
+      dailyInfosByAssignmentDate.set(
+        buildAssignmentDateKey(dailyInfo.assignment_id, dailyInfo.work_date),
+        dailyInfo
+      );
+    }
+
+    const days: PublicAssignmentsDay[] = targetDates.map((date, index) => ({
+      date,
+      label: buildDayLabel(date, index, publicLink.view_mode ?? "next3days"),
+      assignments: buildAssignmentsForDate(
         date,
-        label: buildDayLabel(date, index, publicLink.view_mode ?? "next3days"),
-        assignments: buildAssignmentsForDate(
-          date,
-          assignments ?? [],
-          members ?? []
-        ),
-      }));
+        assignments ?? [],
+        members ?? [],
+        dailyInfosByAssignmentDate
+      ),
+    }));
 
     return NextResponse.json(
       {
@@ -338,9 +362,9 @@ export async function GET(
       },
       { status: 200 }
     );
-} catch (error) {
+  } catch (error) {
     console.error("public assignments route error", error);
-  
+
     return NextResponse.json(
       {
         ok: false,
