@@ -140,65 +140,47 @@ function buildDayLabel(date: string, index: number, viewMode: ViewMode) {
 }
 
 function buildAssignmentsForDate(
-    date: string,
-    assignments: AssignmentRow[],
-    members: AssignmentSiteMemberRow[]
-  ): PublicAssignmentRow[] {
-    const membersByAssignment = new Map<string, PublicAssignmentMember[]>();
-  
-    for (const member of members) {
-      if (member.work_date !== date) continue;
-  
-      const list = membersByAssignment.get(member.assignment_id) ?? [];
-      list.push({
-        employee_name: member.employee_name,
-        is_foreman: member.is_foreman,
-      });
-      membersByAssignment.set(member.assignment_id, list);
-    }
+  date: string,
+  assignments: AssignmentRow[],
+  members: AssignmentSiteMemberRow[]
+): PublicAssignmentRow[] {
+  const membersByAssignment = new Map<string, PublicAssignmentMember[]>();
 
-    function buildAssignmentsForDate(
-      date: string,
-      assignments: AssignmentRow[],
-      members: AssignmentSiteMemberRow[]
-    ): PublicAssignmentRow[] {
-      const membersByAssignment = new Map<string, PublicAssignmentMember[]>();
-    
-      for (const member of members) {
-        if (member.work_date !== date) continue;
-    
-        const list = membersByAssignment.get(member.assignment_id) ?? [];
-        list.push({
-          employee_name: member.employee_name,
-          is_foreman: member.is_foreman,
-        });
-        membersByAssignment.set(member.assignment_id, list);
-      }
-    
-      for (const [assignmentId, list] of membersByAssignment.entries()) {
-        const sorted = [...list].sort((a, b) => {
-          if (a.is_foreman === b.is_foreman) return 0;
-          return a.is_foreman ? -1 : 1;
-        });
-    
-        membersByAssignment.set(assignmentId, sorted);
-      }
-    
-      return assignments
-        .map((assignment) => ({
-          assignment_id: assignment.id,
-          contractor_name: assignment.contractor_name,
-          site_name: assignment.site_name,
-          shift_type: assignment.shift_type,
-          manager_name: assignment.manager_name,
-          contact_phone: assignment.contact_phone,
-          address: assignment.address,
-          meeting_time: assignment.meeting_time,
-          notes: null,
-          members: membersByAssignment.get(assignment.id) ?? [],
-        }))
-        .filter((assignment) => assignment.members.length > 0);
-    }
+  for (const member of members) {
+    if (member.work_date !== date) continue;
+
+    const list = membersByAssignment.get(member.assignment_id) ?? [];
+    list.push({
+      employee_name: member.employee_name,
+      is_foreman: member.is_foreman,
+    });
+    membersByAssignment.set(member.assignment_id, list);
+  }
+
+  for (const [assignmentId, list] of membersByAssignment.entries()) {
+    const sorted = [...list].sort((a, b) => {
+      if (a.is_foreman === b.is_foreman) return 0;
+      return a.is_foreman ? -1 : 1;
+    });
+
+    membersByAssignment.set(assignmentId, sorted);
+  }
+
+  return assignments
+    .map((assignment) => ({
+      assignment_id: assignment.id,
+      contractor_name: assignment.contractor_name,
+      site_name: assignment.site_name,
+      shift_type: assignment.shift_type,
+      manager_name: assignment.manager_name,
+      contact_phone: assignment.contact_phone,
+      address: assignment.address,
+      meeting_time: assignment.meeting_time,
+      notes: null,
+      members: membersByAssignment.get(assignment.id) ?? [],
+    }))
+    .filter((assignment) => assignment.members.length > 0);
+}
 
 export async function GET(
   _request: Request,
