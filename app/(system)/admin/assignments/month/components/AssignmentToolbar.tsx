@@ -104,8 +104,6 @@ export default function AssignmentToolbar({
   return (
     <div
       style={{
-        display: "grid",
-        gap: 8,
         marginBottom: 16,
         width: "100%",
         maxWidth: "100%",
@@ -214,55 +212,51 @@ export default function AssignmentToolbar({
         >
           ＋ 現場追加
         </button>
+
+        {onExportExcel && (
+          <button
+            type="button"
+            onClick={onExportExcel}
+            style={secondaryButtonStyle}
+          >
+            Excel抽出
+          </button>
+        )}
+
+        {setPublicViewMode && (
+          <select
+            value={publicViewMode}
+            onChange={(e) =>
+              setPublicViewMode(e.target.value as "week" | "next3days")
+            }
+            style={inputBoxStyle}
+          >
+            <option value="week">1週間</option>
+            <option value="next3days">3日間</option>
+          </select>
+        )}
+
+        {onCreatePublicLink && (
+          <button
+            type="button"
+            onClick={onCreatePublicLink}
+            disabled={creatingPublicLink}
+            style={{
+              border: "none",
+              borderRadius: 8,
+              padding: "10px 12px",
+              fontWeight: 700,
+              cursor: creatingPublicLink ? "default" : "pointer",
+              backgroundColor: creatingPublicLink ? "#9ca3af" : "#111827",
+              color: "#fff",
+              whiteSpace: "nowrap",
+              flexShrink: 0,
+            }}
+          >
+            {creatingPublicLink ? "公開URL発行中..." : "公開URLを発行"}
+          </button>
+        )}
       </div>
-
-      {(setPublicViewMode || onCreatePublicLink || onExportExcel) && (
-        <div style={scrollRowStyle}>
-          {onExportExcel && (
-            <button
-              type="button"
-              onClick={onExportExcel}
-              style={secondaryButtonStyle}
-            >
-              Excel抽出
-            </button>
-          )}
-
-          {setPublicViewMode && (
-            <select
-              value={publicViewMode}
-              onChange={(e) =>
-                setPublicViewMode(e.target.value as "week" | "next3days")
-              }
-              style={inputBoxStyle}
-            >
-              <option value="week">1週間</option>
-              <option value="next3days">3日間</option>
-            </select>
-          )}
-
-          {onCreatePublicLink && (
-            <button
-              type="button"
-              onClick={onCreatePublicLink}
-              disabled={creatingPublicLink}
-              style={{
-                border: "none",
-                borderRadius: 8,
-                padding: "10px 12px",
-                fontWeight: 700,
-                cursor: creatingPublicLink ? "default" : "pointer",
-                backgroundColor: creatingPublicLink ? "#9ca3af" : "#111827",
-                color: "#fff",
-                whiteSpace: "nowrap",
-                flexShrink: 0,
-              }}
-            >
-              {creatingPublicLink ? "公開URL発行中..." : "公開URLを発行"}
-            </button>
-          )}
-        </div>
-      )}
     </div>
   );
 }
