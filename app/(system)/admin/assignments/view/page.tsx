@@ -1,6 +1,7 @@
+// app/(system)/admin/assignments/view/page.tsx
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
 import { getDateAccentColors } from "@/app/(system)/admin/assignments/month/utils/dateColors";
@@ -100,6 +101,15 @@ function defaultGroupSettings(): AssignmentGroupSetting[] {
   ];
 }
 
+function getWeekday(date: string) {
+  const day = new Date(`${date}T00:00:00`).getDay();
+  return ["日", "月", "火", "水", "木", "金", "土"][day] ?? "";
+}
+
+function FragmentWithKey({ children }: { children: React.ReactNode }) {
+  return <>{children}</>;
+}
+
 export default function AssignmentViewPage() {
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [assignments, setAssignments] = useState<Assignment[]>([]);
@@ -119,23 +129,17 @@ export default function AssignmentViewPage() {
       .sort((a, b) => a.sort_order - b.sort_order);
   }, [groupSettings]);
 
-  const groupNameMap = useMemo(() => {
-    return new Map(
-      groupSettings.map((group) => [group.group_key, group.display_name])
-    );
-  }, [groupSettings]);
-
   const getDisplayDates = () => {
     if (viewMode === "3days") {
       return Array.from({ length: 3 }, (_, index) => {
-        const nextDate = new Date(date);
+        const nextDate = new Date(`${date}T00:00:00`);
         nextDate.setDate(nextDate.getDate() + index);
         return nextDate.toISOString().slice(0, 10);
       });
     }
 
     if (viewMode === "week") {
-      const start = new Date(date);
+      const start = new Date(`${date}T00:00:00`);
       const day = start.getDay();
       const diffToMonday = day === 0 ? -6 : 1 - day;
       start.setDate(start.getDate() + diffToMonday);
@@ -149,6 +153,8 @@ export default function AssignmentViewPage() {
 
     return [date];
   };
+
+  const displayDates = useMemo(() => getDisplayDates(), [date, viewMode]);
 
   const getCurrentOrganization = async () => {
     const { data: sessionData } = await supabase.auth.getSession();
@@ -177,7 +183,6 @@ export default function AssignmentViewPage() {
       return;
     }
 
-    const displayDates = getDisplayDates();
     const startDate = displayDates[0];
     const endDate = displayDates[displayDates.length - 1];
 
@@ -238,8 +243,8 @@ export default function AssignmentViewPage() {
       `)
       .eq("organization_id", organizationId)
       .in("assignment_id", assignmentIds)
-      .gte("work_date", startDate)
-      .lte("work_date", endDate);
+      .gte("work_date", displayDates[0])
+      .lte("work_date", displayDates[displayDates.length - 1]);
 
     if (memberError) {
       alert("メンバー取得失敗: " + memberError.message);
@@ -258,8 +263,8 @@ export default function AssignmentViewPage() {
       `)
       .eq("organization_id", organizationId)
       .in("assignment_id", assignmentIds)
-      .gte("work_date", startDate)
-      .lte("work_date", endDate);
+      .gte("work_date", displayDates[0])
+      .lte("work_date", displayDates[displayDates.length - 1]);
 
     if (dailyInfoError) {
       alert("日別情報取得失敗: " + dailyInfoError.message);
@@ -280,47 +285,23 @@ export default function AssignmentViewPage() {
       .channel("assignment-view-realtime")
       .on(
         "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "assignment_site_members",
-        },
-        () => {
-          void fetchData();
-        }
+        { event: "*", schema: "public", table: "assignment_site_members" },
+        () => void fetchData()
       )
       .on(
         "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "assignment_site_daily_infos",
-        },
-        () => {
-          void fetchData();
-        }
+        { event: "*", schema: "public", table: "assignment_site_daily_infos" },
+        () => void fetchData()
       )
       .on(
         "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "assignments",
-        },
-        () => {
-          void fetchData();
-        }
+        { event: "*", schema: "public", table: "assignments" },
+        () => void fetchData()
       )
       .on(
         "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "assignment_groups",
-        },
-        () => {
-          void fetchData();
-        }
+        { event: "*", schema: "public", table: "assignment_groups" },
+        () => void fetchData()
       )
       .subscribe();
 
@@ -351,8 +332,6 @@ export default function AssignmentViewPage() {
   const filteredAssignments = assignments.filter(matchesGroupFilter);
 
   const visibleAssignments = filteredAssignments.filter((assignment) => {
-    const displayDates = getDisplayDates();
-
     return displayDates.some((workDate) => {
       const members = getMembers(assignment.id, workDate);
       const dailyInfo = getDailyInfo(assignment.id, workDate);
@@ -376,7 +355,7 @@ export default function AssignmentViewPage() {
     .filter((group) => group.rows.length > 0);
 
   const moveDate = (amount: number) => {
-    const nextDate = new Date(date);
+    const nextDate = new Date(`${date}T00:00:00`);
     nextDate.setDate(nextDate.getDate() + amount);
     setDate(nextDate.toISOString().slice(0, 10));
   };
@@ -398,15 +377,21 @@ export default function AssignmentViewPage() {
 
     const link = document.createElement("a");
     link.download = `番割_${date}.jpg`;
-    link.href = canvas.toDataURL("image/jpeg", 0.8);
+    link.href = canvas.toDataURL("image/jpeg", 0.92);
     link.click();
   };
 
   return (
-    <div style={{ padding: 16, backgroundColor: "#f5f6f8", minHeight: "100vh" }}>
+    <div
+      style={{
+        padding: 16,
+        background: "linear-gradient(180deg, #f3f4f6 0%, #eef2f7 100%)",
+        minHeight: "100vh",
+      }}
+    >
       <BackButton />
 
-      <h1>番割</h1>
+      <h1 style={{ marginBottom: 12 }}>番割</h1>
 
       <div
         style={{
@@ -420,7 +405,7 @@ export default function AssignmentViewPage() {
         <button
           type="button"
           onClick={() => moveDate(viewMode === "week" ? -7 : -1)}
-          style={buttonStyle}
+          style={viewButtonStyle}
         >
           {viewMode === "week" ? "前週" : "前日"}
         </button>
@@ -429,13 +414,13 @@ export default function AssignmentViewPage() {
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
-          style={inputStyle}
+          style={viewInputStyle}
         />
 
         <button
           type="button"
           onClick={() => moveDate(viewMode === "week" ? 7 : 1)}
-          style={buttonStyle}
+          style={viewButtonStyle}
         >
           {viewMode === "week" ? "翌週" : "翌日"}
         </button>
@@ -453,66 +438,52 @@ export default function AssignmentViewPage() {
 
             setDate(today.toISOString().slice(0, 10));
           }}
-          style={buttonStyle}
+          style={viewButtonStyle}
         >
           {viewMode === "week" ? "今週" : "今日"}
         </button>
 
-        <button
-          type="button"
-          onClick={() => setViewMode("day")}
-          style={{
-            ...buttonStyle,
-            backgroundColor: viewMode === "day" ? "#2563eb" : "#fff",
-            color: viewMode === "day" ? "#fff" : "#111",
-            border: viewMode === "day" ? "1px solid #2563eb" : "1px solid #d1d5db",
-          }}
-        >
-          1日
-        </button>
+        {(["day", "3days", "week"] as const).map((mode) => {
+          const label = mode === "day" ? "1日" : mode === "3days" ? "3日" : "週間";
 
-        <button
-          type="button"
-          onClick={() => {
-            setDate(new Date().toISOString().slice(0, 10));
-            setViewMode("3days");
-          }}
-          style={{
-            ...buttonStyle,
-            backgroundColor: viewMode === "3days" ? "#2563eb" : "#fff",
-            color: viewMode === "3days" ? "#fff" : "#111",
-            border:
-              viewMode === "3days" ? "1px solid #2563eb" : "1px solid #d1d5db",
-          }}
-        >
-          3日
-        </button>
+          return (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => {
+                if (mode === "3days") {
+                  setDate(new Date().toISOString().slice(0, 10));
+                }
 
-        <button
-          type="button"
-          onClick={() => {
-            const today = new Date();
-            const day = today.getDay();
-            const diff = day === 0 ? -6 : 1 - day;
+                if (mode === "week") {
+                  const today = new Date();
+                  const day = today.getDay();
+                  const diff = day === 0 ? -6 : 1 - day;
+                  today.setDate(today.getDate() + diff);
+                  setDate(today.toISOString().slice(0, 10));
+                }
 
-            today.setDate(today.getDate() + diff);
-            setDate(today.toISOString().slice(0, 10));
-            setViewMode("week");
-          }}
-          style={{
-            ...buttonStyle,
-            backgroundColor: viewMode === "week" ? "#2563eb" : "#fff",
-            color: viewMode === "week" ? "#fff" : "#111",
-            border: viewMode === "week" ? "1px solid #2563eb" : "1px solid #d1d5db",
-          }}
-        >
-          週間
-        </button>
+                setViewMode(mode);
+              }}
+              style={{
+                ...viewButtonStyle,
+                backgroundColor: viewMode === mode ? "#2563eb" : "#fff",
+                color: viewMode === mode ? "#fff" : "#111",
+                border:
+                  viewMode === mode
+                    ? "1px solid #2563eb"
+                    : "1px solid #d1d5db",
+              }}
+            >
+              {label}
+            </button>
+          );
+        })}
 
         <select
           value={filterMode}
           onChange={(e) => setFilterMode(e.target.value as FilterMode)}
-          style={inputStyle}
+          style={viewInputStyle}
         >
           <option value="all">全体表示</option>
           {enabledGroups.map((group) => (
@@ -522,7 +493,7 @@ export default function AssignmentViewPage() {
           ))}
         </select>
 
-        <button type="button" onClick={downloadImage} style={buttonStyle}>
+        <button type="button" onClick={downloadImage} style={viewButtonStyle}>
           画像保存
         </button>
       </div>
@@ -530,300 +501,505 @@ export default function AssignmentViewPage() {
       <div
         ref={pdfRef}
         style={{
-          display: "grid",
-          gridTemplateColumns:
-            viewMode === "day"
-              ? "1fr"
-              : `repeat(${getDisplayDates().length}, minmax(280px, 1fr))`,
-          gap: 14,
           overflowX: "auto",
+          border: "1px solid #dbe2ea",
+          borderRadius: 20,
+          background: "rgba(255,255,255,0.88)",
+          backdropFilter: "blur(10px)",
+          boxShadow: "0 16px 40px rgba(15,23,42,0.08)",
         }}
       >
-        {getDisplayDates().map((workDate, index) => {
-          const day = new Date(workDate).getDay();
-          const colors = getDateAccentColors(workDate);
+        <table
+          style={{
+            borderCollapse: "separate",
+            borderSpacing: 0,
+            minWidth: 960,
+            width: "100%",
+            backgroundColor: "#fff",
+          }}
+        >
+          <thead>
+            <tr>
+              <th style={{ ...stickyHeaderCellStyle, ...stickySiteHeaderStyle }}>
+                現場
+              </th>
+              <th style={{ ...stickyHeaderCellStyle, ...stickyShiftHeaderStyle }}>
+                区分
+              </th>
 
-          const title =
-            viewMode === "3days"
-              ? index === 0
-                ? "今日"
-                : index === 1
-                ? "明日"
-                : "明後日"
-              : viewMode === "week"
-              ? ["月", "火", "水", "木", "金", "土", "日"][index]
-              : "今日";
-
-          const dayGroups = groupedVisibleAssignments
-            .map((group) => ({
-              ...group,
-              rows: group.rows.filter((assignment) => {
-                const members = getMembers(assignment.id, workDate);
-                const dailyInfo = getDailyInfo(assignment.id, workDate);
+              {displayDates.map((workDate) => {
+                const colors = getDateAccentColors(workDate);
 
                 return (
-                  members.length > 0 ||
-                  (dailyInfo?.planned_count ?? 0) > 0 ||
-                  Boolean(dailyInfo?.detail) ||
-                  Boolean(dailyInfo?.vehicle_names?.length)
-                );
-              }),
-            }))
-            .filter((group) => group.rows.length > 0);
-
-          return (
-            <div key={workDate}>
-              <div
-                style={{
-                  fontWeight: 900,
-                  fontSize: 18,
-                  marginBottom: 8,
-                  backgroundColor: colors.headerBackground,
-                  color: colors.headerColor,
-                  border: "1px solid #d1d5db",
-                  borderRadius: 10,
-                  padding: 10,
-                  textAlign: "center",
-                }}
-              >
-                {title}
-                <div
-                  style={{
-                    fontSize: 12,
-                    marginTop: 4,
-                    fontWeight: 600,
-                  }}
-                >
-                  {workDate}
-                </div>
-              </div>
-
-              <div style={{ display: "grid", gap: 12 }}>
-                {dayGroups.length === 0 && (
-                  <div
+                  <th
+                    key={workDate}
                     style={{
-                      backgroundColor: "#fff",
-                      borderRadius: 12,
-                      padding: 16,
-                      color: "#666",
+                      ...dateHeaderStyleBase,
+                      background: `linear-gradient(180deg, ${colors.headerBackground} 0%, #ffffff 100%)`,
+                      color: colors.headerColor,
                     }}
                   >
-                    番割なし
-                  </div>
-                )}
+                    <div style={dateHeaderTopTextStyle}>{workDate}</div>
+                    <div style={dateHeaderBottomTextStyle}>{getWeekday(workDate)}</div>
+                  </th>
+                );
+              })}
+            </tr>
+          </thead>
 
-                {dayGroups.map((group) => (
-                  <div key={`${workDate}-${group.group_key}`} style={{ display: "grid", gap: 10 }}>
-                    <div
-                      style={{
-                        fontWeight: 900,
-                        padding: "8px 10px",
-                        backgroundColor: group.header_color || "#e5e7eb",
-                        borderRadius: 10,
-                        border: "1px solid #d1d5db",
-                      }}
-                    >
-                      {group.display_name}
-                    </div>
+          <tbody>
+            {groupedVisibleAssignments.length === 0 && (
+              <tr>
+                <td
+                  colSpan={2 + displayDates.length}
+                  style={emptyBoardCellStyle}
+                >
+                  番割なし
+                </td>
+              </tr>
+            )}
 
-                    {group.rows.map((assignment) => {
-                      const members = getMembers(assignment.id, workDate);
-                      const dailyInfo = getDailyInfo(assignment.id, workDate);
-                      const groupName =
-                        groupNameMap.get(
-                          (assignment.group_key ?? "group1") as AssignmentGroupKey
-                        ) ?? "未設定グループ";
+            {groupedVisibleAssignments.map((group) => (
+              <FragmentWithKey key={`group-${group.group_key}`}>
+                <tr>
+                  <td
+                    colSpan={2 + displayDates.length}
+                    style={{
+                      padding: "10px 14px",
+                      background: `linear-gradient(180deg, ${group.header_color || "#e5e7eb"} 0%, #ffffff 180%)`,
+                      borderTop: "1px solid #dbe2ea",
+                      borderBottom: "1px solid #dbe2ea",
+                      fontWeight: 900,
+                    }}
+                  >
+                    {group.display_name}
+                  </td>
+                </tr>
 
-                      return (
-                        <div
-                          key={`${workDate}-${assignment.id}`}
-                          style={{
-                            backgroundColor:
-                              assignment.shift_type === "night" ? "#eff6ff" : "#fff",
-                            borderRadius: 14,
-                            padding: 14,
-                            border:
-                              assignment.shift_type === "night"
-                                ? "1px solid #bfdbfe"
-                                : "1px solid #e5e7eb",
-                            boxShadow: "0 4px 12px rgba(0,0,0,0.04)",
-                          }}
-                        >
-                          <div
-                            style={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              alignItems: "flex-start",
-                              gap: 8,
-                              marginBottom: 2,
-                            }}
-                          >
-                            <div>
-                              <div style={{ fontSize: 17, fontWeight: 900 }}>
-                                {assignment.site_name || "-"}
-                              </div>
-                              <div style={{ fontSize: 11, color: "#666", marginTop: 2 }}>
-                                {groupName}
-                              </div>
-                            </div>
+                {group.rows.map((assignment) => {
+                  const isNight = assignment.shift_type === "night";
+                  const rowSurfaceStyle = isNight
+                    ? nightRowSurfaceStyleGray
+                    : dayRowSurfaceStyle;
+                  const shiftBadgeStyle = isNight
+                    ? shiftBadgeNightStyleGray
+                    : shiftBadgeDayStyle;
+                  const rowTextStyle = isNight ? nightRowTextStyle : undefined;
 
-                            <div
-                              style={{
-                                padding: "4px 8px",
-                                borderRadius: 999,
-                                fontSize: 11,
-                                fontWeight: 800,
-                                whiteSpace: "nowrap",
-                                backgroundColor:
-                                  assignment.shift_type === "night"
-                                    ? "#eff6ff"
-                                    : "#f9fafb",
-                                color:
-                                  assignment.shift_type === "night"
-                                    ? "#1d4ed8"
-                                    : "#374151",
-                                border:
-                                  assignment.shift_type === "night"
-                                    ? "1px solid #bfdbfe"
-                                    : "1px solid #e5e7eb",
-                              }}
-                            >
-                              {assignment.shift_type === "night" ? "夜勤" : "日勤"}
-                            </div>
+                  return (
+                    <tr key={assignment.id}>
+                      <td
+                        style={{
+                          ...stickySiteBodyStyle,
+                          ...rowSurfaceStyle,
+                          ...rowTextStyle,
+                        }}
+                      >
+                        <div style={siteTitleStyleEnhanced}>
+                          {assignment.site_name || "-"}
+                        </div>
+
+                        <div style={siteMetaStackStyle}>
+                          <div style={contractorBadgeStyle}>
+                            {assignment.contractor_name || "-"}
                           </div>
 
-                          <div style={{ fontSize: 13, color: "#666" }}>
-                            元請：{assignment.contractor_name || "-"}
+                          <div style={siteMetaTextStyle}>
+                            担当：{assignment.manager_name || "-"}
                           </div>
 
-                          <div style={{ marginTop: 8, display: "grid", gap: 4 }}>
-                            <div>集合：{assignment.meeting_time || "-"}</div>
-                            <div>担当：{assignment.manager_name || "-"}</div>
-                            <div>
-                              連絡先：
-                              {assignment.contact_phone ? (
-                                <a
-                                  href={toTelHref(assignment.contact_phone)}
-                                  style={{
-                                    color: "#2563eb",
-                                    textDecoration: "underline",
-                                    fontWeight: 700,
-                                  }}
-                                >
-                                  {assignment.contact_phone}
-                                </a>
-                              ) : (
-                                "-"
-                              )}
-                            </div>
-                            <div>
-                              住所：
-                              {assignment.address ? (
-                                <a
-                                  href={
-                                    assignment.address.startsWith("http")
-                                      ? assignment.address
-                                      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                                          assignment.address
-                                        )}`
-                                  }
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  style={{
-                                    color: "#2563eb",
-                                    textDecoration: "underline",
-                                    fontWeight: 700,
-                                  }}
-                                >
-                                  {assignment.address.startsWith("http")
-                                    ? "📍GoogleMap"
-                                    : assignment.address}
-                                </a>
-                              ) : (
-                                "-"
-                              )}
-                            </div>
+                          <div style={siteMetaTextStyle}>
+                            連絡先：
+                            {assignment.contact_phone ? (
+                              <a
+                                href={toTelHref(assignment.contact_phone)}
+                                style={inlineLinkStyle}
+                              >
+                                {assignment.contact_phone}
+                              </a>
+                            ) : (
+                              "-"
+                            )}
                           </div>
 
-                          {dailyInfo?.detail && (
-                            <div
-                              style={{
-                                marginTop: 10,
-                                padding: 8,
-                                borderRadius: 8,
-                                backgroundColor: "#ecfdf5",
-                                color: "#166534",
-                                fontWeight: 800,
-                              }}
-                            >
-                              作業：{dailyInfo.detail}
-                            </div>
-                          )}
-
-                          {dailyInfo?.vehicle_names?.length ? (
-                            <div style={{ marginTop: 10 }}>
-                              🚚 {dailyInfo.vehicle_names.join(" / ")}
-                            </div>
-                          ) : null}
-
-                          <div style={{ marginTop: 12 }}>
-                            <div style={{ fontWeight: 900, marginBottom: 6 }}>
-                              人員 {members.length}人
-                            </div>
-
-                            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                              {[...members]
-                                .sort(
-                                  (a, b) => Number(b.is_foreman) - Number(a.is_foreman)
-                                )
-                                .map((member) => (
-                                  <div
-                                    key={member.id}
-                                    style={{
-                                      padding: "6px 10px",
-                                      borderRadius: 999,
-                                      backgroundColor: "#fff7ed",
-                                      border: "1px solid #fed7aa",
-                                      fontWeight: 800,
-                                    }}
-                                  >
-                                    {member.is_foreman ? "👷 " : ""}
-                                    {member.employee_name}
-                                    {member.is_driver ? " 🚚" : ""}
-                                    {member.is_operator ? " OP" : ""}
-                                    {member.heavy_equipment
-                                      ? ` ${member.heavy_equipment}`
-                                      : ""}
-                                  </div>
-                                ))}
-                            </div>
+                          <div style={siteMetaTextStyle}>
+                            住所：
+                            {assignment.address ? (
+                              <a
+                                href={
+                                  assignment.address.startsWith("http")
+                                    ? assignment.address
+                                    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                                        assignment.address
+                                      )}`
+                                }
+                                target="_blank"
+                                rel="noreferrer"
+                                style={inlineLinkStyle}
+                              >
+                                {assignment.address.startsWith("http")
+                                  ? "📍GoogleMap"
+                                  : assignment.address}
+                              </a>
+                            ) : (
+                              "-"
+                            )}
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        })}
+                      </td>
+
+                      <td
+                        style={{
+                          ...stickyShiftBodyStyle,
+                          ...rowSurfaceStyle,
+                          ...rowTextStyle,
+                        }}
+                      >
+                        <div style={shiftBadgeStyle}>
+                          {isNight ? "夜勤" : "日勤"}
+                        </div>
+                      </td>
+
+                      {displayDates.map((workDate) => {
+                        const members = getMembers(assignment.id, workDate);
+                        const dailyInfo = getDailyInfo(assignment.id, workDate);
+
+                        return (
+                          <td
+                            key={`${assignment.id}-${workDate}`}
+                            style={{
+                              ...boardBodyCellStyle,
+                              ...rowSurfaceStyle,
+                              ...rowTextStyle,
+                            }}
+                          >
+                            <div style={cellCardStyle}>
+                              <div style={miniInfoPillStyle}>
+                                集合：{assignment.meeting_time || "-"}
+                              </div>
+
+                              {dailyInfo?.detail ? (
+                                <div style={notesBlockStyle}>作業：{dailyInfo.detail}</div>
+                              ) : null}
+
+                              {dailyInfo?.vehicle_names?.length ? (
+                                <div style={vehicleBlockStyle}>
+                                  🚚 {dailyInfo.vehicle_names.join(" / ")}
+                                </div>
+                              ) : null}
+
+                              {members.length > 0 ? (
+                                <div style={membersBlockWrapStyle}>
+                                  <div style={memberCountLabelStyle}>
+                                    人員 {members.length}人
+                                  </div>
+
+                                  <div style={membersChipWrapStyle}>
+                                    {[...members]
+                                      .sort(
+                                        (a, b) => Number(b.is_foreman) - Number(a.is_foreman)
+                                      )
+                                      .map((member) => (
+                                        <div
+                                          key={member.id}
+                                          style={memberChipElevatedStyle}
+                                        >
+                                          <span>{member.is_foreman ? "👷 " : ""}</span>
+                                          <span>{member.employee_name}</span>
+                                          {member.is_driver ? <span>🚚</span> : null}
+                                          {member.is_operator ? <span>OP</span> : null}
+                                          {member.heavy_equipment ? (
+                                            <span>{member.heavy_equipment}</span>
+                                          ) : null}
+                                        </div>
+                                      ))}
+                                  </div>
+                                </div>
+                              ) : null}
+                            </div>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
+              </FragmentWithKey>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
 }
 
-const buttonStyle: React.CSSProperties = {
+const viewButtonStyle: React.CSSProperties = {
   padding: "9px 12px",
-  borderRadius: 8,
-  border: "1px solid #ccc",
+  borderRadius: 10,
+  border: "1px solid #d1d5db",
   backgroundColor: "#fff",
   fontWeight: 700,
   cursor: "pointer",
+  boxShadow: "0 4px 12px rgba(15,23,42,0.04)",
 };
 
-const inputStyle: React.CSSProperties = {
+const viewInputStyle: React.CSSProperties = {
   padding: 9,
-  borderRadius: 8,
-  border: "1px solid #ccc",
+  borderRadius: 10,
+  border: "1px solid #d1d5db",
   fontSize: 16,
+  backgroundColor: "#fff",
+  boxShadow: "0 4px 12px rgba(15,23,42,0.04)",
+};
+
+const stickyHeaderCellStyle: React.CSSProperties = {
+  position: "sticky",
+  top: 0,
+  zIndex: 50,
+  padding: "12px 10px",
+  textAlign: "center",
+  fontSize: 12,
+  fontWeight: 900,
+  whiteSpace: "nowrap",
+  background:
+    "linear-gradient(180deg, rgba(248,250,252,0.98) 0%, rgba(255,255,255,0.98) 100%)",
+  borderBottom: "1px solid #dbe2ea",
+};
+
+const stickySiteHeaderStyle: React.CSSProperties = {
+  left: 0,
+  zIndex: 70,
+  minWidth: 270,
+  width: 270,
+  boxShadow: "2px 0 0 #dbe2ea, 10px 0 24px rgba(15,23,42,0.06)",
+};
+
+const stickyShiftHeaderStyle: React.CSSProperties = {
+  left: 270,
+  zIndex: 71,
+  minWidth: 86,
+  width: 86,
+  boxShadow: "2px 0 0 #dbe2ea, 10px 0 24px rgba(15,23,42,0.06)",
+};
+
+const dateHeaderStyleBase: React.CSSProperties = {
+  position: "sticky",
+  top: 0,
+  zIndex: 40,
+  minWidth: 220,
+  width: 220,
+  padding: "12px 10px",
+  textAlign: "center",
+  borderBottom: "1px solid #dbe2ea",
+  borderLeft: "1px solid #eef2f7",
+};
+
+const dateHeaderTopTextStyle: React.CSSProperties = {
+  fontSize: 14,
+  fontWeight: 900,
+  lineHeight: 1.15,
+};
+
+const dateHeaderBottomTextStyle: React.CSSProperties = {
+  marginTop: 6,
+  fontSize: 12,
+  fontWeight: 700,
+  opacity: 0.92,
+};
+
+const stickySiteBodyStyle: React.CSSProperties = {
+  position: "sticky",
+  left: 0,
+  zIndex: 20,
+  minWidth: 270,
+  width: 270,
+  padding: "14px 14px",
+  borderBottom: "1px solid #edf2f7",
+  boxShadow: "2px 0 0 #dbe2ea, 10px 0 24px rgba(15,23,42,0.06)",
+  verticalAlign: "top",
+};
+
+const stickyShiftBodyStyle: React.CSSProperties = {
+  position: "sticky",
+  left: 270,
+  zIndex: 21,
+  minWidth: 86,
+  width: 86,
+  padding: "14px 10px",
+  borderBottom: "1px solid #edf2f7",
+  boxShadow: "2px 0 0 #dbe2ea, 10px 0 24px rgba(15,23,42,0.06)",
+  textAlign: "center",
+  verticalAlign: "top",
+};
+
+const dayRowSurfaceStyle: React.CSSProperties = {
+  background: "linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)",
+};
+
+const nightRowSurfaceStyleGray: React.CSSProperties = {
+  background: "linear-gradient(180deg, #bcc3cc 0%, #d1d5db 42%, #e5e7eb 100%)",
+};
+
+const nightRowTextStyle: React.CSSProperties = {
+  color: "#111827",
+};
+
+const shiftBadgeDayStyle: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "6px 10px",
+  borderRadius: 999,
+  backgroundColor: "#ecfdf5",
+  color: "#166534",
+  border: "1px solid #86efac",
+  fontSize: 13,
+  fontWeight: 900,
+  whiteSpace: "nowrap",
+};
+
+const shiftBadgeNightStyleGray: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "6px 10px",
+  borderRadius: 999,
+  background: "linear-gradient(180deg, #374151 0%, #111827 100%)",
+  color: "#ffffff",
+  border: "1px solid #1f2937",
+  boxShadow: "0 6px 14px rgba(17,24,39,0.22)",
+  fontSize: 13,
+  fontWeight: 900,
+  whiteSpace: "nowrap",
+};
+
+const boardBodyCellStyle: React.CSSProperties = {
+  minWidth: 220,
+  width: 220,
+  padding: "12px 10px",
+  borderBottom: "1px solid #edf2f7",
+  borderLeft: "1px solid #f1f5f9",
+  verticalAlign: "top",
+  boxSizing: "border-box",
+};
+
+const siteTitleStyleEnhanced: React.CSSProperties = {
+  fontSize: 17,
+  fontWeight: 900,
+  lineHeight: 1.35,
+  color: "#0f172a",
+  letterSpacing: 0.1,
+  wordBreak: "break-word",
+};
+
+const siteMetaStackStyle: React.CSSProperties = {
+  marginTop: 10,
+  display: "grid",
+  gap: 6,
+};
+
+const contractorBadgeStyle: React.CSSProperties = {
+  display: "inline-flex",
+  width: "fit-content",
+  maxWidth: "100%",
+  padding: "5px 10px",
+  borderRadius: 999,
+  backgroundColor: "#eef2ff",
+  color: "#4338ca",
+  fontSize: 12,
+  fontWeight: 800,
+  wordBreak: "break-word",
+};
+
+const siteMetaTextStyle: React.CSSProperties = {
+  fontSize: 12,
+  color: "#475569",
+  lineHeight: 1.45,
+  wordBreak: "break-word",
+};
+
+const inlineLinkStyle: React.CSSProperties = {
+  color: "#2563eb",
+  textDecoration: "underline",
+  marginLeft: 2,
+  fontWeight: 700,
+};
+
+const cellCardStyle: React.CSSProperties = {
+  display: "grid",
+  gap: 8,
+};
+
+const miniInfoPillStyle: React.CSSProperties = {
+  display: "inline-flex",
+  width: "fit-content",
+  padding: "5px 10px",
+  borderRadius: 999,
+  backgroundColor: "#ffffff",
+  border: "1px solid #cbd5e1",
+  color: "#1e293b",
+  fontSize: 12,
+  fontWeight: 800,
+};
+
+const notesBlockStyle: React.CSSProperties = {
+  padding: "10px 12px",
+  borderRadius: 12,
+  background: "linear-gradient(180deg, #f3f4f6 0%, #ffffff 100%)",
+  border: "1px solid #d1d5db",
+  color: "#374151",
+  fontSize: 12,
+  fontWeight: 800,
+  lineHeight: 1.5,
+  wordBreak: "break-word",
+};
+
+const vehicleBlockStyle: React.CSSProperties = {
+  padding: "8px 10px",
+  borderRadius: 12,
+  background: "linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)",
+  border: "1px solid #e5e7eb",
+  color: "#334155",
+  fontSize: 12,
+  fontWeight: 700,
+  lineHeight: 1.45,
+  wordBreak: "break-word",
+};
+
+const membersBlockWrapStyle: React.CSSProperties = {
+  display: "grid",
+  gap: 8,
+};
+
+const memberCountLabelStyle: React.CSSProperties = {
+  fontSize: 12,
+  fontWeight: 900,
+  color: "#0f172a",
+};
+
+const membersChipWrapStyle: React.CSSProperties = {
+  display: "flex",
+  flexWrap: "wrap",
+  gap: 6,
+};
+
+const memberChipElevatedStyle: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 6,
+  padding: "7px 11px",
+  borderRadius: 999,
+  background: "linear-gradient(180deg, #fff7ed 0%, #fffbeb 100%)",
+  border: "1px solid #fed7aa",
+  color: "#111827",
+  fontSize: 12,
+  fontWeight: 800,
+  lineHeight: 1.2,
+  boxShadow: "0 4px 10px rgba(251,146,60,0.08)",
+};
+
+const emptyBoardCellStyle: React.CSSProperties = {
+  padding: 24,
+  textAlign: "center",
+  color: "#6b7280",
+  fontSize: 14,
 };

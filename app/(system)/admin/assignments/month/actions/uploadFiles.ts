@@ -1,3 +1,5 @@
+"use client";
+
 import { supabase } from "@/lib/supabase";
 
 async function getCurrentOrganization() {
@@ -23,28 +25,39 @@ async function getCurrentOrganization() {
   return result.organizationId as string;
 }
 
-function sanitizeFileName(fileName: string) {
-  return fileName
-    .normalize("NFKC")
-    .replace(/[\\/:\*\?"<>\|\[\]#%&{}~]/g, "_")
-    .replace(/\s+/g, "_");
+function getFileExtension(fileName: string) {
+  const index = fileName.lastIndexOf(".");
+  return index >= 0 ? fileName.slice(index).toLowerCase() : "";
+}
+
+function createSafeFilePath(assignmentId: string, originalFileName: string) {
+  const ext = getFileExtension(originalFileName);
+  const randomId =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}_${Math.random().toString(36).slice(2)}`;
+
+  return `${assignmentId}/${randomId}${ext}`;
 }
 
 export async function uploadFilesAction(
   assignmentId: string,
   files: FileList | null
 ) {
-  if (!files) return { error: null };
+  if (!files || files.length === 0) {
+    return { error: null };
+  }
 
   const organizationId = await getCurrentOrganization();
 
   for (const file of Array.from(files)) {
-    const safeFileName = sanitizeFileName(file.name);
-    const filePath = `${assignmentId}/${Date.now()}_${safeFileName}`;
+    const filePath = createSafeFilePath(assignmentId, file.name);
 
     const { error: uploadError } = await supabase.storage
       .from("assignment-files")
-      .upload(filePath, file);
+      .upload(filePath, file, {
+        upsert: false,
+      });
 
     if (uploadError) {
       return { error: uploadError };
@@ -54,15 +67,13 @@ export async function uploadFilesAction(
       .from("assignment-files")
       .getPublicUrl(filePath);
 
-    const { error: insertError } = await supabase
-      .from("assignment_files")
-      .insert({
-        organization_id: organizationId,
-        assignment_id: assignmentId,
-        file_name: file.name,
-        file_url: data.publicUrl,
-        file_path: filePath,
-      });
+    const { error: insertError } = await supabase.from("assignment_files").insert({
+      organization_id: organizationId,
+      assignment_id: assignmentId,
+      file_name: file.name,
+      file_url: data.publicUrl,
+      file_path: filePath,
+    });
 
     if (insertError) {
       return { error: insertError };

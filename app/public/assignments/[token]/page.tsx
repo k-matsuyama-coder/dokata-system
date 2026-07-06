@@ -1,3 +1,4 @@
+// app/public/assignments/[token]/page.tsx
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
@@ -43,6 +44,20 @@ type PublicAssignmentsErrorResponse = {
   error: string;
 };
 
+type AggregatedRow = {
+  rowKey: string;
+  assignment_id: string;
+  contractor_name: string | null;
+  site_name: string | null;
+  shift_type: string | null;
+  manager_name: string | null;
+  contact_phone: string | null;
+  address: string | null;
+  meeting_time_by_date: Record<string, string | null | undefined>;
+  notes_by_date: Record<string, string | null | undefined>;
+  members_by_date: Record<string, PublicAssignmentMember[]>;
+};
+
 function getWeekdayIndex(date: string) {
   const parsed = new Date(`${date}T00:00:00`);
   return Number.isNaN(parsed.getTime()) ? 0 : parsed.getDay();
@@ -52,41 +67,11 @@ function getJapaneseWeekday(date: string) {
   return ["日", "月", "火", "水", "木", "金", "土"][getWeekdayIndex(date)];
 }
 
-function getDayHeaderStyle(date: string): React.CSSProperties {
-  const day = getWeekdayIndex(date);
-
-  if (day === 0) {
-    return {
-      ...dayHeaderBaseStyle,
-      backgroundColor: "#f8e6e6",
-      borderColor: "#efcaca",
-      color: "#dc2626",
-    };
-  }
-
-  if (day === 6) {
-    return {
-      ...dayHeaderBaseStyle,
-      backgroundColor: "#e8f0fb",
-      borderColor: "#c8dbf7",
-      color: "#2563eb",
-    };
-  }
-
-  return {
-    ...dayHeaderBaseStyle,
-    backgroundColor: "#f3f4f6",
-    borderColor: "#e5e7eb",
-    color: "#111827",
-  };
-}
-
 function formatDateCompact(date: string) {
   const parsed = new Date(`${date}T00:00:00`);
   if (Number.isNaN(parsed.getTime())) return date;
 
   return new Intl.DateTimeFormat("ja-JP", {
-    year: "numeric",
     month: "2-digit",
     day: "2-digit",
   }).format(parsed);
@@ -122,6 +107,42 @@ function toGoogleMapsSearchUrl(address: string) {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
 }
 
+function getRowKey(row: PublicAssignmentRow) {
+  return `${row.assignment_id}_${row.shift_type ?? "day"}`;
+}
+
+function getDateHeaderStyle(date: string): React.CSSProperties {
+  const day = getWeekdayIndex(date);
+
+  if (day === 0) {
+    return {
+      ...dateHeaderStyleBase,
+      background:
+        "linear-gradient(180deg, rgba(254,242,242,1) 0%, rgba(255,255,255,1) 100%)",
+      color: "#dc2626",
+      borderColor: "#fecaca",
+    };
+  }
+
+  if (day === 6) {
+    return {
+      ...dateHeaderStyleBase,
+      background:
+        "linear-gradient(180deg, rgba(239,246,255,1) 0%, rgba(255,255,255,1) 100%)",
+      color: "#2563eb",
+      borderColor: "#bfdbfe",
+    };
+  }
+
+  return {
+    ...dateHeaderStyleBase,
+    background:
+      "linear-gradient(180deg, rgba(248,250,252,1) 0%, rgba(255,255,255,1) 100%)",
+    color: "#111827",
+    borderColor: "#e5e7eb",
+  };
+}
+
 export default function PublicAssignmentsPage() {
   const params = useParams<{ token: string }>();
   const token = typeof params?.token === "string" ? params.token : "";
@@ -144,10 +165,13 @@ export default function PublicAssignmentsPage() {
         setLoading(true);
         setError("");
 
-        const res = await fetch(`/api/public/assignments/${encodeURIComponent(token)}`, {
-          method: "GET",
-          cache: "no-store",
-        });
+        const res = await fetch(
+          `/api/public/assignments/${encodeURIComponent(token)}`,
+          {
+            method: "GET",
+            cache: "no-store",
+          }
+        );
 
         const json =
           ((await res.json()) as
@@ -178,17 +202,12 @@ export default function PublicAssignmentsPage() {
       }
     };
 
-    run();
+    void run();
 
     return () => {
       cancelled = true;
     };
   }, [token]);
-
-  const totalAssignments = useMemo(() => {
-    if (!data) return 0;
-    return data.days.reduce((sum, day) => sum + day.assignments.length, 0);
-  }, [data]);
 
   const totalMembers = useMemo(() => {
     if (!data) return 0;
@@ -203,45 +222,98 @@ export default function PublicAssignmentsPage() {
     );
   }, [data]);
 
-  const columns = useMemo(() => {
-    if (!data) return "1fr";
-    return data.viewMode === "week"
-      ? "repeat(7, minmax(300px, 1fr))"
-      : "repeat(3, minmax(320px, 1fr))";
+  const rows = useMemo(() => {
+    if (!data) return [];
+
+    const rowMap = new Map<string, AggregatedRow>();
+
+    for (const day of data.days) {
+      for (const assignment of day.assignments) {
+        const key = getRowKey(assignment);
+        const members = Array.isArray(assignment.members) ? assignment.members : [];
+
+        if (!rowMap.has(key)) {
+          rowMap.set(key, {
+            rowKey: key,
+            assignment_id: assignment.assignment_id,
+            contractor_name: assignment.contractor_name,
+            site_name: assignment.site_name,
+            shift_type: assignment.shift_type,
+            manager_name: assignment.manager_name,
+            contact_phone: assignment.contact_phone,
+            address: assignment.address,
+            meeting_time_by_date: {},
+            notes_by_date: {},
+            members_by_date: {},
+          });
+        }
+
+        const current = rowMap.get(key)!;
+        current.meeting_time_by_date[day.date] = assignment.meeting_time;
+        current.notes_by_date[day.date] = assignment.notes;
+        current.members_by_date[day.date] = members;
+      }
+    }
+
+    return Array.from(rowMap.values());
   }, [data]);
 
+  const groupedRows = useMemo(() => {
+    const dayRows = rows.filter((row) => row.shift_type !== "night");
+    const nightRows = rows.filter((row) => row.shift_type === "night");
+
+    const sorter = (a: AggregatedRow, b: AggregatedRow) => {
+      const contractorCompare = (a.contractor_name ?? "").localeCompare(
+        b.contractor_name ?? "",
+        "ja"
+      );
+      if (contractorCompare !== 0) return contractorCompare;
+      return (a.site_name ?? "").localeCompare(b.site_name ?? "", "ja");
+    };
+
+    return {
+      dayRows: [...dayRows].sort(sorter),
+      nightRows: [...nightRows].sort(sorter),
+    };
+  }, [rows]);
+
   return (
-    <div style={pageStyle}>
-      <div style={containerStyle}>
-        <header style={headerStyle}>
+    <div style={publicPageStyle}>
+      <div style={publicContainerStyle}>
+        <header style={topHeaderStyle}>
           <div>
             <div style={eyebrowStyle}>公開番割</div>
-            <h1 style={titleStyle}>{data?.shareTitle?.trim() || "番割表"}</h1>
-            <div style={subTitleStyle}>
+            <h1 style={pageTitleStyle}>{data?.shareTitle?.trim() || "番割表"}</h1>
+            <div style={pageSubTitleStyle}>
               {data?.organizationName?.trim() || "組織名未設定"}
             </div>
           </div>
 
           {data && (
-            <div style={metaWrapStyle}>
-              <div style={metaCardStyle}>
-                <div style={metaLabelStyle}>表示形式</div>
-                <div style={metaValueLargeStyle}>
+            <div style={summaryMetaWrapStyle}>
+              <div style={summaryMetaCardStyle}>
+                <div style={summaryMetaLabelStyle}>表示形式</div>
+                <div style={summaryMetaValueStyle}>
                   {data.viewMode === "week" ? "今週1週間" : "翌日から3日間"}
                 </div>
               </div>
 
-              <div style={metaCardStyle}>
-                <div style={metaLabelStyle}>有効期限</div>
-                <div style={metaValueStyle}>{formatExpiresAt(data.expiresAt)}</div>
+              <div style={summaryMetaCardStyle}>
+                <div style={summaryMetaLabelStyle}>有効期限</div>
+                <div style={summaryMetaValueStyle}>{formatExpiresAt(data.expiresAt)}</div>
+              </div>
+
+              <div style={summaryMetaCardStyle}>
+                <div style={summaryMetaLabelStyle}>配置人数</div>
+                <div style={summaryMetaValueStyle}>{totalMembers}人</div>
               </div>
             </div>
           )}
         </header>
 
         {loading && (
-          <div style={panelStyle}>
-            <div style={loadingTextStyle}>読み込み中...</div>
+          <div style={statusPanelStyle}>
+            <div style={statusTextStyle}>読み込み中...</div>
           </div>
         )}
 
@@ -249,164 +321,209 @@ export default function PublicAssignmentsPage() {
           <div style={errorPanelStyle}>
             <div style={errorTitleStyle}>表示できません</div>
             <div style={errorTextStyle}>{error}</div>
-            {token ? <div style={tokenStyle}>token: {token}</div> : null}
           </div>
         )}
 
         {!loading && !error && data && (
-          <>
-            <div style={summaryBarStyle}>
-              <div style={summaryCardStyle}>
-                <div style={summaryLabelStyle}>日数</div>
-                <div style={summaryValueStyle}>{data.days.length}日</div>
-              </div>
-              <div style={summaryCardStyle}>
-                <div style={summaryLabelStyle}>現場数</div>
-                <div style={summaryValueStyle}>{totalAssignments}件</div>
-              </div>
-              <div style={summaryCardStyle}>
-                <div style={summaryLabelStyle}>配置人数</div>
-                <div style={summaryValueStyle}>{totalMembers}人</div>
-              </div>
+          <div style={boardWrapStyle}>
+            <div style={sectionTitleWrapStyle}>
+              <div style={sectionPillDayStyle}>日勤</div>
             </div>
+            <BoardTable rows={groupedRows.dayRows} days={data.days} />
 
-            <div style={scrollWrapStyle}>
-              <div style={{ ...daysGridStyle, gridTemplateColumns: columns }}>
-                {data.days.map((day) => (
-                  <section key={day.date} style={dayColumnStyle}>
-                    <div style={getDayHeaderStyle(day.date)}>
-                      <div style={dayLabelTopStyle}>{day.label}</div>
-                      <div style={dayWeekStyle}>{getJapaneseWeekday(day.date)}</div>
-                      <div style={dayDateStyle}>{formatDateCompact(day.date)}</div>
-                    </div>
-
-                    {day.assignments.length === 0 ? (
-                      <div style={emptyDayStyle}>番割はありません</div>
-                    ) : (
-                      <div style={cardsColumnStyle}>
-  {day.assignments.map((row) => {
-    const members = Array.isArray(row.members) ? row.members : [];
-
-    return (
-      <article
-        key={`${day.date}-${row.assignment_id}`}
-        style={row.shift_type === "night" ? nightCardStyle : cardStyle}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "flex-start",
-            justifyContent: "space-between",
-            gap: 8,
-            marginBottom: 10,
-          }}
-        >
-          <div style={siteTitleStyle}>
-            {row.site_name || "現場名未設定"}
+            {groupedRows.nightRows.length > 0 && (
+              <>
+                <div style={{ ...sectionTitleWrapStyle, marginTop: 22 }}>
+                  <div style={sectionPillNightStyle}>夜勤</div>
+                </div>
+                <BoardTable rows={groupedRows.nightRows} days={data.days} />
+              </>
+            )}
           </div>
-
-          <div
-            style={
-              row.shift_type === "night"
-                ? softNightShiftBadgeStyle
-                : dayShiftBadgeStyle
-            }
-          >
-            {row.shift_type === "night" ? "夜勤" : "昼勤"}
-          </div>
-        </div>
-
-        <div style={contractorTextStyle}>
-          元請：{row.contractor_name || "-"}
-        </div>
-
-        <div style={infoLineStyle}>集合：{row.meeting_time || "-"}</div>
-        <div style={infoLineStyle}>担当：{row.manager_name || "-"}</div>
-
-        <div style={infoLineStyle}>
-          連絡先：
-          {row.contact_phone ? (
-            <a href={toTelHref(row.contact_phone)} style={infoLinkStyle}>
-              {row.contact_phone}
-            </a>
-          ) : (
-            " -"
-          )}
-        </div>
-
-        <div style={infoLineStyle}>
-          住所：
-          {row.address ? (
-            <a
-              href={
-                isUrl(row.address)
-                  ? row.address
-                  : toGoogleMapsSearchUrl(row.address)
-              }
-              target="_blank"
-              rel="noreferrer"
-              style={addressLinkStyle}
-            >
-              {row.address}
-            </a>
-          ) : (
-            " -"
-          )}
-        </div>
-
-        {row.notes ? (
-          <div style={notesBarStyle}>作業：{row.notes}</div>
-        ) : null}
-
-        <div style={memberCountStyle}>人員 {members.length}人</div>
-
-        <div style={membersWrapStyle}>
-          {[...members]
-            .sort((a, b) => {
-              if (a.is_foreman === b.is_foreman) return 0;
-              return a.is_foreman ? -1 : 1;
-            })
-            .map((member, index) => (
-              <div
-                key={`${day.date}-${row.assignment_id}-${member.employee_name}-${index}`}
-                style={memberChipStyle}
-              >
-                <span>{member.employee_name}</span>
-                {member.is_foreman ? (
-                  <span style={foremanBadgeStyle}>職長</span>
-                ) : null}
-              </div>
-            ))}
-        </div>
-      </article>
-    );
-  })}
-</div>
-                    )}
-                  </section>
-                ))}
-              </div>
-            </div>
-          </>
         )}
       </div>
     </div>
   );
 }
 
-const pageStyle: React.CSSProperties = {
+function BoardTable({
+  rows,
+  days,
+}: {
+  rows: AggregatedRow[];
+  days: PublicAssignmentsDay[];
+}) {
+  return (
+    <div style={boardTableOuterStyle}>
+      <table style={boardTableStyle}>
+        <thead>
+          <tr>
+            <th style={{ ...stickyHeaderCellStyle, ...stickySiteHeaderStyle }}>
+              現場
+            </th>
+            <th style={{ ...stickyHeaderCellStyle, ...stickyShiftHeaderStyle }}>
+              区分
+            </th>
+
+            {days.map((day) => (
+              <th key={day.date} style={getDateHeaderStyle(day.date)}>
+                <div style={dateHeaderTopTextStyle}>{day.label}</div>
+                <div style={dateHeaderWeekTextStyle}>{getJapaneseWeekday(day.date)}</div>
+                <div style={dateHeaderBottomTextStyle}>{formatDateCompact(day.date)}</div>
+              </th>
+            ))}
+          </tr>
+        </thead>
+
+        <tbody>
+          {rows.length === 0 ? (
+            <tr>
+              <td colSpan={2 + days.length} style={emptyBoardCellStyle}>
+                番割はありません
+              </td>
+            </tr>
+          ) : (
+            rows.map((row) => {
+              const isNight = row.shift_type === "night";
+              const rowSurfaceStyle = isNight
+                ? publicNightRowSurfaceStyleGray
+                : publicDayRowSurfaceStyle;
+              const shiftBadgeStyle = isNight
+                ? publicShiftBadgeNightStyleGray
+                : publicShiftBadgeDayStyle;
+
+              return (
+                <tr key={row.rowKey}>
+                  <td
+                    style={{
+                      ...stickySiteBodyStyle,
+                      ...rowSurfaceStyle,
+                    }}
+                  >
+                    <div style={siteTitleStyleEnhanced}>
+                      {row.site_name || "現場名未設定"}
+                    </div>
+
+                    <div style={siteMetaStackStyle}>
+                      <div style={contractorBadgeStyle}>
+                        {row.contractor_name || "-"}
+                      </div>
+
+                      {row.manager_name ? (
+                        <div style={siteMetaTextStyle}>担当：{row.manager_name}</div>
+                      ) : null}
+
+                      {row.contact_phone ? (
+                        <div style={siteMetaTextStyle}>
+                          連絡先：
+                          <a href={toTelHref(row.contact_phone)} style={inlineLinkStyle}>
+                            {row.contact_phone}
+                          </a>
+                        </div>
+                      ) : null}
+
+                      {row.address ? (
+                        <div style={siteMetaTextStyle}>
+                          住所：
+                          <a
+                            href={
+                              isUrl(row.address)
+                                ? row.address
+                                : toGoogleMapsSearchUrl(row.address)
+                            }
+                            target="_blank"
+                            rel="noreferrer"
+                            style={inlineLinkStyle}
+                          >
+                            {row.address}
+                          </a>
+                        </div>
+                      ) : null}
+                    </div>
+                  </td>
+
+                  <td
+                    style={{
+                      ...stickyShiftBodyStyle,
+                      ...rowSurfaceStyle,
+                    }}
+                  >
+                    <div style={shiftBadgeStyle}>
+                      {isNight ? "夜勤" : "日勤"}
+                    </div>
+                  </td>
+
+                  {days.map((day) => {
+                    const members = row.members_by_date[day.date] ?? [];
+                    const notes = row.notes_by_date[day.date];
+                    const meetingTime = row.meeting_time_by_date[day.date];
+
+                    return (
+                      <td
+                        key={`${row.rowKey}_${day.date}`}
+                        style={{
+                          ...boardBodyCellStyle,
+                          ...rowSurfaceStyle,
+                        }}
+                      >
+                        <div style={cellCardStyle}>
+                          {meetingTime ? (
+                            <div style={miniInfoPillStyle}>集合 {meetingTime}</div>
+                          ) : null}
+
+                          {notes ? <div style={notesBlockStyle}>{notes}</div> : null}
+
+                          {members.length > 0 ? (
+                            <div style={membersBlockWrapStyle}>
+                              <div style={memberCountLabelStyle}>人員 {members.length}人</div>
+
+                              <div style={membersChipWrapStyle}>
+                                {[...members]
+                                  .sort((a, b) => {
+                                    if (a.is_foreman === b.is_foreman) return 0;
+                                    return a.is_foreman ? -1 : 1;
+                                  })
+                                  .map((member, index) => (
+                                    <div
+                                      key={`${day.date}-${row.assignment_id}-${member.employee_name}-${index}`}
+                                      style={memberChipElevatedStyle}
+                                    >
+                                      <span>{member.employee_name}</span>
+                                      {member.is_foreman ? (
+                                        <span style={foremanBadgeStyle}>職長</span>
+                                      ) : null}
+                                    </div>
+                                  ))}
+                              </div>
+                            </div>
+                          ) : null}
+                        </div>
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+const publicPageStyle: React.CSSProperties = {
   minHeight: "100vh",
-  backgroundColor: "#f3f4f6",
+  background: "linear-gradient(180deg, #f3f4f6 0%, #eef2f7 100%)",
   padding: "24px 16px 40px",
   boxSizing: "border-box",
 };
 
-const containerStyle: React.CSSProperties = {
+const publicContainerStyle: React.CSSProperties = {
   maxWidth: "100%",
   margin: "0 auto",
 };
 
-const headerStyle: React.CSSProperties = {
+const topHeaderStyle: React.CSSProperties = {
   display: "flex",
   justifyContent: "space-between",
   alignItems: "flex-start",
@@ -420,65 +537,63 @@ const eyebrowStyle: React.CSSProperties = {
   fontWeight: 800,
   color: "#2563eb",
   marginBottom: 6,
+  letterSpacing: 0.4,
 };
 
-const titleStyle: React.CSSProperties = {
+const pageTitleStyle: React.CSSProperties = {
   margin: 0,
-  fontSize: 28,
-  lineHeight: 1.2,
+  fontSize: 30,
+  lineHeight: 1.15,
   fontWeight: 900,
   color: "#111827",
 };
 
-const subTitleStyle: React.CSSProperties = {
+const pageSubTitleStyle: React.CSSProperties = {
   marginTop: 8,
   fontSize: 15,
   color: "#4b5563",
   fontWeight: 600,
 };
 
-const metaWrapStyle: React.CSSProperties = {
+const summaryMetaWrapStyle: React.CSSProperties = {
   display: "flex",
   flexWrap: "wrap",
   gap: 10,
 };
 
-const metaCardStyle: React.CSSProperties = {
-  backgroundColor: "#ffffff",
+const summaryMetaCardStyle: React.CSSProperties = {
+  background: "rgba(255,255,255,0.85)",
+  backdropFilter: "blur(8px)",
   border: "1px solid #e5e7eb",
-  borderRadius: 12,
+  borderRadius: 16,
   padding: "12px 14px",
   minWidth: 180,
   boxSizing: "border-box",
+  boxShadow: "0 8px 24px rgba(15,23,42,0.06)",
 };
 
-const metaLabelStyle: React.CSSProperties = {
+const summaryMetaLabelStyle: React.CSSProperties = {
   fontSize: 12,
   color: "#6b7280",
   fontWeight: 700,
   marginBottom: 6,
 };
 
-const metaValueStyle: React.CSSProperties = {
-  fontSize: 14,
-  color: "#111827",
-  fontWeight: 800,
-};
-
-const metaValueLargeStyle: React.CSSProperties = {
+const summaryMetaValueStyle: React.CSSProperties = {
   fontSize: 15,
   color: "#111827",
   fontWeight: 900,
 };
 
-const panelStyle: React.CSSProperties = {
+const statusPanelStyle: React.CSSProperties = {
   backgroundColor: "#ffffff",
   border: "1px solid #e5e7eb",
-  borderRadius: 16,
+  borderRadius: 18,
   padding: 24,
+  boxShadow: "0 10px 28px rgba(15,23,42,0.06)",
 };
 
-const loadingTextStyle: React.CSSProperties = {
+const statusTextStyle: React.CSSProperties = {
   fontSize: 15,
   color: "#374151",
 };
@@ -486,8 +601,9 @@ const loadingTextStyle: React.CSSProperties = {
 const errorPanelStyle: React.CSSProperties = {
   backgroundColor: "#fef2f2",
   border: "1px solid #fecaca",
-  borderRadius: 16,
+  borderRadius: 18,
   padding: 24,
+  boxShadow: "0 10px 28px rgba(127,29,29,0.08)",
 };
 
 const errorTitleStyle: React.CSSProperties = {
@@ -503,184 +619,293 @@ const errorTextStyle: React.CSSProperties = {
   whiteSpace: "pre-wrap",
 };
 
-const tokenStyle: React.CSSProperties = {
-  marginTop: 12,
-  fontSize: 12,
-  color: "#991b1b",
-  wordBreak: "break-all",
-};
-
-const summaryBarStyle: React.CSSProperties = {
+const boardWrapStyle: React.CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
   gap: 12,
-  marginBottom: 16,
 };
 
-const summaryCardStyle: React.CSSProperties = {
-  backgroundColor: "#ffffff",
-  border: "1px solid #e5e7eb",
-  borderRadius: 12,
-  padding: 16,
+const sectionTitleWrapStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
 };
 
-const summaryLabelStyle: React.CSSProperties = {
-  fontSize: 12,
-  fontWeight: 700,
-  color: "#6b7280",
-  marginBottom: 8,
-};
-
-const summaryValueStyle: React.CSSProperties = {
-  fontSize: 24,
+const sectionPillDayStyle: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  padding: "8px 14px",
+  borderRadius: 999,
+  background: "linear-gradient(180deg, #ecfdf5 0%, #dcfce7 100%)",
+  color: "#166534",
+  border: "1px solid #bbf7d0",
+  fontSize: 13,
   fontWeight: 900,
-  color: "#111827",
-  lineHeight: 1,
+  boxShadow: "0 6px 16px rgba(22,101,52,0.08)",
 };
 
-const scrollWrapStyle: React.CSSProperties = {
+const sectionPillNightStyle: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  padding: "8px 14px",
+  borderRadius: 999,
+  background: "linear-gradient(180deg, #4b5563 0%, #111827 100%)",
+  color: "#ffffff",
+  border: "1px solid #374151",
+  fontSize: 13,
+  fontWeight: 900,
+  boxShadow: "0 8px 18px rgba(17,24,39,0.18)",
+};
+
+const boardTableOuterStyle: React.CSSProperties = {
   overflowX: "auto",
-  paddingBottom: 8,
+  border: "1px solid #dbe2ea",
+  borderRadius: 20,
+  background: "rgba(255,255,255,0.88)",
+  backdropFilter: "blur(10px)",
+  boxShadow: "0 16px 40px rgba(15,23,42,0.08)",
 };
 
-const daysGridStyle: React.CSSProperties = {
-  display: "grid",
-  gap: 12,
-  alignItems: "start",
-  minWidth: "max-content",
+const boardTableStyle: React.CSSProperties = {
+  borderCollapse: "separate",
+  borderSpacing: 0,
+  minWidth: 980,
+  width: "100%",
 };
 
-const dayColumnStyle: React.CSSProperties = {
-  width: 300,
-};
-
-const dayHeaderBaseStyle: React.CSSProperties = {
-  border: "1px solid #e5e7eb",
-  borderRadius: 12,
+const stickyHeaderCellStyle: React.CSSProperties = {
+  position: "sticky",
+  top: 0,
+  zIndex: 50,
   padding: "12px 10px",
-  marginBottom: 8,
   textAlign: "center",
-  boxSizing: "border-box",
+  fontSize: 12,
+  fontWeight: 900,
+  whiteSpace: "nowrap",
+  background:
+    "linear-gradient(180deg, rgba(248,250,252,0.98) 0%, rgba(255,255,255,0.98) 100%)",
+  borderBottom: "1px solid #dbe2ea",
 };
 
-const dayLabelTopStyle: React.CSSProperties = {
-  fontSize: 15,
-  fontWeight: 800,
-  lineHeight: 1.2,
+const stickySiteHeaderStyle: React.CSSProperties = {
+  left: 0,
+  zIndex: 70,
+  minWidth: 270,
+  width: 270,
+  boxShadow: "2px 0 0 #dbe2ea, 10px 0 24px rgba(15,23,42,0.06)",
 };
 
-const dayWeekStyle: React.CSSProperties = {
-  marginTop: 8,
-  fontSize: 34,
+const stickyShiftHeaderStyle: React.CSSProperties = {
+  left: 270,
+  zIndex: 71,
+  minWidth: 86,
+  width: 86,
+  boxShadow: "2px 0 0 #dbe2ea, 10px 0 24px rgba(15,23,42,0.06)",
+};
+
+const dateHeaderStyleBase: React.CSSProperties = {
+  position: "sticky",
+  top: 0,
+  zIndex: 40,
+  minWidth: 220,
+  width: 220,
+  padding: "12px 10px",
+  textAlign: "center",
+  borderBottom: "1px solid #dbe2ea",
+  borderLeft: "1px solid #eef2f7",
+};
+
+const dateHeaderTopTextStyle: React.CSSProperties = {
+  fontSize: 14,
+  fontWeight: 900,
+  lineHeight: 1.15,
+};
+
+const dateHeaderWeekTextStyle: React.CSSProperties = {
+  marginTop: 6,
+  fontSize: 28,
   fontWeight: 900,
   lineHeight: 1,
 };
 
-const dayDateStyle: React.CSSProperties = {
-  marginTop: 8,
-  fontSize: 13,
+const dateHeaderBottomTextStyle: React.CSSProperties = {
+  marginTop: 6,
+  fontSize: 12,
   fontWeight: 700,
-  color: "inherit",
-  opacity: 0.9,
+  opacity: 0.92,
 };
 
-const emptyDayStyle: React.CSSProperties = {
-  backgroundColor: "#ffffff",
-  border: "1px solid #e5e7eb",
-  borderRadius: 12,
-  padding: 16,
-  color: "#6b7280",
-  fontSize: 14,
+const stickySiteBodyStyle: React.CSSProperties = {
+  position: "sticky",
+  left: 0,
+  zIndex: 20,
+  minWidth: 270,
+  width: 270,
+  padding: "14px 14px",
+  borderBottom: "1px solid #edf2f7",
+  boxShadow: "2px 0 0 #dbe2ea, 10px 0 24px rgba(15,23,42,0.06)",
+  verticalAlign: "top",
 };
 
-const cardsColumnStyle: React.CSSProperties = {
-  display: "grid",
-  gap: 10,
+const stickyShiftBodyStyle: React.CSSProperties = {
+  position: "sticky",
+  left: 270,
+  zIndex: 21,
+  minWidth: 86,
+  width: 86,
+  padding: "14px 10px",
+  borderBottom: "1px solid #edf2f7",
+  boxShadow: "2px 0 0 #dbe2ea, 10px 0 24px rgba(15,23,42,0.06)",
+  textAlign: "center",
+  verticalAlign: "top",
 };
 
-const cardStyle: React.CSSProperties = {
-  backgroundColor: "#ffffff",
-  border: "1px solid #e5e7eb",
-  borderRadius: 12,
-  padding: 14,
-  boxSizing: "border-box",
+const publicDayRowSurfaceStyle: React.CSSProperties = {
+  background: "linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)",
 };
 
-const nightCardStyle: React.CSSProperties = {
-  backgroundColor: "#f8fbff",
-  border: "1px solid #dbeafe",
-  borderLeft: "5px solid #60a5fa",
-  borderRadius: 12,
-  padding: 14,
-  boxSizing: "border-box",
+const publicNightRowSurfaceStyleGray: React.CSSProperties = {
+  background: "linear-gradient(180deg, #bcc3cc 0%, #d1d5db 42%, #e5e7eb 100%)",
 };
 
-const siteTitleStyle: React.CSSProperties = {
-  fontSize: 18,
+const publicShiftBadgeDayStyle: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "6px 10px",
+  borderRadius: 999,
+  backgroundColor: "#ecfdf5",
+  color: "#166534",
+  border: "1px solid #86efac",
+  fontSize: 13,
   fontWeight: 900,
-  color: "#111827",
-  lineHeight: 1.3,
-  marginBottom: 8,
+  whiteSpace: "nowrap",
 };
 
-const contractorTextStyle: React.CSSProperties = {
-  fontSize: 11,
-  color: "#6b7280",
-  fontWeight: 700,
-  marginBottom: 8,
-};
-
-const infoLineStyle: React.CSSProperties = {
+const publicShiftBadgeNightStyleGray: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "6px 10px",
+  borderRadius: 999,
+  background: "linear-gradient(180deg, #374151 0%, #111827 100%)",
+  color: "#ffffff",
+  border: "1px solid #1f2937",
+  boxShadow: "0 6px 14px rgba(17,24,39,0.22)",
   fontSize: 13,
-  color: "#374151",
-  marginBottom: 6,
+  fontWeight: 900,
+  whiteSpace: "nowrap",
+};
+
+const boardBodyCellStyle: React.CSSProperties = {
+  minWidth: 220,
+  width: 220,
+  padding: "12px 10px",
+  borderBottom: "1px solid #edf2f7",
+  borderLeft: "1px solid #f1f5f9",
+  verticalAlign: "top",
+  boxSizing: "border-box",
+};
+
+const siteTitleStyleEnhanced: React.CSSProperties = {
+  fontSize: 17,
+  fontWeight: 900,
+  lineHeight: 1.35,
+  color: "#0f172a",
+  letterSpacing: 0.1,
+  wordBreak: "break-word",
+};
+
+const siteMetaStackStyle: React.CSSProperties = {
+  marginTop: 10,
+  display: "grid",
+  gap: 6,
+};
+
+const contractorBadgeStyle: React.CSSProperties = {
+  display: "inline-flex",
+  width: "fit-content",
+  maxWidth: "100%",
+  padding: "5px 10px",
+  borderRadius: 999,
+  backgroundColor: "#eef2ff",
+  color: "#4338ca",
+  fontSize: 12,
+  fontWeight: 800,
+  wordBreak: "break-word",
+};
+
+const siteMetaTextStyle: React.CSSProperties = {
+  fontSize: 12,
+  color: "#475569",
   lineHeight: 1.45,
   wordBreak: "break-word",
 };
 
-const addressLinkStyle: React.CSSProperties = {
+const inlineLinkStyle: React.CSSProperties = {
   color: "#2563eb",
   textDecoration: "underline",
   marginLeft: 2,
+  fontWeight: 700,
 };
 
-const notesBarStyle: React.CSSProperties = {
-  marginTop: 10,
-  marginBottom: 10,
-  padding: "8px 10px",
-  borderRadius: 8,
-  backgroundColor: "#e6f4ec",
-  color: "#166534",
-  fontSize: 13,
-  fontWeight: 800,
-};
-
-const memberCountStyle: React.CSSProperties = {
-  marginTop: 10,
-  marginBottom: 10,
-  fontSize: 14,
-  fontWeight: 900,
-  color: "#111827",
-};
-
-const membersWrapStyle: React.CSSProperties = {
-  display: "flex",
-  flexWrap: "wrap",
+const cellCardStyle: React.CSSProperties = {
+  display: "grid",
   gap: 8,
 };
 
-const memberChipStyle: React.CSSProperties = {
+const miniInfoPillStyle: React.CSSProperties = {
+  display: "inline-flex",
+  width: "fit-content",
+  padding: "5px 10px",
+  borderRadius: 999,
+  backgroundColor: "#ffffff",
+  border: "1px solid #cbd5e1",
+  color: "#1e293b",
+  fontSize: 12,
+  fontWeight: 800,
+};
+
+const notesBlockStyle: React.CSSProperties = {
+  padding: "10px 12px",
+  borderRadius: 12,
+  background: "linear-gradient(180deg, #f3f4f6 0%, #ffffff 100%)",
+  border: "1px solid #d1d5db",
+  color: "#374151",
+  fontSize: 12,
+  fontWeight: 800,
+  lineHeight: 1.5,
+  wordBreak: "break-word",
+};
+
+const membersBlockWrapStyle: React.CSSProperties = {
+  display: "grid",
+  gap: 8,
+};
+
+const memberCountLabelStyle: React.CSSProperties = {
+  fontSize: 12,
+  fontWeight: 900,
+  color: "#0f172a",
+};
+
+const membersChipWrapStyle: React.CSSProperties = {
+  display: "flex",
+  flexWrap: "wrap",
+  gap: 6,
+};
+
+const memberChipElevatedStyle: React.CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   gap: 6,
-  padding: "6px 10px",
+  padding: "7px 11px",
   borderRadius: 999,
-  backgroundColor: "#faf4ea",
-  border: "1px solid #f0dcc0",
+  background: "linear-gradient(180deg, #fff7ed 0%, #fffbeb 100%)",
+  border: "1px solid #fed7aa",
   color: "#111827",
   fontSize: 12,
   fontWeight: 800,
   lineHeight: 1.2,
+  boxShadow: "0 4px 10px rgba(251,146,60,0.08)",
 };
 
 const foremanBadgeStyle: React.CSSProperties = {
@@ -693,32 +918,9 @@ const foremanBadgeStyle: React.CSSProperties = {
   lineHeight: 1,
 };
 
-const dayShiftBadgeStyle: React.CSSProperties = {
-  flexShrink: 0,
-  backgroundColor: "#f3f4f6",
-  color: "#4b5563",
-  border: "1px solid #e5e7eb",
-  borderRadius: 999,
-  padding: "6px 10px",
-  fontSize: 12,
-  fontWeight: 800,
-  lineHeight: 1,
-};
-
-const softNightShiftBadgeStyle: React.CSSProperties = {
-  flexShrink: 0,
-  backgroundColor: "#eff6ff",
-  color: "#2563eb",
-  border: "1px solid #bfdbfe",
-  borderRadius: 999,
-  padding: "6px 10px",
-  fontSize: 12,
-  fontWeight: 800,
-  lineHeight: 1,
-};
-
-const infoLinkStyle: React.CSSProperties = {
-  color: "#2563eb",
-  textDecoration: "underline",
-  marginLeft: 2,
+const emptyBoardCellStyle: React.CSSProperties = {
+  padding: 24,
+  textAlign: "center",
+  color: "#6b7280",
+  fontSize: 14,
 };
