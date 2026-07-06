@@ -513,7 +513,7 @@ export default function AssignmentViewPage() {
           style={{
             borderCollapse: "separate",
             borderSpacing: 0,
-            minWidth: 960,
+            minWidth: 760,
             width: "100%",
             backgroundColor: "#fff",
           }}
@@ -768,16 +768,16 @@ const stickyHeaderCellStyle: React.CSSProperties = {
 const stickySiteHeaderStyle: React.CSSProperties = {
   left: 0,
   zIndex: 70,
-  minWidth: 270,
-  width: 270,
+  minWidth: 180,
+  width: 180,
   boxShadow: "2px 0 0 #dbe2ea, 10px 0 24px rgba(15,23,42,0.06)",
 };
 
 const stickyShiftHeaderStyle: React.CSSProperties = {
-  left: 270,
+  left: 180,
   zIndex: 71,
-  minWidth: 86,
-  width: 86,
+  minWidth: 64,
+  width: 64,
   boxShadow: "2px 0 0 #dbe2ea, 10px 0 24px rgba(15,23,42,0.06)",
 };
 
@@ -785,9 +785,9 @@ const dateHeaderStyleBase: React.CSSProperties = {
   position: "sticky",
   top: 0,
   zIndex: 40,
-  minWidth: 220,
-  width: 220,
-  padding: "12px 10px",
+  minWidth: 150,
+  width: 150,
+  padding: "10px 6px",
   textAlign: "center",
   borderBottom: "1px solid #dbe2ea",
   borderLeft: "1px solid #eef2f7",
@@ -810,9 +810,9 @@ const stickySiteBodyStyle: React.CSSProperties = {
   position: "sticky",
   left: 0,
   zIndex: 20,
-  minWidth: 270,
-  width: 270,
-  padding: "14px 14px",
+  minWidth: 180,
+  width: 180,
+  padding: "10px 10px",
   borderBottom: "1px solid #edf2f7",
   boxShadow: "2px 0 0 #dbe2ea, 10px 0 24px rgba(15,23,42,0.06)",
   verticalAlign: "top",
@@ -820,11 +820,11 @@ const stickySiteBodyStyle: React.CSSProperties = {
 
 const stickyShiftBodyStyle: React.CSSProperties = {
   position: "sticky",
-  left: 270,
+  left: 180,
   zIndex: 21,
-  minWidth: 86,
-  width: 86,
-  padding: "14px 10px",
+  minWidth: 64,
+  width: 64,
+  padding: "10px 6px",
   borderBottom: "1px solid #edf2f7",
   boxShadow: "2px 0 0 #dbe2ea, 10px 0 24px rgba(15,23,42,0.06)",
   textAlign: "center",
@@ -873,9 +873,9 @@ const shiftBadgeNightStyleGray: React.CSSProperties = {
 };
 
 const boardBodyCellStyle: React.CSSProperties = {
-  minWidth: 220,
-  width: 220,
-  padding: "12px 10px",
+  minWidth: 150,
+  width: 150,
+  padding: "10px 6px",
   borderBottom: "1px solid #edf2f7",
   borderLeft: "1px solid #f1f5f9",
   verticalAlign: "top",
@@ -883,11 +883,11 @@ const boardBodyCellStyle: React.CSSProperties = {
 };
 
 const siteTitleStyleEnhanced: React.CSSProperties = {
-  fontSize: 17,
+  fontSize: 14,
   fontWeight: 900,
-  lineHeight: 1.35,
+  lineHeight: 1.3,
   color: "#0f172a",
-  letterSpacing: 0.1,
+  letterSpacing: 0,
   wordBreak: "break-word",
 };
 
@@ -901,19 +901,19 @@ const contractorBadgeStyle: React.CSSProperties = {
   display: "inline-flex",
   width: "fit-content",
   maxWidth: "100%",
-  padding: "5px 10px",
+  padding: "4px 8px",
   borderRadius: 999,
   backgroundColor: "#eef2ff",
   color: "#4338ca",
-  fontSize: 12,
+  fontSize: 11,
   fontWeight: 800,
   wordBreak: "break-word",
 };
 
 const siteMetaTextStyle: React.CSSProperties = {
-  fontSize: 12,
+  fontSize: 11,
   color: "#475569",
-  lineHeight: 1.45,
+  lineHeight: 1.35,
   wordBreak: "break-word",
 };
 

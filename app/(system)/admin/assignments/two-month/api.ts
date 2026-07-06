@@ -1,4 +1,5 @@
-// app/(system)/admin/assignments/two-month/api.ts
+"use client";
+
 import { supabase } from "@/lib/supabase";
 import type { Assignment, AssignmentGroupKey } from "./types";
 
@@ -12,6 +13,24 @@ function ensureOrganizationId(organizationId: string | null | undefined) {
     throw new Error("会社情報が取得できません");
   }
   return organizationId;
+}
+
+function getFileExtension(fileName: string) {
+  const lastDotIndex = fileName.lastIndexOf(".");
+  return lastDotIndex >= 0 ? fileName.slice(lastDotIndex).toLowerCase() : "";
+}
+
+function createSafeStorageFilePath(
+  assignmentId: string,
+  originalFileName: string
+) {
+  const extension = getFileExtension(originalFileName);
+  const uniqueId =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}_${Math.random().toString(36).slice(2)}`;
+
+  return `${assignmentId}/${uniqueId}${extension}`;
 }
 
 export async function fetchTwoMonthData({
@@ -147,14 +166,16 @@ export async function uploadAssignmentFiles(
 ) {
   const safeOrganizationId = ensureOrganizationId(organizationId);
 
-  if (!files) return;
+  if (!files || files.length === 0) return;
 
   for (const file of Array.from(files)) {
-    const filePath = `${assignmentId}/${Date.now()}_${file.name}`;
+    const filePath = createSafeStorageFilePath(assignmentId, file.name);
 
     const { error: uploadError } = await supabase.storage
       .from("assignment-files")
-      .upload(filePath, file);
+      .upload(filePath, file, {
+        upsert: false,
+      });
 
     if (uploadError) {
       throw new Error("アップロード失敗: " + uploadError.message);
