@@ -271,23 +271,25 @@ export default function PublicAssignmentsPage() {
     return Array.from(rowMap.values());
   }, [data]);
 
-  const groupedRows = useMemo(() => {
-    const dayRows = rows.filter((row) => row.shift_type !== "night");
-    const nightRows = rows.filter((row) => row.shift_type === "night");
-
+  const sortedRows = useMemo(() => {
     const sorter = (a: AggregatedRow, b: AggregatedRow) => {
       const contractorCompare = (a.contractor_name ?? "").localeCompare(
         b.contractor_name ?? "",
         "ja"
       );
       if (contractorCompare !== 0) return contractorCompare;
-      return (a.site_name ?? "").localeCompare(b.site_name ?? "", "ja");
+  
+      const siteCompare = (a.site_name ?? "").localeCompare(
+        b.site_name ?? "",
+        "ja"
+      );
+      if (siteCompare !== 0) return siteCompare;
+  
+      if (a.shift_type === b.shift_type) return 0;
+      return a.shift_type === "night" ? 1 : -1;
     };
-
-    return {
-      dayRows: [...dayRows].sort(sorter),
-      nightRows: [...nightRows].sort(sorter),
-    };
+  
+    return [...rows].sort(sorter);
   }, [rows]);
 
   return (
@@ -337,23 +339,11 @@ export default function PublicAssignmentsPage() {
           </div>
         )}
 
-        {!loading && !error && data && (
-          <div style={boardWrapStyle}>
-            <div style={sectionTitleWrapStyle}>
-              <div style={sectionPillDayStyle}>日勤</div>
-            </div>
-            <BoardTable rows={groupedRows.dayRows} days={data.days} isMobile={isMobile} />
-
-            {groupedRows.nightRows.length > 0 && (
-              <>
-                <div style={{ ...sectionTitleWrapStyle, marginTop: 22 }}>
-                  <div style={sectionPillNightStyle}>夜勤</div>
-                </div>
-                <BoardTable rows={groupedRows.nightRows} days={data.days} isMobile={isMobile} />
-              </>
-            )}
-          </div>
-        )}
+{!loading && !error && data && (
+  <div style={boardWrapStyle}>
+    <BoardTable rows={sortedRows} days={data.days} isMobile={isMobile} />
+  </div>
+)}
       </div>
     </div>
   );
@@ -746,37 +736,6 @@ const errorTextStyle: React.CSSProperties = {
 const boardWrapStyle: React.CSSProperties = {
   display: "grid",
   gap: 12,
-};
-
-const sectionTitleWrapStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-};
-
-const sectionPillDayStyle: React.CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  padding: "8px 14px",
-  borderRadius: 999,
-  background: "linear-gradient(180deg, #ecfdf5 0%, #dcfce7 100%)",
-  color: "#166534",
-  border: "1px solid #bbf7d0",
-  fontSize: 13,
-  fontWeight: 900,
-  boxShadow: "0 6px 16px rgba(22,101,52,0.08)",
-};
-
-const sectionPillNightStyle: React.CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  padding: "8px 14px",
-  borderRadius: 999,
-  background: "linear-gradient(180deg, #4b5563 0%, #111827 100%)",
-  color: "#ffffff",
-  border: "1px solid #374151",
-  fontSize: 13,
-  fontWeight: 900,
-  boxShadow: "0 8px 18px rgba(17,24,39,0.18)",
 };
 
 const boardTableOuterStyle: React.CSSProperties = {
