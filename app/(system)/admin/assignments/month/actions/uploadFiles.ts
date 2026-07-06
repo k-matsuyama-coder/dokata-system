@@ -23,6 +23,13 @@ async function getCurrentOrganization() {
   return result.organizationId as string;
 }
 
+function sanitizeFileName(fileName: string) {
+  return fileName
+    .normalize("NFKC")
+    .replace(/[\\/:\*\?"<>\|\[\]#%&{}~]/g, "_")
+    .replace(/\s+/g, "_");
+}
+
 export async function uploadFilesAction(
   assignmentId: string,
   files: FileList | null
@@ -32,7 +39,8 @@ export async function uploadFilesAction(
   const organizationId = await getCurrentOrganization();
 
   for (const file of Array.from(files)) {
-    const filePath = `${assignmentId}/${Date.now()}_${file.name}`;
+    const safeFileName = sanitizeFileName(file.name);
+    const filePath = `${assignmentId}/${Date.now()}_${safeFileName}`;
 
     const { error: uploadError } = await supabase.storage
       .from("assignment-files")

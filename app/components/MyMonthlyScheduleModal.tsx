@@ -15,7 +15,6 @@ type Assignment = {
   site_name: string | null;
   contractor_name: string | null;
   shift_type: string | null;
-
   manager_name: string | null;
   contact_phone: string | null;
   address: string | null;
@@ -33,15 +32,19 @@ type Props = {
 export default function MyMonthlyScheduleModal({ open, onClose }: Props) {
   const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [members, setMembers] = useState<SiteMember[]>([]);
+  const [allMembers, setAllMembers] = useState<SiteMember[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
-  const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
+  const [selectedSchedule, setSelectedSchedule] = useState<{
+    assignment: Assignment;
+    workDate: string;
+  } | null>(null);
 
   const days = useMemo(() => {
     const [year, monthNum] = month.split("-").map(Number);
     const lastDay = new Date(year, monthNum, 0).getDate();
 
-    return Array.from({ length: lastDay }, (_, i) => {
-      const day = i + 1;
+    return Array.from({ length: lastDay }, (_, index) => {
+      const day = index + 1;
       return `${month}-${String(day).padStart(2, "0")}`;
     });
   }, [month]);
@@ -56,69 +59,73 @@ export default function MyMonthlyScheduleModal({ open, onClose }: Props) {
       if (!user) return;
 
       const { data: employee } = await supabase
-  .from("employees")
-  .select(`
-    *,
-    organizations (
-      id,
-      name
-    )
-  `)
-  .eq("auth_user_id", user.id)
-  .single();
+        .from("employees")
+        .select(`
+          *,
+          organizations (
+            id,
+            name
+          )
+        `)
+        .eq("auth_user_id", user.id)
+        .single();
 
       if (!employee) return;
+
       const organizationId = employee.organization_id;
 
-if (!organizationId) {
-  alert("会社情報が取得できません");
-  return;
-}
+      if (!organizationId) {
+        alert("会社情報が取得できません");
+        return;
+      }
 
       const startDate = `${month}-01`;
       const endDate = days[days.length - 1];
 
       const { data: memberData, error: memberError } = await supabase
-  .from("assignment_site_members")
-  .select("id, assignment_id, work_date, employee_name")
-  .eq("organization_id", organizationId)
-  .eq("employee_name", employee.name)
-  .gte("work_date", startDate)
-  .lte("work_date", endDate);
+        .from("assignment_site_members")
+        .select("id, assignment_id, work_date, employee_name")
+        .eq("organization_id", organizationId)
+        .eq("employee_name", employee.name)
+        .gte("work_date", startDate)
+        .lte("work_date", endDate);
 
       if (memberError) {
         alert("予定取得失敗: " + memberError.message);
         return;
       }
 
-      setMembers(memberData ?? []);
+      const ownMembers = memberData ?? [];
+      setMembers(ownMembers);
 
       const assignmentIds = Array.from(
-        new Set((memberData ?? []).map((m) => m.assignment_id))
+        new Set(ownMembers.map((member) => member.assignment_id))
       );
 
       if (assignmentIds.length === 0) {
         setAssignments([]);
+        setAllMembers([]);
+        setSelectedSchedule(null);
         return;
       }
 
       const { data: assignmentData, error: assignmentError } = await supabase
-  .from("assignments")
-  .select(`
-    id,
-    site_name,
-    contractor_name,
-    shift_type,
-    manager_name,
-    contact_phone,
-    address,
-    meeting_time,
-    construction_type,
-    start_date,
-    end_date
-  `)
-  .eq("organization_id", organizationId)
-  .in("id", assignmentIds);
+        .from("assignments")
+        .select(`
+          id,
+          site_name,
+          contractor_name,
+          shift_type,
+          manager_name,
+          contact_phone,
+          address,
+          meeting_time,
+          construction_type,
+          start_date,
+          end_date
+        `)
+        .eq("organization_id", organizationId)
+        .in("id", assignmentIds);
 
       if (assignmentError) {
         alert("現場取得失敗: " + assignmentError.message);
@@ -126,17 +133,44 @@ if (!organizationId) {
       }
 
       setAssignments(assignmentData ?? []);
+
+      const { data: allMemberData, error: allMemberError } = await supabase
+        .from("assignment_site_members")
+        .select("id, assignment_id, work_date, employee_name")
+        .eq("organization_id", organizationId)
+        .in("assignment_id", assignmentIds)
+        .gte("work_date", startDate)
+        .lte("work_date", endDate);
+
+      if (allMemberError) {
+        alert("配置メンバー取得失敗: " + allMemberError.message);
+        return;
+      }
+
+      setAllMembers(allMemberData ?? []);
     };
 
-    fetchSchedule();
+    void fetchSchedule();
   }, [open, month, days]);
+
+  const selectedMembers = useMemo(() => {
+    if (!selectedSchedule) return [];
+
+    return allMembers.filter(
+      (member) =>
+        member.assignment_id === selectedSchedule.assignment.id &&
+        member.work_date === selectedSchedule.workDate
+    );
+  }, [selectedSchedule, allMembers]);
 
   if (!open) return null;
 
   const getSchedulesByDate = (date: string) => {
     return members
-      .filter((m) => m.work_date === date)
-      .map((m) => assignments.find((a) => a.id === m.assignment_id))
+      .filter((member) => member.work_date === date)
+      .map((member) =>
+        assignments.find((assignment) => assignment.id === member.assignment_id)
+      )
       .filter(Boolean) as Assignment[];
   };
 
@@ -217,9 +251,9 @@ if (!organizationId) {
             width: "100%",
           }}
         >
-          {["日", "月", "火", "水", "木", "金", "土"].map((d) => (
+          {["日", "月", "火", "水", "木", "金", "土"].map((dayLabel) => (
             <div
-              key={d}
+              key={dayLabel}
               style={{
                 fontWeight: 800,
                 textAlign: "center",
@@ -228,14 +262,14 @@ if (!organizationId) {
                 borderRadius: 8,
               }}
             >
-              {d}
+              {dayLabel}
             </div>
           ))}
 
           {Array.from({
             length: new Date(`${month}-01`).getDay(),
-          }).map((_, i) => (
-            <div key={`empty-${i}`} />
+          }).map((_, index) => (
+            <div key={`empty-${index}`} />
           ))}
 
           {days.map((date) => {
@@ -267,173 +301,206 @@ if (!organizationId) {
                 </div>
 
                 <div style={{ display: "grid", gap: 4 }}>
-                {schedules.map((assignment) => (
-  <div
-    key={assignment.id}
-    onClick={() => setSelectedAssignment(assignment)}
-    style={{
-      padding: "4px 5px",
-      borderRadius: 8,
-      overflow: "hidden",
-      minWidth: 0,
-      backgroundColor:
-        assignment.shift_type === "night"
-          ? "#374151"
-          : "#dcfce7",
-      color:
-        assignment.shift_type === "night" ? "#fff" : "#166534",
-      fontWeight: 700,
-      cursor: "pointer",
-    }}
-  >
-    <div
-      style={{
-        whiteSpace: "normal",
-        overflow: "hidden",
-        display: "-webkit-box",
-        WebkitLineClamp: 2,
-        WebkitBoxOrient: "vertical",
-        fontSize: 10,
-        lineHeight: 1.25,
-      }}
-    >
-      {assignment.site_name || "-"}
-    </div>
+                  {schedules.map((assignment) => (
+                    <div
+                      key={`${date}-${assignment.id}`}
+                      onClick={() =>
+                        setSelectedSchedule({
+                          assignment,
+                          workDate: date,
+                        })
+                      }
+                      style={{
+                        padding: "4px 5px",
+                        borderRadius: 8,
+                        overflow: "hidden",
+                        minWidth: 0,
+                        backgroundColor:
+                          assignment.shift_type === "night" ? "#374151" : "#dcfce7",
+                        color:
+                          assignment.shift_type === "night" ? "#fff" : "#166534",
+                        fontWeight: 700,
+                        cursor: "pointer",
+                      }}
+                    >
+                      <div
+                        style={{
+                          whiteSpace: "normal",
+                          overflow: "hidden",
+                          display: "-webkit-box",
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: "vertical",
+                          fontSize: 10,
+                          lineHeight: 1.25,
+                        }}
+                      >
+                        {assignment.site_name || "-"}
+                      </div>
 
-    <div
-      style={{
-        whiteSpace: "nowrap",
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        fontSize: 9,
-        opacity: 0.8,
-        marginTop: 2,
-      }}
-    >
-      {assignment.contractor_name || "-"} /{" "}
-      {assignment.shift_type === "night" ? "夜" : "昼"}
-    </div>
-  </div>
-))}
+                      <div
+                        style={{
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          fontSize: 9,
+                          opacity: 0.8,
+                          marginTop: 2,
+                        }}
+                      >
+                        {assignment.contractor_name || "-"} /{" "}
+                        {assignment.shift_type === "night" ? "夜" : "昼"}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             );
           })}
         </div>
-        {selectedAssignment && (
-  <div
-    onClick={() => setSelectedAssignment(null)}
-    style={{
-      position: "fixed",
-      inset: 0,
-      backgroundColor: "rgba(0,0,0,0.45)",
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-      zIndex: 100000,
-      padding: 16,
-    }}
-  >
-    <div
-      onClick={(e) => e.stopPropagation()}
-      style={{
-        width: "100%",
-        maxWidth: 520,
-        backgroundColor: "#fff",
-        borderRadius: 16,
-        padding: 20,
-        display: "grid",
-        gap: 10,
-      }}
-    >
-      <h2 style={{ margin: 0 }}>
-        {selectedAssignment.site_name}
-      </h2>
 
-      <div>
-        <strong>元請：</strong>
-        {selectedAssignment.contractor_name || "-"}
-      </div>
+        {selectedSchedule && (
+          <div
+            onClick={() => setSelectedSchedule(null)}
+            style={{
+              position: "fixed",
+              inset: 0,
+              backgroundColor: "rgba(0,0,0,0.45)",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              zIndex: 100000,
+              padding: 16,
+            }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                width: "100%",
+                maxWidth: 520,
+                backgroundColor: "#fff",
+                borderRadius: 16,
+                padding: 20,
+                display: "grid",
+                gap: 10,
+              }}
+            >
+              <h2 style={{ margin: 0 }}>{selectedSchedule.assignment.site_name}</h2>
 
-      <div>
-        <strong>担当者：</strong>
-        {selectedAssignment.manager_name || "-"}
-      </div>
+              <div>
+                <strong>日付：</strong>
+                {selectedSchedule.workDate}
+              </div>
 
-      <div>
-        <strong>連絡先：</strong>
-        {selectedAssignment.contact_phone || "-"}
-      </div>
+              <div>
+                <strong>元請：</strong>
+                {selectedSchedule.assignment.contractor_name || "-"}
+              </div>
 
-      <div>
-  <strong>住所：</strong>
+              <div>
+                <strong>担当者：</strong>
+                {selectedSchedule.assignment.manager_name || "-"}
+              </div>
 
-  {selectedAssignment.address ? (
-    <a
-      href={
-        selectedAssignment.address.startsWith("http")
-          ? selectedAssignment.address
-          : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-              selectedAssignment.address
-            )}`
-      }
-      target="_blank"
-      rel="noreferrer"
-      style={{
-        color: "#2563eb",
-        textDecoration: "underline",
-        fontWeight: 700,
-      }}
-    >
-      {selectedAssignment.address}
-    </a>
-  ) : (
-    "-"
-  )}
-</div>
+              <div>
+                <strong>連絡先：</strong>
+                {selectedSchedule.assignment.contact_phone || "-"}
+              </div>
 
-      <div>
-        <strong>集合：</strong>
-        {selectedAssignment.meeting_time || "-"}
-      </div>
+              <div>
+                <strong>住所：</strong>
+                {selectedSchedule.assignment.address ? (
+                  <a
+                    href={
+                      selectedSchedule.assignment.address.startsWith("http")
+                        ? selectedSchedule.assignment.address
+                        : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                            selectedSchedule.assignment.address
+                          )}`
+                    }
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      color: "#2563eb",
+                      textDecoration: "underline",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {selectedSchedule.assignment.address}
+                  </a>
+                ) : (
+                  "-"
+                )}
+              </div>
 
-      <div>
-        <strong>工事区分：</strong>
-        {selectedAssignment.construction_type || "-"}
-      </div>
+              <div>
+                <strong>集合：</strong>
+                {selectedSchedule.assignment.meeting_time || "-"}
+              </div>
 
-      <div>
-        <strong>工期：</strong>
-        {selectedAssignment.start_date || "-"}
-        {" ～ "}
-        {selectedAssignment.end_date || "-"}
-      </div>
+              <div>
+                <strong>工事区分：</strong>
+                {selectedSchedule.assignment.construction_type || "-"}
+              </div>
 
-      <div>
-        <strong>昼夜：</strong>
-        {selectedAssignment.shift_type === "night"
-          ? "夜勤"
-          : "日勤"}
-      </div>
+              <div>
+                <strong>工期：</strong>
+                {selectedSchedule.assignment.start_date || "-"}
+                {" ～ "}
+                {selectedSchedule.assignment.end_date || "-"}
+              </div>
 
-      <button
-        onClick={() => setSelectedAssignment(null)}
-        style={{
-          marginTop: 10,
-          padding: 12,
-          border: "none",
-          borderRadius: 8,
-          backgroundColor: "#111",
-          color: "#fff",
-          fontWeight: 700,
-          cursor: "pointer",
-        }}
-      >
-        閉じる
-      </button>
-    </div>
-  </div>
-)}
+              <div>
+                <strong>昼夜：</strong>
+                {selectedSchedule.assignment.shift_type === "night" ? "夜勤" : "日勤"}
+              </div>
+
+              {selectedMembers.length > 0 && (
+                <div>
+                  <strong>メンバー：</strong>
+                  <div
+                    style={{
+                      marginTop: 8,
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: 6,
+                    }}
+                  >
+                    {selectedMembers.map((member) => (
+                      <div
+                        key={member.id}
+                        style={{
+                          padding: "6px 10px",
+                          borderRadius: 999,
+                          backgroundColor: "#f3f4f6",
+                          fontSize: 12,
+                          fontWeight: 700,
+                        }}
+                      >
+                        {member.employee_name}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <button
+                onClick={() => setSelectedSchedule(null)}
+                style={{
+                  marginTop: 10,
+                  padding: 12,
+                  border: "none",
+                  borderRadius: 8,
+                  backgroundColor: "#111",
+                  color: "#fff",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                }}
+              >
+                閉じる
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

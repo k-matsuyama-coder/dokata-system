@@ -255,11 +255,21 @@ export default function AssignmentEditModal({
           <div style={{ fontWeight: 700, marginBottom: 6 }}>添付ファイル</div>
 
           <input
-            type="file"
-            multiple
-            accept="image/*,.pdf,.xlsx,.xls,.doc,.docx"
-            onChange={(e) => uploadFiles(editingAssignment.id, e.target.files)}
-          />
+  type="file"
+  multiple
+  accept="image/*,.pdf,.xlsx,.xls,.doc,.docx"
+  onChange={(e) => {
+    console.log("edit modal file selected", {
+      assignmentId: editingAssignment.id,
+      fileCount: e.target.files?.length ?? 0,
+      fileNames: e.target.files
+        ? Array.from(e.target.files).map((file) => file.name)
+        : [],
+    });
+
+    void uploadFiles(editingAssignment.id, e.target.files);
+  }}
+/>
 
           {files.length > 0 && (
             <div style={{ marginTop: 10, display: "grid", gap: 8 }}>

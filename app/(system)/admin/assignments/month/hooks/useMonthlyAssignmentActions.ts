@@ -111,13 +111,21 @@ export function useMonthlyAssignmentActions({
     assignmentId: string,
     files: FileList | null
   ) => {
+    console.log("uploadFiles start", {
+      assignmentId,
+      fileCount: files?.length ?? 0,
+      fileNames: files ? Array.from(files).map((file) => file.name) : [],
+    });
+  
     const { error } = await uploadFilesAction(assignmentId, files);
-
+  
+    console.log("uploadFiles result", { error });
+  
     if (error) {
       alert("アップロード失敗: " + error.message);
       return;
     }
-
+  
     await fetchScheduleData();
   };
 
