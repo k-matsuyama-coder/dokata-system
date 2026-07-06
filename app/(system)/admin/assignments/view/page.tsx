@@ -134,6 +134,7 @@ export default function AssignmentViewPage() {
   const [dailyInfos, setDailyInfos] = useState<DailyInfo[]>([]);
   const [viewMode, setViewMode] = useState<"day" | "3days" | "week">("day");
   const [filterMode, setFilterMode] = useState<FilterMode>("all");
+  const [isExportingImage, setIsExportingImage] = useState(false);
   const [groupSettings, setGroupSettings] = useState<AssignmentGroupSetting[]>(
     defaultGroupSettings()
   );
@@ -403,19 +404,27 @@ export default function AssignmentViewPage() {
 
   const downloadImage = async () => {
     const html2canvas = (await import("html2canvas")).default;
-
+  
     if (!pdfRef.current) return;
-
-    const canvas = await html2canvas(pdfRef.current, {
-      scale: 1.2,
-      backgroundColor: "#f5f6f8",
-      useCORS: true,
-    });
-
-    const link = document.createElement("a");
-    link.download = `番割_${date}.jpg`;
-    link.href = canvas.toDataURL("image/jpeg", 0.92);
-    link.click();
+  
+    try {
+      setIsExportingImage(true);
+  
+      await new Promise((resolve) => setTimeout(resolve, 80));
+  
+      const canvas = await html2canvas(pdfRef.current, {
+        scale: 1.6,
+        backgroundColor: "#f5f6f8",
+        useCORS: true,
+      });
+  
+      const link = document.createElement("a");
+      link.download = `番割_${date}.jpg`;
+      link.href = canvas.toDataURL("image/jpeg", 0.95);
+      link.click();
+    } finally {
+      setIsExportingImage(false);
+    }
   };
 
   return (
@@ -577,8 +586,22 @@ export default function AssignmentViewPage() {
                       color: colors.headerColor,
                     }}
                   >
-                    <div style={dateHeaderTopTextStyle}>{workDate}</div>
-                    <div style={dateHeaderBottomTextStyle}>{getWeekday(workDate)}</div>
+                    <div
+  style={{
+    ...dateHeaderTopTextStyle,
+    fontSize: isExportingImage ? 13 : dateHeaderTopTextStyle.fontSize,
+  }}
+>
+  {workDate}
+</div>
+<div
+  style={{
+    ...dateHeaderBottomTextStyle,
+    fontSize: isExportingImage ? 13 : dateHeaderBottomTextStyle.fontSize,
+  }}
+>
+  {getWeekday(workDate)}
+</div>
                   </th>
                 );
               })}
@@ -633,12 +656,12 @@ export default function AssignmentViewPage() {
                         }}
                       >
                         <div
-                          style={{
-                            ...siteTitleStyleEnhanced,
-                            fontSize: isMobile ? 12 : 14,
-                            lineHeight: isMobile ? 1.2 : 1.3,
-                          }}
-                        >
+  style={{
+    ...siteTitleStyleEnhanced,
+    fontSize: isExportingImage ? 16 : isMobile ? 12 : 14,
+    lineHeight: isExportingImage ? 1.35 : isMobile ? 1.2 : 1.3,
+  }}
+>
                           {assignment.site_name || "-"}
                         </div>
 
@@ -656,8 +679,8 @@ export default function AssignmentViewPage() {
                           <div
                             style={{
                               ...siteMetaTextStyle,
-                              fontSize: isMobile ? 10 : 11,
-                              lineHeight: isMobile ? 1.25 : 1.35,
+                              fontSize: isExportingImage ? 12 : isMobile ? 10 : 11,
+                              lineHeight: isExportingImage ? 1.45 : isMobile ? 1.25 : 1.35,
                             }}
                           >
                             担当：{assignment.manager_name || "-"}
@@ -666,8 +689,8 @@ export default function AssignmentViewPage() {
                           <div
                             style={{
                               ...siteMetaTextStyle,
-                              fontSize: isMobile ? 10 : 11,
-                              lineHeight: isMobile ? 1.25 : 1.35,
+                              fontSize: isExportingImage ? 12 : isMobile ? 10 : 11,
+                              lineHeight: isExportingImage ? 1.45 : isMobile ? 1.25 : 1.35,
                             }}
                           >
                             連絡先：
@@ -686,8 +709,8 @@ export default function AssignmentViewPage() {
                           <div
                             style={{
                               ...siteMetaTextStyle,
-                              fontSize: isMobile ? 10 : 11,
-                              lineHeight: isMobile ? 1.25 : 1.35,
+                              fontSize: isExportingImage ? 12 : isMobile ? 10 : 11,
+                              lineHeight: isExportingImage ? 1.45 : isMobile ? 1.25 : 1.35,
                             }}
                           >
                             住所：
@@ -748,8 +771,8 @@ export default function AssignmentViewPage() {
                               <div
                                 style={{
                                   ...miniInfoPillStyle,
-                                  fontSize: isMobile ? 10 : 12,
-                                  padding: isMobile ? "4px 8px" : "5px 10px",
+                                  fontSize: isExportingImage ? 12 : isMobile ? 10 : 12,
+                                  padding: isExportingImage ? "6px 10px" : isMobile ? "4px 8px" : "5px 10px",
                                 }}
                               >
                                 集合：{assignment.meeting_time || "-"}
@@ -757,10 +780,10 @@ export default function AssignmentViewPage() {
 
                               {dailyInfo?.detail ? (
                                 <div
-                                  style={{
-                                    ...notesBlockStyle,
-                                    fontSize: isMobile ? 10 : 12,
-                                  }}
+                                style={{
+                                  ...notesBlockStyle,
+                                  fontSize: isExportingImage ? 12 : isMobile ? 10 : 12,
+                                }}
                                 >
                                   作業：{dailyInfo.detail}
                                 </div>
@@ -768,10 +791,10 @@ export default function AssignmentViewPage() {
 
                               {dailyInfo?.vehicle_names?.length ? (
                                 <div
-                                  style={{
-                                    ...vehicleBlockStyle,
-                                    fontSize: isMobile ? 10 : 12,
-                                  }}
+                                style={{
+                                  ...vehicleBlockStyle,
+                                  fontSize: isExportingImage ? 12 : isMobile ? 10 : 12,
+                                }}
                                 >
                                   🚚 {dailyInfo.vehicle_names.join(" / ")}
                                 </div>
@@ -782,7 +805,7 @@ export default function AssignmentViewPage() {
                                   <div
                                     style={{
                                       ...memberCountLabelStyle,
-                                      fontSize: isMobile ? 10 : 12,
+                                      fontSize: isExportingImage ? 12 : isMobile ? 10 : 12,
                                     }}
                                   >
                                     人員 {members.length}人
@@ -798,8 +821,8 @@ export default function AssignmentViewPage() {
                                           key={member.id}
                                           style={{
                                             ...memberChipElevatedStyle,
-                                            fontSize: isMobile ? 10 : 12,
-                                            padding: isMobile ? "5px 8px" : "7px 11px",
+                                            fontSize: isExportingImage ? 12 : isMobile ? 10 : 12,
+                                            padding: isExportingImage ? "7px 10px" : isMobile ? "5px 8px" : "7px 11px",
                                           }}
                                         >
                                           <span>{member.is_foreman ? "👷 " : ""}</span>
