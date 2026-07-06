@@ -101,8 +101,20 @@ function defaultGroupSettings(): AssignmentGroupSetting[] {
 }
 
 function getWeekday(date: string) {
-  const day = new Date(`${date}T00:00:00`).getDay();
+  const day = parseLocalDate(date).getDay();
   return ["日", "月", "火", "水", "木", "金", "土"][day] ?? "";
+}
+
+function formatLocalDate(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function parseLocalDate(value: string) {
+  const [year, month, day] = value.split("-").map(Number);
+  return new Date(year, month - 1, day);
 }
 
 function FragmentWithKey({
@@ -116,7 +128,7 @@ function FragmentWithKey({
 type BoardRow = Assignment;
 
 export default function AssignmentViewPage() {
-  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(() => formatLocalDate(new Date()));
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [siteMembers, setSiteMembers] = useState<SiteMember[]>([]);
   const [dailyInfos, setDailyInfos] = useState<DailyInfo[]>([]);
@@ -157,25 +169,25 @@ export default function AssignmentViewPage() {
   const getDisplayDates = () => {
     if (viewMode === "3days") {
       return Array.from({ length: 3 }, (_, index) => {
-        const nextDate = new Date(`${date}T00:00:00`);
+        const nextDate = parseLocalDate(date);
         nextDate.setDate(nextDate.getDate() + index);
-        return nextDate.toISOString().slice(0, 10);
+        return formatLocalDate(nextDate);
       });
     }
-
+  
     if (viewMode === "week") {
-      const start = new Date(`${date}T00:00:00`);
+      const start = parseLocalDate(date);
       const day = start.getDay();
       const diffToMonday = day === 0 ? -6 : 1 - day;
       start.setDate(start.getDate() + diffToMonday);
-
+  
       return Array.from({ length: 7 }, (_, index) => {
         const nextDate = new Date(start);
         nextDate.setDate(start.getDate() + index);
-        return nextDate.toISOString().slice(0, 10);
+        return formatLocalDate(nextDate);
       });
     }
-
+  
     return [date];
   };
 
@@ -379,11 +391,11 @@ export default function AssignmentViewPage() {
     }))
     .filter((group) => group.rows.length > 0);
 
-  const moveDate = (amount: number) => {
-    const nextDate = new Date(`${date}T00:00:00`);
-    nextDate.setDate(nextDate.getDate() + amount);
-    setDate(nextDate.toISOString().slice(0, 10));
-  };
+    const moveDate = (amount: number) => {
+      const nextDate = parseLocalDate(date);
+      nextDate.setDate(nextDate.getDate() + amount);
+      setDate(formatLocalDate(nextDate));
+    };
 
   const toTelHref = (phone: string) => {
     return `tel:${phone.replace(/[^\d+]/g, "")}`;
@@ -453,7 +465,7 @@ export default function AssignmentViewPage() {
         <button
           type="button"
           onClick={() => {
-            const today = new Date();
+            const today = parseLocalDate(formatLocalDate(new Date()));
 
             if (viewMode === "week") {
               const day = today.getDay();
@@ -461,7 +473,7 @@ export default function AssignmentViewPage() {
               today.setDate(today.getDate() + diff);
             }
 
-            setDate(today.toISOString().slice(0, 10));
+            setDate(formatLocalDate(today));
           }}
           style={viewButtonStyle}
         >
@@ -477,15 +489,15 @@ export default function AssignmentViewPage() {
               type="button"
               onClick={() => {
                 if (mode === "3days") {
-                  setDate(new Date().toISOString().slice(0, 10));
+                  setDate(formatLocalDate(new Date()));
                 }
 
                 if (mode === "week") {
-                  const today = new Date();
+                  const today = parseLocalDate(formatLocalDate(new Date()));
                   const day = today.getDay();
                   const diff = day === 0 ? -6 : 1 - day;
                   today.setDate(today.getDate() + diff);
-                  setDate(today.toISOString().slice(0, 10));
+                  setDate(formatLocalDate(today));
                 }
 
                 setViewMode(mode);
