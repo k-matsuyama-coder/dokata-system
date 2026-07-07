@@ -393,6 +393,7 @@ const {
     toggleForeman,
   } = useMonthlyAssignmentMembers({
     organizationId: currentOrganizationId ?? "",
+    assignments,
     siteMembers,
     setSiteMembers,
     getCellMembers,

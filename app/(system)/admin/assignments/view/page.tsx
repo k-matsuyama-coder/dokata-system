@@ -785,7 +785,7 @@ export default function AssignmentViewPage() {
                                   fontSize: isExportingImage ? 12 : isMobile ? 10 : 12,
                                 }}
                                 >
-                                  作業：{dailyInfo.detail}
+                                  詳細：{dailyInfo.detail}
                                 </div>
                               ) : null}
 

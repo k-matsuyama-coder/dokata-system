@@ -1,3 +1,5 @@
+// app/api/public/assignments/[token]/route.ts
+
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
@@ -29,6 +31,7 @@ type AssignmentRow = {
   contact_phone: string | null;
   address: string | null;
   meeting_time: string | null;
+  detail: string | null;
   sort_order: number | null;
   created_at: string;
 };
@@ -129,7 +132,7 @@ function buildTargetDates(baseDate: string, viewMode: ViewMode) {
   });
 }
 
-function buildDayLabel(date: string, index: number, viewMode: ViewMode) {
+function buildDayLabel(_date: string, index: number, viewMode: ViewMode) {
   if (viewMode === "next3days") {
     if (index === 0) return "明日";
     if (index === 1) return "明後日";
@@ -166,20 +169,18 @@ function buildAssignmentsForDate(
     membersByAssignment.set(assignmentId, sorted);
   }
 
-  return assignments
-    .map((assignment) => ({
-      assignment_id: assignment.id,
-      contractor_name: assignment.contractor_name,
-      site_name: assignment.site_name,
-      shift_type: assignment.shift_type,
-      manager_name: assignment.manager_name,
-      contact_phone: assignment.contact_phone,
-      address: assignment.address,
-      meeting_time: assignment.meeting_time,
-      notes: null,
-      members: membersByAssignment.get(assignment.id) ?? [],
-    }))
-    .filter((assignment) => assignment.members.length > 0);
+  return assignments.map((assignment) => ({
+    assignment_id: assignment.id,
+    contractor_name: assignment.contractor_name,
+    site_name: assignment.site_name,
+    shift_type: assignment.shift_type,
+    manager_name: assignment.manager_name,
+    contact_phone: assignment.contact_phone,
+    address: assignment.address,
+    meeting_time: assignment.meeting_time,
+    notes: assignment.detail,
+    members: membersByAssignment.get(assignment.id) ?? [],
+  }));
 }
 
 export async function GET(
@@ -189,14 +190,9 @@ export async function GET(
   try {
     const { token } = await params;
 
-    console.log("public token:", token);
-
     if (!token || typeof token !== "string") {
       return NextResponse.json(
-        {
-          ok: false,
-          error: "公開トークンが不正です",
-        },
+        { ok: false, error: "公開トークンが不正です" },
         { status: 400 }
       );
     }
@@ -211,44 +207,30 @@ export async function GET(
       .eq("token", token)
       .maybeSingle<PublicLinkRow>();
 
-      console.log("publicLink:", publicLink);
-
     if (publicLinkError) {
       return NextResponse.json(
-        {
-          ok: false,
-          error: "公開URL情報の取得に失敗しました",
-        },
+        { ok: false, error: "公開URL情報の取得に失敗しました" },
         { status: 500 }
       );
     }
 
     if (!publicLink) {
       return NextResponse.json(
-        {
-          ok: false,
-          error: "公開URLが見つかりません",
-        },
+        { ok: false, error: "公開URLが見つかりません" },
         { status: 404 }
       );
     }
 
     if (!publicLink.is_active) {
       return NextResponse.json(
-        {
-          ok: false,
-          error: "この公開URLは無効化されています",
-        },
+        { ok: false, error: "この公開URLは無効化されています" },
         { status: 410 }
       );
     }
 
     if (isExpired(publicLink.expires_at)) {
       return NextResponse.json(
-        {
-          ok: false,
-          error: "この公開URLの有効期限は切れています",
-        },
+        { ok: false, error: "この公開URLの有効期限は切れています" },
         { status: 410 }
       );
     }
@@ -258,8 +240,6 @@ export async function GET(
       publicLink.view_mode ?? "next3days"
     );
 
-    console.log("targetDates:", targetDates);
-
     const { data: organization, error: organizationError } = await supabase
       .from("organizations")
       .select("name")
@@ -268,62 +248,50 @@ export async function GET(
 
     if (organizationError) {
       return NextResponse.json(
-        {
-          ok: false,
-          error: "組織情報の取得に失敗しました",
-        },
+        { ok: false, error: "組織情報の取得に失敗しました" },
         { status: 500 }
       );
     }
 
     const [
-        { data: assignments, error: assignmentsError },
-        { data: members, error: membersError },
-      ] = await Promise.all([
-        supabase
-          .from("assignments")
-          .select(
-            "id, contractor_name, site_name, shift_type, manager_name, contact_phone, address, meeting_time, sort_order, created_at"
-          )
-          .eq("organization_id", publicLink.organization_id)
-          .order("sort_order", { ascending: true })
-          .order("created_at", { ascending: true })
-          .returns<AssignmentRow[]>(),
-        supabase
-          .from("assignment_site_members")
-          .select("assignment_id, employee_name, is_foreman, work_date")
-          .eq("organization_id", publicLink.organization_id)
-          .in("work_date", targetDates)
-          .returns<AssignmentSiteMemberRow[]>(),
-      ]);
+      { data: assignments, error: assignmentsError },
+      { data: members, error: membersError },
+    ] = await Promise.all([
+      supabase
+        .from("assignments")
+        .select(
+          "id, contractor_name, site_name, shift_type, manager_name, contact_phone, address, meeting_time, detail, sort_order, created_at"
+        )
+        .eq("organization_id", publicLink.organization_id)
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: true })
+        .returns<AssignmentRow[]>(),
+      supabase
+        .from("assignment_site_members")
+        .select("assignment_id, employee_name, is_foreman, work_date")
+        .eq("organization_id", publicLink.organization_id)
+        .in("work_date", targetDates)
+        .returns<AssignmentSiteMemberRow[]>(),
+    ]);
 
-      console.log("assignmentsError:", assignmentsError);
-      console.log("membersError:", membersError);
-      console.log("assignments count:", assignments?.length ?? 0);
-      console.log("members count:", members?.length ?? 0);
+    if (assignmentsError || membersError) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error:
+            assignmentsError?.message ??
+            membersError?.message ??
+            "公開ページ用データの取得に失敗しました",
+        },
+        { status: 500 }
+      );
+    }
 
-      if (assignmentsError || membersError) {
-        return NextResponse.json(
-          {
-            ok: false,
-            error:
-              assignmentsError?.message ??
-              membersError?.message ??
-              "公開ページ用データの取得に失敗しました",
-          },
-          { status: 500 }
-        );
-      }
-
-      const days: PublicAssignmentsDay[] = targetDates.map((date, index) => ({
-        date,
-        label: buildDayLabel(date, index, publicLink.view_mode ?? "next3days"),
-        assignments: buildAssignmentsForDate(
-          date,
-          assignments ?? [],
-          members ?? []
-        ),
-      }));
+    const days: PublicAssignmentsDay[] = targetDates.map((date, index) => ({
+      date,
+      label: buildDayLabel(date, index, publicLink.view_mode ?? "next3days"),
+      assignments: buildAssignmentsForDate(date, assignments ?? [], members ?? []),
+    }));
 
     return NextResponse.json(
       {
@@ -338,9 +306,9 @@ export async function GET(
       },
       { status: 200 }
     );
-} catch (error) {
+  } catch (error) {
     console.error("public assignments route error", error);
-  
+
     return NextResponse.json(
       {
         ok: false,
