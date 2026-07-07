@@ -20,7 +20,12 @@ type Props = {
   setEditingAssignment: React.Dispatch<React.SetStateAction<Assignment | null>>;
   moveAssignmentRow: (fromAssignmentId: string, toAssignmentId: string) => void;
   deleteAssignment: (id: string) => void;
-  getDailyTotal: (date: string) => number;
+  getDailyTotal: (date: string) => {
+    total: number;
+    first: number;
+    second: number;
+    third: number;
+  };
   getMonthlyTotal: (assignmentId: string, index: 0 | 1) => number;
   getPlannedCount: (assignmentId: string, workDate: string) => number | "";
   getBandColor: (assignment: Assignment) => string;

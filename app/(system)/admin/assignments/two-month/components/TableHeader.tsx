@@ -1,10 +1,16 @@
+import React from "react";
 import { stickyTh, th, totalTh } from "../styles";
 import type { Employee } from "../types";
 
 type Props = {
   days: string[];
   employees: Employee[];
-  getDailyTotal: (workDate: string) => number;
+  getDailyTotal: (workDate: string) => {
+    total: number;
+    first: number;
+    second: number;
+    third: number;
+  };
 };
 
 export default function TwoMonthTableHeader({
@@ -17,11 +23,27 @@ export default function TwoMonthTableHeader({
       <tr style={{ position: "sticky", top: 0, zIndex: 60 }}>
         <th style={{ ...stickyTh, top: 0, zIndex: 61 }}>現場名</th>
 
-        <th style={{ ...totalTh, position: "sticky", top: 0, left: 180, zIndex: 61 }}>
+        <th
+          style={{
+            ...totalTh,
+            position: "sticky",
+            top: 0,
+            left: 180,
+            zIndex: 61,
+          }}
+        >
           前月合計
         </th>
 
-        <th style={{ ...totalTh, position: "sticky", top: 0, left: 250, zIndex: 61 }}>
+        <th
+          style={{
+            ...totalTh,
+            position: "sticky",
+            top: 0,
+            left: 250,
+            zIndex: 61,
+          }}
+        >
           後月合計
         </th>
 
@@ -38,8 +60,8 @@ export default function TwoMonthTableHeader({
                 backgroundColor: isSunday
                   ? "#ffe5e5"
                   : isSaturday
-                  ? "#e5f0ff"
-                  : "#f5f5f5",
+                    ? "#e5f0ff"
+                    : "#f5f5f5",
                 color: isSunday ? "#d11a2a" : isSaturday ? "#2563eb" : "#111",
                 position: "sticky",
                 top: 0,
@@ -64,33 +86,63 @@ export default function TwoMonthTableHeader({
           日別合計
         </th>
 
-        <th style={{ ...totalTh, position: "sticky", top: 28, left: 180, zIndex: 59 }} />
+        <th
+          style={{
+            ...totalTh,
+            position: "sticky",
+            top: 28,
+            left: 180,
+            zIndex: 59,
+          }}
+        />
 
-        <th style={{ ...totalTh, position: "sticky", top: 28, left: 250, zIndex: 59 }} />
+        <th
+          style={{
+            ...totalTh,
+            position: "sticky",
+            top: 28,
+            left: 250,
+            zIndex: 59,
+          }}
+        />
 
         {days.map((date) => {
           const day = new Date(date).getDay();
           const isSunday = day === 0;
           const isSaturday = day === 6;
+          const dailyTotal = getDailyTotal(date);
 
           return (
             <th
               key={date}
               style={{
                 ...th,
-                fontWeight: 800,
                 backgroundColor: isSunday
                   ? "#ffe5e5"
                   : isSaturday
-                  ? "#e5f0ff"
-                  : "#f9fafb",
+                    ? "#e5f0ff"
+                    : "#f9fafb",
                 color: isSunday ? "#d11a2a" : isSaturday ? "#2563eb" : "#111",
                 position: "sticky",
                 top: 30,
                 zIndex: 59,
+                padding: "4px 2px",
               }}
             >
-              {getDailyTotal(date)} / {employees.length}
+              <div style={dailyTotalCellWrapStyle}>
+              <div style={dailyTotalMainLineStyle}>
+  全 {dailyTotal.total} / {employees.length}
+</div>
+<div style={dailyTotalSubLineStyle}>
+  ① {dailyTotal.first} / {employees.length}
+</div>
+<div style={dailyTotalSubLineStyle}>
+  ② {dailyTotal.second} / {employees.length}
+</div>
+<div style={dailyTotalSubLineStyle}>
+  ③ {dailyTotal.third} / {employees.length}
+</div>
+              </div>
             </th>
           );
         })}
@@ -98,3 +150,24 @@ export default function TwoMonthTableHeader({
     </thead>
   );
 }
+
+const dailyTotalCellWrapStyle: React.CSSProperties = {
+  display: "grid",
+  gap: 2,
+  justifyItems: "center",
+  lineHeight: 1.15,
+  minWidth: 72,
+};
+
+const dailyTotalMainLineStyle: React.CSSProperties = {
+  fontSize: 13,
+  fontWeight: 900,
+  whiteSpace: "nowrap",
+};
+
+const dailyTotalSubLineStyle: React.CSSProperties = {
+  fontSize: 10,
+  fontWeight: 500,
+  whiteSpace: "nowrap",
+  opacity: 0.62,
+};

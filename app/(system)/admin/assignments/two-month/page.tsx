@@ -247,7 +247,7 @@ export default function TwoMonthPage() {
   setEditingAssignment={setEditingAssignment}
   moveAssignmentRow={moveAssignmentRow}
   deleteAssignment={deleteAssignment}
-  getDailyTotal={(date) => getDailyTotal(dailyInfos, date)}
+  getDailyTotal={(date) => getDailyTotal(assignments, dailyInfos, date)}
   getMonthlyTotal={(assignmentId, index) =>
     getMonthlyTotal(dailyInfos, baseMonth, assignmentId, index)
   }

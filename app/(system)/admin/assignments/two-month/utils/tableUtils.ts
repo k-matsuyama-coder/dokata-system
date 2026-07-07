@@ -42,10 +42,51 @@ export const getMonthlyTotal = (
     .reduce((sum, dailyInfo) => sum + (dailyInfo.planned_count ?? 0), 0);
 };
 
-export const getDailyTotal = (dailyInfos: DailyInfo[], workDate: string) => {
-  return dailyInfos
-    .filter((dailyInfo) => dailyInfo.work_date === workDate)
-    .reduce((sum, dailyInfo) => sum + (dailyInfo.planned_count ?? 0), 0);
+type DailyTotalSummary = {
+  total: number;
+  first: number;
+  second: number;
+  third: number;
+};
+
+export const getDailyTotal = (
+  assignments: Assignment[],
+  dailyInfos: DailyInfo[],
+  workDate: string
+): DailyTotalSummary => {
+  const assignmentMap = new Map(
+    assignments.map((assignment) => [assignment.id, assignment])
+  );
+
+  const targetInfos = dailyInfos.filter(
+    (dailyInfo) => dailyInfo.work_date === workDate
+  );
+
+  return targetInfos.reduce<DailyTotalSummary>(
+    (summary, dailyInfo) => {
+      const plannedCount = dailyInfo.planned_count ?? 0;
+      const assignment = assignmentMap.get(dailyInfo.assignment_id);
+      const groupKey = assignment?.group_key ?? "group1";
+
+      summary.total += plannedCount;
+
+      if (groupKey === "group1") {
+        summary.first += plannedCount;
+      } else if (groupKey === "group2") {
+        summary.second += plannedCount;
+      } else if (groupKey === "group3") {
+        summary.third += plannedCount;
+      }
+
+      return summary;
+    },
+    {
+      total: 0,
+      first: 0,
+      second: 0,
+      third: 0,
+    }
+  );
 };
 
 export const getSortedAssignments = (
