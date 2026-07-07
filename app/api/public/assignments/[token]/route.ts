@@ -31,7 +31,6 @@ type AssignmentRow = {
   contact_phone: string | null;
   address: string | null;
   meeting_time: string | null;
-  detail: string | null;
   sort_order: number | null;
   created_at: string;
 };
@@ -43,9 +42,28 @@ type AssignmentSiteMemberRow = {
   work_date: string;
 };
 
+type AssignmentDailyInfoRow = {
+  assignment_id: string;
+  work_date: string;
+  detail: string | null;
+};
+
+type AssignmentFileRow = {
+  id: string;
+  assignment_id: string;
+  file_name: string;
+  file_url: string;
+};
+
 type PublicAssignmentMember = {
   employee_name: string;
   is_foreman: boolean | null;
+};
+
+type PublicAssignmentFile = {
+  id: string;
+  file_name: string;
+  file_url: string;
 };
 
 type PublicAssignmentRow = {
@@ -57,8 +75,9 @@ type PublicAssignmentRow = {
   contact_phone: string | null;
   address: string | null;
   meeting_time: string | null;
-  notes: string | null;
+  detail: string | null;
   members: PublicAssignmentMember[];
+  files: PublicAssignmentFile[];
 };
 
 type PublicAssignmentsDay = {
@@ -142,10 +161,22 @@ function buildDayLabel(_date: string, index: number, viewMode: ViewMode) {
   return ["月", "火", "水", "木", "金", "土", "日"][index] ?? "";
 }
 
+function buildDailyInfoMap(rows: AssignmentDailyInfoRow[]) {
+  const map = new Map<string, AssignmentDailyInfoRow>();
+
+  for (const row of rows) {
+    map.set(`${row.assignment_id}__${row.work_date}`, row);
+  }
+
+  return map;
+}
+
 function buildAssignmentsForDate(
   date: string,
   assignments: AssignmentRow[],
-  members: AssignmentSiteMemberRow[]
+  members: AssignmentSiteMemberRow[],
+  dailyInfoMap: Map<string, AssignmentDailyInfoRow>,
+  filesByAssignmentId: Map<string, PublicAssignmentFile[]>
 ): PublicAssignmentRow[] {
   const membersByAssignment = new Map<string, PublicAssignmentMember[]>();
 
@@ -169,18 +200,30 @@ function buildAssignmentsForDate(
     membersByAssignment.set(assignmentId, sorted);
   }
 
-  return assignments.map((assignment) => ({
-    assignment_id: assignment.id,
-    contractor_name: assignment.contractor_name,
-    site_name: assignment.site_name,
-    shift_type: assignment.shift_type,
-    manager_name: assignment.manager_name,
-    contact_phone: assignment.contact_phone,
-    address: assignment.address,
-    meeting_time: assignment.meeting_time,
-    notes: assignment.detail,
-    members: membersByAssignment.get(assignment.id) ?? [],
-  }));
+  return assignments.map((assignment) => {
+    const dailyInfo = dailyInfoMap.get(`${assignment.id}__${date}`);
+  
+    return {
+      assignment_id: assignment.id,
+      contractor_name: assignment.contractor_name,
+      site_name: assignment.site_name,
+      shift_type: assignment.shift_type,
+      manager_name: assignment.manager_name,
+      contact_phone: assignment.contact_phone,
+      address: assignment.address,
+      meeting_time: assignment.meeting_time,
+      detail: dailyInfo?.detail ?? null,
+      members: membersByAssignment.get(assignment.id) ?? [],
+      files: filesByAssignmentId.get(assignment.id) ?? [],
+    };
+  });
+}
+
+function hasVisibleContent(assignment: PublicAssignmentRow) {
+  const hasMembers = (assignment.members ?? []).length > 0;
+  const hasDetail = Boolean(assignment.detail?.trim());
+
+  return hasMembers || hasDetail;
 }
 
 export async function GET(
@@ -256,41 +299,94 @@ export async function GET(
     const [
       { data: assignments, error: assignmentsError },
       { data: members, error: membersError },
+      { data: dailyInfos, error: dailyInfosError },
+      { data: files, error: filesError },
     ] = await Promise.all([
       supabase
         .from("assignments")
         .select(
-          "id, contractor_name, site_name, shift_type, manager_name, contact_phone, address, meeting_time, detail, sort_order, created_at"
+          "id, contractor_name, site_name, shift_type, manager_name, contact_phone, address, meeting_time, sort_order, created_at"
         )
         .eq("organization_id", publicLink.organization_id)
         .order("sort_order", { ascending: true })
         .order("created_at", { ascending: true })
         .returns<AssignmentRow[]>(),
+    
       supabase
         .from("assignment_site_members")
         .select("assignment_id, employee_name, is_foreman, work_date")
         .eq("organization_id", publicLink.organization_id)
         .in("work_date", targetDates)
         .returns<AssignmentSiteMemberRow[]>(),
+    
+      supabase
+        .from("assignment_site_daily_infos")
+        .select("assignment_id, work_date, detail")
+        .eq("organization_id", publicLink.organization_id)
+        .in("work_date", targetDates)
+        .returns<AssignmentDailyInfoRow[]>(),
+
+        supabase
+        .from("assignment_files")
+        .select("id, assignment_id, file_name, file_url")
+        .eq("organization_id", publicLink.organization_id)
+        .returns<AssignmentFileRow[]>(),
     ]);
 
-    if (assignmentsError || membersError) {
+    if (assignmentsError || membersError || dailyInfosError || filesError) {
       return NextResponse.json(
         {
           ok: false,
           error:
-            assignmentsError?.message ??
-            membersError?.message ??
-            "公開ページ用データの取得に失敗しました",
+  assignmentsError?.message ??
+  membersError?.message ??
+  dailyInfosError?.message ??
+  filesError?.message ??
+  "公開ページ用データの取得に失敗しました",
         },
         { status: 500 }
       );
     }
 
+    const dailyInfoMap = buildDailyInfoMap(dailyInfos ?? []);
+
+    const filesByAssignmentId = new Map<string, PublicAssignmentFile[]>();
+
+for (const file of files ?? []) {
+  const list = filesByAssignmentId.get(file.assignment_id) ?? [];
+  list.push({
+    id: file.id,
+    file_name: file.file_name,
+    file_url: file.file_url,
+  });
+  filesByAssignmentId.set(file.assignment_id, list);
+}
+
     const days: PublicAssignmentsDay[] = targetDates.map((date, index) => ({
       date,
       label: buildDayLabel(date, index, publicLink.view_mode ?? "next3days"),
-      assignments: buildAssignmentsForDate(date, assignments ?? [], members ?? []),
+      assignments: buildAssignmentsForDate(
+        date,
+        assignments ?? [],
+        members ?? [],
+        dailyInfoMap,
+        filesByAssignmentId
+      ),
+    }));
+
+    const visibleAssignmentIds = new Set(
+      days.flatMap((day) =>
+        day.assignments
+          .filter((assignment) => hasVisibleContent(assignment))
+          .map((assignment) => assignment.assignment_id)
+      )
+    );
+    
+    const filteredDays: PublicAssignmentsDay[] = days.map((day) => ({
+      ...day,
+      assignments: day.assignments.filter((assignment) =>
+        visibleAssignmentIds.has(assignment.assignment_id)
+      ),
     }));
 
     return NextResponse.json(
@@ -302,7 +398,7 @@ export async function GET(
         createdAt: publicLink.created_at,
         viewMode: publicLink.view_mode ?? "next3days",
         baseDate: publicLink.base_date,
-        days,
+        days: filteredDays,
       },
       { status: 200 }
     );
