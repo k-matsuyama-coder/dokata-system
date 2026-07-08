@@ -31,6 +31,13 @@ type Assignment = {
   end_date: string | null;
 };
 
+type AssignmentFile = {
+  id: string;
+  assignment_id: string;
+  file_name: string;
+  file_url: string;
+};
+
 type Props = {
   open: boolean;
   onClose: () => void;
@@ -41,6 +48,7 @@ export default function MyMonthlyScheduleModal({ open, onClose }: Props) {
   const [members, setMembers] = useState<SiteMember[]>([]);
   const [allMembers, setAllMembers] = useState<SiteMember[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [assignmentFiles, setAssignmentFiles] = useState<AssignmentFile[]>([]);
   const [dailyInfos, setDailyInfos] = useState<DailyInfo[]>([]);
   const [selectedSchedule, setSelectedSchedule] = useState<{
     assignment: Assignment;
@@ -142,6 +150,19 @@ export default function MyMonthlyScheduleModal({ open, onClose }: Props) {
 
       setAssignments(assignmentData ?? []);
 
+      const { data: fileData, error: fileError } = await supabase
+  .from("assignment_files")
+  .select("id, assignment_id, file_name, file_url")
+  .eq("organization_id", organizationId)
+  .in("assignment_id", assignmentIds);
+
+if (fileError) {
+  alert("添付ファイル取得失敗: " + fileError.message);
+  return;
+}
+
+setAssignmentFiles(fileData ?? []);
+
       const { data: dailyInfoData, error: dailyInfoError } = await supabase
   .from("assignment_site_daily_infos")
   .select("id, assignment_id, work_date, detail")
@@ -197,6 +218,14 @@ setDailyInfos(dailyInfoData ?? []);
       ) ?? null
     );
   }, [selectedSchedule, dailyInfos]);
+
+  const selectedFiles = useMemo(() => {
+    if (!selectedSchedule) return [];
+  
+    return assignmentFiles.filter(
+      (file) => file.assignment_id === selectedSchedule.assignment.id
+    );
+  }, [selectedSchedule, assignmentFiles]);
 
   if (!open) return null;
 
@@ -437,9 +466,22 @@ setDailyInfos(dailyInfoData ?? []);
               </div>
 
               <div>
-                <strong>連絡先：</strong>
-                {selectedSchedule.assignment.contact_phone || "-"}
-              </div>
+  <strong>連絡先：</strong>
+  {selectedSchedule.assignment.contact_phone ? (
+    <a
+      href={`tel:${selectedSchedule.assignment.contact_phone.replace(/[^\d+]/g, "")}`}
+      style={{
+        color: "#2563eb",
+        textDecoration: "underline",
+        fontWeight: 700,
+      }}
+    >
+      {selectedSchedule.assignment.contact_phone}
+    </a>
+  ) : (
+    "-"
+  )}
+</div>
 
               <div>
                 <strong>住所：</strong>
@@ -488,6 +530,44 @@ setDailyInfos(dailyInfoData ?? []);
   >
     {selectedDailyInfo?.detail || "-"}
   </div>
+</div>
+
+<div>
+  <strong>添付ファイル：</strong>
+
+  {selectedFiles.length > 0 ? (
+    <div
+      style={{
+        marginTop: 8,
+        display: "grid",
+        gap: 8,
+      }}
+    >
+      {selectedFiles.map((file) => (
+        <a
+          key={file.id}
+          href={file.file_url}
+          target="_blank"
+          rel="noreferrer"
+          style={{
+            display: "block",
+            padding: "10px 12px",
+            borderRadius: 10,
+            backgroundColor: "#f8fafc",
+            border: "1px solid #e5e7eb",
+            color: "#2563eb",
+            textDecoration: "underline",
+            fontWeight: 700,
+            wordBreak: "break-word",
+          }}
+        >
+          {file.file_name}
+        </a>
+      ))}
+    </div>
+  ) : (
+    <div style={{ marginTop: 6 }}>-</div>
+  )}
 </div>
 
               <div>
