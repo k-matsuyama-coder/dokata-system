@@ -10,6 +10,13 @@ type SiteMember = {
   employee_name: string;
 };
 
+type DailyInfo = {
+  id: string;
+  assignment_id: string;
+  work_date: string;
+  detail: string | null;
+};
+
 type Assignment = {
   id: string;
   site_name: string | null;
@@ -34,6 +41,7 @@ export default function MyMonthlyScheduleModal({ open, onClose }: Props) {
   const [members, setMembers] = useState<SiteMember[]>([]);
   const [allMembers, setAllMembers] = useState<SiteMember[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [dailyInfos, setDailyInfos] = useState<DailyInfo[]>([]);
   const [selectedSchedule, setSelectedSchedule] = useState<{
     assignment: Assignment;
     workDate: string;
@@ -134,6 +142,21 @@ export default function MyMonthlyScheduleModal({ open, onClose }: Props) {
 
       setAssignments(assignmentData ?? []);
 
+      const { data: dailyInfoData, error: dailyInfoError } = await supabase
+  .from("assignment_site_daily_infos")
+  .select("id, assignment_id, work_date, detail")
+  .eq("organization_id", organizationId)
+  .in("assignment_id", assignmentIds)
+  .gte("work_date", startDate)
+  .lte("work_date", endDate);
+
+if (dailyInfoError) {
+  alert("日別詳細取得失敗: " + dailyInfoError.message);
+  return;
+}
+
+setDailyInfos(dailyInfoData ?? []);
+
       const { data: allMemberData, error: allMemberError } = await supabase
         .from("assignment_site_members")
         .select("id, assignment_id, work_date, employee_name")
@@ -162,6 +185,18 @@ export default function MyMonthlyScheduleModal({ open, onClose }: Props) {
         member.work_date === selectedSchedule.workDate
     );
   }, [selectedSchedule, allMembers]);
+
+  const selectedDailyInfo = useMemo(() => {
+    if (!selectedSchedule) return null;
+  
+    return (
+      dailyInfos.find(
+        (dailyInfo) =>
+          dailyInfo.assignment_id === selectedSchedule.assignment.id &&
+          dailyInfo.work_date === selectedSchedule.workDate
+      ) ?? null
+    );
+  }, [selectedSchedule, dailyInfos]);
 
   if (!open) return null;
 
@@ -436,6 +471,24 @@ export default function MyMonthlyScheduleModal({ open, onClose }: Props) {
                 <strong>集合：</strong>
                 {selectedSchedule.assignment.meeting_time || "-"}
               </div>
+
+              <div>
+  <strong>現場詳細：</strong>
+  <div
+    style={{
+      marginTop: 6,
+      whiteSpace: "pre-wrap",
+      lineHeight: 1.6,
+      backgroundColor: "#f8fafc",
+      border: "1px solid #e5e7eb",
+      borderRadius: 10,
+      padding: 10,
+      fontSize: 14,
+    }}
+  >
+    {selectedDailyInfo?.detail || "-"}
+  </div>
+</div>
 
               <div>
                 <strong>工事区分：</strong>
