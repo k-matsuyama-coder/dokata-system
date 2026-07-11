@@ -20,6 +20,7 @@ type Props = {
   setSelectedSiteMemberId: (value: string | null) => void;
   setCopiedEmployeeNames: React.Dispatch<React.SetStateAction<string[]>>;
   setCopiedVehicleNames: React.Dispatch<React.SetStateAction<string[]>>;
+  getAssignmentCount: (employeeName: string) => number;
 };
 
 export default function MobileMemberModal({
@@ -36,6 +37,7 @@ export default function MobileMemberModal({
   setSelectedSiteMemberId,
   setCopiedEmployeeNames,
   setCopiedVehicleNames,
+  getAssignmentCount,
 }: Props) {
   if (!show) return null;
 
@@ -83,30 +85,49 @@ export default function MobileMemberModal({
           </div>
 
           <div style={{ marginTop: 12, display: "grid", gap: 8 }}>
-            {displayEmployees.map((employee) => (
-              <button
-                key={employee.name}
-                type="button"
-                onClick={() => {
-                  setSelectedEmployeeName(employee.name);
-                  setShowMemberModal(false);
-                }}
-                style={{
-                  padding: 12,
-                  borderRadius: 10,
-                  border:
-                    selectedEmployeeName === employee.name
-                      ? "2px solid #2563eb"
-                      : "1px solid #ddd",
-                  backgroundColor:
-                    selectedEmployeeName === employee.name ? "#dbeafe" : "#fff",
-                  textAlign: "left",
-                  fontWeight: 700,
-                }}
-              >
-                {employee.name}
-              </button>
-            ))}
+          {displayEmployees.map((employee) => (
+  <button
+    key={employee.name}
+    type="button"
+    onClick={() => {
+      setSelectedEmployeeName(employee.name);
+      setShowMemberModal(false);
+    }}
+    style={{
+      padding: 12,
+      borderRadius: 10,
+      border:
+        selectedEmployeeName === employee.name
+          ? "2px solid #2563eb"
+          : "1px solid #ddd",
+      backgroundColor:
+        selectedEmployeeName === employee.name ? "#dbeafe" : "#fff",
+      textAlign: "left",
+      fontWeight: 700,
+    }}
+  >
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        gap: 8,
+      }}
+    >
+      <span>{employee.name}</span>
+      <span
+        style={{
+          fontSize: 11,
+          fontWeight: 800,
+          color: "#666",
+          flexShrink: 0,
+        }}
+      >
+        {getAssignmentCount(employee.name)}
+      </span>
+    </div>
+  </button>
+))}
           </div>
 
           <div style={{ marginTop: 18 }}>

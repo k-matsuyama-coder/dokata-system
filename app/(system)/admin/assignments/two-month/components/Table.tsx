@@ -1,5 +1,7 @@
 // app/(system)/admin/assignments/two-month/components/Table.tsx
-import React from "react";
+"use client";
+
+import React, { useCallback, useRef } from "react";
 import TwoMonthTableHeader from "./TableHeader";
 import TwoMonthAssignmentRow from "./AssignmentRow";
 import type { Assignment, AssignmentGroupKey, Employee } from "../types";
@@ -49,6 +51,9 @@ type Props = {
   groupNameMap: Map<AssignmentGroupKey, string>;
 };
 
+const AUTO_SCROLL_EDGE = 72;
+const AUTO_SCROLL_STEP = 28;
+
 export default function TwoMonthTable({
   days,
   employees,
@@ -69,8 +74,44 @@ export default function TwoMonthTable({
   updateDailyInfo,
   groupNameMap,
 }: Props) {
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+
+  const handleAutoScroll = useCallback(
+    (event: React.DragEvent<HTMLDivElement>) => {
+      const container = scrollContainerRef.current;
+      if (!container) return;
+
+      const rect = container.getBoundingClientRect();
+      const { clientX, clientY } = event;
+
+      const distanceToTop = clientY - rect.top;
+      const distanceToBottom = rect.bottom - clientY;
+      const distanceToLeft = clientX - rect.left;
+      const distanceToRight = rect.right - clientX;
+
+      if (distanceToTop < AUTO_SCROLL_EDGE) {
+        const ratio = (AUTO_SCROLL_EDGE - distanceToTop) / AUTO_SCROLL_EDGE;
+        container.scrollTop -= Math.ceil(AUTO_SCROLL_STEP * ratio);
+      } else if (distanceToBottom < AUTO_SCROLL_EDGE) {
+        const ratio = (AUTO_SCROLL_EDGE - distanceToBottom) / AUTO_SCROLL_EDGE;
+        container.scrollTop += Math.ceil(AUTO_SCROLL_STEP * ratio);
+      }
+
+      if (distanceToLeft < AUTO_SCROLL_EDGE) {
+        const ratio = (AUTO_SCROLL_EDGE - distanceToLeft) / AUTO_SCROLL_EDGE;
+        container.scrollLeft -= Math.ceil(AUTO_SCROLL_STEP * ratio);
+      } else if (distanceToRight < AUTO_SCROLL_EDGE) {
+        const ratio = (AUTO_SCROLL_EDGE - distanceToRight) / AUTO_SCROLL_EDGE;
+        container.scrollLeft += Math.ceil(AUTO_SCROLL_STEP * ratio);
+      }
+    },
+    []
+  );
+
   return (
     <div
+      ref={scrollContainerRef}
+      onDragOver={handleAutoScroll}
       style={{
         overflow: "auto",
         maxHeight: "calc(100vh - 180px)",

@@ -30,6 +30,7 @@ type PublicAssignmentRow = {
   address: string | null;
   meeting_time: string | null;
   detail: string | null;
+  vehicle_names?: string[] | null;
   members?: PublicAssignmentMember[] | null;
   files?: PublicAssignmentFile[] | null;
 };
@@ -67,6 +68,7 @@ type AggregatedRow = {
   address: string | null;
   meeting_time_by_date: Record<string, string | null | undefined>;
   detail_by_date: Record<string, string | null | undefined>;
+  vehicle_names_by_date: Record<string, string[]>;
   members_by_date: Record<string, PublicAssignmentMember[]>;
   files: PublicAssignmentFile[];
 };
@@ -394,6 +396,7 @@ export default function PublicAssignmentsPage() {
             address: assignment.address,
             meeting_time_by_date: {},
             detail_by_date: {},
+            vehicle_names_by_date: {},
             members_by_date: {},
             files: Array.isArray(assignment.files) ? assignment.files : [],
           });
@@ -415,9 +418,10 @@ export default function PublicAssignmentsPage() {
           assignment.contact_phone
         );
         current.address = pickDisplayValue(current.address, assignment.address);
-        current.meeting_time_by_date[day.date] = assignment.meeting_time;
-        current.detail_by_date[day.date] = assignment.detail;
-        current.members_by_date[day.date] = members;
+current.meeting_time_by_date[day.date] = assignment.meeting_time;
+current.detail_by_date[day.date] = assignment.detail;
+current.vehicle_names_by_date[day.date] = assignment.vehicle_names ?? [];
+current.members_by_date[day.date] = members;
       }
     }
 
@@ -1015,6 +1019,7 @@ function BoardTable({
                   {days.map((day) => {
                     const members = row.members_by_date[day.date] ?? [];
                     const detail = row.detail_by_date[day.date];
+                    const vehicleNames = row.vehicle_names_by_date[day.date] ?? [];
 
                     return (
                       <td
@@ -1038,6 +1043,17 @@ function BoardTable({
                               onOpen={onOpenDetailTextModal}
                             />
                           ) : null}
+
+{vehicleNames.length > 0 ? (
+  <div
+    style={{
+      ...vehicleBlockStyle,
+      fontSize: isMobile ? 9 : 11,
+    }}
+  >
+    🚚 {vehicleNames.join(" / ")}
+  </div>
+) : null}
 
                           {members.length > 0 ? (
                             <div style={membersBlockWrapStyle}>
@@ -1436,6 +1452,18 @@ const notesBlockStyle: React.CSSProperties = {
   fontSize: 9,
   fontWeight: 800,
   lineHeight: 1.25,
+  wordBreak: "break-word",
+};
+
+const vehicleBlockStyle: React.CSSProperties = {
+  padding: "6px 7px",
+  borderRadius: 10,
+  background: "linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)",
+  border: "1px solid #e5e7eb",
+  color: "#334155",
+  fontSize: 9,
+  fontWeight: 700,
+  lineHeight: 1.35,
   wordBreak: "break-word",
 };
 

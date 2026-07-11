@@ -46,6 +46,7 @@ type AssignmentDailyInfoRow = {
   assignment_id: string;
   work_date: string;
   detail: string | null;
+  vehicle_names: string[] | null;
 };
 
 type AssignmentFileRow = {
@@ -76,6 +77,7 @@ type PublicAssignmentRow = {
   address: string | null;
   meeting_time: string | null;
   detail: string | null;
+  vehicle_names: string[];
   members: PublicAssignmentMember[];
   files: PublicAssignmentFile[];
 };
@@ -213,6 +215,7 @@ function buildAssignmentsForDate(
       address: assignment.address,
       meeting_time: assignment.meeting_time,
       detail: dailyInfo?.detail ?? null,
+      vehicle_names: dailyInfo?.vehicle_names ?? [],
       members: membersByAssignment.get(assignment.id) ?? [],
       files: filesByAssignmentId.get(assignment.id) ?? [],
     };
@@ -319,9 +322,9 @@ export async function GET(
         .in("work_date", targetDates)
         .returns<AssignmentSiteMemberRow[]>(),
     
-      supabase
+        supabase
         .from("assignment_site_daily_infos")
-        .select("assignment_id, work_date, detail")
+        .select("assignment_id, work_date, detail, vehicle_names")
         .eq("organization_id", publicLink.organization_id)
         .in("work_date", targetDates)
         .returns<AssignmentDailyInfoRow[]>(),
