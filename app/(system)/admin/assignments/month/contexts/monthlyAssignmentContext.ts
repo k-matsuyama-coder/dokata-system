@@ -34,9 +34,6 @@ export type MonthlyAssignmentContextValue = {
   copiedEmployeeNames: string[];
   copiedVehicleNames: string[];
 
-  editingDetails: Record<string, string>;
-  saveTimers: Record<string, ReturnType<typeof setTimeout>>;
-
   employees: Employee[];
 
   getCellMembers: (assignmentId: string, workDate: string) => SiteMember[];
@@ -64,13 +61,6 @@ export type MonthlyAssignmentContextValue = {
 
   setCopiedEmployeeNames: React.Dispatch<React.SetStateAction<string[]>>;
   setCopiedVehicleNames: React.Dispatch<React.SetStateAction<string[]>>;
-
-  setEditingDetails: React.Dispatch<
-    React.SetStateAction<Record<string, string>>
-  >;
-  setSaveTimers: React.Dispatch<
-    React.SetStateAction<Record<string, ReturnType<typeof setTimeout>>>
-  >;
 
   setEditingAssignment: (assignment: Assignment | null) => void;
 

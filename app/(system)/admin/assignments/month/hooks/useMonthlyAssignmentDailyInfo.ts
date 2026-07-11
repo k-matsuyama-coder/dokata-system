@@ -1,5 +1,5 @@
 // app/(system)/admin/assignments/month/hooks/useMonthlyAssignmentDailyInfo.ts
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 
 import { updateDailyInfoAction } from "../actions/updateDailyInfo";
@@ -13,19 +13,14 @@ type Props = {
   organizationId: string;
 };
 
-const DETAIL_SAVE_DELAY_MS = 1200;
+const DETAIL_SAVE_DELAY_MS = 350;
 
 export function useMonthlyAssignmentDailyInfo({
   organizationId,
   dailyInfos,
   setDailyInfos,
 }: Props) {
-  const [editingDetails, setEditingDetails] = useState<Record<string, string>>(
-    {}
-  );
-  const [saveTimers, setSaveTimers] = useState<
-    Record<string, ReturnType<typeof setTimeout>>
-  >({});
+  const saveTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   const dailyInfoMap = useMemo(() => {
     const map = new Map<string, DailyInfo>();
@@ -41,36 +36,30 @@ export function useMonthlyAssignmentDailyInfo({
     return dailyInfoMap.get(`${assignmentId}_${workDate}`);
   };
 
-  const getDetailValue = (assignmentId: string, workDate: string) => {
-    const key = `${assignmentId}_${workDate}`;
-    return (
-      editingDetails[key] ?? getDailyInfo(assignmentId, workDate)?.detail ?? ""
-    );
-  };
-
   const clearSaveTimer = (key: string) => {
-    setSaveTimers((prev) => {
-      const timer = prev[key];
-
-      if (timer) {
-        clearTimeout(timer);
-      }
-
-      const next = { ...prev };
-      delete next[key];
-      return next;
-    });
+    const timer = saveTimersRef.current[key];
+  
+    if (timer) {
+      clearTimeout(timer);
+      delete saveTimersRef.current[key];
+    }
   };
 
   const applySavedDailyInfo = (data: DailyInfo) => {
     setDailyInfos((prev) => {
-      const exists = prev.some((info) => info.id === data.id);
-
-      if (exists) {
-        return prev.map((info) => (info.id === data.id ? data : info));
+      const index = prev.findIndex(
+        (info) =>
+          info.assignment_id === data.assignment_id &&
+          info.work_date === data.work_date
+      );
+  
+      if (index === -1) {
+        return [...prev, data];
       }
-
-      return [...prev, data];
+  
+      const next = [...prev];
+      next[index] = data;
+      return next;
     });
   };
 
@@ -112,29 +101,13 @@ export function useMonthlyAssignmentDailyInfo({
   ) => {
     if (field === "detail") {
       const key = `${assignmentId}_${workDate}`;
-
-      setEditingDetails((prev) => ({
-        ...prev,
-        [key]: value,
-      }));
-
-      setSaveTimers((prev) => {
-        const current = prev[key];
-
-        if (current) {
-          clearTimeout(current);
-        }
-
-        const timer = setTimeout(() => {
-          void saveDailyInfo(assignmentId, workDate, field, value);
-        }, DETAIL_SAVE_DELAY_MS);
-
-        return {
-          ...prev,
-          [key]: timer,
-        };
-      });
-
+    
+      clearSaveTimer(key);
+    
+      saveTimersRef.current[key] = setTimeout(() => {
+        void saveDailyInfo(assignmentId, workDate, field, value);
+      }, DETAIL_SAVE_DELAY_MS);
+    
       return;
     }
 
@@ -143,42 +116,19 @@ export function useMonthlyAssignmentDailyInfo({
 
   const flushDetailSave = async (assignmentId: string, workDate: string) => {
     const key = `${assignmentId}_${workDate}`;
-    const value = editingDetails[key];
-  
     clearSaveTimer(key);
-  
-    if (value === undefined) {
-      return;
-    }
-  
-    const ok = await saveDailyInfo(assignmentId, workDate, "detail", value);
-  
-    if (!ok) {
-      return;
-    }
-  
-    setEditingDetails((prev) => {
-      const next = { ...prev };
-      delete next[key];
-      return next;
-    });
   };
 
   useEffect(() => {
     return () => {
-      Object.values(saveTimers).forEach((timer) => clearTimeout(timer));
+      Object.values(saveTimersRef.current).forEach((timer) => clearTimeout(timer));
     };
-  }, [saveTimers]);
+  }, []);
 
   return {
     dailyInfoMap,
     getDailyInfo,
-    getDetailValue,
     updateDailyInfo,
     flushDetailSave,
-    editingDetails,
-    setEditingDetails,
-    saveTimers,
-    setSaveTimers,
   };
 }

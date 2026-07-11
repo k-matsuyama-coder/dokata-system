@@ -31,16 +31,6 @@ type Props = {
   isOutOfPeriod: boolean;
   employees: Employee[];
 
-  editingDetails: Record<string, string>;
-  setEditingDetails: React.Dispatch<
-    React.SetStateAction<Record<string, string>>
-  >;
-
-  saveTimers: Record<string, ReturnType<typeof setTimeout>>;
-  setSaveTimers: React.Dispatch<
-    React.SetStateAction<Record<string, ReturnType<typeof setTimeout>>>
-  >;
-
   copiedVehicleNames: string[];
   setCopiedVehicleNames: React.Dispatch<React.SetStateAction<string[]>>;
   setDraggingVehicleFrom: React.Dispatch<
@@ -86,11 +76,6 @@ function AssignmentCellContent({
   isOutOfPeriod,
   employees,
 
-  editingDetails,
-  setEditingDetails,
-  saveTimers,
-  setSaveTimers,
-
   copiedVehicleNames,
   setCopiedVehicleNames,
   setDraggingVehicleFrom,
@@ -126,10 +111,6 @@ function AssignmentCellContent({
   assignmentId={assignment.id}
   workDate={date}
   dailyInfo={dailyInfo}
-  editingDetails={editingDetails}
-  setEditingDetails={setEditingDetails}
-  saveTimers={saveTimers}
-  setSaveTimers={setSaveTimers}
   flushDetailSave={flushDetailSave}
   updateDailyInfo={updateDailyInfo}
 />

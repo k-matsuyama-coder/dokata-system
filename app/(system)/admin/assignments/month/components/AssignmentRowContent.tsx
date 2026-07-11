@@ -38,15 +38,11 @@ function AssignmentRowContent({ assignment }: Props) {
     isMobile,
     viewMode,
     sortMode,
-    editingDetails,
-    saveTimers,
     employees,
     getCellMembers,
     getDailyInfo,
     getCellStyle,
     setShowMemberModal,
-    setEditingDetails,
-    setSaveTimers,
     setEditingAssignment,
     flushDetailSave,
     getEditingUsers,
@@ -424,37 +420,33 @@ const shouldFadeText = isOutOfPeriod || isPlannedCountEmpty;
     opacity: shouldFadeText ? 0.45 : 1,
   }}
 >
-  <AssignmentCellContent
-    isMobile={isMobile}
-    assignment={assignment}
-    date={date}
-    dailyInfo={dailyInfo}
-    cellMembers={cellMembers}
-    plannedCount={plannedCount}
-    memberCount={memberCount}
-    isOutOfPeriod={isOutOfPeriod}
-    editingDetails={editingDetails}
-    setEditingDetails={setEditingDetails}
-    saveTimers={saveTimers}
-    setSaveTimers={setSaveTimers}
-    copiedVehicleNames={copiedVehicleNames}
-    setCopiedVehicleNames={setCopiedVehicleNames}
-    setDraggingVehicleFrom={setDraggingVehicleFrom}
-    copiedEmployeeNames={copiedEmployeeNames}
-    setDraggingSiteMemberId={setDraggingSiteMemberId}
-    setCopiedEmployeeNames={setCopiedEmployeeNames}
-    setSelectedSiteMemberId={setSelectedSiteMemberId}
-    setSelectedEmployeeName={setSelectedEmployeeName}
-    updateDailyInfo={updateDailyInfo}
-    flushDetailSave={flushDetailSave}
-    removeVehicleFromCell={removeVehicleFromCell}
-    deleteSiteMember={deleteSiteMember}
-    toggleForeman={toggleForeman}
-    editingUsers={getEditingUsers(detailCellKey)}
-startEditing={startEditing}
-stopEditing={stopEditing}
-employees={employees}
-  />
+<AssignmentCellContent
+  isMobile={isMobile}
+  assignment={assignment}
+  date={date}
+  dailyInfo={dailyInfo}
+  cellMembers={cellMembers}
+  plannedCount={plannedCount}
+  memberCount={memberCount}
+  isOutOfPeriod={isOutOfPeriod}
+  copiedVehicleNames={copiedVehicleNames}
+  setCopiedVehicleNames={setCopiedVehicleNames}
+  setDraggingVehicleFrom={setDraggingVehicleFrom}
+  copiedEmployeeNames={copiedEmployeeNames}
+  setDraggingSiteMemberId={setDraggingSiteMemberId}
+  setCopiedEmployeeNames={setCopiedEmployeeNames}
+  setSelectedSiteMemberId={setSelectedSiteMemberId}
+  setSelectedEmployeeName={setSelectedEmployeeName}
+  updateDailyInfo={updateDailyInfo}
+  flushDetailSave={flushDetailSave}
+  removeVehicleFromCell={removeVehicleFromCell}
+  deleteSiteMember={deleteSiteMember}
+  toggleForeman={toggleForeman}
+  editingUsers={getEditingUsers(detailCellKey)}
+  startEditing={startEditing}
+  stopEditing={stopEditing}
+  employees={employees}
+/>
 </div>
 
           </AssignmentCell>
