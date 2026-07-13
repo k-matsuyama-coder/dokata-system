@@ -103,8 +103,10 @@ function AssignmentDetailTextarea({
       data-detail-input="true"
       value={draft}
       onClick={(e) => e.stopPropagation()}
-      onMouseDown={(e) => e.stopPropagation()}
-      onFocus={(e) => e.stopPropagation()}
+onMouseDown={(e) => e.stopPropagation()}
+onTouchStart={(e) => e.stopPropagation()}
+onTouchEnd={(e) => e.stopPropagation()}
+onFocus={(e) => e.stopPropagation()}
       onChange={(e) => {
         const value = e.target.value;
         setDraft(value);
@@ -144,6 +146,9 @@ function AssignmentDetailTextarea({
         fontSize: isMobile ? 10 : 11,
         backgroundColor: "#fff",
         boxSizing: "border-box",
+        WebkitUserSelect: "text",
+userSelect: "text",
+touchAction: "manipulation",
       }}
     />
   );
