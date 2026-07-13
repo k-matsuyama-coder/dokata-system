@@ -61,13 +61,13 @@ function AssignmentDetailTextarea({
   const externalValue = dailyInfo?.detail ?? "";
   const [draft, setDraft] = useState(externalValue);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const latestExternalValueRef = useRef(externalValue);
+  const isFocusedRef = useRef(false);
+  const isComposingRef = useRef(false);
 
   useEffect(() => {
-    if (latestExternalValueRef.current !== externalValue) {
-      latestExternalValueRef.current = externalValue;
-      setDraft(externalValue);
-    }
+    if (isFocusedRef.current) return;
+    if (isComposingRef.current) return;
+    setDraft(externalValue);
   }, [externalValue]);
 
   useEffect(() => {
@@ -103,17 +103,34 @@ function AssignmentDetailTextarea({
       data-detail-input="true"
       value={draft}
       onClick={(e) => e.stopPropagation()}
-onMouseDown={(e) => e.stopPropagation()}
-onTouchStart={(e) => e.stopPropagation()}
-onTouchEnd={(e) => e.stopPropagation()}
-onFocus={(e) => e.stopPropagation()}
-      onChange={(e) => {
-        const value = e.target.value;
+      onMouseDown={(e) => e.stopPropagation()}
+      onTouchStart={(e) => e.stopPropagation()}
+      onTouchEnd={(e) => e.stopPropagation()}
+      onFocus={(e) => {
+        e.stopPropagation();
+        isFocusedRef.current = true;
+      }}
+      onBlur={() => {
+        isFocusedRef.current = false;
+        isComposingRef.current = false;
+        void flushSave();
+      }}
+      onCompositionStart={() => {
+        isComposingRef.current = true;
+      }}
+      onCompositionEnd={(e) => {
+        isComposingRef.current = false;
+        const value = e.currentTarget.value;
         setDraft(value);
         scheduleSave(value);
       }}
-      onBlur={() => {
-        void flushSave();
+      onChange={(e) => {
+        const value = e.target.value;
+        setDraft(value);
+
+        if (!isComposingRef.current) {
+          scheduleSave(value);
+        }
       }}
       onKeyDown={(e) => {
         if (e.key === "ArrowLeft" && !e.shiftKey && !e.nativeEvent.isComposing) {
@@ -147,8 +164,8 @@ onFocus={(e) => e.stopPropagation()}
         backgroundColor: "#fff",
         boxSizing: "border-box",
         WebkitUserSelect: "text",
-userSelect: "text",
-touchAction: "manipulation",
+        userSelect: "text",
+        touchAction: "manipulation",
       }}
     />
   );
