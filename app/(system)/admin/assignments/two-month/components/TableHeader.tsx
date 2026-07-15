@@ -1,3 +1,5 @@
+// app/(system)/admin/assignments/two-month/components/TableHeader.tsx
+
 import React from "react";
 import { stickyTh, th, totalTh } from "../styles";
 import type { Employee } from "../types";
@@ -5,6 +7,11 @@ import type { Employee } from "../types";
 type Props = {
   days: string[];
   employees: Employee[];
+
+  // 【追加①】
+  previousMonthTotal: number;
+  nextMonthTotal: number;
+
   getDailyTotal: (workDate: string) => {
     total: number;
     first: number;
@@ -16,6 +23,11 @@ type Props = {
 export default function TwoMonthTableHeader({
   days,
   employees,
+
+  // 【追加②】
+  previousMonthTotal,
+  nextMonthTotal,
+
   getDailyTotal,
 }: Props) {
   return (
@@ -86,6 +98,7 @@ export default function TwoMonthTableHeader({
           日別合計
         </th>
 
+        {/* 【変更③】前月合計の空欄に値を表示 */}
         <th
           style={{
             ...totalTh,
@@ -93,9 +106,14 @@ export default function TwoMonthTableHeader({
             top: 28,
             left: 180,
             zIndex: 59,
+            fontWeight: 900,
+            backgroundColor: "#f9fafb",
           }}
-        />
+        >
+          {previousMonthTotal}
+        </th>
 
+        {/* 【変更③】後月合計の空欄に値を表示 */}
         <th
           style={{
             ...totalTh,
@@ -103,8 +121,12 @@ export default function TwoMonthTableHeader({
             top: 28,
             left: 250,
             zIndex: 59,
+            fontWeight: 900,
+            backgroundColor: "#f9fafb",
           }}
-        />
+        >
+          {nextMonthTotal}
+        </th>
 
         {days.map((date) => {
           const day = new Date(date).getDay();
@@ -130,18 +152,21 @@ export default function TwoMonthTableHeader({
               }}
             >
               <div style={dailyTotalCellWrapStyle}>
-              <div style={dailyTotalMainLineStyle}>
-  全 {dailyTotal.total} / {employees.length}
-</div>
-<div style={dailyTotalSubLineStyle}>
-  ① {dailyTotal.first} / {employees.length}
-</div>
-<div style={dailyTotalSubLineStyle}>
-  ② {dailyTotal.second} / {employees.length}
-</div>
-<div style={dailyTotalSubLineStyle}>
-  ③ {dailyTotal.third} / {employees.length}
-</div>
+                <div style={dailyTotalMainLineStyle}>
+                  全 {dailyTotal.total} / {employees.length}
+                </div>
+
+                <div style={dailyTotalSubLineStyle}>
+                  ① {dailyTotal.first} / {employees.length}
+                </div>
+
+                <div style={dailyTotalSubLineStyle}>
+                  ② {dailyTotal.second} / {employees.length}
+                </div>
+
+                <div style={dailyTotalSubLineStyle}>
+                  ③ {dailyTotal.third} / {employees.length}
+                </div>
               </div>
             </th>
           );

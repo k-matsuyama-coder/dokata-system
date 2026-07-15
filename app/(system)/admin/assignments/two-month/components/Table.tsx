@@ -29,6 +29,8 @@ type Props = {
     third: number;
   };
   getMonthlyTotal: (assignmentId: string, index: 0 | 1) => number;
+  previousMonthTotal: number;
+nextMonthTotal: number;
   getPlannedCount: (assignmentId: string, workDate: string) => number | "";
   getBandColor: (assignment: Assignment) => string;
   getDetailTags: (assignmentId: string, workDate: string) => string[];
@@ -65,8 +67,10 @@ export default function TwoMonthTable({
   moveAssignmentRow,
   deleteAssignment,
   getDailyTotal,
-  getMonthlyTotal,
-  getPlannedCount,
+getMonthlyTotal,
+previousMonthTotal,
+nextMonthTotal,
+getPlannedCount,
   getBandColor,
   getDetailTags,
   removeDetailTag,
@@ -130,10 +134,12 @@ export default function TwoMonthTable({
         }}
       >
         <TwoMonthTableHeader
-          days={days}
-          employees={employees}
-          getDailyTotal={getDailyTotal}
-        />
+  days={days}
+  employees={employees}
+  getDailyTotal={getDailyTotal}
+  previousMonthTotal={previousMonthTotal}
+  nextMonthTotal={nextMonthTotal}
+/>
 
         <tbody>
           {groupedAssignments.map((group) => (

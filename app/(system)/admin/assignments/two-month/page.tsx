@@ -100,6 +100,29 @@ export default function TwoMonthPage() {
     groupSettings
   );
 
+  const [previousMonthTotal, nextMonthTotal] = useMemo(() => {
+    return assignments.reduce<[number, number]>(
+      (totals, assignment) => {
+        totals[0] += getMonthlyTotal(
+          dailyInfos,
+          baseMonth,
+          assignment.id,
+          0
+        );
+  
+        totals[1] += getMonthlyTotal(
+          dailyInfos,
+          baseMonth,
+          assignment.id,
+          1
+        );
+  
+        return totals;
+      },
+      [0, 0]
+    );
+  }, [assignments, dailyInfos, baseMonth]);
+
   const {
     uploadFiles,
     updateAssignment,
@@ -251,6 +274,8 @@ export default function TwoMonthPage() {
   getMonthlyTotal={(assignmentId, index) =>
     getMonthlyTotal(dailyInfos, baseMonth, assignmentId, index)
   }
+  previousMonthTotal={previousMonthTotal}
+nextMonthTotal={nextMonthTotal}
   getPlannedCount={getPlannedCount}
   getBandColor={(assignment) => getBandColor(assignment, groupSettings)}
   getDetailTags={getDetailTags}
