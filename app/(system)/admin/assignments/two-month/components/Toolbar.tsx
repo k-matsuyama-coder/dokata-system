@@ -21,9 +21,8 @@ type Props = {
           display: "flex",
           gap: 12,
           alignItems: "center",
-          flexWrap: "nowrap",
+          flexWrap: "wrap",
           marginBottom: 16,
-          overflowX: "auto",
         }}
       >
         <button
@@ -36,12 +35,27 @@ type Props = {
               `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
             );
           }}
-          style={smallButton}
+          style={{
+            ...smallButton,
+            minWidth: 90,
+            height: 42,
+            padding: "0 12px",
+            whiteSpace: "nowrap",
+            flexShrink: 0,
+          }}
         >
           前の2ヶ月
         </button>
   
-        <strong>{baseMonth.replace("-", "年")}月〜</strong>
+        <strong
+  style={{
+    minWidth: 90,
+    textAlign: "center",
+    whiteSpace: "nowrap",
+  }}
+>
+  {baseMonth.replace("-", "年")}月〜
+</strong>
   
         <button
           type="button"
@@ -53,7 +67,14 @@ type Props = {
               `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
             );
           }}
-          style={smallButton}
+          style={{
+            ...smallButton,
+            minWidth: 90,
+            height: 42,
+            padding: "0 12px",
+            whiteSpace: "nowrap",
+            flexShrink: 0,
+          }}
         >
           次の2ヶ月
         </button>
@@ -62,11 +83,13 @@ type Props = {
           value={sortMode}
           onChange={(e) => setSortMode(e.target.value)}
           style={{
+            minWidth: 110,
             padding: "8px 12px",
             borderRadius: 8,
             border: "1px solid #ccc",
             fontWeight: 700,
             height: 42,
+            flexShrink: 0,
           }}
         >
           <option value="manual">標準</option>
@@ -81,6 +104,7 @@ type Props = {
           type="button"
           onClick={() => setShowAddModal(true)}
           style={{
+            minWidth: 120,
             padding: "10px 16px",
             borderRadius: 8,
             border: "none",
@@ -89,6 +113,8 @@ type Props = {
             fontWeight: 700,
             cursor: "pointer",
             height: 42,
+            whiteSpace: "nowrap",
+            flexShrink: 0,
           }}
         >
           ＋ 現場追加

@@ -45,6 +45,21 @@ export default function MobileMemberModal({
     ? getUnassignedEmployeesByDate(selectedDate, selectedShiftType)
     : employees;
 
+    const groupedEmployees = displayEmployees.reduce(
+      (groups, employee) => {
+        const companyName = employee.company_name || "未設定";
+    
+        if (!groups[companyName]) {
+          groups[companyName] = [];
+        }
+    
+        groups[companyName].push(employee);
+    
+        return groups;
+      },
+      {} as Record<string, Employee[]>
+    );
+
   return (
     <div
       onClick={() => setShowMemberModal(false)}
@@ -84,51 +99,74 @@ export default function MobileMemberModal({
             </button>
           </div>
 
-          <div style={{ marginTop: 12, display: "grid", gap: 8 }}>
-          {displayEmployees.map((employee) => (
-  <button
-    key={employee.name}
-    type="button"
-    onClick={() => {
-      setSelectedEmployeeName(employee.name);
-      setShowMemberModal(false);
-    }}
-    style={{
-      padding: 12,
-      borderRadius: 10,
-      border:
-        selectedEmployeeName === employee.name
-          ? "2px solid #2563eb"
-          : "1px solid #ddd",
-      backgroundColor:
-        selectedEmployeeName === employee.name ? "#dbeafe" : "#fff",
-      textAlign: "left",
-      fontWeight: 700,
-    }}
-  >
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        gap: 8,
-      }}
-    >
-      <span>{employee.name}</span>
-      <span
-        style={{
-          fontSize: 11,
-          fontWeight: 800,
-          color: "#666",
-          flexShrink: 0,
-        }}
-      >
-        {getAssignmentCount(employee.name)}
-      </span>
-    </div>
-  </button>
-))}
-          </div>
+          <div style={{ marginTop: 12, display: "grid", gap: 12 }}>
+  {Object.entries(groupedEmployees).map(
+    ([companyName, companyEmployees]) => (
+      <div key={companyName}>
+        <div
+          style={{
+            marginBottom: 6,
+            padding: "6px 8px",
+            borderRadius: 6,
+            backgroundColor: "#f3f4f6",
+            fontSize: 13,
+            fontWeight: 800,
+          }}
+        >
+          {companyName}
+        </div>
+
+        <div style={{ display: "grid", gap: 8 }}>
+          {companyEmployees.map((employee) => (
+            <button
+              key={employee.name}
+              type="button"
+              onClick={() => {
+                setSelectedEmployeeName(employee.name);
+                setShowMemberModal(false);
+              }}
+              style={{
+                padding: 12,
+                borderRadius: 10,
+                border:
+                  selectedEmployeeName === employee.name
+                    ? "2px solid #2563eb"
+                    : "1px solid #ddd",
+                backgroundColor:
+                  selectedEmployeeName === employee.name
+                    ? "#dbeafe"
+                    : "#fff",
+                textAlign: "left",
+                fontWeight: 700,
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                <span>{employee.name}</span>
+
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 800,
+                    color: "#666",
+                  }}
+                >
+                  {getAssignmentCount(employee.name)}
+                </span>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+    )
+  )}
+</div>
 
           <div style={{ marginTop: 18 }}>
             <div

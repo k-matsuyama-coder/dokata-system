@@ -792,6 +792,7 @@ boxSizing: "border-box",
             selectedShiftType={selectedShiftType}
             employees={employees}
             vehicles={vehicles}
+            getAssignmentCount={getAssignmentCount}
             selectedEmployeeName={selectedEmployeeName}
             copiedVehicleNames={copiedVehicleNames}
             getUnassignedEmployeesByDate={getUnassignedEmployeesByDate}
