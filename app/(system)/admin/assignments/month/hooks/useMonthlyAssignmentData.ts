@@ -83,11 +83,9 @@ export function useMonthlyAssignmentData({ days, organizationId }: Props) {
     const assignmentData = await getAssignments(organizationId);
 
     console.log(
-      "assignmentIds",
-      assignmentData.map((a) => ({
-        id: a.id,
-        site: a.site_name,
-      }))
+      assignmentData.some(
+        (a) => a.id === "d705ae07-f5be-4fb1-9b29-e6ea8b50d9e1"
+      )
     );
     
     const assignmentIds = (assignmentData ?? []).map((assignment) => assignment.id);
