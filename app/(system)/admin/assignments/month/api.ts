@@ -1,5 +1,31 @@
 import { supabase } from "@/lib/supabase";
 
+async function fetchAllPages<T>(
+  query: (from: number, to: number) => Promise<{
+    data: T[] | null;
+    error: Error | null;
+  }>
+) {
+  const pageSize = 1000;
+  const results: T[] = [];
+
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await query(from, from + pageSize - 1);
+
+    if (error) {
+      throw error;
+    }
+
+    results.push(...(data ?? []));
+
+    if (!data || data.length < pageSize) {
+      break;
+    }
+  }
+
+  return results;
+}
+
 export async function getCurrentOrganization() {
   const { data: sessionData } = await supabase.auth.getSession();
   const token = sessionData.session?.access_token;
@@ -92,15 +118,20 @@ export async function getAssignmentFiles(
 ) {
   if (assignmentIds.length === 0) return [];
 
-  const { data, error } = await supabase
-    .from("assignment_files")
-    .select("id, assignment_id, file_name, file_url, file_path")
-    .eq("organization_id", organizationId)
-    .in("assignment_id", assignmentIds);
+  return fetchAllPages(async (from, to) => {
+    const { data, error } = await supabase
+      .from("assignment_files")
+      .select("id, assignment_id, file_name, file_url, file_path")
+      .eq("organization_id", organizationId)
+      .in("assignment_id", assignmentIds)
+      .order("id", { ascending: true })
+      .range(from, to);
 
-  if (error) throw error;
-
-  return data ?? [];
+    return {
+      data,
+      error: error ? new Error(error.message) : null,
+    };
+  });
 }
 
 export async function getSiteMembers(
@@ -111,10 +142,7 @@ export async function getSiteMembers(
 ) {
   if (assignmentIds.length === 0) return [];
 
-  const pageSize = 1000;
-  const allMembers = [];
-
-  for (let from = 0; ; from += pageSize) {
+  return fetchAllPages(async (from, to) => {
     const { data, error } = await supabase
       .from("assignment_site_members")
       .select(
@@ -125,18 +153,13 @@ export async function getSiteMembers(
       .gte("work_date", startDate)
       .lte("work_date", endDate)
       .order("id", { ascending: true })
-      .range(from, from + pageSize - 1);
+      .range(from, to);
 
-    if (error) throw error;
-
-    allMembers.push(...(data ?? []));
-
-    if (!data || data.length < pageSize) {
-      break;
-    }
-  }
-
-  return allMembers;
+    return {
+      data,
+      error: error ? new Error(error.message) : null,
+    };
+  });
 }
 
 export async function getDailyInfos(
@@ -147,10 +170,7 @@ export async function getDailyInfos(
 ) {
   if (assignmentIds.length === 0) return [];
 
-  const pageSize = 1000;
-  const allDailyInfos = [];
-
-  for (let from = 0; ; from += pageSize) {
+  return fetchAllPages(async (from, to) => {
     const { data, error } = await supabase
       .from("assignment_site_daily_infos")
       .select(
@@ -161,18 +181,13 @@ export async function getDailyInfos(
       .gte("work_date", startDate)
       .lte("work_date", endDate)
       .order("id", { ascending: true })
-      .range(from, from + pageSize - 1);
+      .range(from, to);
 
-    if (error) throw error;
-
-    allDailyInfos.push(...(data ?? []));
-
-    if (!data || data.length < pageSize) {
-      break;
-    }
-  }
-
-  return allDailyInfos;
+    return {
+      data,
+      error: error ? new Error(error.message) : null,
+    };
+  });
 }
 
 export async function getShiftRequests(
@@ -180,14 +195,19 @@ export async function getShiftRequests(
   startDate: string,
   endDate: string
 ) {
-  const { data, error } = await supabase
-    .from("shift_requests")
-    .select("id, employee_name, request_date, status")
-    .eq("organization_id", organizationId)
-    .gte("request_date", startDate)
-    .lte("request_date", endDate);
+  return fetchAllPages(async (from, to) => {
+    const { data, error } = await supabase
+      .from("shift_requests")
+      .select("id, employee_name, request_date, status")
+      .eq("organization_id", organizationId)
+      .gte("request_date", startDate)
+      .lte("request_date", endDate)
+      .order("id", { ascending: true })
+      .range(from, to);
 
-  if (error) throw error;
-
-  return data ?? [];
+    return {
+      data,
+      error: error ? new Error(error.message) : null,
+    };
+  });
 }
