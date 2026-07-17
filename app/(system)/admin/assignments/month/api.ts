@@ -111,19 +111,32 @@ export async function getSiteMembers(
 ) {
   if (assignmentIds.length === 0) return [];
 
-  const { data, error } = await supabase
-    .from("assignment_site_members")
-    .select(
-      "id, assignment_id, work_date, employee_name, is_driver, is_operator, is_foreman, heavy_equipment"
-    )
-    .eq("organization_id", organizationId)
-    .in("assignment_id", assignmentIds)
-    .gte("work_date", startDate)
-    .lte("work_date", endDate);
+  const pageSize = 1000;
+  const allMembers = [];
 
-  if (error) throw error;
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await supabase
+      .from("assignment_site_members")
+      .select(
+        "id, assignment_id, work_date, employee_name, is_driver, is_operator, is_foreman, heavy_equipment"
+      )
+      .eq("organization_id", organizationId)
+      .in("assignment_id", assignmentIds)
+      .gte("work_date", startDate)
+      .lte("work_date", endDate)
+      .order("id", { ascending: true })
+      .range(from, from + pageSize - 1);
 
-  return data ?? [];
+    if (error) throw error;
+
+    allMembers.push(...(data ?? []));
+
+    if (!data || data.length < pageSize) {
+      break;
+    }
+  }
+
+  return allMembers;
 }
 
 export async function getDailyInfos(
