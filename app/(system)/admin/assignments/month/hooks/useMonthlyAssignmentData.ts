@@ -106,6 +106,8 @@ export function useMonthlyAssignmentData({ days, organizationId }: Props) {
         getShiftRequests(organizationId, startDate, endDate),
       ]);
 
+      console.log("取得したメンバー", memberData);
+
     console.timeEnd("scheduleChildren");
 
     setAssignmentFiles(fileData);
