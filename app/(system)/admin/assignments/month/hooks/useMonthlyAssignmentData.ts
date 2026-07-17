@@ -81,6 +81,15 @@ export function useMonthlyAssignmentData({ days, organizationId }: Props) {
     console.time("getAssignments");
 
     const assignmentData = await getAssignments(organizationId);
+
+    console.log(
+      "assignmentIds",
+      assignmentData.map((a) => ({
+        id: a.id,
+        site: a.site_name,
+      }))
+    );
+    
     const assignmentIds = (assignmentData ?? []).map((assignment) => assignment.id);
 
     console.timeEnd("getAssignments");
