@@ -419,6 +419,7 @@ const {
 
   const groupedAssignments = useGroupedAssignments({
     assignments,
+    dailyInfos,
     sortMode,
     showFinished,
     days,

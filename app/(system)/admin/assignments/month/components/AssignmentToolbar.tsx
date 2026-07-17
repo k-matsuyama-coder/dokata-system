@@ -182,6 +182,7 @@ export default function AssignmentToolbar({
           style={inputBoxStyle}
         >
           <option value="default">標準</option>
+          <option value="plannedWeek">今週予定あり</option>
           <option value="contractor">元請順</option>
           <option value="site">現場順</option>
         </select>
