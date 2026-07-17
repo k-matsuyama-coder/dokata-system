@@ -25,11 +25,26 @@ export function useGroupedAssignments({
   groupSettings,
 }: Props) {
   return useMemo(() => {
-    const filtered = assignments.filter((assignment) => {
-      if (showFinished) return true;
-      if (!assignment.end_date) return true;
-      return assignment.end_date >= todayString;
-    });
+    const monthStart = days[0];
+const monthEnd = days[days.length - 1];
+const filtered = assignments.filter((assignment) => {
+  const start = assignment.start_date ?? "0000-01-01";
+  const end = assignment.end_date ?? "9999-12-31";
+
+  const overlapsMonth =
+    start <= monthEnd &&
+    end >= monthStart;
+
+  if (!overlapsMonth) {
+    return false;
+  }
+
+  if (showFinished) {
+    return true;
+  }
+
+  return end >= todayString;
+});
 
     const groupedMap = new Map<
       string,
