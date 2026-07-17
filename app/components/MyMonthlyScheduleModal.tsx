@@ -45,6 +45,11 @@ type Props = {
 
 export default function MyMonthlyScheduleModal({ open, onClose }: Props) {
   const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
+  const [isAdmin, setIsAdmin] = useState(false);
+const [employees, setEmployees] = useState<
+  { id: string; name: string }[]
+>([]);
+const [selectedEmployee, setSelectedEmployee] = useState("");
   const [members, setMembers] = useState<SiteMember[]>([]);
   const [allMembers, setAllMembers] = useState<SiteMember[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
@@ -77,22 +82,41 @@ export default function MyMonthlyScheduleModal({ open, onClose }: Props) {
       const { data: employee } = await supabase
         .from("employees")
         .select(`
-          *,
-          organizations (
-            id,
-            name
-          )
+        *,
+        role,
+        organizations (
+          id,
+          name
+        )
         `)
         .eq("auth_user_id", user.id)
         .single();
 
       if (!employee) return;
 
+      setSelectedEmployee((current) => current || employee.name);
+setIsAdmin(employee.role === "admin");
+
       const organizationId = employee.organization_id;
 
       if (!organizationId) {
         alert("会社情報が取得できません");
         return;
+      }
+
+      if (employee.role === "admin") {
+        const { data: employeeList, error: employeeListError } = await supabase
+          .from("employees")
+          .select("id, name")
+          .eq("organization_id", organizationId)
+          .order("name");
+      
+        if (employeeListError) {
+          alert("社員一覧取得失敗: " + employeeListError.message);
+          return;
+        }
+      
+        setEmployees(employeeList ?? []);
       }
 
       const startDate = `${month}-01`;
@@ -102,7 +126,10 @@ export default function MyMonthlyScheduleModal({ open, onClose }: Props) {
         .from("assignment_site_members")
         .select("id, assignment_id, work_date, employee_name")
         .eq("organization_id", organizationId)
-        .eq("employee_name", employee.name)
+        .eq(
+          "employee_name",
+          selectedEmployee || employee.name
+        )
         .gte("work_date", startDate)
         .lte("work_date", endDate);
 
@@ -195,7 +222,7 @@ setDailyInfos(dailyInfoData ?? []);
     };
 
     void fetchSchedule();
-  }, [open, month, days]);
+  }, [open, month, days, selectedEmployee]);
 
   const selectedMembers = useMemo(() => {
     if (!selectedSchedule) return [];
@@ -227,6 +254,8 @@ setDailyInfos(dailyInfoData ?? []);
     );
   }, [selectedSchedule, assignmentFiles]);
 
+  const today = new Date().toISOString().slice(0, 10);
+
   if (!open) return null;
 
   const getSchedulesByDate = (date: string) => {
@@ -235,7 +264,17 @@ setDailyInfos(dailyInfoData ?? []);
       .map((member) =>
         assignments.find((assignment) => assignment.id === member.assignment_id)
       )
-      .filter(Boolean) as Assignment[];
+      .filter((assignment): assignment is Assignment => Boolean(assignment))
+      .sort((a, b) => {
+        const aIsNight = a.shift_type === "night";
+        const bIsNight = b.shift_type === "night";
+  
+        if (aIsNight === bIsNight) {
+          return 0;
+        }
+  
+        return aIsNight ? 1 : -1;
+      });
   };
 
   return (
@@ -307,6 +346,27 @@ setDailyInfos(dailyInfoData ?? []);
           }}
         />
 
+{isAdmin && (
+  <select
+    value={selectedEmployee}
+    onChange={(e) => setSelectedEmployee(e.target.value)}
+    style={{
+      padding: 10,
+      border: "1px solid #ccc",
+      borderRadius: 8,
+      marginBottom: 12,
+      marginLeft: 12,
+      fontSize: 16,
+    }}
+  >
+    {employees.map((employee) => (
+      <option key={employee.id} value={employee.name}>
+        {employee.name}
+      </option>
+    ))}
+  </select>
+)}
+
         <div
           style={{
             display: "grid",
@@ -346,7 +406,7 @@ setDailyInfos(dailyInfoData ?? []);
                 style={{
                   minHeight: 90,
                   minWidth: 0,
-                  border: "1px solid #ddd",
+                  border: date === today ? "3px solid #2563eb" : "1px solid #ddd",
                   borderRadius: 10,
                   padding: 6,
                   backgroundColor:
@@ -356,9 +416,16 @@ setDailyInfos(dailyInfoData ?? []);
                 <div
                   style={{
                     fontWeight: 800,
+                    fontSize: date === today ? 20 : 16,
                     marginBottom: 6,
                     color:
-                      day === 0 ? "#d11a2a" : day === 6 ? "#2563eb" : "#111",
+  date === today
+    ? "#2563eb"
+    : day === 0
+    ? "#d11a2a"
+    : day === 6
+    ? "#2563eb"
+    : "#111",
                   }}
                 >
                   {Number(date.slice(-2))}
