@@ -127,8 +127,8 @@ if (!currentOrganizationId) {
         parking_subcontract,
         heavy_equipment,
         operator_name,
-        is_checked
-        organization_id,
+        is_checked,
+        organization_id
       `
       )
       .eq("organization_id", currentOrganizationId)
