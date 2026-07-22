@@ -122,7 +122,9 @@ const { data: previousReport, error } = await supabase
 
     setStartTime(previousReport.start_time ?? "08:00");
     setEndTime(previousReport.end_time ?? "17:00");
-    setOvertimeMinutes(String(previousReport.overtime_minutes ?? "0"));
+    setOvertimeMinutes(
+      String(Number(previousReport.overtime_minutes ?? 0) / 60)
+    );
 
     setExpresswayMain(String(previousReport.expressway_main ?? ""));
     setExpresswaySecondary(String(previousReport.expressway_secondary ?? ""));
@@ -350,7 +352,7 @@ if (existingReport) {
       shift_type: shiftType,
       start_time: startTime,
       end_time: endTime,
-      overtime_minutes: Number(overtimeMinutes || 0),
+      overtime_minutes: Math.round(Number(overtimeMinutes || 0) * 60),
       worker_count: selectedMembers.reduce(
         (sum, member) => sum + Number(member.labor || 0),
         0

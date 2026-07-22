@@ -65,6 +65,17 @@ export default function ReportsPage() {
         return;
       }
 
+      const { data: employee } = await supabase
+  .from("employees")
+  .select("name")
+  .eq("auth_user_id", user.id)
+  .single();
+
+if (!employee) {
+  alert("社員情報が取得できません");
+  return;
+}
+
       const currentOrganizationId = await getCurrentOrganization();
 
 if (!currentOrganizationId) {
@@ -78,7 +89,8 @@ if (!currentOrganizationId) {
           "id, report_date, worker_name, site_name, shift_type, start_time, end_time, worker_count, vehicle_count, driver_name, note, expressway_main, expressway_secondary, expressway_subcontract, parking_main, parking_secondary, parking_subcontract, fuel_gasoline, fuel_diesel, work_description, members"
         )
         .eq("organization_id", currentOrganizationId)
-        .order("created_at", { ascending: false });
+.eq("worker_name", employee.name)
+.order("created_at", { ascending: false });
 
       if (error) {
         alert("取得失敗: " + error.message);

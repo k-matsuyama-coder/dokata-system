@@ -350,8 +350,8 @@ if (!currentOrganizationId) {
   </td>
 
   <td style={{ ...tdStyle, textAlign: "center" }}>
-    {report.overtime_minutes ?? 0}
-  </td>
+  {Number((Number(report.overtime_minutes ?? 0) / 60).toFixed(2))}時間
+</td>
 
   <td style={{ ...tdStyle, textAlign: "center" }}>
     {report.worker_count ?? 0}

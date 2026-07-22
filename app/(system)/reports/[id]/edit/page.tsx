@@ -129,7 +129,9 @@ if (!currentOrganizationId) {
       setStartTime(report.start_time ?? "");
       setEndTime(report.end_time ?? "");
       setShiftType(report.shift_type ?? "day");
-      setOvertimeMinutes(String(report.overtime_minutes ?? ""));
+      setOvertimeMinutes(
+        String(Number(report.overtime_minutes ?? 0) / 60)
+      );
       setNote(report.note ?? "");
 
       setExpresswayMain(String(report.expressway_main ?? ""));
@@ -244,7 +246,7 @@ if (!currentOrganizationId) {
         shift_type: shiftType,
         start_time: startTime,
         end_time: endTime,
-        overtime_minutes: Number(overtimeMinutes || 0),
+        overtime_minutes: Math.round(Number(overtimeMinutes || 0) * 60),
         worker_count: selectedMembers.reduce(
           (sum, member) => sum + Number(member.labor || 0),
           0

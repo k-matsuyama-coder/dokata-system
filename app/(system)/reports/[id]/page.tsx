@@ -162,7 +162,9 @@ let query = supabase
         <p>勤務帯: {report.shift_type === "night" ? "夜" : "昼"}</p>
         <p>開始時間: {report.start_time || "-"}</p>
         <p>終了時間: {report.end_time || "-"}</p>
-        <p>残業: {report.overtime_minutes ?? 0}分</p>
+        <p>
+  残業: {Number((Number(report.overtime_minutes ?? 0) / 60).toFixed(2))}時間
+</p>
         <p>稼働人数: {report.worker_count ?? 0}</p>
         <p>車両台数: {report.vehicle_count ?? 0}</p>
         <p>運転手: {report.driver_name || "-"}</p>
