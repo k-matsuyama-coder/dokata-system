@@ -391,6 +391,7 @@ const {
     organizationId: currentOrganizationId ?? "",
     assignments,
     siteMembers,
+    shiftRequests, // ←追加
     setSiteMembers,
     getCellMembers,
     setDraggingEmployeeName,

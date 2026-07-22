@@ -6,12 +6,17 @@ import { moveSiteMemberAction } from "../actions/moveSiteMember";
 import { deleteSiteMemberAction } from "../actions/deleteSiteMember";
 import { toggleForemanAction } from "../actions/toggleForeman";
 
-import type { Assignment, SiteMember } from "../types";
+import type {
+  Assignment,
+  SiteMember,
+  ShiftRequest,
+} from "../types";
 
 type Props = {
   organizationId: string;
   assignments: Assignment[];
   siteMembers: SiteMember[];
+  shiftRequests: ShiftRequest[];
   setSiteMembers: Dispatch<SetStateAction<SiteMember[]>>;
   getCellMembers: (assignmentId: string, workDate: string) => SiteMember[];
   setDraggingEmployeeName: Dispatch<SetStateAction<string | null>>;
@@ -34,6 +39,7 @@ export function useMonthlyAssignmentMembers({
   organizationId,
   assignments,
   siteMembers,
+  shiftRequests,
   setSiteMembers,
   getCellMembers,
   setDraggingEmployeeName,
@@ -115,6 +121,17 @@ export function useMonthlyAssignmentMembers({
     workDate: string,
     autoForeman = true
   ) => {
+    const isHoliday = shiftRequests.some(
+      (request) =>
+        request.employee_name === employeeName &&
+        request.request_date === workDate
+    );
+    
+    if (isHoliday) {
+      alert(`${employeeName} は ${workDate} は休みのため配置できません。`);
+      return;
+    }
+
     const duplicate = hasDuplicateInSameShift({
       employeeName,
       assignmentId,

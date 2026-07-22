@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
 import { hasRole } from "@/app/types/auth";
@@ -36,12 +36,40 @@ heavy_equipment: string | null;
 operator_name: string | null;
 };
 
+type AssignmentMember = {
+  assignment_id: string;
+  work_date: string;
+};
+
+type MonthDayStatus = {
+  day: number;
+  dateString: string;
+  totalSites: number;
+  checkedSites: number;
+  status: "green" | "red" | "gray";
+};
+
+function formatLocalDate(d: Date): string {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
 export default function DailyReportAdminPage() {
   const [date, setDate] = useState(() => {
     return new Date().toISOString().slice(0, 10);
   });
 
   const [reports, setReports] = useState<Report[]>([]);
+  const [monthReports, setMonthReports] = useState<Report[]>([]);
+  const [calendarMonth, setCalendarMonth] = useState(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
+  
+  const [assignmentMembers, setAssignmentMembers] = useState<AssignmentMember[]>([]);
   const getCurrentOrganization = async () => {
     const { data: sessionData } = await supabase.auth.getSession();
     const token = sessionData.session?.access_token;
@@ -61,9 +89,21 @@ export default function DailyReportAdminPage() {
     return result.organizationId as string | null;
   };
 
-const allChecked =
-  reports.length > 0 &&
-  reports.every((report) => report.is_checked);
+  const scheduledSiteCount = new Set(
+    assignmentMembers
+      .filter((member) => member.work_date === date)
+      .map((member) => member.assignment_id)
+  ).size;
+  
+  const checkedSiteCount = new Set(
+    reports
+      .filter((report) => report.is_checked && report.site_name)
+      .map((report) => report.site_name)
+  ).size;
+  
+  const canPrint =
+    scheduledSiteCount > 0 &&
+    checkedSiteCount === scheduledSiteCount;
 
   useEffect(() => {
     const checkAdminAndFetch = async () => {
@@ -97,50 +137,80 @@ if (!currentOrganizationId) {
     };
 
     checkAdminAndFetch();
-  }, [date]);
+  }, [date, calendarMonth]);
 
   const fetchReports = async (currentOrganizationId: string) => {
+    const firstDay = formatLocalDate(
+      new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1)
+    );
+  
+    const lastDay = formatLocalDate(
+      new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 0)
+    );
+  
     const { data, error } = await supabase
       .from("daily_reports")
       .select(
         `
-        id,
-        report_date,
-        contractor_name,
-        worker_name,
-        site_name,
-        shift_type,
-        start_time,
-        end_time,
-        overtime_minutes,
-        worker_count,
-        vehicle_count,
-        driver_name,
-        work_description,
-        members,
-        note,
-        expressway_main,
-        expressway_secondary,
-        expressway_subcontract,
-        parking_main,
-        parking_secondary,
-        parking_subcontract,
-        heavy_equipment,
-        operator_name,
-        is_checked,
-        organization_id
-      `
+          id,
+          report_date,
+          contractor_name,
+          worker_name,
+          site_name,
+          shift_type,
+          start_time,
+          end_time,
+          overtime_minutes,
+          worker_count,
+          vehicle_count,
+          driver_name,
+          work_description,
+          members,
+          note,
+          expressway_main,
+          expressway_secondary,
+          expressway_subcontract,
+          parking_main,
+          parking_secondary,
+          parking_subcontract,
+          heavy_equipment,
+          operator_name,
+          is_checked,
+          organization_id
+        `
       )
       .eq("organization_id", currentOrganizationId)
-      .eq("report_date", date)
+      .gte("report_date", firstDay)
+      .lte("report_date", lastDay)
+      .order("report_date", { ascending: true })
       .order("created_at", { ascending: true });
-
+  
     if (error) {
       alert("日報取得失敗: " + error.message);
       return;
     }
-
-    setReports(data ?? []);
+  
+    const allReports = data ?? [];
+  
+    setMonthReports(allReports);
+    setReports(
+      allReports.filter((report) => report.report_date === date)
+    );
+  
+    const { data: assignmentMemberData, error: assignmentMemberError } =
+      await supabase
+        .from("assignment_site_members")
+        .select("assignment_id, work_date")
+        .eq("organization_id", currentOrganizationId)
+        .gte("work_date", firstDay)
+        .lte("work_date", lastDay);
+  
+    if (assignmentMemberError) {
+      alert("予定現場取得失敗: " + assignmentMemberError.message);
+      return;
+    }
+  
+    setAssignmentMembers(assignmentMemberData ?? []);
   };
 
   const thStyle = {
@@ -152,6 +222,61 @@ if (!currentOrganizationId) {
     textAlign: "center" as const,
   };
 
+  const monthDays = useMemo<MonthDayStatus[]>(() => {
+    const year = calendarMonth.getFullYear();
+    const month = calendarMonth.getMonth();
+    const lastDay = new Date(year, month + 1, 0).getDate();
+  
+    return Array.from({ length: lastDay }, (_, i) => {
+      const day = i + 1;
+  
+      const dateString = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  
+      const dayMembers = assignmentMembers.filter(
+        (m) => m.work_date === dateString
+      );
+  
+      const totalSites = new Set(dayMembers.map((m) => m.assignment_id)).size;
+  
+      const checkedSites = new Set(
+        monthReports
+          .filter(
+            (report) =>
+              report.report_date === dateString &&
+              report.is_checked &&
+              report.site_name
+          )
+          .map((report) => report.site_name)
+      ).size;
+  
+      let status: "green" | "red" | "gray" = "gray";
+  
+      if (totalSites === 0) {
+        status = "gray";
+      } else if (checkedSites === totalSites) {
+        status = "green";
+      } else {
+        status = "red";
+      }
+  
+      return {
+        day,
+        dateString,
+        totalSites,
+        checkedSites,
+        status,
+      };
+    });
+  }, [calendarMonth, assignmentMembers, monthReports]);
+  
+  const firstDay = new Date(
+    calendarMonth.getFullYear(),
+    calendarMonth.getMonth(),
+    1
+  );
+  
+  const startOffset = (firstDay.getDay() + 6) % 7;
+
   const tdStyle = {
     border: "1px solid #333",
     padding: 6,
@@ -160,7 +285,13 @@ if (!currentOrganizationId) {
   };
 
   return (
-    <div style={{ padding: 16 }}>
+    <div
+  style={{
+    width: "100%",
+    padding: 16,
+    boxSizing: "border-box",
+  }}
+>
       <style>
         {`
           @media print {
@@ -189,10 +320,147 @@ if (!currentOrganizationId) {
         `}
       </style>
 
-      <div className="no-print" style={{ maxWidth: 1200, margin: "0 auto 16px" }}>
+      <div
+  className="no-print"
+  style={{
+    width: "100%",
+    marginBottom: 16,
+  }}
+>
         <BackButton />
 
         <h1>日別日報確認</h1>
+
+        <div
+  style={{
+    background: "#fff",
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+    border: "1px solid #ddd",
+  }}
+>
+  <div
+    style={{
+      display: "flex",
+      justifyContent: "space-between",
+      marginBottom: 12,
+      alignItems: "center",
+    }}
+  >
+    <button
+      onClick={() =>
+        setCalendarMonth(
+          new Date(
+            calendarMonth.getFullYear(),
+            calendarMonth.getMonth() - 1,
+            1
+          )
+        )
+      }
+    >
+      ◀ 前月
+    </button>
+
+    <strong>
+      {calendarMonth.getFullYear()}年
+      {calendarMonth.getMonth() + 1}月
+    </strong>
+
+    <button
+      onClick={() =>
+        setCalendarMonth(
+          new Date(
+            calendarMonth.getFullYear(),
+            calendarMonth.getMonth() + 1,
+            1
+          )
+        )
+      }
+    >
+      翌月 ▶
+    </button>
+  </div>
+
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns: "repeat(7, 1fr)",
+      gap: 8,
+      marginBottom: 8,
+      fontWeight: 700,
+      textAlign: "center",
+    }}
+  >
+    <div>月</div>
+    <div>火</div>
+    <div>水</div>
+    <div>木</div>
+    <div>金</div>
+    <div style={{ color: "#2563eb" }}>土</div>
+    <div style={{ color: "#dc2626" }}>日</div>
+  </div>
+
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns: "repeat(7, 1fr)",
+      gap: 8,
+    }}
+  >
+    {Array.from({ length: startOffset }).map((_, index) => (
+      <div key={`empty-${index}`} />
+    ))}
+
+    {monthDays.map((day) => (
+      <button
+        key={day.dateString}
+        onClick={() => setDate(day.dateString)}
+        style={{
+          borderRadius: 8,
+          padding: 8,
+          background:
+            day.status === "green"
+              ? "#dcfce7"
+              : day.status === "red"
+                ? "#fee2e2"
+                : "#e5e7eb",
+          cursor: "pointer",
+          border:
+            day.dateString === date
+              ? "3px solid #2563eb"
+              : day.dateString === formatLocalDate(new Date())
+                ? "2px solid #16a34a"
+                : "1px solid #ddd",
+        }}
+      >
+        <div style={{ fontWeight: 800 }}>{day.day}</div>
+
+        <div
+          style={{
+            fontSize: 12,
+            marginTop: 4,
+          }}
+        >
+          {day.checkedSites}/{day.totalSites}
+        </div>
+      </button>
+    ))}
+  </div>
+
+  <div
+    style={{
+      marginTop: 12,
+      display: "flex",
+      gap: 12,
+      fontSize: 13,
+    }}
+  >
+    <span>🟢 全確認済み</span>
+    <span>🔴 未確認あり</span>
+    <span>⚪ 現場なし</span>
+  </div>
+</div>
 
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <input
@@ -208,10 +476,12 @@ if (!currentOrganizationId) {
           />
 
 <button
-  disabled={!allChecked}
+  disabled={!canPrint}
   onClick={() => {
-    if (!allChecked) {
-      alert("すべての確認チェックを入れてください");
+    if (!canPrint) {
+      alert(
+        `予定現場数と確認済み現場数が一致していません。\n\n予定現場：${scheduledSiteCount}件\n確認済み：${checkedSiteCount}件`
+      );
       return;
     }
 
@@ -219,11 +489,11 @@ if (!currentOrganizationId) {
   }}
   style={{
     padding: "10px 14px",
-    backgroundColor: allChecked ? "#111" : "#aaa",
+    backgroundColor: canPrint ? "#111" : "#aaa",
     color: "#fff",
     border: "none",
     borderRadius: 8,
-    cursor: allChecked ? "pointer" : "not-allowed",
+    cursor: canPrint ? "pointer" : "not-allowed",
     fontWeight: 600,
   }}
 >
@@ -232,7 +502,12 @@ if (!currentOrganizationId) {
         </div>
       </div>
 
-      <div className="print-area" style={{ maxWidth: 1400, margin: "0 auto" }}>
+      <div
+  className="print-area"
+  style={{
+    width: "100%",
+  }}
+>
         <h2 style={{ textAlign: "center", marginBottom: 12 }}>
           日報確認表　{date}
         </h2>
@@ -319,6 +594,13 @@ if (!currentOrganizationId) {
               : r
           )
         );
+        setMonthReports((prev) =>
+  prev.map((item) =>
+    item.id === report.id
+      ? { ...item, is_checked: checked }
+      : item
+  )
+);
       }}
     />
   </td>

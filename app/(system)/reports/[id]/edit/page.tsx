@@ -280,9 +280,10 @@ if (!currentOrganizationId) {
     }
 
     const { error: deleteMembersError } = await supabase
-      .from("report_members")
-      .delete()
-      .eq("report_id", id);
+  .from("report_members")
+  .delete()
+  .eq("organization_id", currentOrganizationId)
+  .eq("report_id", id);
 
     if (deleteMembersError) {
       alert("メンバー更新失敗: " + deleteMembersError.message);
