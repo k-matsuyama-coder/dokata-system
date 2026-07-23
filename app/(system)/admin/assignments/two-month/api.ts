@@ -42,69 +42,81 @@ export async function fetchTwoMonthData({
   const startDate = days[0];
   const endDate = days[days.length - 1];
 
-  const { data: employeeData, error: employeeError } = await supabase
-    .from("employees")
-    .select("name, company_name")
-    .eq("organization_id", safeOrganizationId)
-    .order("name", { ascending: true });
-
-  if (employeeError) {
-    throw new Error("社員取得失敗: " + employeeError.message);
+  if (!startDate || !endDate) {
+    throw new Error("表示期間が取得できません");
   }
 
-  const { data: contractorData, error: contractorError } = await supabase
-    .from("contractors")
-    .select("id, name")
-    .eq("organization_id", safeOrganizationId)
-    .order("name", { ascending: true });
+  const [
+    employeeResult,
+    contractorResult,
+    contactResult,
+    assignmentResult,
+  ] = await Promise.all([
+    supabase
+      .from("employees")
+      .select("name, company_name")
+      .eq("organization_id", safeOrganizationId)
+      .order("name", { ascending: true }),
 
-  if (contractorError) {
-    throw new Error("元請取得失敗: " + contractorError.message);
+    supabase
+      .from("contractors")
+      .select("id, name")
+      .eq("organization_id", safeOrganizationId)
+      .order("name", { ascending: true }),
+
+    supabase
+      .from("contractor_contacts")
+      .select("id, contractor_id, manager_name, contact_phone")
+      .eq("organization_id", safeOrganizationId),
+
+    supabase
+      .from("assignments")
+      .select(`
+        id,
+        assignment_date,
+        site_name,
+        contractor_name,
+        construction_type,
+        group_key,
+        manager_name,
+        contact_phone,
+        address,
+        meeting_time,
+        shift_type,
+        start_time,
+        end_time,
+        start_date,
+        end_date
+      `)
+      .eq("organization_id", safeOrganizationId)
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: true }),
+  ]);
+
+  if (employeeResult.error) {
+    throw new Error("社員取得失敗: " + employeeResult.error.message);
   }
 
-  const { data: contactData, error: contactError } = await supabase
-    .from("contractor_contacts")
-    .select("id, contractor_id, manager_name, contact_phone")
-    .eq("organization_id", safeOrganizationId);
-
-  if (contactError) {
-    throw new Error("担当者取得失敗: " + contactError.message);
+  if (contractorResult.error) {
+    throw new Error("元請取得失敗: " + contractorResult.error.message);
   }
 
-  const { data: assignmentData, error: assignmentError } = await supabase
-    .from("assignments")
-    .select(`
-      id,
-      assignment_date,
-      site_name,
-      contractor_name,
-      construction_type,
-      group_key,
-      manager_name,
-      contact_phone,
-      address,
-      meeting_time,
-      shift_type,
-      start_time,
-      end_time,
-      start_date,
-      end_date
-    `)
-    .eq("organization_id", safeOrganizationId)
-    .order("sort_order", { ascending: true })
-    .order("created_at", { ascending: true });
-
-  if (assignmentError) {
-    throw new Error("現場取得失敗: " + assignmentError.message);
+  if (contactResult.error) {
+    throw new Error("担当者取得失敗: " + contactResult.error.message);
   }
 
-  const assignmentIds = assignmentData?.map((a) => a.id) ?? [];
+  if (assignmentResult.error) {
+    throw new Error("現場取得失敗: " + assignmentResult.error.message);
+  }
+
+  const assignmentData = assignmentResult.data ?? [];
+  const assignmentIds = assignmentData.map((assignment) => assignment.id);
 
   if (assignmentIds.length === 0) {
     return {
-      employees: employeeData ?? [],
-      contractors: contractorData ?? [],
-      contractorContacts: contactData ?? [],
+      employees: employeeResult.data ?? [],
+      contractors: contractorResult.data ?? [],
+      contractorContacts: contactResult.data ?? [],
       assignments: [],
       dailyInfos: [],
       siteMembers: [],
@@ -112,50 +124,54 @@ export async function fetchTwoMonthData({
     };
   }
 
-  const { data: dailyInfoData, error: dailyInfoError } = await supabase
-    .from("assignment_site_daily_infos")
-    .select("id, assignment_id, work_date, planned_count, detail, vehicle_names")
-    .eq("organization_id", safeOrganizationId)
-    .in("assignment_id", assignmentIds)
-    .gte("work_date", startDate)
-    .lte("work_date", endDate);
+  const [dailyInfoResult, memberResult, fileResult] = await Promise.all([
+    supabase
+      .from("assignment_site_daily_infos")
+      .select(
+        "id, assignment_id, work_date, planned_count, detail, vehicle_names"
+      )
+      .eq("organization_id", safeOrganizationId)
+      .in("assignment_id", assignmentIds)
+      .gte("work_date", startDate)
+      .lte("work_date", endDate),
 
-  if (dailyInfoError) {
-    throw new Error("工程表取得失敗: " + dailyInfoError.message);
+    supabase
+      .from("assignment_site_members")
+      .select(
+        "id, assignment_id, work_date, employee_name, is_driver, is_operator, is_foreman, heavy_equipment"
+      )
+      .eq("organization_id", safeOrganizationId)
+      .in("assignment_id", assignmentIds)
+      .gte("work_date", startDate)
+      .lte("work_date", endDate),
+
+    supabase
+      .from("assignment_files")
+      .select("id, assignment_id, file_name, file_url, file_path")
+      .eq("organization_id", safeOrganizationId)
+      .in("assignment_id", assignmentIds),
+  ]);
+
+  if (dailyInfoResult.error) {
+    throw new Error("工程表取得失敗: " + dailyInfoResult.error.message);
   }
 
-  const { data: memberData, error: memberError } = await supabase
-    .from("assignment_site_members")
-    .select(
-      "id, assignment_id, work_date, employee_name, is_driver, is_operator, is_foreman, heavy_equipment"
-    )
-    .eq("organization_id", safeOrganizationId)
-    .in("assignment_id", assignmentIds)
-    .gte("work_date", startDate)
-    .lte("work_date", endDate);
-
-  if (memberError) {
-    throw new Error("メンバー取得失敗: " + memberError.message);
+  if (memberResult.error) {
+    throw new Error("メンバー取得失敗: " + memberResult.error.message);
   }
 
-  const { data: fileData, error: fileError } = await supabase
-    .from("assignment_files")
-    .select("id, assignment_id, file_name, file_url, file_path")
-    .eq("organization_id", safeOrganizationId)
-    .in("assignment_id", assignmentIds);
-
-  if (fileError) {
-    throw new Error("ファイル取得失敗: " + fileError.message);
+  if (fileResult.error) {
+    throw new Error("ファイル取得失敗: " + fileResult.error.message);
   }
 
   return {
-    employees: employeeData ?? [],
-    contractors: contractorData ?? [],
-    contractorContacts: contactData ?? [],
-    assignments: assignmentData ?? [],
-    dailyInfos: dailyInfoData ?? [],
-    siteMembers: memberData ?? [],
-    assignmentFiles: fileData ?? [],
+    employees: employeeResult.data ?? [],
+    contractors: contractorResult.data ?? [],
+    contractorContacts: contactResult.data ?? [],
+    assignments: assignmentData,
+    dailyInfos: dailyInfoResult.data ?? [],
+    siteMembers: memberResult.data ?? [],
+    assignmentFiles: fileResult.data ?? [],
   };
 }
 
