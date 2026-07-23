@@ -407,14 +407,31 @@ export async function addAssignmentApi(
       start_time: data.shift_type === "night" ? "20:00" : "08:00",
       end_time: data.shift_type === "night" ? "05:00" : "17:00",
     })
-    .select("id")
+    .select(`
+  id,
+  assignment_date,
+  site_name,
+  contractor_name,
+  construction_type,
+  group_key,
+  manager_name,
+  contact_phone,
+  address,
+  meeting_time,
+  shift_type,
+  start_time,
+  end_time,
+  start_date,
+  end_date,
+  sort_order
+`)
     .single();
 
   if (error || !result) {
     throw new Error("現場追加失敗: " + (error?.message ?? "ID取得失敗"));
   }
 
-  return result.id;
+  return result;
 }
 
 export async function updateDailyInfoApi(

@@ -193,7 +193,7 @@ export function useAssignmentActions({
     try {
       const safeOrganizationId = ensureOrganizationId(organizationId);
 
-      const assignmentId = await addAssignmentApi(
+      const assignment = await addAssignmentApi(
         {
           assignment_date: days[0],
           contractor_name: contractorName,
@@ -210,7 +210,7 @@ export function useAssignmentActions({
         safeOrganizationId
       );
 
-      await uploadAssignmentFiles(assignmentId, newFiles, safeOrganizationId);
+      await uploadAssignmentFiles(assignment.id, newFiles, safeOrganizationId);
 
       setSiteName("");
       setContractorName("");
@@ -225,7 +225,7 @@ export function useAssignmentActions({
       setShowAddModal(false);
       setNewFiles(null);
 
-      await fetchData();
+      setAssignments((prev) => [assignment, ...prev]);
     } catch (error) {
       alert(error instanceof Error ? error.message : "現場追加に失敗しました");
     }
