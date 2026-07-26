@@ -29,7 +29,7 @@ export function useDailyInfo({
   const updateDailyInfo = async (
     assignmentId: string,
     workDate: string,
-    field: "planned_count" | "detail",
+    field: "planned_count" | "detail" | "memo",
     value: string
   ) => {
     if (!organizationId) {
@@ -71,6 +71,7 @@ export function useDailyInfo({
             : Number(value)
           : existing?.planned_count ?? null,
       detail: field === "detail" ? value : existing?.detail ?? null,
+      memo: field === "memo" ? value : existing?.memo ?? null,
     };
 
     try {

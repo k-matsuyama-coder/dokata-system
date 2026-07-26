@@ -39,6 +39,10 @@ export function useTwoMonthPage() {
   const [contractorContacts, setContractorContacts] = useState<ContractorContact[]>([]);
   const [organizationId, setOrganizationId] = useState<string | null>(null);
 
+  const [dateMemos, setDateMemos] = useState<Map<string, string>>(
+    () => new Map()
+  );
+
   const [baseMonth, setBaseMonth] = useState(() => {
     const now = new Date();
     let year = now.getFullYear();
@@ -161,6 +165,26 @@ export function useTwoMonthPage() {
         organizationId: nextOrganizationId,
       });
 
+      const { data: memoRows, error: memoError } = await supabase
+  .from("assignment_date_memos")
+  .select("work_date, memo")
+  .eq("organization_id", nextOrganizationId)
+  .gte("work_date", days[0])
+  .lte("work_date", days[days.length - 1]);
+
+if (memoError) {
+  throw memoError;
+}
+
+setDateMemos(
+  new Map(
+    (memoRows ?? []).map((row) => [
+      row.work_date as string,
+      (row.memo as string | null) ?? "",
+    ])
+  )
+);
+
       setEmployees(resultData.employees ?? []);
       setContractors(resultData.contractors ?? []);
       setContractorContacts(resultData.contractorContacts ?? []);
@@ -173,6 +197,34 @@ export function useTwoMonthPage() {
     }
   };
 
+  const onSaveDateMemo = async (date: string, memo: string) => {
+    if (!organizationId) return;
+  
+    const { error } = await supabase
+      .from("assignment_date_memos")
+      .upsert(
+        {
+          organization_id: organizationId,
+          work_date: date,
+          memo,
+        },
+        {
+          onConflict: "organization_id,work_date",
+        }
+      );
+  
+    if (error) {
+      alert(error.message);
+      return;
+    }
+  
+    setDateMemos((prev) => {
+      const next = new Map(prev);
+      next.set(date, memo);
+      return next;
+    });
+  };
+
   useEffect(() => {
     void fetchData();
   }, [baseMonth]);
@@ -180,6 +232,9 @@ export function useTwoMonthPage() {
   return {
     assignments,
     setAssignments,
+    dateMemos,
+setDateMemos,
+onSaveDateMemo,
     assignmentFiles,
     setAssignmentFiles,
     dailyInfos,

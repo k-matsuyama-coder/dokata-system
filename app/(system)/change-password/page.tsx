@@ -8,6 +8,9 @@ export default function ChangePasswordPage() {
   const [passwordConfirm, setPasswordConfirm] = useState("");
 
   const handleChangePassword = async () => {
+    if (!confirm("パスワードを変更します。よろしいですか？")) {
+      return;
+    }
     if (!password || !passwordConfirm) {
       alert("パスワードを入力してください");
       return;
@@ -53,14 +56,19 @@ export default function ChangePasswordPage() {
     }
 
     alert("パスワードを変更しました");
-    window.location.href = "/home";
+    window.location.replace("/home");
   };
 
   return (
     <div style={{ maxWidth: 420, margin: "80px auto", padding: 16 }}>
       <h1>パスワード変更</h1>
+      <p style={{ color: "#666", marginBottom: 24 }}>
+  新しいパスワードを入力してください。（8文字以上）
+</p>
 
-      <p>新しいパスワード</p>
+      <p style={{ fontWeight: 600, marginBottom: 8 }}>
+  新しいパスワード
+</p>
       <input
         type="password"
         value={password}
@@ -71,10 +79,15 @@ export default function ChangePasswordPage() {
           fontSize: 16,
           marginBottom: 16,
           boxSizing: "border-box",
+          border: "1px solid #ccc",
+borderRadius: 8,
+backgroundColor: "#fff",
         }}
       />
 
-      <p>新しいパスワード確認</p>
+<p style={{ fontWeight: 600, marginBottom: 8 }}>
+  新しいパスワード確認
+</p>
       <input
         type="password"
         value={passwordConfirm}
@@ -85,6 +98,9 @@ export default function ChangePasswordPage() {
           fontSize: 16,
           marginBottom: 16,
           boxSizing: "border-box",
+          border: "1px solid #ccc",
+borderRadius: 8,
+backgroundColor: "#fff",
         }}
       />
 
@@ -98,6 +114,7 @@ export default function ChangePasswordPage() {
           color: "#fff",
           border: "none",
           borderRadius: 8,
+          cursor: "pointer",
         }}
       >
         パスワードを変更

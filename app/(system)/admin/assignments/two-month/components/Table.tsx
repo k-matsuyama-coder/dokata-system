@@ -5,6 +5,7 @@ import React, { useCallback, useRef } from "react";
 import TwoMonthTableHeader from "./TableHeader";
 import TwoMonthAssignmentRow from "./AssignmentRow";
 import type { Assignment, AssignmentGroupKey, Employee } from "../types";
+import type { DailyInfo } from "../types";
 
 type GroupedAssignment = {
   label: string;
@@ -15,6 +16,8 @@ type GroupedAssignment = {
 type Props = {
   days: string[];
   employees: Employee[];
+  dateMemos: Map<string, string>;
+onSaveDateMemo: (date: string, memo: string) => Promise<void>;
   groupedAssignments: GroupedAssignment[];
   sortMode: string;
   draggingAssignmentId: string | null;
@@ -28,6 +31,7 @@ type Props = {
     second: number;
     third: number;
   };
+  dailyInfos: DailyInfo[];
   getMonthlyTotal: (assignmentId: string, index: 0 | 1) => number;
   previousMonthTotal: number;
 nextMonthTotal: number;
@@ -47,9 +51,13 @@ nextMonthTotal: number;
   updateDailyInfo: (
     assignmentId: string,
     workDate: string,
-    field: "planned_count" | "detail",
+    field: "planned_count" | "detail" | "memo",
     value: string
   ) => void;
+  updateAssignmentMemo: (
+    assignmentId: string,
+    memo: string
+  ) => void | Promise<void>;
   groupNameMap: Map<AssignmentGroupKey, string>;
 };
 
@@ -59,6 +67,8 @@ const AUTO_SCROLL_STEP = 28;
 export default function TwoMonthTable({
   days,
   employees,
+  dateMemos,
+onSaveDateMemo,
   groupedAssignments,
   sortMode,
   draggingAssignmentId,
@@ -67,6 +77,7 @@ export default function TwoMonthTable({
   moveAssignmentRow,
   deleteAssignment,
   getDailyTotal,
+  dailyInfos,
 getMonthlyTotal,
 previousMonthTotal,
 nextMonthTotal,
@@ -76,6 +87,7 @@ getPlannedCount,
   removeDetailTag,
   addDetailTag,
   updateDailyInfo,
+  updateAssignmentMemo,
   groupNameMap,
 }: Props) {
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
@@ -136,6 +148,8 @@ getPlannedCount,
         <TwoMonthTableHeader
   days={days}
   employees={employees}
+  dateMemos={dateMemos}
+  onSaveDateMemo={onSaveDateMemo}
   getDailyTotal={getDailyTotal}
   previousMonthTotal={previousMonthTotal}
   nextMonthTotal={nextMonthTotal}
@@ -179,9 +193,19 @@ getPlannedCount,
                   getPlannedCount={getPlannedCount}
                   getBandColor={getBandColor}
                   getDetailTags={getDetailTags}
+                  getMemo={(assignmentId, workDate) => {
+                    return (
+                      dailyInfos.find(
+                        (d) =>
+                          d.assignment_id === assignmentId &&
+                          d.work_date === workDate
+                      )?.memo ?? ""
+                    );
+                  }}
                   removeDetailTag={removeDetailTag}
                   addDetailTag={addDetailTag}
                   updateDailyInfo={updateDailyInfo}
+                  updateAssignmentMemo={updateAssignmentMemo}
                   groupNameMap={groupNameMap}
                 />
               ))}

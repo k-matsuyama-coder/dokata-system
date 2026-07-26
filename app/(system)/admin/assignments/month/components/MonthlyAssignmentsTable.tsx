@@ -5,6 +5,7 @@ import AssignmentDateHeader from "./AssignmentDateHeader";
 
 import type {
   Assignment,
+  AssignmentDateMemo,
   AssignmentGroupKey,
   AssignmentGroupSetting,
   DailyInfo,
@@ -28,11 +29,13 @@ type Props = {
   isMobile: boolean;
   viewMode: "month" | "week";
   days: string[];
+  dateMemos: AssignmentDateMemo[];
   dailySummaryMap: Map<string, DailySummary>;
   assignmentMap: Map<string, Assignment>;
   enabledGroups: AssignmentGroupSetting[];
   groupNameMap: Map<AssignmentGroupKey, string>;
   getDateHeaderStyle: (date: string) => React.CSSProperties;
+  onSaveDateMemo: (date: string, memo: string) => Promise<void>;
   children: React.ReactNode;
 };
 
@@ -42,11 +45,13 @@ const MonthlyAssignmentsTable = React.forwardRef<HTMLDivElement, Props>(
       isMobile,
       viewMode,
       days,
+      dateMemos,
       dailySummaryMap,
       assignmentMap,
       enabledGroups,
       groupNameMap,
       getDateHeaderStyle,
+      onSaveDateMemo,
       children,
     },
     ref
@@ -101,14 +106,16 @@ const MonthlyAssignmentsTable = React.forwardRef<HTMLDivElement, Props>(
 
               {days.map((date) => (
                 <AssignmentDateHeader
-                  key={date}
-                  date={date}
-                  summary={dailySummaryMap.get(date)}
-                  assignmentMap={assignmentMap}
-                  enabledGroups={enabledGroups}
-                  groupNameMap={groupNameMap}
-                  getDateHeaderStyle={getDateHeaderStyle}
-                />
+                key={date}
+                date={date}
+                summary={dailySummaryMap.get(date)}
+                assignmentMap={assignmentMap}
+                enabledGroups={enabledGroups}
+                groupNameMap={groupNameMap}
+                getDateHeaderStyle={getDateHeaderStyle}
+                memo={dateMemos.find((m) => m.work_date === date)?.memo ?? null}
+                onSaveDateMemo={onSaveDateMemo}
+              />
               ))}
             </tr>
           </thead>

@@ -87,7 +87,7 @@ export function useMonthlyAssignmentData({ days, organizationId }: Props) {
         (a) => a.id === "d705ae07-f5be-4fb1-9b29-e6ea8b50d9e1"
       )
     );
-    
+
     const assignmentIds = (assignmentData ?? []).map((assignment) => assignment.id);
 
     console.timeEnd("getAssignments");
@@ -113,7 +113,16 @@ export function useMonthlyAssignmentData({ days, organizationId }: Props) {
         getShiftRequests(organizationId, startDate, endDate),
       ]);
 
-      console.log("取得したメンバー", memberData);
+      console.log(
+  "番割 7/23 現場",
+  [
+    ...new Set(
+      memberData
+        .filter((member) => member.work_date === "2026-07-23")
+        .map((member) => member.assignment_id)
+    ),
+  ]
+);
 
     console.timeEnd("scheduleChildren");
 

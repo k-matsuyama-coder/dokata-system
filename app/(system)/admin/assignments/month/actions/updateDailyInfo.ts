@@ -2,7 +2,7 @@
 import { supabase } from "@/lib/supabase";
 import type { DailyInfo } from "../types";
 
-type Field = "planned_count" | "detail" | "vehicle_names";
+type Field = "planned_count" | "detail" | "memo" | "vehicle_names";
 
 type Props = {
   assignmentId: string;
@@ -47,6 +47,12 @@ export async function updateDailyInfoAction({
       field === "detail"
         ? toNullableDetail(value)
         : existing?.detail ?? null,
+
+        memo:
+        field === "memo"
+          ? toNullableDetail(value)
+          : existing?.memo ?? null,
+          
     vehicle_names:
       field === "vehicle_names"
         ? toVehicleNames(value)
@@ -58,7 +64,7 @@ export async function updateDailyInfoAction({
     .upsert(payload, {
       onConflict: "organization_id,assignment_id,work_date",
     })
-    .select("id, assignment_id, work_date, planned_count, detail, vehicle_names")
+    .select("id, assignment_id, work_date, planned_count, detail, memo, vehicle_names")
     .single();
 
   return { data, error };

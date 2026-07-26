@@ -38,6 +38,7 @@ type ItemRequest = {
 
   const itemTypes = [
     "舗装道具",
+    "佐官道具",
     "吊り道具",
     "測量機器",
     "安全用品",
@@ -62,6 +63,7 @@ export default function ItemsPage() {
 const [items, setItems] = useState<Item[]>([]);
 const [requests, setRequests] = useState<ItemRequest[]>([]);
 const [showAddModal, setShowAddModal] = useState(false);
+const [editingItem, setEditingItem] = useState<Item | null>(null);
 
 const [itemType, setItemType] = useState("");
 const [itemName, setItemName] = useState("");
@@ -180,6 +182,47 @@ if (!currentOrganizationId) {
     fetchItems();
   };
 
+  const updateItem = async () => {
+    if (!editingItem) return;
+  
+    const currentOrganizationId = await getCurrentOrganization();
+  
+    if (!currentOrganizationId) {
+      alert("会社情報が取得できません");
+      return;
+    }
+  
+    const { error } = await supabase
+      .from("items")
+      .update({
+        item_type: itemType,
+        item_name: itemName,
+        classification,
+        model_number: modelNumber,
+        quantity: Number(quantity || 1),
+        location,
+        manager_name: managerName,
+      })
+      .eq("organization_id", currentOrganizationId)
+      .eq("id", editingItem.id);
+  
+    if (error) {
+      alert("更新失敗: " + error.message);
+      return;
+    }
+  
+    setItemType("");
+setItemName("");
+setClassification("");
+setModelNumber("");
+setQuantity("1");
+setLocation("");
+setManagerName("");
+setEditingItem(null);
+
+fetchItems();
+  };
+
 const approveRequest = async (
     requestId: string,
     itemId: string
@@ -240,6 +283,17 @@ if (!currentOrganizationId) {
       .eq("id", itemId);
   
     fetchItems();
+  };
+
+  const openEditModal = (item: Item) => {
+    setEditingItem(item);
+    setItemType(item.item_type);
+    setItemName(item.item_name);
+    setClassification(item.classification ?? "");
+    setModelNumber(item.model_number ?? "");
+    setQuantity(String(item.quantity));
+    setLocation(item.location ?? "");
+    setManagerName(item.manager_name ?? "");
   };
 
   const deleteItem = async (item: Item) => {
@@ -431,37 +485,276 @@ if (!currentOrganizationId) {
   </div>
 )}
 
+{editingItem && (
+  <div
+    onClick={() => setEditingItem(null)}
+    style={{
+      position: "fixed",
+      inset: 0,
+      backgroundColor: "rgba(0,0,0,0.45)",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      zIndex: 9999,
+      padding: 16,
+    }}
+  >
+    <div
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        width: "100%",
+        maxWidth: 520,
+        backgroundColor: "#fff",
+        borderRadius: 16,
+        padding: 20,
+      }}
+    >
+      <>
+  <h2 style={{ margin: 0 }}>物品編集</h2>
+
+  <select
+    value={itemType}
+    onChange={(e) => setItemType(e.target.value)}
+    style={inputStyle}
+  >
+    <option value="">種別を選択</option>
+
+    {itemTypes.map((type) => (
+      <option key={type} value={type}>
+        {type}
+      </option>
+    ))}
+  </select>
+  <input
+  placeholder="品名"
+  value={itemName}
+  onChange={(e) => setItemName(e.target.value)}
+  style={inputStyle}
+/>
+<select
+  value={classification}
+  onChange={(e) => setClassification(e.target.value)}
+  style={inputStyle}
+>
+  <option value="">
+    区分を選択
+  </option>
+
+  {classifications.map((item) => (
+    <option key={item} value={item}>
+      {item}
+    </option>
+  ))}
+</select>
+<input
+  placeholder="型番/品番"
+  value={modelNumber}
+  onChange={(e) => setModelNumber(e.target.value)}
+  style={inputStyle}
+/>
+<input
+  type="number"
+  min="1"
+  placeholder="個数"
+  value={quantity}
+  onChange={(e) => setQuantity(e.target.value)}
+  style={inputStyle}
+/>
+<input
+  placeholder="管理場所"
+  value={location}
+  onChange={(e) => setLocation(e.target.value)}
+  style={inputStyle}
+/>
+<input
+  placeholder="管理者"
+  value={managerName}
+  onChange={(e) => setManagerName(e.target.value)}
+  style={inputStyle}
+/>
+<div style={{ display: "flex", gap: 8 }}>
+  <button
+    type="button"
+    onClick={() => setEditingItem(null)}
+    style={{
+      flex: 1,
+      padding: 12,
+      borderRadius: 8,
+      border: "1px solid #ccc",
+      backgroundColor: "#fff",
+      fontWeight: 700,
+      cursor: "pointer",
+    }}
+  >
+    キャンセル
+  </button>
+
+  <button
+    type="button"
+    onClick={updateItem}
+    style={{
+      flex: 1,
+      padding: 12,
+      border: "none",
+      borderRadius: 8,
+      backgroundColor: "#111",
+      color: "#fff",
+      fontWeight: 800,
+      cursor: "pointer",
+    }}
+  >
+    更新
+  </button>
+</div>
+</>
+    </div>
+  </div>
+)}
+
+<div
+  style={{
+    overflowX: "auto",
+    border: "1px solid #e5e7eb",
+    borderRadius: 10,
+  }}
+>
+
   <table
     style={{
       width: "100%",
+      minWidth: 900,
       borderCollapse: "collapse",
+      marginTop: 16,
     }}
   >
-    <thead>
+    <thead
+  style={{
+    position: "sticky",
+    top: 0,
+    backgroundColor: "#f8f8f8",
+    zIndex: 1,
+  }}
+>
       <tr>
-        <th>種別</th>
-        <th>品名</th>
-        <th>区分</th>
-        <th>型番</th>
-        <th>個数</th>
-        <th>管理場所</th>
-        <th>管理者</th>
-        <th>状態</th>
-        <th>操作</th>
+      <th
+  style={{
+    padding: "14px 10px",
+    textAlign: "left",
+    backgroundColor: "#f3f4f6",
+    borderBottom: "2px solid #ddd",
+  }}
+>
+  種別
+</th>
+<th style={{ padding: "14px 10px", textAlign: "left", backgroundColor: "#f3f4f6", borderBottom: "2px solid #ddd" }}>
+  品名
+</th>
+<th style={{ padding: "14px 10px", textAlign: "left", backgroundColor: "#f3f4f6", borderBottom: "2px solid #ddd" }}>
+  区分
+</th>
+<th style={{ padding: "14px 10px", textAlign: "left", backgroundColor: "#f3f4f6", borderBottom: "2px solid #ddd" }}>
+  型番
+</th>
+<th style={{ padding: "14px 10px", textAlign: "left", backgroundColor: "#f3f4f6", borderBottom: "2px solid #ddd" }}>
+  個数
+</th>
+<th style={{ padding: "14px 10px", textAlign: "left", backgroundColor: "#f3f4f6", borderBottom: "2px solid #ddd" }}>
+  管理場所
+</th>
+<th style={{ padding: "14px 10px", textAlign: "left", backgroundColor: "#f3f4f6", borderBottom: "2px solid #ddd" }}>
+  管理者
+</th>
+<th style={{ padding: 10, textAlign: "left", backgroundColor: "#f3f4f6", borderBottom: "2px solid #ddd" }}>
+  状態
+</th>
+<th style={{ padding: 10, textAlign: "left", backgroundColor: "#f3f4f6", borderBottom: "2px solid #ddd" }}>
+  操作
+</th>
       </tr>
     </thead>
     <tbody>
       {items.map((item) => (
-        <tr key={item.id}>
-          <td>{item.item_type}</td>
-          <td>{item.item_name}</td>
-          <td>{item.classification}</td>
-          <td>{item.model_number}</td>
-          <td>{item.quantity}</td>
-          <td>{item.location}</td>
-          <td>{item.manager_name}</td>
-          <td>{item.status}</td>
-          <td>
+        <tr
+        key={item.id}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = "#f9fafb";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = "#fff";
+        }}
+      >
+          <td
+  style={{
+    padding: "12px 14px",
+    borderBottom: "1px solid #eee",
+  }}
+>
+  {item.item_type}
+</td>
+<td style={{ padding: "12px 14px", borderBottom: "1px solid #eee" }}>
+  {item.item_name}
+</td>
+<td style={{ padding: "12px 14px", borderBottom: "1px solid #eee" }}>
+  {item.classification || "-"}
+</td>
+<td style={{ padding: "12px 14px", borderBottom: "1px solid #eee" }}>
+  {item.model_number || "-"}
+</td>
+<td style={{ padding: "12px 14px", borderBottom: "1px solid #eee" }}>
+  {item.quantity}
+</td>
+<td style={{ padding: "12px 14px", borderBottom: "1px solid #eee" }}>
+  {item.location || "-"}
+</td>
+<td style={{ padding: "12px 14px", borderBottom: "1px solid #eee" }}>
+  {item.manager_name || "-"}
+</td>
+<td
+  style={{
+    padding: 10,
+    borderBottom: "1px solid #eee",
+    textAlign: "center",
+  }}
+>
+  <span
+    style={{
+      display: "inline-block",
+      padding: "4px 10px",
+      borderRadius: 999,
+      fontWeight: 700,
+      backgroundColor:
+        item.status === "保管中" ? "#dcfce7" : "#dbeafe",
+      color:
+        item.status === "保管中" ? "#166534" : "#1d4ed8",
+    }}
+  >
+    {item.status}
+  </span>
+</td>
+<td
+  style={{
+    padding: 10,
+    borderBottom: "1px solid #eee",
+    whiteSpace: "nowrap",
+  }}
+>
+  
+          <button
+  type="button"
+  onClick={() => openEditModal(item)}
+  style={{
+    border: "none",
+    borderRadius: 6,
+    padding: "6px 10px",
+    backgroundColor: "#2563eb",
+    color: "#fff",
+    fontWeight: 800,
+    cursor: "pointer",
+    marginRight: 8,
+  }}
+>
+  編集
+</button>
   <button
     type="button"
     onClick={() => deleteItem(item)}
@@ -482,6 +775,8 @@ if (!currentOrganizationId) {
       ))}
     </tbody>
   </table>
+  </div>
+  
 
   <h2 style={{ marginTop: 40 }}>
   貸出申請一覧

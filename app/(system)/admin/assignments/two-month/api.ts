@@ -76,6 +76,7 @@ export async function fetchTwoMonthData({
         assignment_date,
         site_name,
         contractor_name,
+        memo,
         construction_type,
         group_key,
         manager_name,
@@ -128,7 +129,7 @@ export async function fetchTwoMonthData({
     supabase
       .from("assignment_site_daily_infos")
       .select(
-        "id, assignment_id, work_date, planned_count, detail, vehicle_names"
+        "id, assignment_id, work_date, planned_count, detail, memo, vehicle_names"
       )
       .eq("organization_id", safeOrganizationId)
       .in("assignment_id", assignmentIds)
@@ -348,6 +349,26 @@ export async function updateAssignmentApi(
   }
 }
 
+export async function updateAssignmentMemoApi(
+  assignmentId: string,
+  memo: string,
+  organizationId: string
+) {
+  const safeOrganizationId = ensureOrganizationId(organizationId);
+
+  const { error } = await supabase
+    .from("assignments")
+    .update({
+      memo,
+    })
+    .eq("organization_id", safeOrganizationId)
+    .eq("id", assignmentId);
+
+  if (error) {
+    throw new Error("現場メモ更新失敗: " + error.message);
+  }
+}
+
 async function getTopSortOrder(organizationId: string) {
   const safeOrganizationId = ensureOrganizationId(organizationId);
 
@@ -440,6 +461,7 @@ export async function updateDailyInfoApi(
     work_date: string;
     planned_count: number | null;
     detail: string | null;
+    memo: string | null;
   },
   organizationId: string
 ) {
@@ -456,7 +478,7 @@ export async function updateDailyInfoApi(
         onConflict: "organization_id,assignment_id,work_date",
       }
     )
-    .select("id, assignment_id, work_date, planned_count, detail, vehicle_names")
+    .select("id, assignment_id, work_date, planned_count, detail, memo, vehicle_names")
     .single();
 
   if (error || !data) {

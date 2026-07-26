@@ -191,9 +191,20 @@ message: `${employeeName}さんが「${selectedItem?.item_name ?? "物品"}」�
           marginBottom: 20,
         }}
       >
+
+<label style={{ fontWeight: 600 }}>
+  利用する物品
+</label>
         <select
           value={selectedItemId}
           onChange={(e) => setSelectedItemId(e.target.value)}
+          style={{
+            padding: 10,
+            border: "1px solid #ccc",
+            borderRadius: 8,
+            fontSize: 16,
+            boxSizing: "border-box",
+          }}
         >
           <option value="">
             物品を選択
@@ -211,17 +222,41 @@ message: `${employeeName}さんが「${selectedItem?.item_name ?? "物品"}」�
             ))}
         </select>
 
-        <input
-          type="date"
-          value={startDate}
-          onChange={(e) => setStartDate(e.target.value)}
-        />
+        <label style={{ fontWeight: 600 }}>
+
+  利用開始日
+
+</label>
 
         <input
-          type="date"
-          value={returnDate}
-          onChange={(e) => setReturnDate(e.target.value)}
-        />
+  type="date"
+  value={startDate}
+  onChange={(e) => setStartDate(e.target.value)}
+  style={{
+    padding: 10,
+    border: "1px solid #ccc",
+    borderRadius: 8,
+    fontSize: 16,
+    boxSizing: "border-box",
+  }}
+/>
+
+<label style={{ fontWeight: 600 }}>
+  返却予定日
+</label>
+
+<input
+  type="date"
+  value={returnDate}
+  onChange={(e) => setReturnDate(e.target.value)}
+  style={{
+    padding: 10,
+    border: "1px solid #ccc",
+    borderRadius: 8,
+    fontSize: 16,
+    boxSizing: "border-box",
+  }}
+/>
 
         <button
           onClick={submitRequest}
@@ -232,6 +267,7 @@ message: `${employeeName}さんが「${selectedItem?.item_name ?? "物品"}」�
             backgroundColor: "#111",
             color: "#fff",
             fontWeight: 700,
+            cursor: "pointer",
           }}
         >
           使用申請

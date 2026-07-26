@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 
 import AssignmentRow from "./AssignmentRow";
 import AssignmentCell from "./AssignmentCell";
@@ -59,6 +59,7 @@ function AssignmentRowContent({ assignment }: Props) {
     addVehicleToCell,
     removeVehicleFromCell,
     updateDailyInfo,
+    updateAssignmentMemo,
     deleteSiteMember,
     toggleForeman,
   } = useMonthlyAssignmentActionContext();
@@ -84,6 +85,11 @@ function AssignmentRowContent({ assignment }: Props) {
     setCopiedVehicleNames,
     setDraggingVehicleName,
   } = useMonthlyAssignmentSelectionContext();
+
+  const [isSiteMemoHovered, setIsSiteMemoHovered] = useState(false);
+const [isSiteMemoEditing, setIsSiteMemoEditing] = useState(false);
+const [isSiteMemoPreviewVisible, setIsSiteMemoPreviewVisible] = useState(false);
+const [siteMemoDraft, setSiteMemoDraft] = useState("");
 
   const canDragRow = !isMobile && sortMode === "manual";
 
@@ -172,10 +178,27 @@ function AssignmentRowContent({ assignment }: Props) {
         onDragEnd={handleAssignmentDragEnd}
         onDragOver={handleAssignmentDragOver}
         onDrop={handleAssignmentDrop}
+        onMouseEnter={() => {
+          setIsSiteMemoHovered(true);
+          setIsSiteMemoPreviewVisible(true);
+        }}
+        onMouseLeave={() => {
+          setIsSiteMemoHovered(false);
+        
+          if (!isSiteMemoEditing) {
+            setIsSiteMemoPreviewVisible(false);
+          }
+        }}
         style={{
           ...td,
           ...stickyTd2,
           left: isMobile ? 0 : 90,
+          zIndex:
+              isSiteMemoEditing || isSiteMemoPreviewVisible
+                ? 1000
+                : stickyTd2.zIndex,
+          overflow: "visible",
+          fontWeight: 800,
           fontWeight: 800,
           cursor: canDragRow ? "grab" : "pointer",
           backgroundColor: fixedCellBackground,
@@ -187,14 +210,15 @@ function AssignmentRowContent({ assignment }: Props) {
         }}
       >
         <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 10,
-            minHeight: 80,
-          }}
-        >
+  style={{
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    width: "100%",
+    height: "100%",
+  }}
+>
           {canDragRow && (
             <span
               title="ドラッグして上下移動"
@@ -209,6 +233,18 @@ function AssignmentRowContent({ assignment }: Props) {
             </span>
           )}
 
+<div
+  style={{
+    position: "relative",
+    display: "flex",
+    width: "100%",
+    height: "100%",
+    minHeight: 80,
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 6,
+  }}
+>
 <span
   onClick={() => setEditingAssignment(assignment)}
   style={{
@@ -230,6 +266,131 @@ function AssignmentRowContent({ assignment }: Props) {
 >
   {assignment.site_name || "-"}
 </span>
+{!assignment.memo && isSiteMemoHovered && !isSiteMemoEditing && (
+  <button
+    type="button"
+    onClick={(e) => {
+      e.stopPropagation();
+      setSiteMemoDraft("");
+      setIsSiteMemoEditing(true);
+    }}
+    style={{
+      border: "none",
+      background: "transparent",
+      cursor: "pointer",
+      padding: 0,
+      fontSize: 14,
+    }}
+  >
+    💬
+  </button>
+)}
+
+{assignment.memo && !isSiteMemoEditing && (
+  <div
+    title="メモあり"
+    style={{
+      width: 8,
+      height: 8,
+      borderRadius: "50%",
+      backgroundColor: "#2563eb",
+      flexShrink: 0,
+    }}
+  />
+)}
+{assignment.memo &&
+  isSiteMemoPreviewVisible &&
+  !isSiteMemoEditing && (
+    <div
+    onMouseEnter={() => {
+      setIsSiteMemoPreviewVisible(true);
+    }}
+    onMouseLeave={() => {
+      setIsSiteMemoPreviewVisible(false);
+    }}
+      onClick={(e) => {
+        e.stopPropagation();
+        setSiteMemoDraft(assignment.memo ?? "");
+        setIsSiteMemoEditing(true);
+      }}
+      style={{
+        position: "absolute",
+        top: "100%",
+        left: 0,
+        marginTop: 6,
+        width: 260,
+        padding: 10,
+        backgroundColor: "#fff",
+        border: "1px solid #d1d5db",
+        borderRadius: 8,
+        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+        whiteSpace: "pre-wrap",
+        fontSize: 12,
+        zIndex: 1000,
+        cursor: "pointer",
+      }}
+    >
+      {assignment.memo}
+    </div>
+)}
+{isSiteMemoEditing && (
+  <div
+  style={{
+    position: "absolute",
+    top: "50%",
+    left: "calc(100% + 10px)",
+    transform: "translateY(-50%)",
+    width: 260,
+    padding: 10,
+    boxSizing: "border-box",
+    display: "grid",
+    gap: 8,
+    backgroundColor: "#fff",
+    border: "1px solid #d1d5db",
+    borderRadius: 8,
+    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+    zIndex: 1000,
+  }}
+  >
+    <textarea
+      value={siteMemoDraft}
+      onChange={(e) => setSiteMemoDraft(e.target.value)}
+      placeholder="現場メモを入力"
+      style={{
+        width: "100%",
+        minHeight: 100,
+        resize: "vertical",
+        boxSizing: "border-box",
+      }}
+    />
+
+    <button
+      type="button"
+      onClick={async () => {
+        await updateAssignmentMemo(
+          assignment.id,
+          siteMemoDraft
+        );
+      
+        setIsSiteMemoEditing(false);
+        setIsSiteMemoPreviewVisible(false);
+      }}
+      style={{
+        width: "100%",
+        padding: "6px 0",
+        border: "none",
+        borderRadius: 6,
+        backgroundColor: "#2563eb",
+        color: "#fff",
+        cursor: "pointer",
+        fontWeight: 700,
+      }}
+    >
+      保存
+    </button>
+  </div>
+)}
+</div>
         </div>
       </td>
 

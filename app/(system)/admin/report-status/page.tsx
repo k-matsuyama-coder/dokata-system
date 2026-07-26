@@ -4,6 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
 import { hasRole } from "@/app/types/auth";
+import {
+  getSiteMembers,
+  getDailyReports,
+} from "../assignments/month/api";
 
 type Assignment = {
   id: string;
@@ -137,30 +141,33 @@ export default function ReportStatusPage() {
       return;
     }
 
-    const { data: memberData, error: memberError } = await supabase
-      .from("assignment_site_members")
-      .select("assignment_id, work_date, employee_name, is_foreman")
-      .eq("organization_id", currentOrganizationId)
-      .in("assignment_id", assignmentIds)
-      .gte("work_date", startOfMonth)
-      .lte("work_date", endOfMonth);
+    const memberData = await getSiteMembers(
+      currentOrganizationId,
+      assignmentIds,
+      startOfMonth,
+      endOfMonth
+    );
 
-    if (memberError) {
-      alert("番割メンバー取得失敗: " + memberError.message);
-      return;
-    }
+    console.log(
+      "選択日の現場名",
+      [...new Set(
+        (memberData ?? [])
+          .filter((member) => member.work_date === date)
+          .map((member) => {
+            const assignment = (assignmentData ?? []).find(
+              (item) => item.id === member.assignment_id
+            );
+    
+            return assignment?.site_name ?? `不明: ${member.assignment_id}`;
+          })
+      )]
+    );
 
-    const { data: reportData, error: reportError } = await supabase
-      .from("daily_reports")
-      .select("id, report_date, site_name, worker_name, worker_count, members")
-      .eq("organization_id", currentOrganizationId)
-      .gte("report_date", startOfMonth)
-      .lte("report_date", endOfMonth);
-
-    if (reportError) {
-      alert("日報取得失敗: " + reportError.message);
-      return;
-    }
+    const reportData = await getDailyReports(
+      currentOrganizationId,
+      startOfMonth,
+      endOfMonth
+    );
 
     setAssignments(assignmentData ?? []);
     setSiteMembers(memberData ?? []);

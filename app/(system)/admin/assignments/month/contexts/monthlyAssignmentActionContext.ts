@@ -52,6 +52,11 @@ export type MonthlyAssignmentActionContextValue = {
     value: string
   ) => void;
 
+  updateAssignmentMemo: (
+    assignmentId: string,
+    memo: string
+  ) => Promise<void>;
+
   deleteSiteMember: (id: string) => void;
 
   toggleForeman: (member: SiteMember) => void;

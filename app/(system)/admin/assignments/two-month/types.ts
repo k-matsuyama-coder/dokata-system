@@ -23,6 +23,7 @@ export type DailyInfo = {
   work_date: string;
   planned_count: number | null;
   detail: string | null;
+  memo: string | null;
 };
 
 export type AssignmentFile = {
@@ -36,6 +37,7 @@ export type Assignment = {
   id: string;
   site_name: string | null;
   contractor_name: string | null;
+  memo: string | null;
   construction_type: string | null;
   group_key: AssignmentGroupKey | null;
   manager_name: string | null;

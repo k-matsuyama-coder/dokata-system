@@ -30,6 +30,8 @@ export default function TwoMonthPage() {
   const {
     assignments,
     setAssignments,
+    dateMemos,
+onSaveDateMemo,
     assignmentFiles,
     setAssignmentFiles,
     dailyInfos,
@@ -126,6 +128,7 @@ export default function TwoMonthPage() {
   const {
     uploadFiles,
     updateAssignment,
+    updateAssignmentMemo,
     deleteAssignment,
     deleteAssignmentFile,
     moveAssignmentRow,
@@ -263,6 +266,8 @@ export default function TwoMonthPage() {
       <TwoMonthTable
   days={days}
   employees={employees}
+  dateMemos={dateMemos}
+onSaveDateMemo={onSaveDateMemo}
   groupedAssignments={groupedAssignments}
   sortMode={sortMode}
   draggingAssignmentId={draggingAssignmentId}
@@ -271,6 +276,7 @@ export default function TwoMonthPage() {
   moveAssignmentRow={moveAssignmentRow}
   deleteAssignment={deleteAssignment}
   getDailyTotal={(date) => getDailyTotal(assignments, dailyInfos, date)}
+  dailyInfos={dailyInfos}
   getMonthlyTotal={(assignmentId, index) =>
     getMonthlyTotal(dailyInfos, baseMonth, assignmentId, index)
   }
@@ -282,6 +288,7 @@ nextMonthTotal={nextMonthTotal}
   removeDetailTag={removeDetailTag}
   addDetailTag={addDetailTag}
   updateDailyInfo={updateDailyInfo}
+  updateAssignmentMemo={updateAssignmentMemo}
   groupNameMap={groupNameMap}
 />
       </div>

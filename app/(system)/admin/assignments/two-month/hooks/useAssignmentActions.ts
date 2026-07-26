@@ -6,6 +6,7 @@ import {
   updateAssignmentApi,
   addAssignmentApi,
   updateAssignmentSortOrderApi,
+  updateAssignmentMemoApi,
 } from "../api";
 
 import type {
@@ -124,6 +125,27 @@ export function useAssignmentActions({
     }
   };
 
+  const updateAssignmentMemo = async (
+    assignmentId: string,
+    memo: string
+  ) => {
+    try {
+      const safeOrganizationId = ensureOrganizationId(organizationId);
+      await updateAssignmentMemoApi(
+        assignmentId,
+        memo,
+        safeOrganizationId
+      );
+      await fetchData();
+    } catch (error) {
+      alert(
+        error instanceof Error
+          ? error.message
+          : "メモ更新に失敗しました"
+      );
+    }
+  };
+
   const deleteAssignment = async (id: string) => {
     const ok = window.confirm("この現場を削除しますか？");
     if (!ok) return;
@@ -234,6 +256,7 @@ export function useAssignmentActions({
   return {
     uploadFiles,
     updateAssignment,
+    updateAssignmentMemo,
     deleteAssignment,
     deleteAssignmentFile,
     moveAssignmentRow,

@@ -30,6 +30,7 @@ import { MonthlyAssignmentContext } from "./contexts/monthlyAssignmentContext";
 import { exportMonthlyMatrix } from "./utils/exportMonthlyMatrix";
 import { useAssignmentGroups } from "./hooks/useAssignmentGroups";
 import { useAssignmentEditPresence } from "./hooks/useAssignmentEditPresence";
+import { updateAssignmentMemoAction } from "./actions/updateAssignmentMemoAction";
 import {
   MonthlyAssignmentSelectionContext,
   type MonthlyAssignmentSelectionContextValue,
@@ -39,6 +40,7 @@ import {
   type MonthlyAssignmentActionContextValue,
 } from "./contexts/monthlyAssignmentActionContext";
 import { getWeekStart } from "./utils";
+import type { AssignmentDateMemo } from "./types";
 
 export default function MonthlyAssignmentsPage() {
   const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
@@ -47,6 +49,7 @@ export default function MonthlyAssignmentsPage() {
   const [currentOrganizationId, setCurrentOrganizationId] = useState<string | null>(null);
   const [currentAuthUserId, setCurrentAuthUserId] = useState<string>("");
 const [currentEmployeeName, setCurrentEmployeeName] = useState<string>("");
+const [dateMemos, setDateMemos] = useState<AssignmentDateMemo[]>([]);
 
   const [creatingPublicLink, setCreatingPublicLink] = useState(false);
   const [publicViewMode, setPublicViewMode] = useState<"week" | "next3days">("next3days");
@@ -249,6 +252,26 @@ const {
   
     void fetchCurrentUserAndOrganization();
   }, []);
+
+  useEffect(() => {
+    if (!currentOrganizationId) return;
+  
+    const fetchDateMemos = async () => {
+      const { data, error } = await supabase
+        .from("assignment_date_memos")
+        .select("*")
+        .eq("organization_id", currentOrganizationId);
+  
+      if (error) {
+        console.error("日付メモの取得に失敗しました:", error);
+        return;
+      }
+  
+      setDateMemos(data ?? []);
+    };
+  
+    void fetchDateMemos();
+  }, [currentOrganizationId]);
 
   const { isMobile } = useResponsive();
 
@@ -471,6 +494,62 @@ const {
     }
   };
 
+  const updateAssignmentMemo = async (
+    assignmentId: string,
+    memo: string
+  ) => {
+    if (!currentOrganizationId) return;
+  
+    const { error } = await updateAssignmentMemoAction({
+      assignmentId,
+      memo,
+      organizationId: currentOrganizationId,
+    });
+  
+    if (error) {
+      alert("現場メモの保存に失敗しました: " + error.message);
+      return;
+    }
+  
+    await fetchScheduleData();
+  };
+
+  const onSaveDateMemo = async (date: string, memo: string) => {
+    if (!currentOrganizationId) return;
+  
+    const { error } = await supabase
+  .from("assignment_date_memos")
+  .upsert(
+    {
+      organization_id: currentOrganizationId,
+      work_date: date,
+      memo,
+    },
+    {
+      onConflict: "organization_id,work_date",
+    }
+  );
+  
+  if (error) {
+    console.error("日付メモの保存に失敗しました:", error);
+    return;
+  }
+  
+    setDateMemos((current) => {
+      const others = current.filter((m) => m.work_date !== date);
+  
+      return [
+        ...others,
+        {
+          id: crypto.randomUUID(),
+          organization_id: currentOrganizationId,
+          work_date: date,
+          memo,
+        },
+      ];
+    });
+  };
+
   const assignmentContextValue = useMemo<MonthlyAssignmentContextValue>(
     () => ({
       days,
@@ -605,6 +684,7 @@ stopEditing,
       addVehicleToCell,
       removeVehicleFromCell,
       updateDailyInfo,
+      updateAssignmentMemo,
       deleteSiteMember,
       toggleForeman,
     }),
@@ -617,6 +697,7 @@ stopEditing,
       addVehicleToCell,
       removeVehicleFromCell,
       updateDailyInfo,
+      updateAssignmentMemo,
       deleteSiteMember,
       toggleForeman,
     ]
@@ -722,11 +803,13 @@ stopEditing,
   isMobile={isMobile}
   viewMode={viewMode}
   days={days}
+  dateMemos={dateMemos}
   dailySummaryMap={dailySummaryMap}
   assignmentMap={assignmentMap}
   enabledGroups={enabledGroups}
   groupNameMap={groupNameMap}
   getDateHeaderStyle={getDateHeaderStyle}
+  onSaveDateMemo={onSaveDateMemo}
 >
   <tbody>
     <AssignmentGroups groupedAssignments={groupedAssignments} />

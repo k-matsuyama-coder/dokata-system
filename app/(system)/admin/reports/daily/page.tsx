@@ -632,7 +632,12 @@ if (!currentOrganizationId) {
   </td>
 
   <td style={{ ...tdStyle, textAlign: "center" }}>
-  {Number((Number(report.overtime_minutes ?? 0) / 60).toFixed(2))}時間
+  {(() => {
+    const value = Number(report.overtime_minutes ?? 0);
+    const hours = value > 0 && value < 30 ? value : value / 60;
+
+    return `${Number(hours.toFixed(2))}時間`;
+  })()}
 </td>
 
   <td style={{ ...tdStyle, textAlign: "center" }}>

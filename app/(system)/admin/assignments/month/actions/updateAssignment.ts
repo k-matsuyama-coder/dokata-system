@@ -40,6 +40,7 @@ export async function updateAssignmentAction({
     .update({
       contractor_name: editingAssignment.contractor_name,
       site_name: editingAssignment.site_name,
+      memo: editingAssignment.memo,
       group_key: editingAssignment.group_key,
       construction_type: editingAssignment.construction_type,
       manager_name: editingAssignment.manager_name,

@@ -5,7 +5,7 @@ import type { Dispatch, SetStateAction } from "react";
 import { updateDailyInfoAction } from "../actions/updateDailyInfo";
 import type { DailyInfo } from "../types";
 
-type Field = "planned_count" | "detail" | "vehicle_names";
+type Field = "planned_count" | "detail" | "memo" | "vehicle_names";
 
 type Props = {
   dailyInfos: DailyInfo[];

@@ -6,6 +6,23 @@ export type AssignmentGroupKey =
   | "group3"
   | "group4"
   | "group5";
+  
+  export type DailyInfo = {
+    id: string;
+    assignment_id: string;
+    work_date: string;
+    planned_count: number | null;
+    detail: string | null;
+    memo: string | null;
+    vehicle_names: string[];
+  };
+
+export type AssignmentDateMemo = {
+  id: string;
+  organization_id: string;
+  work_date: string;
+  memo: string | null;
+};
 
 export type AssignmentGroupSetting = {
   id: string;
@@ -28,6 +45,7 @@ export type Assignment = {
   assignment_date: string;
   site_name: string | null;
   contractor_name: string | null;
+  memo: string | null;
   shift_type: ShiftType | null;
   start_time: string | null;
   end_time: string | null;
@@ -49,15 +67,6 @@ export type SiteMember = {
   is_operator: boolean | null;
   heavy_equipment: string | null;
   is_foreman: boolean | null;
-};
-
-export type DailyInfo = {
-  id: string;
-  assignment_id: string;
-  work_date: string;
-  planned_count: number | null;
-  detail: string | null;
-  vehicle_names: string[];
 };
 
 export type ShiftRequest = {

@@ -98,18 +98,22 @@ export async function getContractorContacts(organizationId: string) {
 }
 
 export async function getAssignments(organizationId: string) {
-  const { data, error } = await supabase
-    .from("assignments")
-    .select(
-      "id, assignment_date, site_name, contractor_name, construction_type, group_key, shift_type, start_time, end_time, manager_name, contact_phone, address, meeting_time, start_date, end_date"
-    )
-    .eq("organization_id", organizationId)
-    .order("sort_order", { ascending: true })
-    .order("created_at", { ascending: true });
+  return fetchAllPages(async (from, to) => {
+    const { data, error } = await supabase
+      .from("assignments")
+      .select(
+        "id, assignment_date, site_name, contractor_name, memo, construction_type, group_key, shift_type, start_time, end_time, manager_name, contact_phone, address, meeting_time, start_date, end_date"
+      )
+      .eq("organization_id", organizationId)
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: true })
+      .range(from, to);
 
-  if (error) throw error;
-
-  return data ?? [];
+    return {
+      data,
+      error: error ? new Error(error.message) : null,
+    };
+  });
 }
 
 export async function getAssignmentFiles(
@@ -174,7 +178,7 @@ export async function getDailyInfos(
     const { data, error } = await supabase
       .from("assignment_site_daily_infos")
       .select(
-        "id, assignment_id, work_date, planned_count, detail, vehicle_names"
+        "id, assignment_id, work_date, planned_count, detail, memo, vehicle_names"
       )
       .eq("organization_id", organizationId)
       .in("assignment_id", assignmentIds)
@@ -202,6 +206,28 @@ export async function getShiftRequests(
       .eq("organization_id", organizationId)
       .gte("request_date", startDate)
       .lte("request_date", endDate)
+      .order("id", { ascending: true })
+      .range(from, to);
+
+    return {
+      data,
+      error: error ? new Error(error.message) : null,
+    };
+  });
+}
+
+export async function getDailyReports(
+  organizationId: string,
+  startDate: string,
+  endDate: string
+) {
+  return fetchAllPages(async (from, to) => {
+    const { data, error } = await supabase
+      .from("daily_reports")
+      .select("id, report_date, site_name, worker_name, worker_count, members")
+      .eq("organization_id", organizationId)
+      .gte("report_date", startDate)
+      .lte("report_date", endDate)
       .order("id", { ascending: true })
       .range(from, to);
 

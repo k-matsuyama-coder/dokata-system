@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 
 import AssignmentDayCell from "./AssignmentDayCell";
 import AssignmentDetailTextarea from "./AssignmentDetailTextarea";
@@ -46,7 +46,7 @@ type Props = {
   updateDailyInfo: (
     assignmentId: string,
     workDate: string,
-    field: "planned_count" | "detail" | "vehicle_names",
+    field: "planned_count" | "detail" | "memo" | "vehicle_names",
     value: string
   ) => void;
 
@@ -92,18 +92,110 @@ function AssignmentCellContent({
   deleteSiteMember,
   toggleForeman,
 }: Props) {
+const [isMemoHovered, setIsMemoHovered] = useState(false);
+const [isMemoEditing, setIsMemoEditing] = useState(false);
+const [memoDraft, setMemoDraft] = useState("");
+const [isMemoPreviewVisible, setIsMemoPreviewVisible] = useState(false);
   return (
-    <div style={{ display: "grid", gap: 4 }}>
-      <AssignmentDayCell
-        isMobile={isMobile}
-        isOutOfPeriod={isOutOfPeriod}
-        plannedCount={plannedCount}
-        memberCount={memberCount}
-        assignmentId={assignment.id}
-        workDate={date}
-        dailyInfo={dailyInfo}
-        updateDailyInfo={updateDailyInfo}
-      />
+    <div
+    onMouseEnter={() => {
+      setIsMemoHovered(true);
+      setIsMemoPreviewVisible(true);
+    }}
+    onMouseLeave={() => {
+      setIsMemoHovered(false);
+      setIsMemoPreviewVisible(false);
+    }}
+  style={{
+    position: "relative",
+    display: "grid",
+    gap: 4,
+  }}
+>
+
+{isMemoHovered && !isMemoEditing && !dailyInfo?.memo && (
+  <button
+    type="button"
+    onClick={(event) => {
+      event.stopPropagation();
+      setMemoDraft("");
+      setIsMemoEditing(true);
+    }}
+    aria-label="メモを追加"
+    style={{
+      position: "absolute",
+      top: 4,
+      right: 4,
+      zIndex: 10,
+      padding: 2,
+      border: "none",
+      borderRadius: 4,
+      backgroundColor: "#fff",
+      cursor: "pointer",
+      fontSize: 14,
+    }}
+  >
+    💬
+  </button>
+)}
+
+{dailyInfo?.memo && !isMemoEditing && (
+  <div
+  title={dailyInfo.memo}
+  onClick={() => {
+    setMemoDraft(dailyInfo.memo ?? "");
+    setIsMemoEditing(true);
+  }}
+  style={{
+    position: "absolute",
+    top: 4,
+    right: 4,
+    width: 8,
+    height: 8,
+    borderRadius: "50%",
+    backgroundColor: "#2563eb",
+    zIndex: 10,
+    cursor: "pointer",
+  }}
+/>
+)}
+
+{isMemoPreviewVisible && dailyInfo?.memo && !isMemoEditing && (
+  <div
+    onClick={() => {
+      setMemoDraft(dailyInfo.memo ?? "");
+      setIsMemoEditing(true);
+    }}
+    style={{
+      position: "absolute",
+      top: 4,
+      left: "calc(100% + 8px)",
+      width: 240,
+      padding: 10,
+      backgroundColor: "#fff",
+      border: "1px solid #ccc",
+      borderRadius: 8,
+      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+      whiteSpace: "pre-wrap",
+      fontSize: 12,
+      zIndex: 1000,
+      cursor: "pointer",
+    }}
+  >
+    {dailyInfo.memo}
+  </div>
+)}
+
+<AssignmentDayCell
+  isMobile={isMobile}
+  isOutOfPeriod={isOutOfPeriod}
+  plannedCount={plannedCount}
+  memberCount={memberCount}
+  assignmentId={assignment.id}
+  workDate={date}
+  dailyInfo={dailyInfo}
+  updateDailyInfo={updateDailyInfo}
+/>
 
 <AssignmentDetailTextarea
   isMobile={isMobile}
@@ -138,6 +230,64 @@ function AssignmentCellContent({
         deleteSiteMember={deleteSiteMember}
         toggleForeman={toggleForeman}
       />
+
+{isMemoEditing && (
+  <div
+  onClick={(e) => e.stopPropagation()}
+    style={{
+      position: "absolute",
+      top: 4,
+      left: "calc(100% + 8px)",
+      width: 240,
+      padding: 10,
+      backgroundColor: "#fff",
+      border: "1px solid #ccc",
+      borderRadius: 8,
+      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+      zIndex: 1000,
+    }}
+  >
+    <textarea
+      value={memoDraft}
+      onChange={(e) => setMemoDraft(e.target.value)}
+      placeholder="メモを入力"
+      style={{
+        width: "100%",
+        minHeight: 100,
+        resize: "vertical",
+      }}
+    />
+
+    <button
+      type="button"
+      onClick={async () => {
+        await updateDailyInfo(
+          assignment.id,
+          date,
+          "memo",
+          memoDraft
+        );
+      
+        setIsMemoEditing(false);
+        setIsMemoPreviewVisible(false);
+        setMemoDraft("");
+      }}
+      style={{
+        marginTop: 8,
+        width: "100%",
+        padding: "6px 0",
+        border: "none",
+        borderRadius: 6,
+        backgroundColor: "#2563eb",
+        color: "#fff",
+        cursor: "pointer",
+        fontWeight: 700,
+      }}
+    >
+      保存
+    </button>
+  </div>
+)}
     </div>
   );
 }
