@@ -197,20 +197,40 @@ if (!currentOrganizationId) {
       allReports.filter((report) => report.report_date === date)
     );
   
-    const { data: assignmentMemberData, error: assignmentMemberError } =
-      await supabase
-        .from("assignment_site_members")
-        .select("assignment_id, work_date")
-        .eq("organization_id", currentOrganizationId)
-        .gte("work_date", firstDay)
-        .lte("work_date", lastDay);
-  
-    if (assignmentMemberError) {
-      alert("予定現場取得失敗: " + assignmentMemberError.message);
-      return;
-    }
-  
-    setAssignmentMembers(assignmentMemberData ?? []);
+    const assignmentMemberRows: AssignmentMember[] = [];
+const pageSize = 1000;
+let page = 0;
+
+while (true) {
+  const from = page * pageSize;
+  const to = from + pageSize - 1;
+
+  const { data: pageData, error: assignmentMemberError } = await supabase
+    .from("assignment_site_members")
+    .select("assignment_id, work_date")
+    .eq("organization_id", currentOrganizationId)
+    .gte("work_date", firstDay)
+    .lte("work_date", lastDay)
+    .order("work_date", { ascending: true })
+    .order("assignment_id", { ascending: true })
+    .range(from, to);
+
+  if (assignmentMemberError) {
+    alert("予定現場取得失敗: " + assignmentMemberError.message);
+    return;
+  }
+
+  const rows = (pageData ?? []) as AssignmentMember[];
+  assignmentMemberRows.push(...rows);
+
+  if (rows.length < pageSize) {
+    break;
+  }
+
+  page += 1;
+}
+
+setAssignmentMembers(assignmentMemberRows);
   };
 
   const thStyle = {
@@ -235,8 +255,10 @@ if (!currentOrganizationId) {
       const dayMembers = assignmentMembers.filter(
         (m) => m.work_date === dateString
       );
-  
-      const totalSites = new Set(dayMembers.map((m) => m.assignment_id)).size;
+      
+      const totalSites = new Set(
+        dayMembers.map((m) => m.assignment_id)
+      ).size;
   
       const checkedSites = new Set(
         monthReports
