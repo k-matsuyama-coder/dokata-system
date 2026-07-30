@@ -498,23 +498,27 @@ setDailyInfos(dailyInfoData ?? []);
               backgroundColor: "rgba(0,0,0,0.45)",
               display: "flex",
               justifyContent: "center",
-              alignItems: "center",
+              alignItems: "flex-start",
+              overflowY: "auto",
               zIndex: 100000,
               padding: 16,
             }}
           >
             <div
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                width: "100%",
-                maxWidth: 520,
-                backgroundColor: "#fff",
-                borderRadius: 16,
-                padding: 20,
-                display: "grid",
-                gap: 10,
-              }}
-            >
+  onClick={(e) => e.stopPropagation()}
+  style={{
+    width: "100%",
+    maxWidth: 520,
+    maxHeight: "calc(100vh - 32px)",
+    overflowY: "auto",
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 20,
+    display: "grid",
+    gap: 10,
+    boxSizing: "border-box",
+  }}
+>
               <h2 style={{ margin: 0 }}>{selectedSchedule.assignment.site_name}</h2>
 
               <div>

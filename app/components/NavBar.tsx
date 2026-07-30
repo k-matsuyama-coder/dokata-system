@@ -295,6 +295,7 @@ export default function NavBar() {
 
   return (
     <header
+      className="app-navbar"
       style={{
         position: "fixed",
         top: 0,
@@ -313,6 +314,7 @@ export default function NavBar() {
       }}
     >
       <button
+      className="navbar-menu-button"
         type="button"
         onClick={(e) => {
           e.stopPropagation();
@@ -331,6 +333,7 @@ export default function NavBar() {
       </button>
 
       <a
+      className="navbar-brand"
         href="/home"
         onClick={() => setMenuOpen(false)}
         style={{
@@ -345,6 +348,7 @@ export default function NavBar() {
       </a>
 
       <div
+      className="navbar-actions"
         style={{
           marginLeft: "auto",
           display: "flex",
@@ -353,6 +357,7 @@ export default function NavBar() {
         }}
       >
         <select
+        className="navbar-language"
           value={language}
           onChange={(e) => setLanguage(e.target.value as "ja" | "en")}
           style={{
@@ -364,11 +369,12 @@ export default function NavBar() {
             fontSize: 13,
           }}
         >
-          <option value="ja">日本語</option>
-          <option value="en">English</option>
+          <option value="ja">日</option>
+<option value="en">EN</option>
         </select>
 
         <button
+        className="navbar-icon-button"
           type="button"
           onClick={() => setShowCalendarModal(true)}
           style={{
@@ -384,6 +390,7 @@ export default function NavBar() {
         </button>
 
         <button
+        className="navbar-icon-button"
           type="button"
           onClick={enablePushNotifications}
           style={{
@@ -401,6 +408,7 @@ export default function NavBar() {
 
         <div style={{ position: "relative" }}>
           <button
+          className="navbar-icon-button"
             type="button"
             onClick={() => setShowNotifications(!showNotifications)}
             style={{
@@ -687,6 +695,57 @@ export default function NavBar() {
         open={showCalendarModal}
         onClose={() => setShowCalendarModal(false)}
       />
+
+<style jsx>{`
+  @media (max-width: 600px) {
+    .app-navbar {
+      gap: 6px !important;
+      padding: 8px !important;
+    }
+
+    .navbar-menu-button {
+      width: 40px;
+      height: 40px;
+      padding: 0 !important;
+      flex-shrink: 0;
+    }
+
+    .navbar-brand {
+      min-width: 0;
+      max-width: 92px;
+      font-size: 15px !important;
+      line-height: 1.15;
+      overflow-wrap: anywhere;
+      flex-shrink: 1;
+    }
+
+    .navbar-actions {
+      margin-left: auto !important;
+      gap: 4px !important;
+      flex-shrink: 0;
+    }
+
+    .navbar-language {
+      display: block;
+      width: 40px;
+      min-width: 40px;
+      height: 40px;
+      padding: 0 4px !important;
+      text-align: center;
+    }
+
+    .navbar-icon-button {
+      width: 40px;
+      height: 40px;
+      padding: 0 !important;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px !important;
+      flex-shrink: 0;
+    }
+  }
+`}</style>
     </header>
   );
 }

@@ -407,8 +407,9 @@ setAssignmentMembers(assignmentMemberRows);
   <div
     style={{
       display: "grid",
-      gridTemplateColumns: "repeat(7, 1fr)",
-      gap: 8,
+      gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
+gap: 4,
+width: "100%",
       marginBottom: 8,
       fontWeight: 700,
       textAlign: "center",
@@ -424,12 +425,13 @@ setAssignmentMembers(assignmentMemberRows);
   </div>
 
   <div
-    style={{
-      display: "grid",
-      gridTemplateColumns: "repeat(7, 1fr)",
-      gap: 8,
-    }}
-  >
+  style={{
+    display: "grid",
+    gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
+    gap: 4,
+    width: "100%",
+  }}
+>
     {Array.from({ length: startOffset }).map((_, index) => (
       <div key={`empty-${index}`} />
     ))}
@@ -439,8 +441,11 @@ setAssignmentMembers(assignmentMemberRows);
         key={day.dateString}
         onClick={() => setDate(day.dateString)}
         style={{
+          minWidth: 0,
+          width: "100%",
+          boxSizing: "border-box",
           borderRadius: 8,
-          padding: 8,
+          padding: "6px 2px",
           background:
             day.status === "green"
               ? "#dcfce7"
