@@ -54,13 +54,7 @@ const [licenseStatus, setLicenseStatus] = useState<"expired" | "warning" | "ok" 
 const [licenseRemainingDays, setLicenseRemainingDays] = useState<number | null>(null);
 const [impersonating, setImpersonating] = useState(false);
 
-const getCurrentOrganization = async () => {
-  const { data: sessionData } = await supabase.auth.getSession();
-  const token = sessionData.session?.access_token;
-
-  if (!token) {
-    return null;
-  }
+const getCurrentOrganization = async (token: string) => {
 
   const res = await fetch("/api/current-organization", {
     method: "GET",
@@ -87,15 +81,19 @@ const getCurrentOrganization = async () => {
 
 useEffect(() => {
     const fetchHomeData = async () => {
-      const { data: userData } = await supabase.auth.getUser();
-      const user = userData.user;
-
-      if (!user) {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      
+      const user = session?.user;
+      const token = session?.access_token;
+      
+      if (!user || !token) {
         window.location.href = "/login";
         return;
       }
-
-const currentOrganization = await getCurrentOrganization();
+      
+      const currentOrganization = await getCurrentOrganization(token);
 
 if (!currentOrganization?.organizationId) {
   if (currentOrganization?.isSuperAdmin) {
@@ -112,24 +110,13 @@ const isImpersonating = currentOrganization.impersonating;
 
 setImpersonating(isImpersonating);
 
-const { data: loginEmployee } = await supabase
-  .from("employees")
-  .select("must_change_password")
-  .eq("organization_id", currentOrganizationId)
-  .eq("auth_user_id", user.id)
-  .single();
-
-if (loginEmployee?.must_change_password) {
-  window.location.href = "/change-password";
-  return;
-}
-
 const { data: employee, error: employeeError } = await supabase
   .from("employees")
   .select(`
     id,
     name,
     role,
+    must_change_password,
     organization_id,
     organizations (
       status
@@ -139,10 +126,15 @@ const { data: employee, error: employeeError } = await supabase
   .eq("auth_user_id", user.id)
   .single();
 
-if (employeeError || !employee) {
-  console.error("社員情報取得失敗:", employeeError?.message);
-  return;
-}
+  if (employeeError || !employee) {
+    console.error("社員情報取得失敗:", employeeError?.message);
+    return;
+  }
+  
+  if (employee.must_change_password) {
+    window.location.href = "/change-password";
+    return;
+  }
 
 setEmployeeName(employee.name?.trim() || user.email || "ユーザー");
 setRole(employee.role);
@@ -173,50 +165,60 @@ return;
           .toISOString()
           .slice(0, 10);
       
-          const { data: todayReports } = await supabase
-          .from("daily_reports")
-          .select("id")
-          .eq("organization_id", currentOrganizationId)
-          .eq("report_date", todayString);
-      
-          const { data: todayAssignments } = await supabase
-          .from("assignments")
-          .select("id")
-          .eq("organization_id", currentOrganizationId)
-          .lte("start_date", todayString)
-          .or(`end_date.gte.${todayString},end_date.is.null`);
-      
-          const { data: todayMembers } = await supabase
-          .from("assignment_site_members")
-          .select("id")
-          .eq("organization_id", currentOrganizationId)
-          .eq("work_date", todayString);
-      
-          const { data: monthlyDailyInfos } = await supabase
-          .from("assignment_site_daily_infos")
-          .select("planned_count, work_date")
-          .eq("organization_id", currentOrganizationId)
-          .gte("work_date", monthStart)
-          .lte("work_date", monthEnd);
-      
-          const { data: monthlyReports } = await supabase
-          .from("daily_reports")
-          .select("worker_count")
-          .eq("organization_id", currentOrganizationId)
-          .gte("report_date", monthStart)
-          .lte("report_date", monthEnd);
-      
-          const { data: pendingItems } = await supabase
-          .from("item_requests")
-          .select("id")
-          .eq("organization_id", currentOrganizationId)
-          .eq("status", "pending");
-        
-        const { data: returnItems } = await supabase
-          .from("item_requests")
-          .select("id")
-          .eq("organization_id", currentOrganizationId)
-          .eq("status", "return_requested");
+          const [
+            { data: todayReports },
+            { data: todayAssignments },
+            { data: todayMembers },
+            { data: monthlyDailyInfos },
+            { data: monthlyReports },
+            { data: pendingItems },
+            { data: returnItems },
+          ] = await Promise.all([
+            supabase
+              .from("daily_reports")
+              .select("id")
+              .eq("organization_id", currentOrganizationId)
+              .eq("report_date", todayString),
+          
+            supabase
+              .from("assignments")
+              .select("id")
+              .eq("organization_id", currentOrganizationId)
+              .lte("start_date", todayString)
+              .or(`end_date.gte.${todayString},end_date.is.null`),
+          
+            supabase
+              .from("assignment_site_members")
+              .select("id")
+              .eq("organization_id", currentOrganizationId)
+              .eq("work_date", todayString),
+          
+            supabase
+              .from("assignment_site_daily_infos")
+              .select("planned_count, work_date")
+              .eq("organization_id", currentOrganizationId)
+              .gte("work_date", monthStart)
+              .lte("work_date", monthEnd),
+          
+            supabase
+              .from("daily_reports")
+              .select("worker_count")
+              .eq("organization_id", currentOrganizationId)
+              .gte("report_date", monthStart)
+              .lte("report_date", monthEnd),
+          
+            supabase
+              .from("item_requests")
+              .select("id")
+              .eq("organization_id", currentOrganizationId)
+              .eq("status", "pending"),
+          
+            supabase
+              .from("item_requests")
+              .select("id")
+              .eq("organization_id", currentOrganizationId)
+              .eq("status", "return_requested"),
+          ]);
       
         const monthlyPlannedLabor = (monthlyDailyInfos ?? []).reduce(
           (sum, row) => sum + Number(row.planned_count ?? 0),

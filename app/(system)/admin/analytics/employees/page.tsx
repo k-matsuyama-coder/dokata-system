@@ -23,13 +23,19 @@ type SummaryRow = {
   nightCount: number;
   totalDays: number;
   labor: number;
-  overtime: number;
+  dayOvertime: number;
+  nightOvertime: number;
+  totalOvertime: number;
   driveCount: number;
 };
 
 const getNextMonth = (ym: string) => {
   const [y, m] = ym.split("-").map(Number);
   return new Date(y, m, 1).toISOString().slice(0, 10);
+};
+
+const formatHours = (value: number): string => {
+  return `${Number(value.toFixed(2))}h`;
 };
 
 export default function EmployeesAnalyticsPage() {
@@ -137,19 +143,25 @@ if (!currentOrganizationId) {
           nightCount: 0,
           totalDays: 0,
           labor: 0,
-          overtime: 0,
+          dayOvertime: 0,
+          nightOvertime: 0,
+          totalOvertime: 0,
           driveCount: 0,
         };
 
-      if (shift === "night") {
-        current.nightCount += 1;
-      } else {
-        current.dayCount += 1;
-      }
+        const overtime = Number(row.overtime ?? 0);
 
-      current.totalDays += 1;
-      current.labor += Number(row.labor ?? 0);
-      current.overtime += Number(row.overtime ?? 0);
+        if (shift === "night") {
+          current.nightCount += 1;
+          current.nightOvertime += overtime;
+        } else {
+          current.dayCount += 1;
+          current.dayOvertime += overtime;
+        }
+        
+        current.totalDays += 1;
+        current.labor += Number(row.labor ?? 0);
+        current.totalOvertime += overtime;
 
       if (row.is_driver) {
         current.driveCount += 1;
@@ -166,7 +178,20 @@ if (!currentOrganizationId) {
   const totalWorkers = summaryRows.length;
   const totalDays = summaryRows.reduce((sum, row) => sum + row.totalDays, 0);
   const totalLabor = summaryRows.reduce((sum, row) => sum + row.labor, 0);
-  const totalOvertime = summaryRows.reduce((sum, row) => sum + row.overtime, 0);
+  const totalDayOvertime = summaryRows.reduce(
+    (sum, row) => sum + row.dayOvertime,
+    0
+  );
+  
+  const totalNightOvertime = summaryRows.reduce(
+    (sum, row) => sum + row.nightOvertime,
+    0
+  );
+  
+  const totalOvertime = summaryRows.reduce(
+    (sum, row) => sum + row.totalOvertime,
+    0
+  );
   const totalDriveCount = summaryRows.reduce(
     (sum, row) => sum + row.driveCount,
     0
@@ -203,7 +228,18 @@ if (!currentOrganizationId) {
         <KpiCard label="対象人数" value={`${totalWorkers}人`} />
         <KpiCard label="稼働合計" value={`${totalDays}日`} />
         <KpiCard label="人工合計" value={`${totalLabor}`} />
-        <KpiCard label="残業合計" value={`${totalOvertime}h`} />
+        <KpiCard
+  label="昼残業合計"
+  value={formatHours(totalDayOvertime)}
+/>
+<KpiCard
+  label="夜残業合計"
+  value={formatHours(totalNightOvertime)}
+/>
+<KpiCard
+  label="残業合計"
+  value={formatHours(totalOvertime)}
+/>
         <KpiCard label="運転回数" value={`${totalDriveCount}回`} />
       </div>
 
@@ -226,7 +262,9 @@ if (!currentOrganizationId) {
                 <th style={th}>昼</th>
                 <th style={th}>夜</th>
                 <th style={th}>人工</th>
-                <th style={th}>残業</th>
+                <th style={th}>昼残業</th>
+<th style={th}>夜残業</th>
+<th style={th}>残業合計</th>
                 <th style={th}>運転回数</th>
                 <th style={th}>詳細</th>
               </tr>
@@ -240,7 +278,9 @@ if (!currentOrganizationId) {
                   <td style={td}>{row.dayCount}</td>
                   <td style={td}>{row.nightCount}</td>
                   <td style={td}>{row.labor}</td>
-                  <td style={td}>{row.overtime}h</td>
+                  <td style={td}>{formatHours(row.dayOvertime)}</td>
+<td style={td}>{formatHours(row.nightOvertime)}</td>
+<td style={td}>{formatHours(row.totalOvertime)}</td>
                   <td style={td}>{row.driveCount}</td>
                   <td style={td}>
                     <a
@@ -260,7 +300,7 @@ if (!currentOrganizationId) {
 
               {summaryRows.length === 0 && (
                 <tr>
-                  <td style={td} colSpan={8}>
+                  <td style={td} colSpan={10}>
                     データがありません。
                   </td>
                 </tr>

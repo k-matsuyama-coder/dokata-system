@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import type {
   Contractor,
   ContractorContact,
@@ -35,7 +35,7 @@ type Props = {
   addFiles: FileList | null;
   setAddFiles: React.Dispatch<React.SetStateAction<FileList | null>>;
   inputStyle: React.CSSProperties;
-  handleAddSite: () => void;
+  handleAddSite: (siteName: string) => void;
 };
 
 export default function AddTwoMonthAssignmentModal({
@@ -70,6 +70,14 @@ export default function AddTwoMonthAssignmentModal({
   handleAddSite,
 }: Props) {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+
+  const [localSiteName, setLocalSiteName] = useState("");
+
+useEffect(() => {
+  if (showAddModal) {
+    setLocalSiteName(siteName);
+  }
+}, [showAddModal, siteName]);
 
   if (!showAddModal) return null;
 
@@ -128,11 +136,11 @@ export default function AddTwoMonthAssignmentModal({
           </div>
 
           <input
-            value={siteName}
-            onChange={(e) => setSiteName(e.target.value)}
-            placeholder="現場名"
-            style={inputStyle}
-          />
+  value={localSiteName}
+  onChange={(e) => setLocalSiteName(e.target.value)}
+  placeholder="現場名"
+  style={inputStyle}
+/>
 
           <select
             value={groupKey}
@@ -422,7 +430,7 @@ export default function AddTwoMonthAssignmentModal({
 
             <button
               type="button"
-              onClick={handleAddSite}
+              onClick={() => handleAddSite(localSiteName)}
               style={{
                 flex: 1,
                 padding: 12,

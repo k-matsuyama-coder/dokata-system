@@ -78,25 +78,95 @@ export default function ItemRequestPage() {
     init();
   }, []);
 
+  useEffect(() => {
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+  
+    const subscribeToItemChanges = async () => {
+      const currentOrganizationId = await getCurrentOrganization();
+  
+      if (!currentOrganizationId) return;
+  
+      channel = supabase
+        .channel(`item-request-items-${currentOrganizationId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "items",
+            filter: `organization_id=eq.${currentOrganizationId}`,
+          },
+          () => {
+            void fetchData();
+          }
+        )
+        .subscribe();
+    };
+  
+    void subscribeToItemChanges();
+  
+    return () => {
+      if (channel) {
+        void supabase.removeChannel(channel);
+      }
+    };
+  }, []);
+
   const submitRequest = async () => {
     const currentOrganizationId = await getCurrentOrganization();
-
-if (!currentOrganizationId) {
-  alert("会社情報が取得できません");
-  return;
-}
-
+  
+    if (!currentOrganizationId) {
+      alert("会社情報が取得できません");
+      return;
+    }
+  
     if (!selectedItemId) {
       alert("物品を選択してください");
       return;
     }
-
+  
     if (!startDate || !returnDate) {
       alert("日付を入力してください");
       return;
     }
-
-    const { error } = await supabase
+  
+    if (returnDate < startDate) {
+      alert("返却予定日は利用開始日以降にしてください");
+      return;
+    }
+  
+    const selectedItem = items.find((item) => item.id === selectedItemId);
+  
+    if (!selectedItem) {
+      alert("選択した物品が見つかりません");
+      await fetchData();
+      return;
+    }
+  
+    const { data: reservedItem, error: reserveError } = await supabase
+      .from("items")
+      .update({
+        status: "申請中",
+      })
+      .eq("organization_id", currentOrganizationId)
+      .eq("id", selectedItemId)
+      .eq("status", "保管中")
+      .select("id")
+      .maybeSingle();
+  
+    if (reserveError) {
+      alert("物品の状態確認に失敗しました: " + reserveError.message);
+      return;
+    }
+  
+    if (!reservedItem) {
+      alert("この物品は他の人が申請済みです");
+      setSelectedItemId("");
+      await fetchData();
+      return;
+    }
+  
+    const { error: requestError } = await supabase
       .from("item_requests")
       .insert({
         organization_id: currentOrganizationId,
@@ -106,70 +176,80 @@ if (!currentOrganizationId) {
         return_due_date: returnDate,
         status: "pending",
       });
-
-    if (error) {
-      alert(error.message);
+  
+    if (requestError) {
+      await supabase
+        .from("items")
+        .update({
+          status: "保管中",
+        })
+        .eq("organization_id", currentOrganizationId)
+        .eq("id", selectedItemId)
+        .eq("status", "申請中");
+  
+      alert("申請登録に失敗しました: " + requestError.message);
+      await fetchData();
       return;
     }
-
-    await supabase
-      .from("items")
-      .update({
-        status: "申請中",
-      })
+  
+    const { data: admins, error: adminsError } = await supabase
+      .from("employees")
+      .select("name")
       .eq("organization_id", currentOrganizationId)
-      .eq("id", selectedItemId);
-
-      const selectedItem = items.find((item) => item.id === selectedItemId);
-
-      const { data: admins } = await supabase
-  .from("employees")
-  .select("name")
-  .eq("organization_id", currentOrganizationId)
-  .eq("role", "admin");
-
-if (admins && admins.length > 0) {
-  await supabase.from("notifications").insert(
-    admins.map((admin) => ({
-      organization_id: currentOrganizationId,
-      employee_name: admin.name,
-      title: "物品使用申請",
-      message: `${employeeName}さんが「${selectedItem?.item_name ?? "物品"}」の使用申請をしました`,
-      link_url: "/admin/items/requests",
-      is_read: false,
-    }))
-  );
-}
-
-const pushResults = await Promise.all(
-  (admins ?? []).map(async (admin) => {
-      const res = await fetch("/api/send-push", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          organizationId: currentOrganizationId,
-          employeeName: admin.name,
-          title: "物品使用申請",
-message: `${employeeName}さんが「${selectedItem?.item_name ?? "物品"}」の使用申請をしました`,
-          url: "/admin/items/requests",
-        }),
-      });
+      .eq("role", "admin");
   
-      return await res.json();
-    })
-  );
+    if (!adminsError && admins && admins.length > 0) {
+      const { error: notificationError } = await supabase
+        .from("notifications")
+        .insert(
+          admins.map((admin) => ({
+            organization_id: currentOrganizationId,
+            employee_name: admin.name,
+            title: "物品使用申請",
+            message: `${employeeName}さんが「${selectedItem.item_name}」の使用申請をしました`,
+            link_url: "/admin/items/requests",
+            is_read: false,
+          }))
+        );
   
-  console.log("物品Push送信結果", pushResults);
-
+      if (notificationError) {
+        console.error("通知登録失敗:", notificationError);
+      }
+  
+      const pushResults = await Promise.allSettled(
+        admins.map(async (admin) => {
+          const response = await fetch("/api/send-push", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              organizationId: currentOrganizationId,
+              employeeName: admin.name,
+              title: "物品使用申請",
+              message: `${employeeName}さんが「${selectedItem.item_name}」の使用申請をしました`,
+              url: "/admin/items/requests",
+            }),
+          });
+  
+          if (!response.ok) {
+            throw new Error(`Push送信失敗: ${response.status}`);
+          }
+  
+          return response.json();
+        })
+      );
+  
+      console.log("物品Push送信結果", pushResults);
+    }
+  
     alert("使用申請しました");
-
+  
     setSelectedItemId("");
     setStartDate("");
     setReturnDate("");
-
-    fetchData();
+  
+    await fetchData();
   };
 
   return (

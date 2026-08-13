@@ -109,14 +109,16 @@ onSaveDateMemo,
           dailyInfos,
           baseMonth,
           assignment.id,
-          0
+          0,
+          assignment
         );
   
         totals[1] += getMonthlyTotal(
           dailyInfos,
           baseMonth,
           assignment.id,
-          1
+          1,
+          assignment
         );
   
         return totals;
@@ -278,7 +280,15 @@ onSaveDateMemo={onSaveDateMemo}
   getDailyTotal={(date) => getDailyTotal(assignments, dailyInfos, date)}
   dailyInfos={dailyInfos}
   getMonthlyTotal={(assignmentId, index) =>
-    getMonthlyTotal(dailyInfos, baseMonth, assignmentId, index)
+    getMonthlyTotal(
+      dailyInfos,
+      baseMonth,
+      assignmentId,
+      index,
+      assignments.find(
+        (assignment) => assignment.id === assignmentId
+      )
+    )
   }
   previousMonthTotal={previousMonthTotal}
 nextMonthTotal={nextMonthTotal}

@@ -148,6 +148,111 @@ if (!currentOrganizationId) {
     fetchRequests();
   };
 
+  const rejectRequest = async (request: ItemRequest) => {
+    const confirmed = window.confirm(
+      `「${request.items?.item_name ?? "物品"}」の申請を却下しますか？`
+    );
+  
+    if (!confirmed) return;
+  
+    const currentOrganizationId = await getCurrentOrganization();
+  
+    if (!currentOrganizationId) {
+      alert("会社情報が取得できません");
+      return;
+    }
+  
+    const { error: requestError } = await supabase
+      .from("item_requests")
+      .update({
+        status: "rejected",
+      })
+      .eq("organization_id", currentOrganizationId)
+      .eq("id", request.id)
+      .eq("status", "pending");
+  
+    if (requestError) {
+      alert("却下処理失敗: " + requestError.message);
+      return;
+    }
+  
+    const { error: itemError } = await supabase
+      .from("items")
+      .update({
+        status: "保管中",
+      })
+      .eq("organization_id", currentOrganizationId)
+      .eq("id", request.item_id)
+      .eq("status", "申請中");
+  
+    if (itemError) {
+      alert("物品状態更新失敗: " + itemError.message);
+      return;
+    }
+  
+    const { error: historyError } = await supabase
+      .from("item_histories")
+      .insert({
+        organization_id: currentOrganizationId,
+        item_id: request.item_id,
+        request_id: request.id,
+        user_name: request.user_name,
+        action_type: "rejected",
+      });
+  
+      if (historyError) {
+        console.error("却下履歴登録失敗:", historyError);
+      }
+      
+      const notificationMessage = `「${
+        request.items?.item_name ?? "物品"
+      }」の使用申請が却下されました`;
+      
+      const { error: notificationError } = await supabase
+        .from("notifications")
+        .insert({
+          organization_id: currentOrganizationId,
+          employee_name: request.user_name,
+          title: "物品使用申請が却下されました",
+          message: notificationMessage,
+          link_url: "/items/request",
+          is_read: false,
+        });
+      
+      if (notificationError) {
+        console.error("却下通知登録失敗:", notificationError);
+      }
+      
+      try {
+        const pushResponse = await fetch("/api/send-push", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            organizationId: currentOrganizationId,
+            employeeName: request.user_name,
+            title: "物品使用申請が却下されました",
+            message: notificationMessage,
+            url: "/items/request",
+          }),
+        });
+      
+        if (!pushResponse.ok) {
+          console.error(
+            "却下Push送信失敗:",
+            pushResponse.status,
+            await pushResponse.text()
+          );
+        }
+      } catch (error) {
+        console.error("却下Push送信エラー:", error);
+      }
+      
+      alert("申請を却下しました");
+      await fetchRequests();
+  };
+
   const confirmReturn = async (request: ItemRequest) => {
     const currentOrganizationId = await getCurrentOrganization();
 
@@ -258,15 +363,37 @@ if (!currentOrganizationId) {
               </a>
             )}
 
-            {request.status === "pending" && (
-              <button
-                type="button"
-                onClick={() => approveRequest(request)}
-                style={buttonStyle}
-              >
-                使用承認
-              </button>
-            )}
+{request.status === "pending" && (
+  <div
+    style={{
+      display: "flex",
+      gap: 8,
+    }}
+  >
+    <button
+      type="button"
+      onClick={() => approveRequest(request)}
+      style={{
+        ...buttonStyle,
+        flex: 1,
+      }}
+    >
+      承認
+    </button>
+
+    <button
+      type="button"
+      onClick={() => rejectRequest(request)}
+      style={{
+        ...buttonStyle,
+        flex: 1,
+        backgroundColor: "#dc2626",
+      }}
+    >
+      却下
+    </button>
+  </div>
+)}
 
             {request.status === "return_requested" && (
               <button

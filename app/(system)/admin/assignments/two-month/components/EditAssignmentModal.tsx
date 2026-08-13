@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import type {
   Assignment,
   AssignmentFile,
@@ -12,7 +12,7 @@ type Props = {
   inputStyle: React.CSSProperties;
   assignmentFiles: AssignmentFile[];
   enabledGroups: AssignmentGroupSetting[];
-  updateAssignment: () => void;
+  updateAssignment: (assignment: Assignment) => void;
   uploadFiles: (assignmentId: string, files: FileList | null) => void;
   deleteAssignmentFile: (file: AssignmentFile) => void;
   deleteAssignment: (id: string) => void;
@@ -30,6 +30,12 @@ export default function EditTwoMonthAssignmentModal({
   deleteAssignment,
 }: Props) {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+
+  const [localSiteName, setLocalSiteName] = useState("");
+
+useEffect(() => {
+  setLocalSiteName(editingAssignment?.site_name ?? "");
+}, [editingAssignment?.id]);
 
   if (!editingAssignment) return null;
 
@@ -82,17 +88,12 @@ export default function EditTwoMonthAssignmentModal({
           style={inputStyle}
         />
 
-        <input
-          value={editingAssignment.site_name ?? ""}
-          onChange={(e) =>
-            setEditingAssignment({
-              ...editingAssignment,
-              site_name: e.target.value,
-            })
-          }
-          placeholder="現場名"
-          style={inputStyle}
-        />
+<input
+  value={localSiteName}
+  onChange={(e) => setLocalSiteName(e.target.value)}
+  placeholder="現場名"
+  style={inputStyle}
+/>
 
         <select
           value={editingAssignment.group_key ?? "group1"}
@@ -397,7 +398,12 @@ export default function EditTwoMonthAssignmentModal({
 
           <button
             type="button"
-            onClick={updateAssignment}
+            onClick={() =>
+              updateAssignment({
+                ...editingAssignment,
+                site_name: localSiteName,
+              })
+            }
             style={{
               flex: 1,
               padding: 12,

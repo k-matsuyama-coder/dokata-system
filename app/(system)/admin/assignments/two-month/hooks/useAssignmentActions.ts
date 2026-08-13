@@ -112,12 +112,12 @@ export function useAssignmentActions({
     }
   };
 
-  const updateAssignment = async () => {
-    if (!editingAssignment) return;
-
+  const updateAssignment = async (
+    inputAssignment: Assignment
+  ) => {
     try {
       const safeOrganizationId = ensureOrganizationId(organizationId);
-      await updateAssignmentApi(editingAssignment, safeOrganizationId);
+      await updateAssignmentApi(inputAssignment, safeOrganizationId);
       setEditingAssignment(null);
       await fetchData();
     } catch (error) {
@@ -206,8 +206,8 @@ export function useAssignmentActions({
     }
   };
 
-  const handleAddSite = async () => {
-    if (!siteName || !contractorName || !startDate) {
+  const handleAddSite = async (inputSiteName: string) => {
+    if (!inputSiteName || !contractorName || !startDate) {
       alert("元請・現場名・工期開始を入力してください");
       return;
     }
@@ -219,7 +219,7 @@ export function useAssignmentActions({
         {
           assignment_date: days[0],
           contractor_name: contractorName,
-          site_name: siteName,
+          site_name: inputSiteName,
           group_key: groupKey,
           manager_name: managerName,
           contact_phone: contactPhone,

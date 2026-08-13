@@ -21,8 +21,10 @@ export const getMonthlyTotal = (
   dailyInfos: DailyInfo[],
   baseMonth: string,
   assignmentId: string,
-  targetMonthIndex: 0 | 1
+  targetMonthIndex: 0 | 1,
+  assignment: Assignment | undefined
 ) => {
+  if (!assignment) return 0;
   const [baseYear, baseMonthNum] = baseMonth.split("-").map(Number);
 
   const targetDate = new Date(baseYear, baseMonthNum - 1 + targetMonthIndex, 1);
@@ -36,7 +38,11 @@ export const getMonthlyTotal = (
       return (
         dailyInfo.assignment_id === assignmentId &&
         year === targetYear &&
-        month === targetMonth
+        month === targetMonth &&
+        (!assignment.start_date ||
+          dailyInfo.work_date >= assignment.start_date) &&
+        (!assignment.end_date ||
+          dailyInfo.work_date <= assignment.end_date)
       );
     })
     .reduce((sum, dailyInfo) => sum + (dailyInfo.planned_count ?? 0), 0);
@@ -58,9 +64,18 @@ export const getDailyTotal = (
     assignments.map((assignment) => [assignment.id, assignment])
   );
 
-  const targetInfos = dailyInfos.filter(
-    (dailyInfo) => dailyInfo.work_date === workDate
-  );
+  const targetInfos = dailyInfos.filter((dailyInfo) => {
+    if (dailyInfo.work_date !== workDate) return false;
+  
+    const assignment = assignmentMap.get(dailyInfo.assignment_id);
+  
+    if (!assignment) return false;
+  
+    return (
+      (!assignment.start_date || workDate >= assignment.start_date) &&
+      (!assignment.end_date || workDate <= assignment.end_date)
+    );
+  });
 
   return targetInfos.reduce<DailyTotalSummary>(
     (summary, dailyInfo) => {

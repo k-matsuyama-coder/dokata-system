@@ -44,9 +44,20 @@ export default function AssignmentDateHeader({
   }, [memo]);
 
   const infosOfDate = summary?.infos ?? [];
-  const membersOfDate = summary?.members ?? [];
+const membersOfDate = summary?.members ?? [];
 
-  const plannedAll = infosOfDate.reduce(
+const infosWithinAssignmentPeriod = infosOfDate.filter((info) => {
+  const assignment = assignmentMap.get(info.assignment_id);
+
+  if (!assignment) return false;
+
+  return (
+    (!assignment.start_date || date >= assignment.start_date) &&
+    (!assignment.end_date || date <= assignment.end_date)
+  );
+});
+
+const plannedAll = infosWithinAssignmentPeriod.reduce(
     (sum, info) => sum + (info.planned_count ?? 0),
     0
   );
@@ -54,7 +65,7 @@ export default function AssignmentDateHeader({
   const totalAll = membersOfDate.length;
 
   const groupSummaries = enabledGroups.map((group) => {
-    const planned = infosOfDate
+    const planned = infosWithinAssignmentPeriod
       .filter((info) => {
         const assignment = assignmentMap.get(info.assignment_id);
         return (assignment?.group_key ?? "group1") === group.group_key;
@@ -260,12 +271,12 @@ export default function AssignmentDateHeader({
           }}
         >
           <div>
-            全 {plannedAll}/{totalAll}
+          全 {totalAll}/{plannedAll}
           </div>
 
           {groupSummaries.map((group) => (
             <div key={group.key}>
-              {group.label} {group.planned}/{group.total}
+              {group.label} {group.total}/{group.planned}
             </div>
           ))}
         </div>
