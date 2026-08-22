@@ -221,15 +221,29 @@ export default function ReportStatusPage() {
       const day = i + 1;
       const dateString = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 
-      const dayMembers = siteMembers.filter((m) => m.work_date === dateString);
-
-      const totalSites = new Set(dayMembers.map((m) => m.assignment_id)).size;
-
-      const submittedSites = new Set(
-        reports
-          .filter((r) => r.report_date === dateString)
-          .map((r) => r.site_name)
-      ).size;
+      const dayMembers = siteMembers.filter(
+        (member) => member.work_date === dateString
+      );
+      
+      const scheduledAssignmentIds = new Set(
+        dayMembers.map((member) => member.assignment_id)
+      );
+      
+      const scheduledAssignments = assignments.filter(
+        (assignment) =>
+          scheduledAssignmentIds.has(assignment.id)
+      );
+      
+      const totalSites = scheduledAssignments.length;
+      
+      const submittedSites = scheduledAssignments.filter(
+        (assignment) =>
+          reports.some(
+            (report) =>
+              report.report_date === dateString &&
+              report.site_name === assignment.site_name
+          )
+      ).length;
 
       let status: "green" | "red" | "gray" = "gray";
 
@@ -249,7 +263,12 @@ export default function ReportStatusPage() {
         status,
       };
     });
-  }, [calendarMonth, siteMembers, reports]);
+  }, [
+    calendarMonth,
+    assignments,
+    siteMembers,
+    reports,
+  ]);
 
   const firstDay = new Date(
     calendarMonth.getFullYear(),
