@@ -37,7 +37,7 @@ type Props = {
   updateDailyInfo: (
     assignmentId: string,
     workDate: string,
-    field: "planned_count" | "detail",
+    field: "planned_count" | "detail" | "memo",
     value: string
   ) => void | Promise<void>;
   groupNameMap: Map<AssignmentGroupKey, string>;

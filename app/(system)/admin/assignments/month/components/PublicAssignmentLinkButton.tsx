@@ -176,21 +176,3 @@ export default function PublicAssignmentLinkButton() {
     </div>
   );
 }
-
-// ================================================
-// app/(system)/admin/assignments/month/page.tsx
-// 先頭付近に追加する例
-// ================================================
-
-import PublicAssignmentLinkButton from "./components/PublicAssignmentLinkButton";
-
-// 既存の page コンポーネント内の return の上の方にこれを差し込む
-// 例:
-// <div style={{ padding: 16 }}>
-//   <PublicAssignmentLinkButton />
-//   ...既存UI...
-// </div>
-
-// 実際には今の page.tsx の上部 import に追加して、return の上側に
-// <PublicAssignmentLinkButton />
-// を置いてください。

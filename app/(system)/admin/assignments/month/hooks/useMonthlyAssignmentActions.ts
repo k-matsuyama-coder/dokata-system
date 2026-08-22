@@ -8,7 +8,7 @@ import { uploadFilesAction } from "../actions/uploadFiles";
 import { deleteAssignmentFileAction } from "../actions/deleteAssignmentFile";
 import type { AssignmentGroupKey } from "../types";
 
-import type { Assignment, AssignmentFile } from "../types";
+import type { Assignment, AssignmentFile, SiteMember } from "../types";
 
 type Props = {
   month: string;
@@ -47,7 +47,7 @@ type Props = {
   setAssignmentFiles: Dispatch<SetStateAction<AssignmentFile[]>>;
 
   setAssignments: Dispatch<SetStateAction<Assignment[]>>;
-  setSiteMembers: Dispatch<SetStateAction<any[]>>;
+  setSiteMembers: Dispatch<SetStateAction<SiteMember[]>>;
 
   addFiles: FileList | null;
   setAddFiles: React.Dispatch<React.SetStateAction<FileList | null>>;

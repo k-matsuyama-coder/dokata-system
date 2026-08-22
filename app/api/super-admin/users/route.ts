@@ -1,7 +1,6 @@
 import { requireSuperAdmin } from "@/app/api/_lib/auth";
 import {
   forbidden,
-  ok,
   serverError,
   unauthorized,
 } from "@/app/api/_lib/response";
@@ -33,7 +32,7 @@ export async function GET(req: Request) {
       return serverError(dbError);
     }
 
-    return ok(data ?? []);
+    return Response.json(data ?? []);
   } catch (error) {
     return serverError(error);
   }

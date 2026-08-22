@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type {
   AssignmentGroupKey,
@@ -14,16 +14,7 @@ type Props = {
 export function useAssignmentGroups({ organizationId }: Props) {
   const [groupSettings, setGroupSettings] = useState<AssignmentGroupSetting[]>([]);
 
-  useEffect(() => {
-    if (!organizationId) {
-      setGroupSettings([]);
-      return;
-    }
-
-    void fetchGroups(organizationId);
-  }, [organizationId]);
-
-  const fetchGroups = async (targetOrganizationId: string) => {
+  const fetchGroups = useCallback(async (targetOrganizationId: string) => {
     const { data, error } = await supabase
       .from("assignment_groups")
       .select(
@@ -31,14 +22,33 @@ export function useAssignmentGroups({ organizationId }: Props) {
       )
       .eq("organization_id", targetOrganizationId)
       .order("sort_order", { ascending: true });
-
+  
     if (error) {
-      console.error("assignment_groups fetch error", error);
-      return;
+      throw error;
     }
-
-    setGroupSettings((data ?? []) as AssignmentGroupSetting[]);
-  };
+  
+    return (data ?? []) as AssignmentGroupSetting[];
+  }, []);
+  
+  useEffect(() => {
+    if (!organizationId) return;
+  
+    let cancelled = false;
+  
+    void fetchGroups(organizationId)
+      .then((groups) => {
+        if (!cancelled) {
+          setGroupSettings(groups);
+        }
+      })
+      .catch((error) => {
+        console.error("assignment_groups fetch error", error);
+      });
+  
+    return () => {
+      cancelled = true;
+    };
+  }, [organizationId, fetchGroups]);
 
   const enabledGroups = useMemo(
     () => groupSettings.filter((group) => group.is_enabled),
@@ -55,6 +65,5 @@ export function useAssignmentGroups({ organizationId }: Props) {
     groupSettings,
     enabledGroups,
     groupNameMap,
-    fetchGroups,
   };
 }

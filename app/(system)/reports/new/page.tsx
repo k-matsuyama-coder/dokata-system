@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import ReportForm from "@/app/components/reports/ReportForm";
 import { useRouter } from "next/navigation";

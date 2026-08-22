@@ -2,6 +2,7 @@
 
 import React, {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -14,6 +15,15 @@ import en from "@/locales/en.json";
 type Language = "ja" | "en";
 
 type Messages = Record<string, string>;
+function normalizeMessages(source: Record<string, unknown>): Messages {
+  return Object.entries(source).reduce<Messages>((result, [key, value]) => {
+    if (typeof value === "string") {
+      result[key] = value;
+    }
+
+    return result;
+  }, {});
+}
 
 type LanguageContextValue = {
   language: Language;
@@ -24,8 +34,8 @@ type LanguageContextValue = {
 const LANGUAGE_STORAGE_KEY = "app_language";
 
 const messages: Record<Language, Messages> = {
-  ja: ja as Messages,
-  en: en as Messages,
+  ja: normalizeMessages(ja),
+  en: normalizeMessages(en),
 };
 
 const LanguageContext = createContext<LanguageContextValue | null>(null);
@@ -57,14 +67,17 @@ export function LanguageProvider({
     setLanguageState("en");
   }, []);
 
-  const setLanguage = (nextLanguage: Language) => {
+  const setLanguage = useCallback((nextLanguage: Language) => {
     setLanguageState(nextLanguage);
     window.localStorage.setItem(LANGUAGE_STORAGE_KEY, nextLanguage);
-  };
+  }, []);
 
-  const t = (key: string) => {
-    return messages[language][key] ?? messages.ja[key] ?? key;
-  };
+  const t = useCallback(
+    (key: string) => {
+      return messages[language][key] ?? messages.ja[key] ?? key;
+    },
+    [language]
+  );
 
   const value = useMemo<LanguageContextValue>(
     () => ({
@@ -72,7 +85,7 @@ export function LanguageProvider({
       setLanguage,
       t,
     }),
-    [language]
+    [language, setLanguage, t]
   );
 
   return (

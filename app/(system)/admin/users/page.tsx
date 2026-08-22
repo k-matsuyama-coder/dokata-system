@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
 import { hasRole } from "@/app/types/auth";
@@ -85,7 +86,11 @@ if (!currentOrganizationId) {
   }, []);
 
   const companyOptions = Array.from(
-    new Set(employees.map((e) => e.company_name).filter(Boolean))
+    new Set(
+      employees
+        .map((employee) => employee.company_name)
+        .filter((company): company is string => Boolean(company))
+    )
   );
   
   const filteredEmployees = employees
@@ -214,8 +219,8 @@ if (!currentOrganizationId) {
   CSVダウンロード
 </button>
 
-      <a
-        href="/admin/users/new"
+<Link
+  href="/admin/users/new"
         style={{
           display: "inline-block",
           marginBottom: 16,
@@ -228,7 +233,7 @@ if (!currentOrganizationId) {
         }}
       >
         ＋ 社員追加
-      </a>
+        </Link>
 
       <input
   type="text"

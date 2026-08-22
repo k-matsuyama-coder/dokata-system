@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { hasRole } from "@/app/types/auth";
 
@@ -53,6 +54,12 @@ const [licenseExpiryDate, setLicenseExpiryDate] = useState("");
 const [licenseStatus, setLicenseStatus] = useState<"expired" | "warning" | "ok" | "">("");
 const [licenseRemainingDays, setLicenseRemainingDays] = useState<number | null>(null);
 const [impersonating, setImpersonating] = useState(false);
+const [adminSummaryLoading, setAdminSummaryLoading] = useState(true);
+const [adminSummaryError, setAdminSummaryError] = useState(false);
+const [licenseLoading, setLicenseLoading] = useState(true);
+const [licenseLoadError, setLicenseLoadError] = useState(false);
+const [workSummaryLoading, setWorkSummaryLoading] = useState(true);
+const [workSummaryError, setWorkSummaryError] = useState(false);
 
 const getCurrentOrganization = async (token: string) => {
 
@@ -139,9 +146,7 @@ const { data: employee, error: employeeError } = await supabase
 setEmployeeName(employee.name?.trim() || user.email || "ユーザー");
 setRole(employee.role);
 
-const organizationStatus = Array.isArray(employee.organizations)
-? employee.organizations[0]?.status
-: employee.organizations?.status;
+const organizationStatus = employee.organizations?.[0]?.status ?? null;
 
 if (organizationStatus === "suspended" || organizationStatus === "cancelled") {
 alert("現在この会社はご利用いただけません。管理者へお問い合わせください。");
@@ -157,7 +162,9 @@ return;
       const monthStart = todayString.slice(0, 7) + "-01";
       
       if (hasRole(employee.role, "admin")) {
-        const monthEnd = new Date(
+        void (async () => {
+          try {
+            const monthEnd = new Date(
           Number(todayString.slice(0, 4)),
           Number(todayString.slice(5, 7)),
           0
@@ -240,56 +247,79 @@ return;
           pendingItemRequests: pendingItems?.length ?? 0,
           returnItemRequests: returnItems?.length ?? 0,
         });
-      }
-
-      if (!isImpersonating) {
-      const { data: licenses, error: licenseError } = await supabase
-        .from("licenses")
-        .select("license_name, expiry_date")
-        .eq("employee_id", employee.id)
-        .order("created_at", { ascending: false })
-        .limit(1);
-
-      if (licenseError) {
-        console.error("免許情報取得失敗:", licenseError.message);
-      }
-
-      if (licenses && licenses.length > 0) {
-        const license = licenses[0];
-
-        setLicenseName(license.license_name ?? "");
-        setLicenseExpiryDate(license.expiry_date ?? "");
-
-        if (license.expiry_date) {
-          const today = new Date();
-          const expiry = new Date(license.expiry_date);
-          const diffTime = expiry.getTime() - today.getTime();
-          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-          setLicenseRemainingDays(diffDays);
-
-          if (diffDays < 0) {
-            setLicenseStatus("expired");
-          } else if (diffDays <= 30) {
-            setLicenseStatus("warning");
-          } else {
-            setLicenseStatus("ok");
-          }
+            } catch (error) {
+              console.error("管理者集計取得失敗:", error);
+              setAdminSummaryError(true);
+            } finally {
+              setAdminSummaryLoading(false);
+            }
+          })();
+        } else {
+          setAdminSummaryLoading(false);
         }
-      }
-    }
 
-      const today = new Date();
+        if (!isImpersonating) {
+          void (async () => {
+            try {
+              const { data: licenses, error } = await supabase
+                .from("licenses")
+                .select("license_name, expiry_date")
+                .eq("employee_id", employee.id)
+                .order("created_at", { ascending: false })
+                .limit(1);
+        
+              if (error) {
+                throw error;
+              }
+        
+              if (licenses && licenses.length > 0) {
+                const license = licenses[0];
+        
+                setLicenseName(license.license_name ?? "");
+                setLicenseExpiryDate(license.expiry_date ?? "");
+        
+                if (license.expiry_date) {
+                  const today = new Date();
+                  const expiry = new Date(license.expiry_date);
+                  const diffTime = expiry.getTime() - today.getTime();
+                  const diffDays = Math.ceil(
+                    diffTime / (1000 * 60 * 60 * 24)
+                  );
+        
+                  setLicenseRemainingDays(diffDays);
+        
+                  if (diffDays < 0) {
+                    setLicenseStatus("expired");
+                  } else if (diffDays <= 30) {
+                    setLicenseStatus("warning");
+                  } else {
+                    setLicenseStatus("ok");
+                  }
+                }
+              }
+            } catch (error) {
+              console.error("免許情報取得失敗:", error);
+              setLicenseLoadError(true);
+            } finally {
+              setLicenseLoading(false);
+            }
+          })();
+        } else {
+          setLicenseLoading(false);
+        }
 
-      const { data: memberRows, error: memberError } = await supabase
+        void (async () => {
+          try {
+            const today = new Date();
+        
+            const { data: memberRows, error: memberError } = await supabase
         .from("report_members")
         .select("overtime, is_driver, report_id")
         .eq("employee_name", employee.name);
 
-      if (memberError) {
-        console.error("report_members取得失敗:", memberError.message);
-        return;
-      }
+        if (memberError) {
+          throw memberError;
+        }
 
       if (!memberRows || memberRows.length === 0) {
         setDayCount(0);
@@ -312,10 +342,9 @@ return;
         .in("id", reportIds)
         .order("report_date", { ascending: false });
 
-      if (reportError) {
-        console.error("daily_reports取得失敗:", reportError.message);
-        return;
-      }
+        if (reportError) {
+          throw reportError;
+        }
 
       const reportMap = new Map<string, ReportRow>();
       (reportRows ?? []).forEach((report: ReportRow) => {
@@ -352,7 +381,7 @@ currentMonthMembers.forEach((row) => {
   const report = reportMap.get(row.report_id);
   if (!report) return;
 
-  const shift = (report as any).shift_type;
+  const shift = report.shift_type;
 
   if (shift === "night") {
     nightSet.add(report.report_date);
@@ -379,6 +408,14 @@ setTotalVehicleCount(driverReportIds.size);
 
       const recent = (reportRows ?? []).slice(0, 5) as ReportRow[];
       setRecentReports(recent);
+
+    } catch (error) {
+      console.error("個人集計取得失敗:", error);
+      setWorkSummaryError(true);
+    } finally {
+      setWorkSummaryLoading(false);
+    }
+  })();
     };
 
     fetchHomeData();
@@ -415,32 +452,68 @@ const totalOvertimeSum = dayOvertime + nightOvertime;
   >
     <AdminCard
   label="今日の日報"
-  value={`${adminSummary.todayReportCount}/${adminSummary.todayPlannedSiteCount}`}
+  value={
+    adminSummaryLoading
+      ? "取得中..."
+      : adminSummaryError
+        ? "取得失敗"
+        : `${adminSummary.todayReportCount}/${adminSummary.todayPlannedSiteCount}`
+  }
   href="/admin/report-status"
 />
 <AdminCard
   label="今日の稼働人数"
-  value={`${adminSummary.todayWorkerCount}人`}
+  value={
+    adminSummaryLoading
+      ? "取得中..."
+      : adminSummaryError
+        ? "取得失敗"
+        : `${adminSummary.todayWorkerCount}人`
+  }
   href="/assignments/month"
 />
 <AdminCard
   label="今月予定人工"
-  value={`${adminSummary.monthlyPlannedLabor}`}
+  value={
+    adminSummaryLoading
+      ? "取得中..."
+      : adminSummaryError
+        ? "取得失敗"
+        : `${adminSummary.monthlyPlannedLabor}`
+  }
   href="/admin/analytics/monthly"
 />
 <AdminCard
   label="進捗人工/終着人工"
-  value={`${adminSummary.monthlyActualLabor}/${adminSummary.monthlyTargetLabor}`}
+  value={
+    adminSummaryLoading
+      ? "取得中..."
+      : adminSummaryError
+        ? "取得失敗"
+        : `${adminSummary.monthlyActualLabor}/${adminSummary.monthlyTargetLabor}`
+  }
   href="/admin/analytics/monthly"
 />
 <AdminCard
   label="物品使用申請"
-  value={`${adminSummary.pendingItemRequests}件`}
+  value={
+    adminSummaryLoading
+      ? "取得中..."
+      : adminSummaryError
+        ? "取得失敗"
+        : `${adminSummary.pendingItemRequests}件`
+  }
   href="/admin/items/requests"
 />
 <AdminCard
   label="返却確認待ち"
-  value={`${adminSummary.returnItemRequests}件`}
+  value={
+    adminSummaryLoading
+      ? "取得中..."
+      : adminSummaryError
+        ? "取得失敗"
+        : `${adminSummary.returnItemRequests}件`
+  }
   href="/admin/items/requests"
 />
   </div>
@@ -456,8 +529,8 @@ const totalOvertimeSum = dayOvertime + nightOvertime;
           marginBottom: 20,
         }}
       >
-        <a
-          href="/reports/new"
+        <Link
+  href="/reports/new"
           style={{
             textDecoration: "none",
             backgroundColor: "#111",
@@ -470,10 +543,10 @@ const totalOvertimeSum = dayOvertime + nightOvertime;
           }}
         >
           ＋ 日報を登録
-        </a>
+          </Link>
   
-        <a
-          href="/reports/new?copy=1"
+          <Link
+  href="/reports/new?copy=1"
           style={{
             textDecoration: "none",
             backgroundColor: "#fff",
@@ -487,7 +560,7 @@ const totalOvertimeSum = dayOvertime + nightOvertime;
           }}
         >
           前回コピー
-        </a>
+          </Link>
       </div>
 
       <div
@@ -552,12 +625,18 @@ const totalOvertimeSum = dayOvertime + nightOvertime;
   >
     <p style={{ margin: 0, fontSize: 14, color: "#666" }}>稼働</p>
     <p style={{ margin: "8px 0 0 0", fontWeight: 800, fontSize: 18 }}>
-  合計 {totalDays}日
+  {workSummaryLoading
+    ? "取得中..."
+    : workSummaryError
+      ? "取得失敗"
+      : `合計 ${totalDays}日`}
 </p>
 
-<p style={{ margin: "4px 0 0 0", fontSize: 13, color: "#666" }}>
-  昼 {dayCount} / 夜 {nightCount}
-</p>
+{!workSummaryLoading && !workSummaryError && (
+  <p style={{ margin: "4px 0 0 0", fontSize: 13, color: "#666" }}>
+    昼 {dayCount} / 夜 {nightCount}
+  </p>
+)}
   </div>
 
   <div
@@ -571,12 +650,18 @@ const totalOvertimeSum = dayOvertime + nightOvertime;
   >
     <p style={{ margin: 0, fontSize: 14, color: "#666" }}>残業</p>
     <p style={{ margin: "8px 0 0 0", fontWeight: 800, fontSize: 18 }}>
-  合計 {totalOvertimeSum}h
+  {workSummaryLoading
+    ? "取得中..."
+    : workSummaryError
+      ? "取得失敗"
+      : `合計 ${totalOvertimeSum}h`}
 </p>
 
-<p style={{ margin: "4px 0 0 0", fontSize: 13, color: "#666" }}>
-  昼 {dayOvertime}h / 夜 {nightOvertime}h
-</p>
+{!workSummaryLoading && !workSummaryError && (
+  <p style={{ margin: "4px 0 0 0", fontSize: 13, color: "#666" }}>
+    昼 {dayOvertime}h / 夜 {nightOvertime}h
+  </p>
+)}
   </div>
 
   <div
@@ -590,9 +675,12 @@ const totalOvertimeSum = dayOvertime + nightOvertime;
   >
     <p style={{ margin: 0, fontSize: 14, color: "#666" }}>運転回数</p>
     <p style={{ margin: "8px 0 0 0", fontWeight: 800, fontSize: 24 }}>
-      {totalVehicleCount}
-      <span style={{ fontSize: 14, marginLeft: 4 }}>回</span>
-    </p>
+  {workSummaryLoading
+    ? "取得中..."
+    : workSummaryError
+      ? "取得失敗"
+      : `${totalVehicleCount}回`}
+</p>
   </div>
 </div>
   
@@ -646,7 +734,13 @@ const totalOvertimeSum = dayOvertime + nightOvertime;
             </span>
           </div>
 
-          {licenseName ? (
+          {licenseLoading ? (
+  <p style={{ margin: 0, color: "#666" }}>取得中...</p>
+) : licenseLoadError ? (
+  <p style={{ margin: 0, color: "#b91c1c" }}>
+    免許情報を取得できませんでした
+  </p>
+) : licenseName ? (
             <>
               <p style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>
                 {licenseName}

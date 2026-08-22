@@ -107,7 +107,7 @@ export type MonthlyAssignmentContextValue = {
   updateDailyInfo: (
     assignmentId: string,
     workDate: string,
-    field: "planned_count" | "detail" | "vehicle_names",
+    field: "planned_count" | "detail" | "memo" | "vehicle_names",
     value: string
   ) => void;
 

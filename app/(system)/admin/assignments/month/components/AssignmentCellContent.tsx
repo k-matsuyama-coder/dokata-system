@@ -63,6 +63,15 @@ type Props = {
 
   deleteSiteMember: (id: string) => void;
   toggleForeman: (member: SiteMember) => void;
+
+  editingUsers: {
+    userId: string;
+    userName: string;
+    cellKey: string;
+    startedAt: string;
+  }[];
+  startEditing: (cellKey: string) => void | Promise<void>;
+  stopEditing: () => void | Promise<void>;
 };
 
 function AssignmentCellContent({
@@ -91,6 +100,9 @@ function AssignmentCellContent({
   removeVehicleFromCell,
   deleteSiteMember,
   toggleForeman,
+  editingUsers,
+  startEditing,
+  stopEditing,
 }: Props) {
 const [isMemoHovered, setIsMemoHovered] = useState(false);
 const [isMemoEditing, setIsMemoEditing] = useState(false);
@@ -205,6 +217,9 @@ const [isMemoPreviewVisible, setIsMemoPreviewVisible] = useState(false);
   dailyInfo={dailyInfo}
   flushDetailSave={flushDetailSave}
   updateDailyInfo={updateDailyInfo}
+  editingUsers={editingUsers}
+  startEditing={startEditing}
+  stopEditing={stopEditing}
 />
 
       <AssignmentVehicleSection

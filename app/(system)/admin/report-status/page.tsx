@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
 import { hasRole } from "@/app/types/auth";
+import { sendPushNotification } from "@/lib/sendPushNotification";
 import {
   getSiteMembers,
   getDailyReports,
@@ -296,24 +297,30 @@ export default function ReportStatusPage() {
       return;
     }
 
-    const pushResponse = await fetch("/api/send-push", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
+    let pushResult;
+
+    try {
+      pushResult = await sendPushNotification({
         organizationId: currentOrganizationId,
         employeeName: foreman.employee_name,
         title: "日報確認依頼",
         message: `${date} ${row.assignment.site_name} の日報を提出してください`,
         url: reportUrl,
-      }),
-    });
+      });
+    } catch (error) {
+      alert(
+        error instanceof Error
+          ? error.message
+          : "プッシュ通知の送信に失敗しました"
+      );
+      return;
+    }
 
-    const pushResult = await pushResponse.json();
-
-    if (!pushResponse.ok || !pushResult.success) {
-      alert("プッシュ通知失敗: " + (pushResult.message ?? "送信失敗"));
+    if (!pushResult.success) {
+      alert(
+        "プッシュ通知失敗: " +
+          (pushResult.message ?? "送信失敗")
+      );
       return;
     }
 
@@ -357,21 +364,24 @@ export default function ReportStatusPage() {
         is_read: false,
       });
 
-      await fetch("/api/send-push", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      try {
+        const pushResult = await sendPushNotification({
           organizationId: currentOrganizationId,
           employeeName: foreman.employee_name,
           title: "日報確認依頼",
           message: `${date} ${row.assignment.site_name} の日報を確認してください`,
           url: reportUrl,
-        }),
-      });
+        });
 
-      sentCount++;
+        if (pushResult.success) {
+          sentCount++;
+        }
+      } catch (error) {
+        console.error(
+          `${foreman.employee_name}へのPush通知に失敗しました`,
+          error
+        );
+      }
     }
 
     alert(`${sentCount}件の通知を送信しました`);

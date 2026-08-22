@@ -159,18 +159,6 @@ console.log("shift requestError:", requestError);
     };
   }, []);
 
-  useEffect(() => {
-    const handleMouseUp = () => {
-      finishShiftDrag();
-    };
-  
-    window.addEventListener("mouseup", handleMouseUp);
-  
-    return () => {
-      window.removeEventListener("mouseup", handleMouseUp);
-    };
-  }, [isDraggingShift, dragMode, dragCells]);
-
   const addRequest = async () => {
     const currentOrganizationId = await getCurrentOrganization();
 
@@ -351,6 +339,18 @@ if (!currentOrganizationId) {
   
     fetchData();
   };
+
+  useEffect(() => {
+    const handleMouseUp = () => {
+      finishShiftDrag();
+    };
+  
+    window.addEventListener("mouseup", handleMouseUp);
+  
+    return () => {
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isDraggingShift, dragMode, dragCells]);
 
   const addRequestForAdmin = async (
     employeeName: string,

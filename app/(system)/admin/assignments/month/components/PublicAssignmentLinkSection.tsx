@@ -190,20 +190,3 @@ export default function PublicAssignmentLinkSection() {
     </div>
   );
 }
-
-
-// app/(system)/admin/assignments/month/page.tsx
-// 1) import を追加
-import PublicAssignmentLinkSection from "./components/PublicAssignmentLinkSection";
-
-// 2) return 内の上の方、既存のUIの先頭付近に追加
-// 例:
-export default function MonthlyAssignmentsPage() {
-  return (
-    <div style={{ padding: 16 }}>
-      <PublicAssignmentLinkSection />
-
-      {/* ここから下は既存の画面そのまま */}
-    </div>
-  );
-}

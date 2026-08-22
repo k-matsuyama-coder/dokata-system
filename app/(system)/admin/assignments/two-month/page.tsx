@@ -90,7 +90,7 @@ onSaveDateMemo,
     organizationId,
   });
 
-  useRealtime(fetchData, baseMonth);
+  useRealtime(fetchData, baseMonth, organizationId);
 
   const detailHistory = useDetailHistory(dailyInfos);
 

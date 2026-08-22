@@ -150,7 +150,12 @@ if (!currentOrganizationId) {
         return;
       }
 
-      setRows((data ?? []) as any);
+      setRows(
+        (data ?? []).map((row) => ({
+          ...row,
+          daily_reports: row.daily_reports?.[0] ?? null,
+        }))
+      );
       setLoading(false);
     };
 

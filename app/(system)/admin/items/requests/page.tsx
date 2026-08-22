@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { hasRole } from "@/app/types/auth";
 import BackButton from "@/app/components/BackButton";
+import { sendPushNotification } from "@/lib/sendPushNotification";
 
 type ItemRequest = {
   id: string;
@@ -95,7 +96,12 @@ if (!currentOrganizationId) {
       return;
     }
 
-    setRequests(data ?? []);
+    setRequests(
+      (data ?? []).map((request) => ({
+        ...request,
+        items: request.items?.[0] ?? null,
+      }))
+    );
   };
 
   useEffect(() => {
@@ -224,25 +230,18 @@ if (!currentOrganizationId) {
       }
       
       try {
-        const pushResponse = await fetch("/api/send-push", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            organizationId: currentOrganizationId,
-            employeeName: request.user_name,
-            title: "物品使用申請が却下されました",
-            message: notificationMessage,
-            url: "/items/request",
-          }),
+        const pushResult = await sendPushNotification({
+          organizationId: currentOrganizationId,
+          employeeName: request.user_name,
+          title: "物品使用申請が却下されました",
+          message: notificationMessage,
+          url: "/items/request",
         });
-      
-        if (!pushResponse.ok) {
+
+        if (!pushResult.success) {
           console.error(
             "却下Push送信失敗:",
-            pushResponse.status,
-            await pushResponse.text()
+            pushResult.message ?? "送信失敗"
           );
         }
       } catch (error) {

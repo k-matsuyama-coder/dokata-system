@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
 import { hasRole } from "@/app/types/auth";
@@ -126,7 +126,8 @@ const { data, error } = await supabase
     fetchReports();
   }, [month, year, viewMode]);
 
-  const createSummary = (key: "contractor_name" | "site_name") => {
+  const createSummary = useCallback(
+    (key: "contractor_name" | "site_name") => {
     const map = new Map<string, Row>();
 
     reports.forEach((report) => {
@@ -159,16 +160,18 @@ const { data, error } = await supabase
         nightRate: row.total ? Math.round((row.night / row.total) * 100) : 0,
       }))
       .sort((a, b) => b.total - a.total);
-  };
+    },
+    [reports]
+  );
 
   const companyRows = useMemo(
     () => createSummary("contractor_name"),
-    [reports]
+    [createSummary]
   );
   
   const siteRows = useMemo(
     () => createSummary("site_name"),
-    [reports]
+    [createSummary]
   );
 
   const totalLabor = reports.reduce(

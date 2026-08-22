@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import ReportSummaryCard from "@/app/components/ReportSummaryCard";
 
@@ -117,8 +118,8 @@ if (!currentOrganizationId) {
       >
         <h1 style={{ margin: 0 }}>日報一覧</h1>
 
-        <a
-          href="/reports/new"
+        <Link
+  href="/reports/new"
           style={{
             textDecoration: "none",
             backgroundColor: "#111",
@@ -130,7 +131,7 @@ if (!currentOrganizationId) {
           }}
         >
           ＋ 日報を新規登録
-        </a>
+          </Link>
       </div>
 
       {reports.length === 0 ? (

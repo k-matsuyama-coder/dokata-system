@@ -135,7 +135,12 @@ if (!currentOrganizationId) {
       }
 
       setEmployees(employeeData ?? []);
-      setMembers((memberData ?? []) as any);
+      setMembers(
+        (memberData ?? []).map((member) => ({
+          ...member,
+          daily_reports: member.daily_reports?.[0] ?? null,
+        }))
+      );
       setLoading(false);
     };
 

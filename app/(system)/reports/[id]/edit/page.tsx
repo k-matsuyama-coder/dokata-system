@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import ReportForm from "@/app/components/reports/ReportForm";
@@ -42,6 +43,8 @@ export default function EditReportPage() {
 
   const [fuelGasoline, setFuelGasoline] = useState("");
   const [fuelDiesel, setFuelDiesel] = useState("");
+  const [heavyEquipment, setHeavyEquipment] = useState("");
+const [operatorName, setOperatorName] = useState("");
 
   const [memberInput, setMemberInput] = useState("");
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -144,6 +147,8 @@ if (!currentOrganizationId) {
 
       setFuelGasoline(String(report.fuel_gasoline ?? ""));
       setFuelDiesel(String(report.fuel_diesel ?? ""));
+      setHeavyEquipment(report.heavy_equipment ?? "");
+setOperatorName(report.operator_name ?? "");
 
       const { data: reportMembers } = await supabase
   .from("report_members")
@@ -261,6 +266,8 @@ if (!currentOrganizationId) {
         parking_subcontract: Number(parkingSubcontract || 0),
         fuel_gasoline: Number(fuelGasoline || 0),
         fuel_diesel: Number(fuelDiesel || 0),
+        heavy_equipment: heavyEquipment,
+operator_name: operatorName,
         members: selectedMembers.map((member) => member.name).join(", "),
         member_details: selectedMembers,
         note,
@@ -359,6 +366,10 @@ if (!currentOrganizationId) {
       setFuelDiesel={setFuelDiesel}
       note={note}
       setNote={setNote}
+      heavyEquipment={heavyEquipment}
+setHeavyEquipment={setHeavyEquipment}
+operatorName={operatorName}
+setOperatorName={setOperatorName}
       submitLabel="日報を更新"
       onSubmit={handleUpdate}
     />

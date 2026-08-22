@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
 import { hasRole } from "@/app/types/auth";
@@ -121,8 +122,8 @@ if (!employee || !hasRole(employee.role, "admin")) {
       >
         <h1 style={{ margin: 0 }}>個人別集計</h1>
 
-        <a
-          href="/reports"
+        <Link
+  href="/reports"
           style={{
             textDecoration: "none",
             backgroundColor: "#111",
@@ -134,7 +135,7 @@ if (!employee || !hasRole(employee.role, "admin")) {
           }}
         >
           日報一覧へ戻る
-        </a>
+          </Link>
       </div>
 
       {loading ? (

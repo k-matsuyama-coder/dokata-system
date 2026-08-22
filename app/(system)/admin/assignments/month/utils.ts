@@ -7,10 +7,10 @@ export function toDateString(date: Date): string {
   )}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
-export function getWeekStart(date: Date = new Date()): Date {
+export function getWeekStart(date: Date = new Date()): string {
   const d = new Date(date);
   d.setDate(d.getDate() - d.getDay());
-  return d;
+  return toDateString(d);
 }
 
 export function getDayType(

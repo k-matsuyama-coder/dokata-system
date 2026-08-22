@@ -106,7 +106,7 @@ const MonthlyAssignmentsTable = React.forwardRef<HTMLDivElement, Props>(
 
               {days.map((date) => (
                 <AssignmentDateHeader
-                key={date}
+                key={`${date}:${dateMemos.find((item) => item.work_date === date)?.memo ?? ""}`}
                 date={date}
                 summary={dailySummaryMap.get(date)}
                 assignmentMap={assignmentMap}

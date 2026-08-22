@@ -16,6 +16,15 @@ type Props = {
     field: "planned_count" | "detail" | "vehicle_names",
     value: string
   ) => void | Promise<void>;
+
+  editingUsers: {
+    userId: string;
+    userName: string;
+    cellKey: string;
+    startedAt: string;
+  }[];
+  startEditing: (cellKey: string) => void | Promise<void>;
+  stopEditing: () => void | Promise<void>;
 };
 
 const LOCAL_SAVE_DELAY_MS = 350;
@@ -57,6 +66,9 @@ function AssignmentDetailTextarea({
   dailyInfo,
   flushDetailSave,
   updateDailyInfo,
+  editingUsers,
+  startEditing,
+  stopEditing,
 }: Props) {
   const externalValue = dailyInfo?.detail ?? "";
   const [draft, setDraft] = useState(externalValue);
@@ -67,6 +79,8 @@ function AssignmentDetailTextarea({
   useEffect(() => {
     if (isFocusedRef.current) return;
     if (isComposingRef.current) return;
+    // リアルタイム更新を、ユーザーが編集中でない場合だけ入力欄へ反映する
+// eslint-disable-next-line react-hooks/set-state-in-effect
     setDraft(externalValue);
   }, [externalValue]);
 
@@ -109,10 +123,12 @@ function AssignmentDetailTextarea({
       onFocus={(e) => {
         e.stopPropagation();
         isFocusedRef.current = true;
+        void startEditing(`${assignmentId}_${workDate}_detail`);
       }}
       onBlur={() => {
         isFocusedRef.current = false;
         isComposingRef.current = false;
+        void stopEditing();
         void flushSave();
       }}
       onCompositionStart={() => {
@@ -158,7 +174,10 @@ function AssignmentDetailTextarea({
       style={{
         width: "100%",
         padding: "4px 6px",
-        border: "1px solid #e5e7eb",
+        border:
+  editingUsers.length > 0
+    ? "2px solid #f59e0b"
+    : "1px solid #e5e7eb",
         borderRadius: 6,
         fontSize: isMobile ? 10 : 11,
         backgroundColor: "#fff",

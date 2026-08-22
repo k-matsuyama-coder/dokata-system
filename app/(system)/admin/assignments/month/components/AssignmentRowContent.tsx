@@ -199,7 +199,6 @@ const [siteMemoDraft, setSiteMemoDraft] = useState("");
                 : stickyTd2.zIndex,
           overflow: "visible",
           fontWeight: 800,
-          fontWeight: 800,
           cursor: canDragRow ? "grab" : "pointer",
           backgroundColor: fixedCellBackground,
           minWidth: viewMode === "week" ? 260 : 180,

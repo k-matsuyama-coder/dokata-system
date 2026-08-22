@@ -120,7 +120,7 @@ const plannedThisWeek = new Set(
             return aPlanned ? -1 : 1;
           }
     
-          return a.site_name.localeCompare(b.site_name, "ja");
+          return (a.site_name ?? "").localeCompare(b.site_name ?? "", "ja");
         });
       });
     }

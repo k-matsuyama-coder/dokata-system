@@ -26,9 +26,30 @@ const menuGroups = [
   {
     title: "日報",
     items: [
-      { label: "日報管理", href: "/admin/reports", icon: "📝", desc: "日報の確認・管理" },
-      { label: "日別日報確認", href: "/admin/reports/daily", icon: "📆", desc: "日付ごとの日報確認" },
-      { label: "日報送付確認", href: "/admin/report-status", icon: "✅", desc: "番割予定と日報提出状況を確認" },
+      {
+        label: "日報管理",
+        href: "/admin/reports",
+        icon: "📝",
+        desc: "日報の確認・管理",
+      },
+      {
+        label: "日別日報確認",
+        href: "/admin/reports/daily",
+        icon: "📆",
+        desc: "日付ごとの日報確認",
+      },
+      {
+        label: "日報送付確認",
+        href: "/admin/report-status",
+        icon: "✅",
+        desc: "番割予定と日報提出状況を確認",
+      },
+      {
+        label: "請求用月次日報",
+        href: "/admin/reports/monthly-sheet",
+        icon: "📄",
+        desc: "請求書用の現場別月次日報を確認",
+      },
     ],
   },
   {
@@ -39,7 +60,7 @@ const menuGroups = [
       { label: "物品申請確認", href: "/admin/items/requests", icon: "✅", desc: "使用申請・返却申請の確認" },
       { label: "物品使用履歴", href: "/admin/items/history", icon: "📋", desc: "物品の使用履歴を確認" },
       { label: "分析", href: "/admin/analysis", icon: "📊", desc: "集計・分析" },
-      { label: "給与計算", href: "/admin/payroll@", icon: "💴", desc: "日報から月次給与を集計" },
+      { label: "給与計算", href: "/admin/payroll", icon: "💴", desc: "日報から月次給与を集計" },
       { label: "設定", href: "/admin/settings", icon: "⚙️", desc: "グループ名やON/OFFを設定" },
     ],
   },

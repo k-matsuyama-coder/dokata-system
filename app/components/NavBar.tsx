@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import MyMonthlyScheduleModal from "@/app/components/MyMonthlyScheduleModal";
 import { hasRole } from "@/app/types/auth";
@@ -20,16 +21,21 @@ type EmployeeWithOrg = {
   name: string;
   role: string | null;
   organization_id: string | null;
-};
-
-type OrganizationRow = {
-  name: string | null;
+  organizations:
+    | {
+        name: string | null;
+      }
+    | {
+        name: string | null;
+      }[]
+    | null;
 };
 
 export default function NavBar() {
   const [role, setRole] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
   const { language, setLanguage, t } = useLanguage();
 
   const [showCalendarModal, setShowCalendarModal] = useState(false);
@@ -56,44 +62,51 @@ export default function NavBar() {
 
       if (!user) return;
 
-      const { data: employee, error: employeeError } = await supabase
-        .from("employees")
-        .select("name, role, organization_id")
-        .eq("auth_user_id", user.id)
-        .single<EmployeeWithOrg>();
-
-      if (!active || employeeError || !employee) return;
-
+      const [employeeResult, organizationResult] = await Promise.all([
+        supabase
+          .from("employees")
+          .select(`
+            name,
+            role,
+            organization_id,
+            organizations (
+              name
+            )
+          `)
+          .eq("auth_user_id", user.id)
+          .single<EmployeeWithOrg>(),
+      
+        token
+          ? fetch("/api/current-organization", {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            })
+          : Promise.resolve(null),
+      ]);
+      
+      const employee = employeeResult.data;
+      
+      if (!active || employeeResult.error || !employee) return;
+      
       setRole(employee.role);
       setEmployeeName(employee.name);
       setOrganizationId(employee.organization_id);
-
-      if (token) {
-        const res = await fetch("/api/current-organization", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        const result = await res.json();
-
+      
+      const organization = Array.isArray(employee.organizations)
+        ? employee.organizations[0]
+        : employee.organizations;
+      
+      setOrganizationName(organization?.name ?? "");
+      
+      if (organizationResult) {
+        const result = await organizationResult.json();
+      
         if (!active) return;
-
-        if (res.ok) {
+      
+        if (organizationResult.ok) {
           setImpersonating(Boolean(result.impersonating));
         }
-      }
-
-      if (employee.organization_id) {
-        const { data: organization, error: organizationError } = await supabase
-          .from("organizations")
-          .select("name")
-          .eq("id", employee.organization_id)
-          .single<OrganizationRow>();
-
-        if (!active || organizationError) return;
-
-        setOrganizationName(organization?.name ?? "");
       }
     };
 
@@ -163,7 +176,7 @@ export default function NavBar() {
     setNotifications((prev) => prev.filter((item) => item.id !== notification.id));
 
     if (notification.link_url) {
-      window.location.href = notification.link_url;
+      router.push(notification.link_url);
     }
   };
 
@@ -582,8 +595,8 @@ export default function NavBar() {
             {t("navbar.home")}
           </a>
 
-          <a
-            href="/reports"
+          <Link
+  href="/reports"
             onClick={() => setMenuOpen(false)}
             className="nav-link"
             style={{
@@ -592,7 +605,7 @@ export default function NavBar() {
             }}
           >
             {t("navbar.reports")}
-          </a>
+            </Link>
 
           <a
             href="/admin/assignments/view"

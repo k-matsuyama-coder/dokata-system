@@ -46,7 +46,8 @@ export type Assignment = {
   site_name: string | null;
   contractor_name: string | null;
   memo: string | null;
-  shift_type: ShiftType | null;
+construction_type: string | null;
+shift_type: ShiftType | null;
   start_time: string | null;
   end_time: string | null;
   manager_name: string | null;

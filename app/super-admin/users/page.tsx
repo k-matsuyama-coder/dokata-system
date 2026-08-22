@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
 type Employee = {
@@ -16,6 +17,7 @@ type Employee = {
 };
 
 export default function SuperAdminUsersPage() {
+  const router = useRouter();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState("");
@@ -46,7 +48,12 @@ export default function SuperAdminUsersPage() {
       return;
     }
 
-    setEmployees(data ?? []);
+    setEmployees(
+      (data ?? []).map((employee) => ({
+        ...employee,
+        organizations: employee.organizations?.[0] ?? null,
+      }))
+    );
     setLoading(false);
   };
 
@@ -82,7 +89,7 @@ export default function SuperAdminUsersPage() {
       return;
     }
 
-    window.location.href = "/home";
+    router.push("/home");
   };
 
   useEffect(() => {

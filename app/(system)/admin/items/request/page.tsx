@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
+import { sendPushNotification } from "@/lib/sendPushNotification";
 
 type Item = {
   id: string;
@@ -218,25 +219,13 @@ export default function ItemRequestPage() {
   
       const pushResults = await Promise.allSettled(
         admins.map(async (admin) => {
-          const response = await fetch("/api/send-push", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              organizationId: currentOrganizationId,
-              employeeName: admin.name,
-              title: "物品使用申請",
-              message: `${employeeName}さんが「${selectedItem.item_name}」の使用申請をしました`,
-              url: "/admin/items/requests",
-            }),
+          return await sendPushNotification({
+            organizationId: currentOrganizationId,
+            employeeName: admin.name,
+            title: "物品使用申請",
+            message: `${employeeName}さんが「${selectedItem.item_name}」の使用申請をしました`,
+            url: "/admin/items/requests",
           });
-  
-          if (!response.ok) {
-            throw new Error(`Push送信失敗: ${response.status}`);
-          }
-  
-          return response.json();
         })
       );
   

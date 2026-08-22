@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
+import { sendPushNotification } from "@/lib/sendPushNotification";
 
 type MyRequest = {
   id: string;
@@ -100,7 +101,12 @@ const { data: employee } = await supabase
       return;
     }
 
-    setRequests(data ?? []);
+    setRequests(
+      (data ?? []).map((request) => ({
+        ...request,
+        items: request.items?.[0] ?? null,
+      }))
+    );
   };
 
   useEffect(() => {
@@ -126,7 +132,8 @@ if (!currentOrganizationId) {
 
     setUploadingId(requestId);
 
-    const filePath = `${requestId}/${Date.now()}_${file.name}`;
+    const filePath =
+  `${requestId}/${file.lastModified}_${file.size}_${file.name}`;
 
     const { error: uploadError } = await supabase.storage
       .from("item-return-photos")
@@ -196,21 +203,13 @@ if (admins && admins.length > 0) {
 
   const pushResults = await Promise.all(
     admins.map(async (admin) => {
-      const res = await fetch("/api/send-push", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          organizationId: currentOrganizationId,
-          employeeName: admin.name,
-          title: "物品返却申請",
-          message: `${employeeName}さんが物品の返却申請をしました`,
-          url: "/admin/items/requests",
-        }),
+      return await sendPushNotification({
+        organizationId: currentOrganizationId,
+        employeeName: admin.name,
+        title: "物品返却申請",
+        message: `${employeeName}さんが物品の返却申請をしました`,
+        url: "/admin/items/requests",
       });
-
-      return await res.json();
     })
   );
 

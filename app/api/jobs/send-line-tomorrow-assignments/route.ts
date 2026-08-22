@@ -253,13 +253,17 @@ async function runJob() {
 
 export async function GET(req: NextRequest) {
   try {
-    const cronHeader = req.headers.get("user-agent");
-    const isVercelCron = cronHeader === "vercel-cron/1.0";
     const authHeader = req.headers.get("authorization");
     const cronSecret = requireEnv("CRON_SECRET");
 
-    if (!isVercelCron && authHeader !== `Bearer ${cronSecret}`) {
-      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+    if (authHeader !== `Bearer ${cronSecret}`) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "Unauthorized",
+        },
+        { status: 401 }
+      );
     }
 
     const result = await runJob();

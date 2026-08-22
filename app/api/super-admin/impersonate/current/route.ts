@@ -47,9 +47,8 @@ export async function GET(req: Request) {
       });
     }
 
-    const organizationName = Array.isArray(session.organizations)
-      ? session.organizations[0]?.name
-      : session.organizations?.name;
+    const organizationName =
+  session.organizations?.[0]?.name ?? null;
 
     return ok({
       active: true,

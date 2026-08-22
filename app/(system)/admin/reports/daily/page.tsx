@@ -105,41 +105,7 @@ export default function DailyReportAdminPage() {
     scheduledSiteCount > 0 &&
     checkedSiteCount === scheduledSiteCount;
 
-  useEffect(() => {
-    const checkAdminAndFetch = async () => {
-      const { data: userData } = await supabase.auth.getUser();
-      const currentOrganizationId = await getCurrentOrganization();
-
-if (!currentOrganizationId) {
-  alert("会社情報が取得できません");
-  return;
-}
-      const user = userData.user;
-
-      if (!user) {
-        window.location.href = "/login";
-        return;
-      }
-
-      const { data: employee } = await supabase
-        .from("employees")
-        .select("role")
-        .eq("auth_user_id", user.id)
-        .single();
-
-      if (!employee || !hasRole(employee.role, "admin")) {
-        alert("管理者のみ閲覧できます");
-        window.location.href = "/home";
-        return;
-      }
-
-      fetchReports(currentOrganizationId);
-    };
-
-    checkAdminAndFetch();
-  }, [date, calendarMonth]);
-
-  const fetchReports = async (currentOrganizationId: string) => {
+  async function fetchReports(currentOrganizationId: string) {
     const firstDay = formatLocalDate(
       new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1)
     );
@@ -231,7 +197,41 @@ while (true) {
 }
 
 setAssignmentMembers(assignmentMemberRows);
+}
+
+useEffect(() => {
+  const checkAdminAndFetch = async () => {
+    const { data: userData } = await supabase.auth.getUser();
+    const currentOrganizationId = await getCurrentOrganization();
+
+if (!currentOrganizationId) {
+alert("会社情報が取得できません");
+return;
+}
+    const user = userData.user;
+
+    if (!user) {
+      window.location.href = "/login";
+      return;
+    }
+
+    const { data: employee } = await supabase
+      .from("employees")
+      .select("role")
+      .eq("auth_user_id", user.id)
+      .single();
+
+    if (!employee || !hasRole(employee.role, "admin")) {
+      alert("管理者のみ閲覧できます");
+      window.location.href = "/home";
+      return;
+    }
+
+    fetchReports(currentOrganizationId);
   };
+
+  checkAdminAndFetch();
+}, [date, calendarMonth]);
 
   const thStyle = {
     border: "1px solid #333",

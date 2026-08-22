@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type {
   Assignment,
   AssignmentGroupKey,
@@ -36,12 +36,8 @@ export default function AssignmentDateHeader({
   onSaveDateMemo,
 }: Props) {
   const [isMemoEditing, setIsMemoEditing] = useState(false);
-  const [memoDraft, setMemoDraft] = useState("");
+  const [memoDraft, setMemoDraft] = useState(memo ?? "");
   const [isHovered, setIsHovered] = useState(false);
-
-  useEffect(() => {
-    setMemoDraft(memo ?? "");
-  }, [memo]);
 
   const infosOfDate = summary?.infos ?? [];
 const membersOfDate = summary?.members ?? [];

@@ -110,7 +110,12 @@ if (!currentOrganizationId) {
       return;
     }
 
-    setRequests(data ?? []);
+    setRequests(
+      (data ?? []).map((request) => ({
+        ...request,
+        items: request.items?.[0] ?? null,
+      }))
+    );
   };
 
   useEffect(() => {
