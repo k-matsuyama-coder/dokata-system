@@ -18,6 +18,13 @@ type MemberRow = {
   report_id: string;
 };
 
+type MemberRowWithReport = MemberRow & {
+  daily_reports:
+    | ReportRow
+    | ReportRow[]
+    | null;
+};
+
 type AdminSummary = {
   todayReportCount: number;
   todayPlannedSiteCount: number;
@@ -48,7 +55,6 @@ const [nightCount, setNightCount] = useState(0);
 const [dayOvertime, setDayOvertime] = useState(0);
 const [nightOvertime, setNightOvertime] = useState(0);
 const [totalVehicleCount, setTotalVehicleCount] = useState(0);
-const [recentReports, setRecentReports] = useState<ReportRow[]>([]);
 const [licenseName, setLicenseName] = useState("");
 const [licenseExpiryDate, setLicenseExpiryDate] = useState("");
 const [licenseStatus, setLicenseStatus] = useState<"expired" | "warning" | "ok" | "">("");
@@ -99,52 +105,92 @@ useEffect(() => {
         window.location.href = "/login";
         return;
       }
+
+      const cachedEmployeeName = window.sessionStorage.getItem(
+        `nippo_employee_name:${user.id}`
+      );
       
-      const currentOrganization = await getCurrentOrganization(token);
+      const cachedEmployeeRole = window.sessionStorage.getItem(
+        `nippo_employee_role:${user.id}`
+      );
+      
+      if (cachedEmployeeName) {
+        setEmployeeName(cachedEmployeeName);
+      }
+      
+      if (cachedEmployeeRole) {
+        setRole(cachedEmployeeRole);
+      }
+      
+      const [currentOrganization, employeeResult] = await Promise.all([
+        getCurrentOrganization(token),
+      
+        supabase
+          .from("employees")
+          .select(`
+            id,
+            name,
+            role,
+            must_change_password,
+            organization_id,
+            organizations (
+              status
+            )
+          `)
+          .eq("auth_user_id", user.id)
+          .single(),
+      ]);
+      
+      if (!currentOrganization?.organizationId) {
+        if (currentOrganization?.isSuperAdmin) {
+          window.location.href = "/super-admin";
+          return;
+        }
+      
+        alert("会社情報が取得できません");
+        return;
+      }
+      
+      const currentOrganizationId = currentOrganization.organizationId;
+      const isImpersonating = currentOrganization.impersonating;
+      
+      setImpersonating(isImpersonating);
+      
+      const employee = employeeResult.data;
+      const employeeError = employeeResult.error;
 
-if (!currentOrganization?.organizationId) {
-  if (currentOrganization?.isSuperAdmin) {
-    window.location.href = "/super-admin";
-    return;
-  }
-
-  alert("会社情報が取得できません");
-  return;
-}
-
-const currentOrganizationId = currentOrganization.organizationId;
-const isImpersonating = currentOrganization.impersonating;
-
-setImpersonating(isImpersonating);
-
-const { data: employee, error: employeeError } = await supabase
-  .from("employees")
-  .select(`
-    id,
-    name,
-    role,
-    must_change_password,
-    organization_id,
-    organizations (
-      status
-    )
-  `)
-  .eq("organization_id", currentOrganizationId)
-  .eq("auth_user_id", user.id)
-  .single();
-
-  if (employeeError || !employee) {
-    console.error("社員情報取得失敗:", employeeError?.message);
-    return;
-  }
+      if (
+        employeeError ||
+        !employee ||
+        employee.organization_id !== currentOrganizationId
+      ) {
+        console.error(
+          "社員情報取得失敗:",
+          employeeError?.message ?? "社員の会社情報が一致しません"
+        );
+        return;
+      }
   
   if (employee.must_change_password) {
     window.location.href = "/change-password";
     return;
   }
 
-setEmployeeName(employee.name?.trim() || user.email || "ユーザー");
+  const resolvedEmployeeName =
+  employee.name?.trim() || user.email || "ユーザー";
+
+setEmployeeName(resolvedEmployeeName);
 setRole(employee.role);
+
+window.sessionStorage.setItem(
+  `nippo_employee_name:${user.id}`,
+  resolvedEmployeeName
+);
+
+window.sessionStorage.setItem(
+  `nippo_employee_role:${user.id}`,
+  employee.role
+);
 
 const organizationStatus = employee.organizations?.[0]?.status ?? null;
 
@@ -173,30 +219,30 @@ return;
           .slice(0, 10);
       
           const [
-            { data: todayReports },
-            { data: todayAssignments },
-            { data: todayMembers },
+            { count: todayReportCount },
+            { count: todayPlannedSiteCount },
+            { count: todayWorkerCount },
             { data: monthlyDailyInfos },
             { data: monthlyReports },
-            { data: pendingItems },
-            { data: returnItems },
+            { count: pendingItemRequests },
+            { count: returnItemRequests },
           ] = await Promise.all([
             supabase
               .from("daily_reports")
-              .select("id")
+              .select("id", { count: "exact", head: true })
               .eq("organization_id", currentOrganizationId)
               .eq("report_date", todayString),
           
             supabase
               .from("assignments")
-              .select("id")
+              .select("id", { count: "exact", head: true })
               .eq("organization_id", currentOrganizationId)
               .lte("start_date", todayString)
               .or(`end_date.gte.${todayString},end_date.is.null`),
           
             supabase
               .from("assignment_site_members")
-              .select("id")
+              .select("id", { count: "exact", head: true })
               .eq("organization_id", currentOrganizationId)
               .eq("work_date", todayString),
           
@@ -216,13 +262,13 @@ return;
           
             supabase
               .from("item_requests")
-              .select("id")
+              .select("id", { count: "exact", head: true })
               .eq("organization_id", currentOrganizationId)
               .eq("status", "pending"),
           
             supabase
               .from("item_requests")
-              .select("id")
+              .select("id", { count: "exact", head: true })
               .eq("organization_id", currentOrganizationId)
               .eq("status", "return_requested"),
           ]);
@@ -238,14 +284,14 @@ return;
         );
       
         setAdminSummary({
-          todayReportCount: todayReports?.length ?? 0,
-          todayPlannedSiteCount: todayAssignments?.length ?? 0,
-          todayWorkerCount: todayMembers?.length ?? 0,
+          todayReportCount: todayReportCount ?? 0,
+todayPlannedSiteCount: todayPlannedSiteCount ?? 0,
+todayWorkerCount: todayWorkerCount ?? 0,
           monthlyPlannedLabor,
           monthlyActualLabor,
           monthlyTargetLabor: monthlyPlannedLabor,
-          pendingItemRequests: pendingItems?.length ?? 0,
-          returnItemRequests: returnItems?.length ?? 0,
+          pendingItemRequests: pendingItemRequests ?? 0,
+returnItemRequests: returnItemRequests ?? 0,
         });
             } catch (error) {
               console.error("管理者集計取得失敗:", error);
@@ -280,71 +326,89 @@ return;
         
                 if (license.expiry_date) {
                   const today = new Date();
+
                   const expiry = new Date(license.expiry_date);
-                  const diffTime = expiry.getTime() - today.getTime();
-                  const diffDays = Math.ceil(
-                    diffTime / (1000 * 60 * 60 * 24)
-                  );
-        
-                  setLicenseRemainingDays(diffDays);
-        
-                  if (diffDays < 0) {
-                    setLicenseStatus("expired");
-                  } else if (diffDays <= 30) {
-                    setLicenseStatus("warning");
-                  } else {
-                    setLicenseStatus("ok");
-                  }
-                }
-              }
-            } catch (error) {
-              console.error("免許情報取得失敗:", error);
-              setLicenseLoadError(true);
-            } finally {
-              setLicenseLoading(false);
-            }
-          })();
-        } else {
-          setLicenseLoading(false);
-        }
+const diffTime = expiry.getTime() - today.getTime();
+const diffDays = Math.ceil(
+  diffTime / (1000 * 60 * 60 * 24)
+);
 
-        void (async () => {
-          try {
-            const today = new Date();
-        
-            const { data: memberRows, error: memberError } = await supabase
-        .from("report_members")
-        .select("overtime, is_driver, report_id")
-        .eq("employee_name", employee.name);
+setLicenseRemainingDays(diffDays);
 
-        if (memberError) {
-          throw memberError;
-        }
+if (diffDays < 0) {
+  setLicenseStatus("expired");
+} else if (diffDays <= 30) {
+  setLicenseStatus("warning");
+} else {
+  setLicenseStatus("ok");
+}
+}
+}
+} catch (error) {
+  console.error("免許情報取得失敗:", error);
+  setLicenseLoadError(true);
+} finally {
+  setLicenseLoading(false);
+}
+})();
+} else {
+  setLicenseLoading(false);
+}
 
-      if (!memberRows || memberRows.length === 0) {
-        setDayCount(0);
-setNightCount(0);
-setDayOvertime(0);
-setNightOvertime(0);
-setTotalVehicleCount(0);
-setRecentReports([]);
-return;
-      }
+void (async () => {
+  try {
+    const today = new Date();
 
-      const reportIds = memberRows
-        .map((row: MemberRow) => row.report_id)
-        .filter(Boolean);
-
-        const { data: reportRows, error: reportError } = await supabase
-        .from("daily_reports")
-        .select("id, report_date, site_name, shift_type")
-        .eq("organization_id", currentOrganizationId)
-        .in("id", reportIds)
-        .order("report_date", { ascending: false });
-
-        if (reportError) {
-          throw reportError;
-        }
+    const monthlyResult = await supabase
+    .from("report_members")
+    .select(`
+      overtime,
+      is_driver,
+      report_id,
+      daily_reports!inner (
+        id,
+        report_date,
+        site_name,
+        shift_type
+      )
+    `)
+    .eq("organization_id", currentOrganizationId)
+    .eq("employee_name", employee.name)
+    .gte("daily_reports.report_date", monthStart)
+    .lte("daily_reports.report_date", todayString);
+  
+  if (monthlyResult.error) {
+    throw monthlyResult.error;
+  }
+  
+  const monthlyMemberRows =
+    (monthlyResult.data ?? []) as unknown as MemberRowWithReport[];
+  
+  const getRelatedReport = (
+    row: MemberRowWithReport
+  ): ReportRow | null => {
+    if (Array.isArray(row.daily_reports)) {
+      return row.daily_reports[0] ?? null;
+    }
+  
+    return row.daily_reports;
+  };
+  
+  const memberRows: MemberRow[] = monthlyMemberRows.map((row) => ({
+    overtime: row.overtime,
+    is_driver: row.is_driver,
+    report_id: row.report_id,
+  }));
+  
+  const monthlyReports = monthlyMemberRows
+    .map(getRelatedReport)
+    .filter((report): report is ReportRow => report !== null);
+  
+  const reportRows = Array.from(
+    new Map(
+      monthlyReports.map((report) => [report.id, report])
+    ).values()
+  ).sort((a, b) => b.report_date.localeCompare(a.report_date));
 
       const reportMap = new Map<string, ReportRow>();
       (reportRows ?? []).forEach((report: ReportRow) => {
@@ -362,14 +426,6 @@ return;
           reportDate.getMonth() === today.getMonth()
         );
       });
-
-      const uniqueDays = Array.from(
-        new Set(
-          currentMonthMembers
-            .map((row) => reportMap.get(row.report_id)?.report_date)
-            .filter(Boolean)
-        )
-      );
 
       const daySet = new Set<string>();
 const nightSet = new Set<string>();
@@ -405,9 +461,6 @@ const driverReportIds = new Set(
 );
 
 setTotalVehicleCount(driverReportIds.size);
-
-      const recent = (reportRows ?? []).slice(0, 5) as ReportRow[];
-      setRecentReports(recent);
 
     } catch (error) {
       console.error("個人集計取得失敗:", error);
