@@ -18,7 +18,7 @@ export function useAssignmentGroups({ organizationId }: Props) {
     const { data, error } = await supabase
       .from("assignment_groups")
       .select(
-        "id, organization_id, group_key, display_name, is_enabled, sort_order, header_color"
+        "id, organization_id, group_key, display_name, is_enabled, sort_order, header_color, daily_capacity"
       )
       .eq("organization_id", targetOrganizationId)
       .order("sort_order", { ascending: true });

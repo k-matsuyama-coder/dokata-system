@@ -93,7 +93,9 @@ export default function AdminSettingsPage() {
 
       const { data, error: groupError } = await supabase
         .from("assignment_groups")
-        .select("id, organization_id, group_key, display_name, is_enabled, sort_order, header_color")
+        .select(
+          "id, organization_id, group_key, display_name, is_enabled, sort_order, header_color, daily_capacity"
+        )
         .eq("organization_id", organizationId)
         .order("sort_order", { ascending: true });
 
@@ -124,6 +126,7 @@ export default function AdminSettingsPage() {
     : groupKey === "group4"
     ? "#fef3c7"
     : "#fce7f3",
+    daily_capacity: null,
           }
         );
       });
@@ -138,8 +141,12 @@ export default function AdminSettingsPage() {
 
   const handleChange = (
     groupKey: AssignmentGroupKey,
-    field: "display_name" | "is_enabled" | "header_color",
-    value: string | boolean
+    field:
+      | "display_name"
+      | "is_enabled"
+      | "header_color"
+      | "daily_capacity",
+    value: string | boolean | number | null
   ) => {
     setSettings((prev) =>
       prev.map((setting) =>
@@ -166,6 +173,7 @@ export default function AdminSettingsPage() {
         is_enabled: setting.is_enabled,
         sort_order: setting.sort_order,
         header_color: setting.header_color || "#e5e7eb",
+        daily_capacity: setting.daily_capacity,
       }));
 
       const { error } = await supabase.from("assignment_groups").upsert(payload, {
@@ -213,7 +221,7 @@ export default function AdminSettingsPage() {
               key={setting.group_key}
               style={{
                 display: "grid",
-                gridTemplateColumns: "140px 1fr 120px 120px",
+                gridTemplateColumns: "120px 1fr 140px 120px 100px",
                 gap: 12,
                 alignItems: "center",
                 padding: 12,
@@ -238,6 +246,44 @@ export default function AdminSettingsPage() {
                   boxSizing: "border-box",
                 }}
               />
+
+<label
+  style={{
+    display: "grid",
+    gap: 4,
+    fontSize: 12,
+    fontWeight: 700,
+  }}
+>
+  日別合計人数
+
+  <input
+    type="number"
+    min="0"
+    step="1"
+    value={setting.daily_capacity ?? ""}
+    placeholder="社員総数"
+    onChange={(e) => {
+      const inputValue = e.target.value;
+
+      handleChange(
+        setting.group_key,
+        "daily_capacity",
+        inputValue === ""
+          ? null
+          : Math.max(0, Number(inputValue))
+      );
+    }}
+    style={{
+      width: "100%",
+      padding: "8px 10px",
+      border: "1px solid #d1d5db",
+      borderRadius: 8,
+      fontSize: 14,
+      boxSizing: "border-box",
+    }}
+  />
+</label>
 
 <input
   type="color"

@@ -268,6 +268,7 @@ onSaveDateMemo,
       <TwoMonthTable
   days={days}
   employees={employees}
+  groupSettings={groupSettings}
   dateMemos={dateMemos}
 onSaveDateMemo={onSaveDateMemo}
   groupedAssignments={groupedAssignments}

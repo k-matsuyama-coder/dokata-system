@@ -32,6 +32,7 @@ export type AssignmentGroupSetting = {
   is_enabled: boolean;
   sort_order: number;
   header_color: string | null;
+  daily_capacity: number | null;
 };
 
 export type Vehicle = {

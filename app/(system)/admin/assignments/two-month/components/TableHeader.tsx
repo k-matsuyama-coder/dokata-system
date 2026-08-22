@@ -2,11 +2,15 @@
 
 import React, { useState } from "react";
 import { stickyTh, th, totalTh } from "../styles";
-import type { Employee } from "../types";
+import type {
+  AssignmentGroupSetting,
+  Employee,
+} from "../types";
 
 type Props = {
   days: string[];
   employees: Employee[];
+  groupSettings?: AssignmentGroupSetting[];
   dateMemos: Map<string, string>;
 onSaveDateMemo: (date: string, memo: string) => Promise<void>;
 
@@ -24,6 +28,7 @@ onSaveDateMemo: (date: string, memo: string) => Promise<void>;
 export default function TwoMonthTableHeader({
   days,
   employees,
+  groupSettings = [],
   dateMemos,
 onSaveDateMemo,
 
@@ -35,6 +40,21 @@ onSaveDateMemo,
   const [hoveredDate, setHoveredDate] = useState<string | null>(null);
 const [editingDate, setEditingDate] = useState<string | null>(null);
 const [memoDraft, setMemoDraft] = useState("");
+
+const firstCapacity =
+  groupSettings.find(
+    (group) => group.group_key === "group1"
+  )?.daily_capacity ?? employees.length;
+
+const secondCapacity =
+  groupSettings.find(
+    (group) => group.group_key === "group2"
+  )?.daily_capacity ?? employees.length;
+
+const thirdCapacity =
+  groupSettings.find(
+    (group) => group.group_key === "group3"
+  )?.daily_capacity ?? employees.length;
   return (
     <thead>
       <tr style={{ position: "sticky", top: 0, zIndex: 60 }}>
@@ -299,15 +319,15 @@ setHoveredDate(date);
                 </div>
 
                 <div style={dailyTotalSubLineStyle}>
-                  ① {dailyTotal.first} / {employees.length}
+                ① {dailyTotal.first} / {firstCapacity}
                 </div>
 
                 <div style={dailyTotalSubLineStyle}>
-                  ② {dailyTotal.second} / {employees.length}
+                ② {dailyTotal.second} / {secondCapacity}
                 </div>
 
                 <div style={dailyTotalSubLineStyle}>
-                  ③ {dailyTotal.third} / {employees.length}
+                ③ {dailyTotal.third} / {thirdCapacity}
                 </div>
               </div>
             </th>

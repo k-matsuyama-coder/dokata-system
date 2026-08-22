@@ -7,15 +7,16 @@ export type AssignmentGroupKey =
   | "group4"
   | "group5";
 
-export type AssignmentGroupSetting = {
-  id: string;
-  organization_id: string;
-  group_key: AssignmentGroupKey;
-  display_name: string;
-  is_enabled: boolean;
-  sort_order: number;
-  header_color: string | null;
-};
+  export type AssignmentGroupSetting = {
+    id: string;
+    organization_id: string;
+    group_key: AssignmentGroupKey;
+    display_name: string;
+    is_enabled: boolean;
+    sort_order: number;
+    header_color: string | null;
+    daily_capacity: number | null;
+  };
 
 export type DailyInfo = {
   id: string;

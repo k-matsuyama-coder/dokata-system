@@ -4,7 +4,12 @@
 import React, { useCallback, useRef } from "react";
 import TwoMonthTableHeader from "./TableHeader";
 import TwoMonthAssignmentRow from "./AssignmentRow";
-import type { Assignment, AssignmentGroupKey, Employee } from "../types";
+import type {
+  Assignment,
+  AssignmentGroupKey,
+  AssignmentGroupSetting,
+  Employee,
+} from "../types";
 import type { DailyInfo } from "../types";
 
 type GroupedAssignment = {
@@ -16,6 +21,7 @@ type GroupedAssignment = {
 type Props = {
   days: string[];
   employees: Employee[];
+  groupSettings?: AssignmentGroupSetting[];
   dateMemos: Map<string, string>;
 onSaveDateMemo: (date: string, memo: string) => Promise<void>;
   groupedAssignments: GroupedAssignment[];
@@ -67,6 +73,7 @@ const AUTO_SCROLL_STEP = 28;
 export default function TwoMonthTable({
   days,
   employees,
+  groupSettings = [],
   dateMemos,
 onSaveDateMemo,
   groupedAssignments,
@@ -148,6 +155,7 @@ getPlannedCount,
         <TwoMonthTableHeader
   days={days}
   employees={employees}
+  groupSettings={groupSettings}
   dateMemos={dateMemos}
   onSaveDateMemo={onSaveDateMemo}
   getDailyTotal={getDailyTotal}
