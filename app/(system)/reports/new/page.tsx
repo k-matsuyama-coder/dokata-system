@@ -50,9 +50,13 @@ export default function NewReportPage() {
 const [operatorName, setOperatorName] = useState("");
 
   const router = useRouter();
-  const getCurrentOrganization = async () => {
-    const { data: sessionData } = await supabase.auth.getSession();
-    const token = sessionData.session?.access_token;
+  const getCurrentOrganization = async (accessToken?: string) => {
+    let token = accessToken;
+  
+    if (!token) {
+      const { data: sessionData } = await supabase.auth.getSession();
+      token = sessionData.session?.access_token;
+    }
   
     if (!token) {
       return null;
@@ -194,32 +198,50 @@ const { data: previousReport, error } = await supabase
 
   useEffect(() => {
     const fetchInitialData = async () => {
-      const { data: userData } = await supabase.auth.getUser();
-      const user = userData.user;
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      
+      const user = session?.user;
 
       if (!user) {
         window.location.href = "/login";
         return;
       }
-      const currentOrganizationId = await getCurrentOrganization();
 
-if (!currentOrganizationId) {
-  alert("会社情報が取得できません");
-  return;
-}
-
-      let fetchedEmployeeName = "";
-
-      const { data: employee } = await supabase
-        .from("employees")
-        .select("name")
-        .eq("auth_user_id", user.id)
-        .single();
-
-      if (employee) {
-        fetchedEmployeeName = employee.name;
-        setEmployeeName(employee.name);
+      const cachedEmployeeName = window.sessionStorage.getItem(
+        `nippo_employee_name:${user.id}`
+      );
+      
+      if (cachedEmployeeName) {
+        setEmployeeName(cachedEmployeeName);
       }
+      const [currentOrganizationId, employeeResult] = await Promise.all([
+        getCurrentOrganization(session.access_token),
+        supabase
+          .from("employees")
+          .select("name")
+          .eq("auth_user_id", user.id)
+          .single(),
+      ]);
+      
+      if (!currentOrganizationId) {
+        alert("会社情報が取得できません");
+        return;
+      }
+      
+      let fetchedEmployeeName = "";
+      const employee = employeeResult.data;
+
+        if (employee) {
+          fetchedEmployeeName = employee.name;
+          setEmployeeName(employee.name);
+        
+          window.sessionStorage.setItem(
+            `nippo_employee_name:${user.id}`,
+            employee.name
+          );
+        }
 
       const { data: employeeList } = await supabase
   .from("employees")

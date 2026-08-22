@@ -91,6 +91,12 @@ export default function NavBar() {
       
       setRole(employee.role);
       setEmployeeName(employee.name);
+
+      window.sessionStorage.setItem(
+        `nippo_employee_name:${user.id}`,
+        employee.name
+      );
+      
       setOrganizationId(employee.organization_id);
       
       const organization = Array.isArray(employee.organizations)
