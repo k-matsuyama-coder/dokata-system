@@ -25,6 +25,22 @@ type MemberRowWithReport = MemberRow & {
     | null;
 };
 
+type TodayScheduledMember = {
+  assignment_id: string;
+  assignments:
+    | {
+        site_name: string | null;
+      }
+    | {
+        site_name: string | null;
+      }[]
+    | null;
+};
+
+type TodayReport = {
+  site_name: string | null;
+};
+
 type AdminSummary = {
   todayReportCount: number;
   todayPlannedSiteCount: number;
@@ -219,32 +235,29 @@ return;
           .slice(0, 10);
       
           const [
-            { count: todayReportCount },
-            { count: todayPlannedSiteCount },
-            { count: todayWorkerCount },
+            { data: todayReports },
+            { data: todayScheduledMembers },
             { data: monthlyDailyInfos },
             { data: monthlyReports },
             { count: pendingItemRequests },
             { count: returnItemRequests },
           ] = await Promise.all([
             supabase
-              .from("daily_reports")
-              .select("id", { count: "exact", head: true })
-              .eq("organization_id", currentOrganizationId)
-              .eq("report_date", todayString),
-          
-            supabase
-              .from("assignments")
-              .select("id", { count: "exact", head: true })
-              .eq("organization_id", currentOrganizationId)
-              .lte("start_date", todayString)
-              .or(`end_date.gte.${todayString},end_date.is.null`),
-          
-            supabase
-              .from("assignment_site_members")
-              .select("id", { count: "exact", head: true })
-              .eq("organization_id", currentOrganizationId)
-              .eq("work_date", todayString),
+  .from("daily_reports")
+  .select("site_name")
+  .eq("organization_id", currentOrganizationId)
+  .eq("report_date", todayString),
+
+supabase
+  .from("assignment_site_members")
+  .select(`
+    assignment_id,
+    assignments!inner (
+      site_name
+    )
+  `)
+  .eq("organization_id", currentOrganizationId)
+  .eq("work_date", todayString),
           
             supabase
               .from("assignment_site_daily_infos")
@@ -272,6 +285,46 @@ return;
               .eq("organization_id", currentOrganizationId)
               .eq("status", "return_requested"),
           ]);
+
+          const safeTodayReports =
+  (todayReports ?? []) as TodayReport[];
+
+const safeTodayScheduledMembers =
+  (todayScheduledMembers ?? []) as unknown as TodayScheduledMember[];
+
+const scheduledAssignmentSites = new Map<
+  string,
+  string | null
+>();
+
+safeTodayScheduledMembers.forEach((member) => {
+  const assignment = Array.isArray(member.assignments)
+    ? member.assignments[0]
+    : member.assignments;
+
+  if (!assignment) {
+    return;
+  }
+
+  scheduledAssignmentSites.set(
+    member.assignment_id,
+    assignment.site_name
+  );
+});
+
+const submittedSiteNames = new Set(
+  safeTodayReports.map((report) => report.site_name)
+);
+
+const todayPlannedSiteCount = scheduledAssignmentSites.size;
+
+const todayReportCount = Array.from(
+  scheduledAssignmentSites.values()
+).filter((siteName) =>
+  submittedSiteNames.has(siteName)
+).length;
+
+const todayWorkerCount = safeTodayScheduledMembers.length;
       
         const monthlyPlannedLabor = (monthlyDailyInfos ?? []).reduce(
           (sum, row) => sum + Number(row.planned_count ?? 0),
