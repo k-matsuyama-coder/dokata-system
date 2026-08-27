@@ -19,6 +19,7 @@ const menuGroups = [
     title: "人員",
     items: [
       { label: "社員一覧", href: "/admin/users", icon: "👷", desc: "社員の確認・追加" },
+      { label: "作業員名簿", href: "/admin/employee-roster", icon: "📋", desc: "住所・連絡先などの個人情報を管理" },
       { label: "会社管理", href: "/admin/companies", icon: "🏢", desc: "所属会社の管理" },
       { label: "元請管理", href: "/admin/contractors", icon: "🤝", desc: "元請・担当者の管理" },
     ],

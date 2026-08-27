@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 
 type Employee = {
+  id: string;
   name: string;
 };
 
@@ -245,7 +246,7 @@ const { data: previousReport, error } = await supabase
 
       const { data: employeeList } = await supabase
   .from("employees")
-  .select("name")
+  .select("id, name")
   .eq("organization_id", currentOrganizationId)
   .order("name", { ascending: true });
 
@@ -422,6 +423,8 @@ operator_name: operatorName,
       const reportMembersPayload = selectedMembers.map((member) => ({
         organization_id: currentOrganizationId,
         report_id: reportData.id,
+        employee_id:
+          employees.find((employee) => employee.name === member.name)?.id ?? null,
         employee_name: member.name,
         labor: Number(member.labor || 0),
         overtime: Number(member.overtime || 0),

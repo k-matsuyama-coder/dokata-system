@@ -1,0 +1,274 @@
+.employee-roster-print-root {
+    display: grid;
+    gap: 24px;
+    padding: 20px;
+    overflow-x: auto;
+    background: #d1d5db;
+    color: #111;
+    font-family:
+      "Yu Gothic",
+      "Hiragino Kaku Gothic ProN",
+      sans-serif;
+  }
+  
+  .employee-roster-print-page {
+    box-sizing: border-box;
+    width: 400mm;
+    min-height: 277mm;
+    margin: 0 auto;
+    padding: 7mm;
+    background: #fff;
+    break-after: page;
+    page-break-after: always;
+  }
+  
+  .employee-roster-print-page:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+  
+  .employee-roster-form-number {
+    margin-bottom: 2mm;
+    font-size: 8px;
+    font-weight: 700;
+  }
+  
+  .employee-roster-title-row {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr 1fr;
+    align-items: center;
+    gap: 5mm;
+    margin-bottom: 2mm;
+    font-size: 9px;
+  }
+  
+  .employee-roster-heading-left {
+    display: grid;
+    gap: 2mm;
+  }
+  
+  .employee-roster-title {
+    text-align: center;
+  }
+  
+  .employee-roster-title h1 {
+    margin: 0 0 1mm;
+    font-size: 20px;
+    letter-spacing: 4px;
+  }
+  
+  .employee-roster-title div {
+    font-size: 8px;
+  }
+  
+  .employee-roster-confirmation {
+    display: grid;
+    justify-items: end;
+    gap: 1mm;
+  }
+  
+  .employee-roster-confirmation-box {
+    display: grid;
+    grid-template-columns: 22mm 42mm;
+    min-height: 10mm;
+    border: 1px solid #111;
+  }
+  
+  .employee-roster-confirmation-box span,
+  .employee-roster-confirmation-box strong {
+    display: grid;
+    place-items: center;
+    padding: 1mm;
+  }
+  
+  .employee-roster-confirmation-box span {
+    border-right: 1px solid #111;
+  }
+  
+  .employee-roster-company-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 8mm;
+    align-items: end;
+    margin-bottom: 3mm;
+    padding: 2mm 3mm;
+    border: 1px solid #111;
+    font-size: 8px;
+    line-height: 1.6;
+  }
+  
+  .employee-roster-page-number {
+    align-self: start;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  
+  .employee-roster-print-table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+    font-size: 6.5px;
+    line-height: 1.25;
+  }
+  
+  .employee-roster-print-table th,
+  .employee-roster-print-table td {
+    box-sizing: border-box;
+    padding: 0.7mm;
+    border: 1px solid #111;
+    text-align: center;
+    vertical-align: middle;
+    overflow-wrap: anywhere;
+  }
+  
+  .employee-roster-print-table th {
+    height: 7mm;
+    background: #f3f4f6;
+    font-weight: 700;
+  }
+  
+  .employee-roster-print-table tbody tr {
+    height: 6mm;
+  }
+  
+  .employee-roster-worker-first-row {
+    border-top: 1.5px solid #111;
+  }
+  
+  .employee-roster-kana {
+    min-height: 2.5mm;
+    margin-bottom: 1mm;
+    font-size: 5.5px;
+  }
+  
+  .employee-roster-emergency {
+    margin-top: 1.2mm;
+    padding-top: 1.2mm;
+    border-top: 0.5px solid #999;
+  }
+  
+  .roster-text-left {
+    text-align: left !important;
+  }
+  
+  .roster-col-number {
+    width: 8mm;
+  }
+  
+  .roster-col-name {
+    width: 23mm;
+  }
+  
+  .roster-col-job {
+    width: 15mm;
+  }
+  
+  .roster-col-mark {
+    width: 8mm;
+  }
+  
+  .roster-col-date {
+    width: 20mm;
+  }
+  
+  .roster-col-address {
+    width: 48mm;
+  }
+  
+  .roster-col-health {
+    width: 21mm;
+  }
+  
+  .roster-col-blood {
+    width: 10mm;
+  }
+  
+  .roster-col-insurance {
+    width: 33mm;
+  }
+  
+  .roster-col-qualification {
+    width: 39mm;
+  }
+  
+  .roster-col-license {
+    width: 30mm;
+  }
+  
+  .roster-col-retirement {
+    width: 15mm;
+  }
+  
+  .employee-roster-notes {
+    display: grid;
+    gap: 1mm;
+    margin-top: 2mm;
+    font-size: 6.5px;
+    line-height: 1.5;
+  }
+  
+  .employee-roster-print-toolbar {
+    position: sticky;
+    top: 12px;
+    z-index: 20;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.96);
+    border-bottom: 1px solid #d1d5db;
+  }
+  
+  .employee-roster-print-toolbar button,
+  .employee-roster-print-toolbar a {
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  
+  @page {
+    size: A3 landscape;
+    margin: 8mm;
+  }
+  
+  @media print {
+    html,
+    body {
+      margin: 0 !important;
+      padding: 0 !important;
+      background: #fff !important;
+    }
+  
+    nav,
+    body > header,
+    aside,
+    .employee-roster-print-toolbar {
+      display: none !important;
+    }
+  
+    .employee-roster-print-root {
+      display: block;
+      padding: 0;
+      overflow: visible;
+      background: #fff;
+    }
+  
+    .employee-roster-print-page {
+      width: auto;
+      min-height: 0;
+      margin: 0;
+      padding: 0;
+      box-shadow: none;
+    }
+  
+    .employee-roster-print-table {
+      font-size: 6.5px;
+    }
+  
+    * {
+      print-color-adjust: exact;
+      -webkit-print-color-adjust: exact;
+    }
+  }

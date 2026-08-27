@@ -146,21 +146,13 @@ export default function CertificationsPage() {
       return;
     }
 
-    const {
-      data: { publicUrl: frontUrl },
-    } = supabase.storage.from("certifications").getPublicUrl(frontPath);
-
-    const {
-      data: { publicUrl: backUrl },
-    } = supabase.storage.from("certifications").getPublicUrl(backPath);
-
     const { error: insertError } = await supabase.from("certifications").insert([
       {
         employee_id: employee.id,
         qualification_name: finalQualificationName,
         issue_date: issueDate,
-        card_front_url: frontUrl,
-        card_back_url: backUrl,
+        card_front_url: frontPath,
+card_back_url: backPath,
       },
     ]);
 
