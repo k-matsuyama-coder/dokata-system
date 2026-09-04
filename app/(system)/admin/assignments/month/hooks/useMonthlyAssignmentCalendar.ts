@@ -89,10 +89,10 @@ export function useMonthlyAssignmentCalendar({
       minWidth:
   viewMode === "week"
     ? isMobile
-      ? 112
+      ? 150
       : 220
     : isMobile
-      ? 92
+      ? 120
       : 150,
       height: isMobile ? 112 : 140,
       padding: isMobile ? 4 : 6,

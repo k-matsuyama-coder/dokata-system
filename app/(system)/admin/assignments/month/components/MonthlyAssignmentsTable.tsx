@@ -57,7 +57,7 @@ const MonthlyAssignmentsTable = React.forwardRef<HTMLDivElement, Props>(
     ref
   ) {
 
-    const mobileDateWidth = viewMode === "week" ? 112 : 92;
+    const mobileDateWidth = viewMode === "week" ? 150 : 120;
 const mobileTableWidth = 128 + days.length * mobileDateWidth;
 
     return (
@@ -88,6 +88,23 @@ width: isMobile ? mobileTableWidth : "100%",
             fontSize: isMobile ? 10 : 12,
           }}
         >
+
+{isMobile && (
+  <colgroup>
+    <col style={{ width: 96 }} />
+    <col style={{ width: 32 }} />
+
+    {days.map((date) => (
+      <col
+        key={date}
+        style={{
+          width: mobileDateWidth,
+        }}
+      />
+    ))}
+  </colgroup>
+)}
+
           <thead>
             <tr>
               {!isMobile && <th style={{ ...th, ...stickyTh1 }}>元請</th>}
