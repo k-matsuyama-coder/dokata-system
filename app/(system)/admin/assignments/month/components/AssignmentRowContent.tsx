@@ -201,11 +201,19 @@ const [siteMemoDraft, setSiteMemoDraft] = useState("");
           fontWeight: 800,
           cursor: canDragRow ? "grab" : "pointer",
           backgroundColor: fixedCellBackground,
-          minWidth: viewMode === "week" ? 260 : 180,
-          width: viewMode === "week" ? 260 : 180,
+          minWidth: isMobile
+  ? 96
+  : viewMode === "week"
+    ? 260
+    : 180,
+width: isMobile
+  ? 96
+  : viewMode === "week"
+    ? 260
+    : 180,
           textAlign: "center",
           verticalAlign: "middle",
-          padding: "10px 8px",
+          padding: isMobile ? "6px 3px" : "10px 8px",
         }}
       >
         <div
@@ -238,7 +246,7 @@ const [siteMemoDraft, setSiteMemoDraft] = useState("");
     display: "flex",
     width: "100%",
     height: "100%",
-    minHeight: 80,
+    minHeight: isMobile ? 64 : 80,
     justifyContent: "center",
     alignItems: "center",
     gap: 6,
@@ -249,7 +257,7 @@ const [siteMemoDraft, setSiteMemoDraft] = useState("");
   style={{
     cursor: "pointer",
     textDecoration: "underline",
-    fontSize: 16,
+    fontSize: isMobile ? 12 : 16,
     fontWeight: 900,
     lineHeight: 1.3,
     textAlign: "center",
@@ -426,7 +434,10 @@ const [siteMemoDraft, setSiteMemoDraft] = useState("");
         style={{
           ...td,
           ...stickyTd4,
-          left: isMobile ? 0 : 350,
+          left: isMobile ? 96 : 350,
+          minWidth: isMobile ? 32 : 40,
+width: isMobile ? 32 : 40,
+padding: isMobile ? 2 : 4,
           zIndex: 64,
           fontWeight: 800,
           color: assignment.shift_type === "night" ? "#fff" : "#111",

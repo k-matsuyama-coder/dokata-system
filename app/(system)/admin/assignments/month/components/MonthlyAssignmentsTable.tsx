@@ -91,18 +91,40 @@ const MonthlyAssignmentsTable = React.forwardRef<HTMLDivElement, Props>(
               {!isMobile && <th style={{ ...th, ...stickyTh1 }}>元請</th>}
 
               <th
-                style={{
-                  ...th,
-                  ...stickyTh2,
-                  left: isMobile ? 0 : 90,
-                }}
-              >
-                現場名
-              </th>
+  style={{
+    ...th,
+    ...stickyTh2,
+    left: isMobile ? 0 : 90,
+    ...(isMobile
+      ? {
+          minWidth: 96,
+          width: 96,
+          padding: "4px 2px",
+        }
+      : {}),
+  }}
+>
+  現場名
+</th>
 
               {!isMobile && <th style={{ ...th, ...stickyTh3 }}>担当者</th>}
 
-              <th style={{ ...th, ...stickyTh4 }}>昼/夜</th>
+              <th
+  style={{
+    ...th,
+    ...stickyTh4,
+    left: isMobile ? 96 : 350,
+    ...(isMobile
+      ? {
+          minWidth: 32,
+          width: 32,
+          padding: 2,
+        }
+      : {}),
+  }}
+>
+  昼/夜
+</th>
 
               {days.map((date) => (
                 <AssignmentDateHeader

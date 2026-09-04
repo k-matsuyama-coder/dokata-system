@@ -87,14 +87,14 @@ export function useMonthlyAssignmentCalendar({
     return {
       ...cellTd,
       minWidth:
-        viewMode === "week"
-          ? isMobile
-            ? 160
-            : 220
-          : isMobile
-            ? 120
-            : 150,
-      height: isMobile ? 120 : 140,
+  viewMode === "week"
+    ? isMobile
+      ? 112
+      : 220
+    : isMobile
+      ? 92
+      : 150,
+      height: isMobile ? 112 : 140,
       padding: isMobile ? 4 : 6,
       backgroundColor:
   isShort
