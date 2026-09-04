@@ -31,7 +31,7 @@ type Assignment = {
   shift_type: string | null;
 };
 
-type DailyRow = {
+export type DailyRow = {
   date: string;
   workerCount: number;
   overtimeHours: number;
@@ -42,7 +42,7 @@ type DailyRow = {
   notes: string[];
 };
 
-type Sheet = {
+export type Sheet = {
   key: string;
   siteName: string;
   contractorName: string;
@@ -104,6 +104,7 @@ export default function MonthlyInvoiceSheetPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [selectedOffice, setSelectedOffice] = useState("all");
+  const [exportingExcel, setExportingExcel] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -328,6 +329,35 @@ report_members (
   }, [sheets, selectedOffice]);
 
   const { year, monthNumber } = getMonthRange(month);
+  const handleExportExcel = async () => {
+    if (filteredSheets.length === 0) {
+      alert("出力対象の現場がありません");
+      return;
+    }
+  
+    try {
+      setExportingExcel(true);
+  
+      const { exportMonthlySheetsToExcel } = await import(
+        "./monthly-sheet-excel"
+      );
+  
+      await exportMonthlySheetsToExcel({
+        month,
+        sheets: filteredSheets,
+      });
+    } catch (error) {
+      console.error("Excel出力失敗:", error);
+  
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Excel出力に失敗しました"
+      );
+    } finally {
+      setExportingExcel(false);
+    }
+  };
 
   return (
     <div className="monthly-sheet-page">
@@ -357,6 +387,14 @@ report_members (
             value={month}
             onChange={(event) => setMonth(event.target.value)}
           />
+
+<button
+  type="button"
+  onClick={handleExportExcel}
+  disabled={exportingExcel || loading}
+>
+  {exportingExcel ? "作成中..." : "Excel出力"}
+</button>
 
           <button type="button" onClick={() => window.print()}>
             印刷
