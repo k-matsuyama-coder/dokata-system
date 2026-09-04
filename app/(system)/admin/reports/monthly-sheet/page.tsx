@@ -12,7 +12,9 @@ type Report = {
   site_name: string | null;
   shift_type: string | null;
   worker_count: number | null;
-  overtime_minutes: number | null;
+  report_members: {
+    overtime: number | null;
+  }[] | null;
   vehicle_count: number | null;
   parking_main: number | null;
   parking_secondary: number | null;
@@ -157,14 +159,16 @@ export default function MonthlyInvoiceSheetPage() {
               site_name,
               shift_type,
               worker_count,
-              overtime_minutes,
               vehicle_count,
               parking_main,
               parking_secondary,
               parking_subcontract,
               fuel_gasoline,
               fuel_diesel,
-              note
+              note,
+report_members (
+  overtime
+)
             `)
             .eq("organization_id", organizationId)
             .gte("report_date", firstDate)
@@ -268,7 +272,10 @@ export default function MonthlyInvoiceSheetPage() {
       if (!row) return;
 
       row.workerCount += Number(report.worker_count ?? 0);
-      row.overtimeHours += Number(report.overtime_minutes ?? 0) / 60;
+      row.overtimeHours += (report.report_members ?? []).reduce(
+        (total, member) => total + Number(member.overtime ?? 0),
+        0
+      );
       row.vehicleCount += Number(report.vehicle_count ?? 0);
       row.parking +=
         Number(report.parking_main ?? 0) +
