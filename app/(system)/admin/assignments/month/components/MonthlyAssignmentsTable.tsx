@@ -56,6 +56,10 @@ const MonthlyAssignmentsTable = React.forwardRef<HTMLDivElement, Props>(
     },
     ref
   ) {
+
+    const mobileDateWidth = viewMode === "week" ? 112 : 92;
+const mobileTableWidth = 128 + days.length * mobileDateWidth;
+
     return (
       <div
         ref={ref}
@@ -73,15 +77,13 @@ const MonthlyAssignmentsTable = React.forwardRef<HTMLDivElement, Props>(
           style={{
             borderCollapse: "separate",
             borderSpacing: 0,
-            minWidth:
-              viewMode === "week"
-                ? isMobile
-                  ? 900
-                  : 1200
-                : isMobile
-                  ? 950
-                  : 1700,
-            width: "100%",
+            tableLayout: isMobile ? "fixed" : "auto",
+minWidth: isMobile
+  ? mobileTableWidth
+  : viewMode === "week"
+    ? 1200
+    : 1700,
+width: isMobile ? mobileTableWidth : "100%",
             backgroundColor: "#fff",
             fontSize: isMobile ? 10 : 12,
           }}
