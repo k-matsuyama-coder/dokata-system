@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchTwoMonthData } from "../api";
 import { supabase } from "@/lib/supabase";
 import { hasRole } from "@/app/types/auth";
@@ -93,26 +93,17 @@ export function useTwoMonthPage() {
     });
   }, [baseMonth]);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-
-      if (userError || !user) {
-        window.location.href = "/login";
-        return;
-      }
-
       const {
         data: { session },
         error: sessionError,
       } = await supabase.auth.getSession();
-
+      
+      const user = session?.user;
       const token = session?.access_token;
-
-      if (sessionError || !token) {
+      
+      if (sessionError || !user || !token) {
         window.location.href = "/login";
         return;
       }
@@ -193,9 +184,13 @@ setDateMemos(
       setSiteMembers(resultData.siteMembers ?? []);
       setAssignmentFiles(resultData.assignmentFiles ?? []);
     } catch (error) {
-      alert(error instanceof Error ? error.message : "データ取得に失敗しました");
+      alert(
+        error instanceof Error
+          ? error.message
+          : "データ取得に失敗しました"
+      );
     }
-  };
+  }, [days]);
 
   const onSaveDateMemo = async (date: string, memo: string) => {
     if (!organizationId) return;

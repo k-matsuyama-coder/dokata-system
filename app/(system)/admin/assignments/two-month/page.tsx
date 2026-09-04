@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo } from "react";
-import BackButton from "@/app/components/BackButton";
 import AddTwoMonthAssignmentModal from "./components/AddAssignmentModal";
 import EditTwoMonthAssignmentModal from "./components/EditAssignmentModal";
 import TwoMonthToolbar from "./components/Toolbar";
@@ -201,8 +200,6 @@ onSaveDateMemo,
 
   return (
     <div style={{ padding: 16 }}>
-      <BackButton />
-
       <h1>2ヶ月工程表</h1>
 
       <datalist id="detail-history">

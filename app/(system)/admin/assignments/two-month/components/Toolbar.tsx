@@ -1,3 +1,4 @@
+import BackButton from "@/app/components/BackButton";
 type Props = {
     baseMonth: string;
     setBaseMonth: React.Dispatch<React.SetStateAction<string>>;
@@ -25,6 +26,9 @@ type Props = {
           marginBottom: 16,
         }}
       >
+
+<BackButton />
+
         <button
           type="button"
           onClick={() => {
