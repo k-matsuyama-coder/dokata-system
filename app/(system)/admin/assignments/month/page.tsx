@@ -409,6 +409,7 @@ const {
     addEmployeeToCell,
     moveSiteMember,
     deleteSiteMember,
+    resetAssignmentCellMembers,
     toggleForeman,
   } = useMonthlyAssignmentMembers({
     organizationId: currentOrganizationId ?? "",
@@ -686,6 +687,7 @@ stopEditing,
       updateDailyInfo,
       updateAssignmentMemo,
       deleteSiteMember,
+      resetAssignmentCellMembers,
       toggleForeman,
     }),
     [
@@ -699,6 +701,7 @@ stopEditing,
       updateDailyInfo,
       updateAssignmentMemo,
       deleteSiteMember,
+      resetAssignmentCellMembers,
       toggleForeman,
     ]
   );

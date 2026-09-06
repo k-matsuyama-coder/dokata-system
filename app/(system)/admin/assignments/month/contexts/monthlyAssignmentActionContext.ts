@@ -59,6 +59,11 @@ export type MonthlyAssignmentActionContextValue = {
 
   deleteSiteMember: (id: string) => void;
 
+  resetAssignmentCellMembers: (
+    assignmentId: string,
+    workDate: string
+  ) => Promise<boolean>;
+
   toggleForeman: (member: SiteMember) => void;
 };
 

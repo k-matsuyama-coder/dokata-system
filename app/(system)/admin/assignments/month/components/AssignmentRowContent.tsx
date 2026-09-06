@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 
 import AssignmentRow from "./AssignmentRow";
 import AssignmentCell from "./AssignmentCell";
@@ -61,6 +61,7 @@ function AssignmentRowContent({ assignment }: Props) {
     updateDailyInfo,
     updateAssignmentMemo,
     deleteSiteMember,
+    resetAssignmentCellMembers,
     toggleForeman,
   } = useMonthlyAssignmentActionContext();
 
@@ -85,6 +86,18 @@ function AssignmentRowContent({ assignment }: Props) {
     setCopiedVehicleNames,
     setDraggingVehicleName,
   } = useMonthlyAssignmentSelectionContext();
+
+  const twoFingerTapRef = useRef<{
+    date: string;
+    startedAt: number;
+    firstX: number;
+    firstY: number;
+    secondX: number;
+    secondY: number;
+    moved: boolean;
+  } | null>(null);
+
+  const suppressClickUntilRef = useRef(0);
 
   const [isSiteMemoHovered, setIsSiteMemoHovered] = useState(false);
 const [isSiteMemoEditing, setIsSiteMemoEditing] = useState(false);
@@ -115,6 +128,135 @@ const [siteMemoDraft, setSiteMemoDraft] = useState("");
     if (draggingAssignmentId === assignment.id) return;
 
     moveAssignmentRow(draggingAssignmentId, assignment.id);
+  };
+
+  const resetAssignmentCell = async (
+    date: string,
+    memberCount: number,
+    vehicleCount: number
+  ) => {
+    if (memberCount === 0 && vehicleCount === 0) {
+      alert("解除するメンバー・車両はありません。");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `${assignment.site_name || "現場名未設定"}・${date}\n` +
+        `メンバー${memberCount}人、車両${vehicleCount}台をすべて解除しますか？\n\n` +
+        "予定人数・作業内容・メモは残ります。"
+    );
+
+    if (!confirmed) return;
+
+    const membersReset = await resetAssignmentCellMembers(
+      assignment.id,
+      date
+    );
+
+    if (!membersReset) return;
+
+    if (vehicleCount > 0) {
+      await updateDailyInfo(
+        assignment.id,
+        date,
+        "vehicle_names",
+        ""
+      );
+    }
+  };
+
+  const handleCellTouchStart = (
+    date: string,
+    event: React.TouchEvent<HTMLTableCellElement>
+  ) => {
+    if (!isMobile || event.touches.length !== 2) {
+      twoFingerTapRef.current = null;
+      return;
+    }
+
+    const firstTouch = event.touches[0];
+    const secondTouch = event.touches[1];
+
+    twoFingerTapRef.current = {
+      date,
+      startedAt: Date.now(),
+      firstX: firstTouch.clientX,
+      firstY: firstTouch.clientY,
+      secondX: secondTouch.clientX,
+      secondY: secondTouch.clientY,
+      moved: false,
+    };
+  };
+
+  const handleCellTouchMove = (
+    date: string,
+    event: React.TouchEvent<HTMLTableCellElement>
+  ) => {
+    const gesture = twoFingerTapRef.current;
+
+    if (
+      !gesture ||
+      gesture.date !== date ||
+      event.touches.length !== 2
+    ) {
+      return;
+    }
+
+    const firstTouch = event.touches[0];
+    const secondTouch = event.touches[1];
+
+    const firstMoved = Math.hypot(
+      firstTouch.clientX - gesture.firstX,
+      firstTouch.clientY - gesture.firstY
+    );
+
+    const secondMoved = Math.hypot(
+      secondTouch.clientX - gesture.secondX,
+      secondTouch.clientY - gesture.secondY
+    );
+
+    if (firstMoved > 12 || secondMoved > 12) {
+      twoFingerTapRef.current = {
+        ...gesture,
+        moved: true,
+      };
+    }
+  };
+
+  const handleCellTouchEnd = (
+    date: string,
+    memberCount: number,
+    vehicleCount: number,
+    event: React.TouchEvent<HTMLTableCellElement>
+  ) => {
+    if (event.touches.length > 0) return;
+
+    const gesture = twoFingerTapRef.current;
+    twoFingerTapRef.current = null;
+
+    if (
+      !gesture ||
+      gesture.date !== date ||
+      gesture.moved ||
+      Date.now() - gesture.startedAt > 500
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    suppressClickUntilRef.current = Date.now() + 700;
+
+    void resetAssignmentCell(
+      date,
+      memberCount,
+      vehicleCount
+    );
+  };
+
+  const handleCellTouchCancel = () => {
+    twoFingerTapRef.current = null;
   };
 
   const rowDropHighlight =
@@ -484,6 +626,35 @@ const shouldFadeText = isOutOfPeriod || isPlannedCountEmpty;
         return (
           <AssignmentCell
             key={date}
+            onContextMenu={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+
+              if (isOutOfPeriod) return;
+
+              void resetAssignmentCell(
+                date,
+                memberCount,
+                dailyInfo?.vehicle_names?.length ?? 0
+              );
+            }}
+            onTouchStart={(event) => {
+              if (isOutOfPeriod) return;
+
+              handleCellTouchStart(date, event);
+            }}
+            onTouchMove={(event) => {
+              handleCellTouchMove(date, event);
+            }}
+            onTouchEnd={(event) => {
+              handleCellTouchEnd(
+                date,
+                memberCount,
+                dailyInfo?.vehicle_names?.length ?? 0,
+                event
+              );
+            }}
+            onTouchCancel={handleCellTouchCancel}
             onDragOver={(e) => e.preventDefault()}
             onDrop={() => {
               if (isOutOfPeriod) return;
@@ -516,6 +687,12 @@ const shouldFadeText = isOutOfPeriod || isPlannedCountEmpty;
               }
             }}
             onClick={(e) => {
+              if (Date.now() < suppressClickUntilRef.current) {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+              }
+
               if (isOutOfPeriod) return;
 
               setSelectedDate(date);

@@ -31,17 +31,24 @@ export const inputStyle = {
     position: "sticky" as const,
     left: 0,
     zIndex: 2,
-    minWidth: 180,
+    minWidth: 140,
+    width: 140,
+    maxWidth: 140,
+    padding: "4px 5px",
   };
   
   export const stickyTd = {
     border: "1px solid #ddd",
-    padding: 8,
+    padding: 5,
     position: "sticky" as const,
     left: 0,
     backgroundColor: "#fff",
-    zIndex: 1,
-    minWidth: 180,
+    zIndex: 22,
+    minWidth: 140,
+    width: 140,
+    maxWidth: 140,
+    overflow: "hidden",
+    wordBreak: "break-word" as const,
   };
   
   export const smallButton = {
@@ -55,33 +62,41 @@ export const inputStyle = {
   
   export const totalTh = {
     border: "1px solid #ddd",
-    padding: 6,
+    padding: "4px 2px",
     backgroundColor: "#eef2ff",
     whiteSpace: "nowrap" as const,
     textAlign: "center" as const,
-    minWidth: 70,
+    minWidth: 60,
     fontWeight: 800,
+    width: 60,
+maxWidth: 60,
+fontSize: 12,
+boxSizing: "border-box" as const,
   };
   
   export const totalTd = {
     border: "1px solid #ddd",
-    padding: 6,
+    padding: "4px 2px",
     textAlign: "center" as const,
-    minWidth: 70,
+    minWidth: 60,
     fontWeight: 800,
     backgroundColor: "#f8fafc",
+    width: 60,
+maxWidth: 60,
+fontSize: 12,
+boxSizing: "border-box" as const,
   };
   
   export const stickyTotalTd1 = {
     ...totalTd,
     position: "sticky" as const,
-    left: 180,
-    zIndex: 1,
+    left: 140,
+    zIndex: 21,
   };
   
   export const stickyTotalTd2 = {
     ...totalTd,
     position: "sticky" as const,
-    left: 250,
-    zIndex: 1,
+    left: 200,
+    zIndex: 21,
   };

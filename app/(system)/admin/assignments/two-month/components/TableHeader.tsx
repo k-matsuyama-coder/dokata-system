@@ -58,15 +58,15 @@ const thirdCapacity =
   return (
     <thead>
       <tr style={{ position: "sticky", top: 0, zIndex: 60 }}>
-        <th style={{ ...stickyTh, top: 0, zIndex: 61 }}>現場名</th>
+        <th style={{ ...stickyTh, top: 0, zIndex: 63 }}>現場名</th>
 
         <th
           style={{
             ...totalTh,
             position: "sticky",
             top: 0,
-            left: 180,
-            zIndex: 61,
+            left: 140,
+            zIndex: 63,
           }}
         >
           前月合計
@@ -77,8 +77,8 @@ const thirdCapacity =
             ...totalTh,
             position: "sticky",
             top: 0,
-            left: 250,
-            zIndex: 61,
+            left: 200,
+            zIndex: 63,
           }}
         >
           後月合計
@@ -100,6 +100,10 @@ const thirdCapacity =
               }}
               style={{
                 ...th,
+                minWidth: 50,
+                width: 50,
+                maxWidth: 50,
+                padding: "3px 2px",
                 backgroundColor: isSunday
                   ? "#ffe5e5"
                   : isSaturday
@@ -253,7 +257,7 @@ setHoveredDate(date);
           style={{
             ...stickyTh,
             top: 30,
-            zIndex: 59,
+            zIndex: 62,
             backgroundColor: "#f9fafb",
           }}
         >
@@ -266,8 +270,8 @@ setHoveredDate(date);
             ...totalTh,
             position: "sticky",
             top: 28,
-            left: 180,
-            zIndex: 59,
+            left: 140,
+            zIndex: 62,
             fontWeight: 900,
             backgroundColor: "#f9fafb",
           }}
@@ -281,8 +285,8 @@ setHoveredDate(date);
             ...totalTh,
             position: "sticky",
             top: 28,
-            left: 250,
-            zIndex: 59,
+            left: 200,
+            zIndex: 62,
             fontWeight: 900,
             backgroundColor: "#f9fafb",
           }}
@@ -301,6 +305,10 @@ setHoveredDate(date);
               key={date}
               style={{
                 ...th,
+                minWidth: 50,
+                width: 50,
+                maxWidth: 50,
+                padding: "3px 2px",
                 backgroundColor: isSunday
                   ? "#ffe5e5"
                   : isSaturday
@@ -310,7 +318,6 @@ setHoveredDate(date);
                 position: "sticky",
                 top: 30,
                 zIndex: 59,
-                padding: "4px 2px",
               }}
             >
               <div style={dailyTotalCellWrapStyle}>
@@ -343,17 +350,17 @@ const dailyTotalCellWrapStyle: React.CSSProperties = {
   gap: 2,
   justifyItems: "center",
   lineHeight: 1.15,
-  minWidth: 72,
+  minWidth: 46,
 };
 
 const dailyTotalMainLineStyle: React.CSSProperties = {
-  fontSize: 13,
+  fontSize: 11,
   fontWeight: 900,
   whiteSpace: "nowrap",
 };
 
 const dailyTotalSubLineStyle: React.CSSProperties = {
-  fontSize: 10,
+  fontSize: 9,
   fontWeight: 500,
   whiteSpace: "nowrap",
   opacity: 0.62,

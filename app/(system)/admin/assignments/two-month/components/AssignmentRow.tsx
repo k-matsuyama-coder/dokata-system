@@ -72,6 +72,7 @@ export default function TwoMonthAssignmentRow({
   const [hoveredMemoKey, setHoveredMemoKey] = useState<string | null>(null);
   const [editingMemoKey, setEditingMemoKey] = useState<string | null>(null);
   const [editingMemos, setEditingMemos] = useState<Record<string, string>>({});
+  const [editingDetailKey, setEditingDetailKey] = useState<string | null>(null);
   const [saveTimers, setSaveTimers] = useState<
     Record<string, ReturnType<typeof setTimeout>>
   >({});
@@ -142,14 +143,21 @@ const siteMemoCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     width: "fit-content",
   }}
 >
-  <div
-    onClick={() => setEditingAssignment(assignment)}
-    style={{
-      fontWeight: 800,
-      cursor: "pointer",
-      textDecoration: "underline",
-    }}
-  >
+<div
+  onClick={() => setEditingAssignment(assignment)}
+  title={`${groupLabel}
+${assignment.contractor_name || "-"}
+${assignment.start_date} ～ ${assignment.end_date}`}
+  style={{
+    paddingRight: 34,
+    fontSize: 12,
+    lineHeight: 1.25,
+    fontWeight: 800,
+    cursor: "pointer",
+    textDecoration: "underline",
+    textAlign: "left",
+  }}
+>
     {assignment.site_name || "-"}
   </div>
 
@@ -282,37 +290,28 @@ left: 0,
 )}
 </div>
 
+{isSiteMemoHovered && (
         <button
           type="button"
           onClick={() => deleteAssignment(assignment.id)}
           style={{
-            marginTop: 6,
+            position: "absolute",
+            top: 3,
+            right: 3,
             backgroundColor: "#d11a2a",
             color: "#fff",
             border: "none",
-            borderRadius: 6,
-            padding: "4px 8px",
+            borderRadius: 4,
+            padding: "2px 5px",
             cursor: "pointer",
-            fontSize: 11,
+            fontSize: 9,
             fontWeight: 700,
+            zIndex: 5,
           }}
         >
           削除
         </button>
-
-        <div style={{ fontSize: 11, color: "#555", fontWeight: 700 }}>
-          {groupLabel}
-        </div>
-
-        <div style={{ fontSize: 11, color: "#666" }}>
-          {assignment.contractor_name || "-"}
-        </div>
-
-        <div style={{ fontSize: 10, color: "#888" }}>
-          {assignment.start_date}
-          {" ～ "}
-          {assignment.end_date}
-        </div>
+        )}
       </td>
 
       <td style={stickyTotalTd1}>{getMonthlyTotal(assignment.id, 0)}</td>
@@ -340,6 +339,27 @@ left: 0,
         return (
           <td
   key={date}
+  onDoubleClick={() => {
+    if (isOutOfPeriod) return;
+  
+    setEditingDetailKey(detailKey);
+    setHoveredMemoKey(detailKey);
+  
+    setTimeout(() => {
+      document
+        .querySelector<HTMLTextAreaElement>(
+          `textarea[data-detail-key="${detailKey}"]`
+        )
+        ?.focus();
+    }, 0);
+  }}
+  title={
+    textareaValue.trim()
+      ? textareaValue
+      : isOutOfPeriod
+        ? undefined
+        : "ダブルクリックで作業内容を入力"
+  }
   onMouseEnter={() => setHoveredMemoKey(detailKey)}
   onMouseLeave={() => {
     if (editingMemoKey !== detailKey) {
@@ -358,6 +378,10 @@ left: 0,
   backgroundImage: isOutOfPeriod
     ? "repeating-linear-gradient(135deg, rgba(255,255,255,0.18) 0px, rgba(255,255,255,0.18) 8px, transparent 8px, transparent 16px)"
     : "none",
+    minWidth: 50,
+width: 50,
+maxWidth: 50,
+  padding: "3px 2px",
   borderTop:
     !isOutOfPeriod && hasPlannedCount ? "5px solid #22c55e" : td.border,
 }}
@@ -366,20 +390,45 @@ left: 0,
   style={{
     position: "relative",
     display: "grid",
-    gap: 4,
+    gap: 2,
     justifyItems: "center",
     opacity: isOutOfPeriod ? 0.55 : 1,
   }}
 >
-              <div
-                style={{
-                  position: "relative",
-                  width: 72,
-                }}
-              >
+<div
+  style={{
+    display:
+  editingMemoKey !== detailKey &&
+  (
+    editingDetailKey === detailKey ||
+    (
+      hoveredMemoKey === detailKey &&
+      textareaValue.trim() !== ""
+    )
+  )
+    ? "block"
+    : "none",
+    position: "absolute",
+    top: "calc(100% + 4px)",
+    left: "50%",
+    transform: "translateX(-50%)",
+    width: 180,
+    padding: 8,
+    backgroundColor: "#fff",
+    border: "1px solid #94a3b8",
+    borderRadius: 6,
+    boxShadow: "0 6px 18px rgba(0,0,0,0.2)",
+    zIndex: 1100,
+  }}
+>
                 <textarea
                 className="detail-textarea"
+                data-detail-key={detailKey}
                   value={textareaValue}
+                  title={textareaValue}
+                  onBlur={() => {
+                    setEditingDetailKey(null);
+                  }}
                   onChange={(e) => {
                     const value = e.target.value;
 
@@ -435,17 +484,18 @@ left: 0,
                   }}
                   placeholder="詳細"
                   style={{
+                    display: "block",
                     width: "100%",
-                    height: 28,
-                    minHeight: 28,
-                    maxHeight: 28,
-                    overflowY: "hidden",
-                    padding: "0 4px",
+                    height: 60,
+                    minHeight: 60,
+                    maxHeight: 120,
+                    overflowY: "auto",
+                    padding: 6,
                     border: "1px solid #ccc",
                     borderRadius: 4,
-                    fontSize: 10,
-                    lineHeight: "28px",
-                    resize: "none",
+                    fontSize: 12,
+                    lineHeight: 1.4,
+                    resize: "vertical",
                     backgroundColor: "#fff",
                     boxSizing: "border-box",
                   }}
@@ -539,8 +589,8 @@ left: 0,
                   );
                 }}
                 style={{
-                  width: 44,
-                  padding: 4,
+                  width: 36,
+                  padding: 2,
                   border: "1px solid #ccc",
                   borderRadius: 4,
                   textAlign: "center",

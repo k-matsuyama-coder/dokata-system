@@ -4,6 +4,7 @@ import type { Dispatch, SetStateAction } from "react";
 import { addEmployeeToCellAction } from "../actions/addEmployeeToCell";
 import { moveSiteMemberAction } from "../actions/moveSiteMember";
 import { deleteSiteMemberAction } from "../actions/deleteSiteMember";
+import { resetAssignmentCellMembersAction } from "../actions/resetAssignmentCellMembers";
 import { toggleForemanAction } from "../actions/toggleForeman";
 
 import type {
@@ -231,6 +232,34 @@ export function useMonthlyAssignmentMembers({
     setSiteMembers((prev) => prev.filter((member) => member.id !== id));
   };
 
+  const resetAssignmentCellMembers = async (
+    assignmentId: string,
+    workDate: string
+  ) => {
+    const { error } = await resetAssignmentCellMembersAction({
+      organizationId,
+      assignmentId,
+      workDate,
+    });
+
+    if (error) {
+      alert("一括解除に失敗しました: " + error.message);
+      return false;
+    }
+
+    setSiteMembers((prev) =>
+      prev.filter(
+        (member) =>
+          !(
+            member.assignment_id === assignmentId &&
+            member.work_date === workDate
+          )
+      )
+    );
+
+    return true;
+  };
+
   const toggleForeman = async (member: SiteMember) => {
     const { error } = await toggleForemanAction({
       organizationId,
@@ -255,6 +284,7 @@ export function useMonthlyAssignmentMembers({
     addEmployeeToCell,
     moveSiteMember,
     deleteSiteMember,
+    resetAssignmentCellMembers,
     toggleForeman,
   };
 }
