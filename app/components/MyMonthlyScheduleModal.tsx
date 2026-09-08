@@ -71,11 +71,28 @@ const [selectedEmployee, setSelectedEmployee] = useState("");
 
   const days = useMemo(() => {
     const [year, monthNum] = month.split("-").map(Number);
-    const lastDay = new Date(year, monthNum, 0).getDate();
-
-    return Array.from({ length: lastDay }, (_, index) => {
-      const day = index + 1;
-      return `${month}-${String(day).padStart(2, "0")}`;
+  
+    const firstDay = new Date(year, monthNum - 1, 1);
+    const lastDayNumber = new Date(year, monthNum, 0).getDate();
+    const lastDay = new Date(year, monthNum - 1, lastDayNumber);
+  
+    const previousMonthDays = firstDay.getDay();
+    const nextMonthDays = 6 - lastDay.getDay();
+    const totalDays =
+      previousMonthDays + lastDayNumber + nextMonthDays;
+  
+    return Array.from({ length: totalDays }, (_, index) => {
+      const date = new Date(
+        year,
+        monthNum - 1,
+        1 - previousMonthDays + index
+      );
+  
+      const dateYear = date.getFullYear();
+      const dateMonth = String(date.getMonth() + 1).padStart(2, "0");
+      const dateDay = String(date.getDate()).padStart(2, "0");
+  
+      return `${dateYear}-${dateMonth}-${dateDay}`;
     });
   }, [month]);
 
@@ -84,7 +101,7 @@ const [selectedEmployee, setSelectedEmployee] = useState("");
 
 const fetchSchedule = async () => {
 
-  const startDate = `${month}-01`;
+  const startDate = days[0];
 const endDate = days[days.length - 1];
 const targetEmployeeName = selectedEmployee || employeeName;
 
@@ -389,15 +406,10 @@ const ownMembers = memberResult.data ?? [];
             </div>
           ))}
 
-          {Array.from({
-            length: new Date(`${month}-01`).getDay(),
-          }).map((_, index) => (
-            <div key={`empty-${index}`} />
-          ))}
-
           {days.map((date) => {
             const schedules = getSchedulesByDate(date);
             const day = new Date(date).getDay();
+            const isCurrentMonth = date.startsWith(month);
 
             return (
               <div
@@ -408,8 +420,14 @@ const ownMembers = memberResult.data ?? [];
                   border: date === today ? "3px solid #2563eb" : "1px solid #ddd",
                   borderRadius: 10,
                   padding: 6,
-                  backgroundColor:
-                    day === 0 ? "#fff7f7" : day === 6 ? "#f7fbff" : "#fff",
+                  backgroundColor: !isCurrentMonth
+  ? "#f3f4f6"
+  : day === 0
+  ? "#fff7f7"
+  : day === 6
+  ? "#f7fbff"
+  : "#fff",
+opacity: isCurrentMonth ? 1 : 0.7,
                 }}
               >
                 <div
@@ -427,7 +445,9 @@ const ownMembers = memberResult.data ?? [];
     : "#111",
                   }}
                 >
-                  {Number(date.slice(-2))}
+                  {isCurrentMonth
+  ? Number(date.slice(-2))
+  : `${Number(date.slice(5, 7))}/${Number(date.slice(-2))}`}
                 </div>
 
                 <div style={{ display: "grid", gap: 4 }}>
