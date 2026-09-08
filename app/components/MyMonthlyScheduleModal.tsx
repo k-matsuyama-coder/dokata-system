@@ -41,11 +41,20 @@ type AssignmentFile = {
 type Props = {
   open: boolean;
   onClose: () => void;
+  employeeName: string;
+  organizationId: string | null;
+  role: string | null;
 };
 
-export default function MyMonthlyScheduleModal({ open, onClose }: Props) {
+export default function MyMonthlyScheduleModal({
+  open,
+  onClose,
+  employeeName,
+  organizationId,
+  role,
+}: Props) {
   const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
-  const [isAdmin, setIsAdmin] = useState(false);
+  const isAdmin = role === "admin";
 const [employees, setEmployees] = useState<
   { id: string; name: string }[]
 >([]);
@@ -71,74 +80,53 @@ const [selectedEmployee, setSelectedEmployee] = useState("");
   }, [month]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!employeeName || !organizationId) return;
 
-    const fetchSchedule = async () => {
-      const { data: userData } = await supabase.auth.getUser();
-      const user = userData.user;
+const fetchSchedule = async () => {
 
-      if (!user) return;
+  const startDate = `${month}-01`;
+const endDate = days[days.length - 1];
+const targetEmployeeName = selectedEmployee || employeeName;
 
-      const { data: employee } = await supabase
-        .from("employees")
-        .select(`
-        *,
-        role,
-        organizations (
-          id,
-          name
-        )
-        `)
-        .eq("auth_user_id", user.id)
-        .single();
+const employeeListPromise = isAdmin
+  ? supabase
+      .from("employees")
+      .select("id, name")
+      .eq("organization_id", organizationId)
+      .order("name")
+  : Promise.resolve({
+      data: [] as { id: string; name: string }[],
+      error: null,
+    });
 
-      if (!employee) return;
+const memberPromise = supabase
+  .from("assignment_site_members")
+  .select("id, assignment_id, work_date, employee_name")
+  .eq("organization_id", organizationId)
+  .eq("employee_name", targetEmployeeName)
+  .gte("work_date", startDate)
+  .lte("work_date", endDate);
 
-      setSelectedEmployee((current) => current || employee.name);
-setIsAdmin(employee.role === "admin");
+const [employeeListResult, memberResult] = await Promise.all([
+  employeeListPromise,
+  memberPromise,
+]);
 
-      const organizationId = employee.organization_id;
+if (employeeListResult.error) {
+  alert("社員一覧取得失敗: " + employeeListResult.error.message);
+  return;
+}
 
-      if (!organizationId) {
-        alert("会社情報が取得できません");
-        return;
-      }
+if (memberResult.error) {
+  alert("予定取得失敗: " + memberResult.error.message);
+  return;
+}
 
-      if (employee.role === "admin") {
-        const { data: employeeList, error: employeeListError } = await supabase
-          .from("employees")
-          .select("id, name")
-          .eq("organization_id", organizationId)
-          .order("name");
-      
-        if (employeeListError) {
-          alert("社員一覧取得失敗: " + employeeListError.message);
-          return;
-        }
-      
-        setEmployees(employeeList ?? []);
-      }
+if (isAdmin) {
+  setEmployees(employeeListResult.data ?? []);
+}
 
-      const startDate = `${month}-01`;
-      const endDate = days[days.length - 1];
-
-      const { data: memberData, error: memberError } = await supabase
-        .from("assignment_site_members")
-        .select("id, assignment_id, work_date, employee_name")
-        .eq("organization_id", organizationId)
-        .eq(
-          "employee_name",
-          selectedEmployee || employee.name
-        )
-        .gte("work_date", startDate)
-        .lte("work_date", endDate);
-
-      if (memberError) {
-        alert("予定取得失敗: " + memberError.message);
-        return;
-      }
-
-      const ownMembers = memberData ?? [];
+const ownMembers = memberResult.data ?? [];
       setMembers(ownMembers);
 
       const assignmentIds = Array.from(
@@ -152,77 +140,88 @@ setIsAdmin(employee.role === "admin");
         return;
       }
 
-      const { data: assignmentData, error: assignmentError } = await supabase
-        .from("assignments")
-        .select(`
-          id,
-          site_name,
-          contractor_name,
-          shift_type,
-          manager_name,
-          contact_phone,
-          address,
-          meeting_time,
-          construction_type,
-          start_date,
-          end_date
-        `)
-        .eq("organization_id", organizationId)
-        .in("id", assignmentIds);
-
-      if (assignmentError) {
-        alert("現場取得失敗: " + assignmentError.message);
+      const [
+        assignmentResult,
+        fileResult,
+        dailyInfoResult,
+        allMemberResult,
+      ] = await Promise.all([
+        supabase
+          .from("assignments")
+          .select(`
+            id,
+            site_name,
+            contractor_name,
+            shift_type,
+            manager_name,
+            contact_phone,
+            address,
+            meeting_time,
+            construction_type,
+            start_date,
+            end_date
+          `)
+          .eq("organization_id", organizationId)
+          .in("id", assignmentIds),
+      
+        supabase
+          .from("assignment_files")
+          .select("id, assignment_id, file_name, file_url")
+          .eq("organization_id", organizationId)
+          .in("assignment_id", assignmentIds),
+      
+        supabase
+          .from("assignment_site_daily_infos")
+          .select("id, assignment_id, work_date, detail")
+          .eq("organization_id", organizationId)
+          .in("assignment_id", assignmentIds)
+          .gte("work_date", startDate)
+          .lte("work_date", endDate),
+      
+        supabase
+          .from("assignment_site_members")
+          .select("id, assignment_id, work_date, employee_name")
+          .eq("organization_id", organizationId)
+          .in("assignment_id", assignmentIds)
+          .gte("work_date", startDate)
+          .lte("work_date", endDate),
+      ]);
+      
+      if (assignmentResult.error) {
+        alert("現場取得失敗: " + assignmentResult.error.message);
         return;
       }
-
-      setAssignments(assignmentData ?? []);
-
-      const { data: fileData, error: fileError } = await supabase
-  .from("assignment_files")
-  .select("id, assignment_id, file_name, file_url")
-  .eq("organization_id", organizationId)
-  .in("assignment_id", assignmentIds);
-
-if (fileError) {
-  alert("添付ファイル取得失敗: " + fileError.message);
-  return;
-}
-
-setAssignmentFiles(fileData ?? []);
-
-      const { data: dailyInfoData, error: dailyInfoError } = await supabase
-  .from("assignment_site_daily_infos")
-  .select("id, assignment_id, work_date, detail")
-  .eq("organization_id", organizationId)
-  .in("assignment_id", assignmentIds)
-  .gte("work_date", startDate)
-  .lte("work_date", endDate);
-
-if (dailyInfoError) {
-  alert("日別詳細取得失敗: " + dailyInfoError.message);
-  return;
-}
-
-setDailyInfos(dailyInfoData ?? []);
-
-      const { data: allMemberData, error: allMemberError } = await supabase
-        .from("assignment_site_members")
-        .select("id, assignment_id, work_date, employee_name")
-        .eq("organization_id", organizationId)
-        .in("assignment_id", assignmentIds)
-        .gte("work_date", startDate)
-        .lte("work_date", endDate);
-
-      if (allMemberError) {
-        alert("配置メンバー取得失敗: " + allMemberError.message);
+      
+      if (fileResult.error) {
+        alert("添付ファイル取得失敗: " + fileResult.error.message);
         return;
       }
-
-      setAllMembers(allMemberData ?? []);
+      
+      if (dailyInfoResult.error) {
+        alert("日別詳細取得失敗: " + dailyInfoResult.error.message);
+        return;
+      }
+      
+      if (allMemberResult.error) {
+        alert("配置メンバー取得失敗: " + allMemberResult.error.message);
+        return;
+      }
+      
+      setAssignments(assignmentResult.data ?? []);
+      setAssignmentFiles(fileResult.data ?? []);
+      setDailyInfos(dailyInfoResult.data ?? []);
+      setAllMembers(allMemberResult.data ?? []);
     };
 
     void fetchSchedule();
-  }, [open, month, days, selectedEmployee]);
+  }, [
+    month,
+    days,
+    selectedEmployee,
+    employeeName,
+    organizationId,
+    isAdmin,
+  ]);
 
   const selectedMembers = useMemo(() => {
     if (!selectedSchedule) return [];
@@ -348,7 +347,7 @@ setDailyInfos(dailyInfoData ?? []);
 
 {isAdmin && (
   <select
-    value={selectedEmployee}
+  value={selectedEmployee || employeeName}
     onChange={(e) => setSelectedEmployee(e.target.value)}
     style={{
       padding: 10,

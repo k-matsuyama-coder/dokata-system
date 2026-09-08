@@ -718,9 +718,12 @@ export default function NavBar() {
       </>
 
       <MyMonthlyScheduleModal
-        open={showCalendarModal}
-        onClose={() => setShowCalendarModal(false)}
-      />
+  open={showCalendarModal}
+  onClose={() => setShowCalendarModal(false)}
+  employeeName={employeeName}
+  organizationId={organizationId}
+  role={role}
+/>
 
 <style jsx>{`
   @media (max-width: 600px) {
