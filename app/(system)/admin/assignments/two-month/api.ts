@@ -1,6 +1,7 @@
 "use client";
 
 import { supabase } from "@/lib/supabase";
+import { createSignedUrlMap } from "@/lib/storageSignedUrls";
 import type { Assignment, AssignmentGroupKey } from "./types";
 
 type TwoMonthDataParams = {
@@ -164,7 +165,19 @@ export async function fetchTwoMonthData({
   if (fileResult.error) {
     throw new Error("ファイル取得失敗: " + fileResult.error.message);
   }
-
+  
+  const assignmentFiles = fileResult.data ?? [];
+  
+  const signedUrlMap = await createSignedUrlMap(
+    "assignment-files",
+    assignmentFiles.map((file) => file.file_path)
+  );
+  
+  const assignmentFilesWithSignedUrls = assignmentFiles.map((file) => ({
+    ...file,
+    file_url: signedUrlMap[file.file_path] ?? "",
+  }));
+  
   return {
     employees: employeeResult.data ?? [],
     contractors: contractorResult.data ?? [],
@@ -172,7 +185,7 @@ export async function fetchTwoMonthData({
     assignments: assignmentData,
     dailyInfos: dailyInfoResult.data ?? [],
     siteMembers: memberResult.data ?? [],
-    assignmentFiles: fileResult.data ?? [],
+    assignmentFiles: assignmentFilesWithSignedUrls,
   };
 }
 
@@ -198,17 +211,13 @@ export async function uploadAssignmentFiles(
       throw new Error("アップロード失敗: " + uploadError.message);
     }
 
-    const { data } = supabase.storage
-      .from("assignment-files")
-      .getPublicUrl(filePath);
-
     const { error: insertError } = await supabase
       .from("assignment_files")
       .insert({
         organization_id: safeOrganizationId,
         assignment_id: assignmentId,
         file_name: file.name,
-        file_url: data.publicUrl,
+        file_url: filePath,
         file_path: filePath,
       });
 

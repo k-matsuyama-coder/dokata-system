@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { createSignedUrlMap } from "@/lib/storageSignedUrls";
 
 async function fetchAllPages<T>(
   query: (from: number, to: number) => Promise<{
@@ -122,10 +123,10 @@ export async function getAssignmentFiles(
 ) {
   if (assignmentIds.length === 0) return [];
 
-  return fetchAllPages(async (from, to) => {
+  const files = await fetchAllPages(async (from, to) => {
     const { data, error } = await supabase
       .from("assignment_files")
-      .select("id, assignment_id, file_name, file_url, file_path")
+      .select("id, assignment_id, file_name, file_path")
       .eq("organization_id", organizationId)
       .in("assignment_id", assignmentIds)
       .order("id", { ascending: true })
@@ -136,6 +137,16 @@ export async function getAssignmentFiles(
       error: error ? new Error(error.message) : null,
     };
   });
+
+  const signedUrlMap = await createSignedUrlMap(
+    "assignment-files",
+    files.map((file) => file.file_path)
+  );
+
+  return files.map((file) => ({
+    ...file,
+    file_url: signedUrlMap[file.file_path] ?? "",
+  }));
 }
 
 export async function getSiteMembers(

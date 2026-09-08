@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { createSignedUrlMap } from "@/lib/storageSignedUrls";
 
 type SiteMember = {
   id: string;
@@ -36,6 +37,7 @@ type AssignmentFile = {
   assignment_id: string;
   file_name: string;
   file_url: string;
+  file_path: string;
 };
 
 type Props = {
@@ -183,7 +185,7 @@ const ownMembers = memberResult.data ?? [];
       
         supabase
           .from("assignment_files")
-          .select("id, assignment_id, file_name, file_url")
+          .select("id, assignment_id, file_name, file_path")
           .eq("organization_id", organizationId)
           .in("assignment_id", assignmentIds),
       
@@ -224,10 +226,22 @@ const ownMembers = memberResult.data ?? [];
         return;
       }
       
-      setAssignments(assignmentResult.data ?? []);
-      setAssignmentFiles(fileResult.data ?? []);
-      setDailyInfos(dailyInfoResult.data ?? []);
-      setAllMembers(allMemberResult.data ?? []);
+      const files = fileResult.data ?? [];
+
+const signedUrlMap = await createSignedUrlMap(
+  "assignment-files",
+  files.map((file) => file.file_path)
+);
+
+const filesWithSignedUrls: AssignmentFile[] = files.map((file) => ({
+  ...file,
+  file_url: signedUrlMap[file.file_path] ?? "",
+}));
+
+setAssignments(assignmentResult.data ?? []);
+setAssignmentFiles(filesWithSignedUrls);
+setDailyInfos(dailyInfoResult.data ?? []);
+setAllMembers(allMemberResult.data ?? []);
     };
 
     void fetchSchedule();

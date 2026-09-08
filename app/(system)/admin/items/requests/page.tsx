@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { createSignedUrlMap } from "@/lib/storageSignedUrls";
 import { hasRole } from "@/app/types/auth";
 import BackButton from "@/app/components/BackButton";
 import { sendPushNotification } from "@/lib/sendPushNotification";
@@ -14,6 +15,7 @@ type ItemRequest = {
   return_due_date: string | null;
   status: string;
   return_photo_url: string | null;
+  return_photo_path: string | null;
   items: {
     item_name: string;
     item_type: string;
@@ -78,7 +80,7 @@ if (!currentOrganizationId) {
         start_date,
         return_due_date,
         status,
-        return_photo_url,
+        return_photo_path,
         items (
           item_name,
           item_type,
@@ -96,12 +98,22 @@ if (!currentOrganizationId) {
       return;
     }
 
-    setRequests(
-      (data ?? []).map((request) => ({
-        ...request,
-        items: request.items?.[0] ?? null,
-      }))
-    );
+    const requestData = data ?? [];
+
+const signedUrlMap = await createSignedUrlMap(
+  "item-return-photos",
+  requestData.map((request) => request.return_photo_path)
+);
+
+setRequests(
+  requestData.map((request) => ({
+    ...request,
+    return_photo_url: request.return_photo_path
+      ? signedUrlMap[request.return_photo_path] ?? null
+      : null,
+    items: request.items?.[0] ?? null,
+  }))
+);
   };
 
   useEffect(() => {
@@ -292,7 +304,7 @@ if (!currentOrganizationId) {
       request_id: request.id,
       user_name: request.user_name,
       action_type: "returned",
-      photo_url: request.return_photo_url,
+      photo_url: request.return_photo_path,
     });
 
     alert("返却確認しました");

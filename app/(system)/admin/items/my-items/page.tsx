@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { createSignedUrlMap } from "@/lib/storageSignedUrls";
 import BackButton from "@/app/components/BackButton";
 import { sendPushNotification } from "@/lib/sendPushNotification";
 
@@ -13,6 +14,7 @@ type MyRequest = {
   return_due_date: string | null;
   status: string;
   return_photo_url: string | null;
+  return_photo_path: string | null;
   items: {
     item_name: string;
     item_type: string;
@@ -82,7 +84,7 @@ const { data: employee } = await supabase
         start_date,
         return_due_date,
         status,
-        return_photo_url,
+        return_photo_path,
         items (
           item_name,
           item_type,
@@ -101,12 +103,22 @@ const { data: employee } = await supabase
       return;
     }
 
-    setRequests(
-      (data ?? []).map((request) => ({
-        ...request,
-        items: request.items?.[0] ?? null,
-      }))
-    );
+    const requestData = data ?? [];
+
+const signedUrlMap = await createSignedUrlMap(
+  "item-return-photos",
+  requestData.map((request) => request.return_photo_path)
+);
+
+setRequests(
+  requestData.map((request) => ({
+    ...request,
+    return_photo_url: request.return_photo_path
+      ? signedUrlMap[request.return_photo_path] ?? null
+      : null,
+    items: request.items?.[0] ?? null,
+  }))
+);
   };
 
   useEffect(() => {
@@ -145,15 +157,11 @@ if (!currentOrganizationId) {
       return;
     }
 
-    const { data: publicUrlData } = supabase.storage
-      .from("item-return-photos")
-      .getPublicUrl(filePath);
-
     const { error: updateError } = await supabase
       .from("item_requests")
       .update({
         status: "return_requested",
-        return_photo_url: publicUrlData.publicUrl,
+        return_photo_url: null,
         return_photo_path: filePath,
         return_requested_at: new Date().toISOString(),
       })
@@ -180,7 +188,7 @@ if (!currentOrganizationId) {
     request_id: requestId,
     user_name: employeeName,
     action_type: "return_requested",
-    photo_url: publicUrlData.publicUrl,
+    photo_url: filePath,
   });
 
 const { data: admins } = await supabase

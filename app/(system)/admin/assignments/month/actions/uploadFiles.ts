@@ -63,15 +63,11 @@ export async function uploadFilesAction(
       return { error: uploadError };
     }
 
-    const { data } = supabase.storage
-      .from("assignment-files")
-      .getPublicUrl(filePath);
-
     const { error: insertError } = await supabase.from("assignment_files").insert({
       organization_id: organizationId,
       assignment_id: assignmentId,
       file_name: file.name,
-      file_url: data.publicUrl,
+      file_url: filePath,
       file_path: filePath,
     });
 

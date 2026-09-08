@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { createSignedUrlMap } from "@/lib/storageSignedUrls";
 import { hasRole } from "../../../types/auth";
 import BackButton from "@/app/components/BackButton";
 
@@ -25,6 +26,7 @@ type ItemRequest = {
     return_due_date: string | null;
     status: string;
     return_photo_url: string | null;
+    return_photo_path: string | null;
   };
 
   const inputStyle = {
@@ -132,7 +134,21 @@ if (!currentOrganizationId) {
       .in("status", ["pending", "return_requested"])
       .order("created_at", { ascending: false });
   
-    setRequests(requestData ?? []);
+      const requests = requestData ?? [];
+
+      const signedUrlMap = await createSignedUrlMap(
+        "item-return-photos",
+        requests.map((request) => request.return_photo_path)
+      );
+      
+      setRequests(
+        requests.map((request) => ({
+          ...request,
+          return_photo_url: request.return_photo_path
+            ? signedUrlMap[request.return_photo_path] ?? null
+            : null,
+        }))
+      );
   };
 
 useEffect(() => {

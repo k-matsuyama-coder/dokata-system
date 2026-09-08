@@ -144,15 +144,11 @@ if (!currentOrganizationId) {
       return;
     }
 
-    const { data: publicUrlData } = supabase.storage
-      .from("item-return-photos")
-      .getPublicUrl(filePath);
-
     const { error: requestError } = await supabase
       .from("item_requests")
       .update({
         status: "return_requested",
-        return_photo_url: publicUrlData.publicUrl,
+        return_photo_url: null,
         return_photo_path: filePath,
         return_requested_at: new Date().toISOString(),
       })
@@ -183,7 +179,7 @@ const historyResult = await supabase
     request_id: requestId,
     user_name: employeeName,
     action_type: "return_requested",
-    photo_url: publicUrlData.publicUrl,
+    photo_url: filePath,
   });
 
 console.log("履歴保存結果", historyResult);

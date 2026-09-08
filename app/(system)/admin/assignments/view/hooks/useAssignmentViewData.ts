@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { createSignedUrlMap } from "@/lib/storageSignedUrls";
 
 type AssignmentGroupKey =
   | "group1"
@@ -56,6 +57,7 @@ export type AssignmentFile = {
   assignment_id: string;
   file_name: string;
   file_url: string;
+  file_path: string;
 };
 
 function defaultGroupSettings(): AssignmentGroupSetting[] {
@@ -234,11 +236,11 @@ export function useAssignmentViewData({ displayDates, date, viewMode }: Props) {
     const { data: fileData, error: fileError } = await supabase
       .from("assignment_files")
       .select(`
-        id,
-        assignment_id,
-        file_name,
-        file_url
-      `)
+  id,
+  assignment_id,
+  file_name,
+  file_path
+`)
       .eq("organization_id", organizationId)
       .in("assignment_id", assignmentIds);
 
@@ -247,10 +249,22 @@ export function useAssignmentViewData({ displayDates, date, viewMode }: Props) {
       return;
     }
 
-    setAssignments((assignmentData ?? []) as Assignment[]);
-    setSiteMembers((memberData ?? []) as SiteMember[]);
-    setDailyInfos((dailyInfoData ?? []) as DailyInfo[]);
-    setAssignmentFiles((fileData ?? []) as AssignmentFile[]);
+    const files = fileData ?? [];
+
+const signedUrlMap = await createSignedUrlMap(
+  "assignment-files",
+  files.map((file) => file.file_path)
+);
+
+const filesWithSignedUrls: AssignmentFile[] = files.map((file) => ({
+  ...file,
+  file_url: signedUrlMap[file.file_path] ?? "",
+}));
+
+setAssignments((assignmentData ?? []) as Assignment[]);
+setSiteMembers((memberData ?? []) as SiteMember[]);
+setDailyInfos((dailyInfoData ?? []) as DailyInfo[]);
+setAssignmentFiles(filesWithSignedUrls);
   }, [displayDates, getCurrentOrganization]);
 
   useEffect(() => {

@@ -53,7 +53,7 @@ type AssignmentFileRow = {
   id: string;
   assignment_id: string;
   file_name: string;
-  file_url: string;
+  file_path: string;
 };
 
 type PublicAssignmentMember = {
@@ -331,7 +331,7 @@ export async function GET(
 
         supabase
         .from("assignment_files")
-        .select("id, assignment_id, file_name, file_url")
+.select("id, assignment_id, file_name, file_path")
         .eq("organization_id", publicLink.organization_id)
         .returns<AssignmentFileRow[]>(),
     ]);
@@ -353,15 +353,50 @@ export async function GET(
 
     const dailyInfoMap = buildDailyInfoMap(dailyInfos ?? []);
 
-    const filesByAssignmentId = new Map<string, PublicAssignmentFile[]>();
+const assignmentFiles = files ?? [];
 
-for (const file of files ?? []) {
+const { data: signedFiles, error: signedFilesError } =
+  await supabase.storage
+    .from("assignment-files")
+    .createSignedUrls(
+      assignmentFiles.map((file) => file.file_path),
+      24 * 60 * 60
+    );
+
+if (signedFilesError) {
+  return NextResponse.json(
+    {
+      ok: false,
+      error: "添付ファイルURLの発行に失敗しました",
+    },
+    { status: 500 }
+  );
+}
+
+const signedUrlByPath = new Map(
+  (signedFiles ?? []).map((file) => [
+    file.path,
+    file.signedUrl,
+  ])
+);
+
+const filesByAssignmentId = new Map<string, PublicAssignmentFile[]>();
+
+for (const file of assignmentFiles) {
+  const signedUrl = signedUrlByPath.get(file.file_path);
+
+  if (!signedUrl) {
+    continue;
+  }
+
   const list = filesByAssignmentId.get(file.assignment_id) ?? [];
+
   list.push({
     id: file.id,
     file_name: file.file_name,
-    file_url: file.file_url,
+    file_url: signedUrl,
   });
+
   filesByAssignmentId.set(file.assignment_id, list);
 }
 

@@ -2,13 +2,7 @@
 "use client";
 
 import React from "react";
-
-type AssignmentFile = {
-  id: string;
-  assignment_id: string;
-  file_name: string;
-  file_url: string;
-};
+import type { AssignmentFile } from "../hooks/useAssignmentViewData";
 
 type DetailModalAssignment = {
   site_name: string | null;
