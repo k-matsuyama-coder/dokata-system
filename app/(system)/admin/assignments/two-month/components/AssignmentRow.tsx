@@ -389,9 +389,10 @@ maxWidth: 50,
             <div
   style={{
     position: "relative",
-    display: "grid",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 2,
-    justifyItems: "center",
     opacity: isOutOfPeriod ? 0.55 : 1,
   }}
 >
@@ -589,7 +590,7 @@ maxWidth: 50,
                   );
                 }}
                 style={{
-                  width: 36,
+                  width: 34,
                   padding: 2,
                   border: "1px solid #ccc",
                   borderRadius: 4,
@@ -604,38 +605,39 @@ maxWidth: 50,
   <div
     title="メモあり"
     style={{
-      position: "absolute",
-      top: 3,
-      right: 3,
-      width: 8,
-      height: 8,
+      width: 6,
+      height: 6,
+      flexShrink: 0,
       borderRadius: "50%",
       backgroundColor: "#2563eb",
       pointerEvents: "none",
-      zIndex: 10,
     }}
   />
 )}
               {hoveredMemoKey === detailKey && memo === "" && (
   <button
   type="button"
+  title="メモを追加"
   onClick={() => {
     setEditingMemoKey(detailKey);
   }}
   style={{
-      position: "absolute",
-      top: 4,
-      right: 4,
-      border: "none",
-      background: "#fff",
-      cursor: "pointer",
-      fontSize: 14,
-      borderRadius: 4,
-      padding: 2,
-      zIndex: 1000,
-    }}
+    width: 10,
+    height: 18,
+    flexShrink: 0,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 0,
+    border: "none",
+    backgroundColor: "transparent",
+    color: "#2563eb",
+    cursor: "pointer",
+    fontSize: 10,
+    lineHeight: 1,
+  }}
   >
-    💬
+    ＋
   </button>
 )}
 {editingMemoKey === detailKey && (
