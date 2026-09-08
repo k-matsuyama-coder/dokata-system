@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AddTwoMonthAssignmentModal from "./components/AddAssignmentModal";
 import EditTwoMonthAssignmentModal from "./components/EditAssignmentModal";
 import TwoMonthToolbar from "./components/Toolbar";
@@ -26,6 +26,23 @@ import {
 import { inputStyle, smallButton } from "./styles";
 
 export default function TwoMonthPage() {
+  const [isMobile, setIsMobile] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 768px)");
+
+    const updateViewport = () => {
+      setIsMobile(mediaQuery.matches);
+    };
+
+    updateViewport();
+    mediaQuery.addEventListener("change", updateViewport);
+
+    return () => {
+      mediaQuery.removeEventListener("change", updateViewport);
+    };
+  }, []);
+
   const {
     assignments,
     setAssignments,
@@ -89,42 +106,86 @@ onSaveDateMemo,
     organizationId,
   });
 
-  useRealtime(fetchData, baseMonth, organizationId);
+  useRealtime(
+    fetchData,
+    baseMonth,
+    organizationId,
+    setDailyInfos
+  );
 
   const detailHistory = useDetailHistory(dailyInfos);
 
-  const sortedAssignments = getSortedAssignments(assignments, days, sortMode);
-
-  const groupedAssignments = getGroupedAssignments(
-    sortedAssignments,
-    groupNameMap,
-    groupSettings
+  const sortedAssignments = useMemo(
+    () =>
+      getSortedAssignments(
+        assignments,
+        days,
+        sortMode
+      ),
+    [assignments, days, sortMode]
+  );
+  
+  const groupedAssignments = useMemo(
+    () =>
+      getGroupedAssignments(
+        sortedAssignments,
+        groupNameMap,
+        groupSettings
+      ),
+    [sortedAssignments, groupNameMap, groupSettings]
   );
 
-  const [previousMonthTotal, nextMonthTotal] = useMemo(() => {
-    return assignments.reduce<[number, number]>(
-      (totals, assignment) => {
-        totals[0] += getMonthlyTotal(
-          dailyInfos,
-          baseMonth,
-          assignment.id,
-          0,
-          assignment
-        );
+  const {
+    monthlyTotalMap,
+    previousMonthTotal,
+    nextMonthTotal,
+  } = useMemo(() => {
+    const totalsMap = new Map<string, [number, number]>();
   
-        totals[1] += getMonthlyTotal(
-          dailyInfos,
-          baseMonth,
-          assignment.id,
-          1,
-          assignment
-        );
+    let previousTotal = 0;
+    let nextTotal = 0;
   
-        return totals;
-      },
-      [0, 0]
-    );
+    assignments.forEach((assignment) => {
+      const firstMonthTotal = getMonthlyTotal(
+        dailyInfos,
+        baseMonth,
+        assignment.id,
+        0,
+        assignment
+      );
+  
+      const secondMonthTotal = getMonthlyTotal(
+        dailyInfos,
+        baseMonth,
+        assignment.id,
+        1,
+        assignment
+      );
+  
+      totalsMap.set(assignment.id, [
+        firstMonthTotal,
+        secondMonthTotal,
+      ]);
+  
+      previousTotal += firstMonthTotal;
+      nextTotal += secondMonthTotal;
+    });
+  
+    return {
+      monthlyTotalMap: totalsMap,
+      previousMonthTotal: previousTotal,
+      nextMonthTotal: nextTotal,
+    };
   }, [assignments, dailyInfos, baseMonth]);
+
+  const dailyTotalMap = useMemo(() => {
+    return new Map(
+      days.map((date) => [
+        date,
+        getDailyTotal(assignments, dailyInfos, date),
+      ])
+    );
+  }, [assignments, dailyInfos, days]);
 
   const {
     uploadFiles,
@@ -261,7 +322,7 @@ onSaveDateMemo,
         deleteAssignment={deleteAssignment}
       />
 
-      <div className="desktop-view">
+      {isMobile === false && (
       <TwoMonthTable
   days={days}
   employees={employees}
@@ -275,18 +336,17 @@ onSaveDateMemo={onSaveDateMemo}
   setEditingAssignment={setEditingAssignment}
   moveAssignmentRow={moveAssignmentRow}
   deleteAssignment={deleteAssignment}
-  getDailyTotal={(date) => getDailyTotal(assignments, dailyInfos, date)}
+  getDailyTotal={(date) =>
+    dailyTotalMap.get(date) ?? {
+      total: 0,
+      first: 0,
+      second: 0,
+      third: 0,
+    }
+  }
   dailyInfos={dailyInfos}
   getMonthlyTotal={(assignmentId, index) =>
-    getMonthlyTotal(
-      dailyInfos,
-      baseMonth,
-      assignmentId,
-      index,
-      assignments.find(
-        (assignment) => assignment.id === assignmentId
-      )
-    )
+    monthlyTotalMap.get(assignmentId)?.[index] ?? 0
   }
   previousMonthTotal={previousMonthTotal}
 nextMonthTotal={nextMonthTotal}
@@ -299,32 +359,16 @@ nextMonthTotal={nextMonthTotal}
   updateAssignmentMemo={updateAssignmentMemo}
   groupNameMap={groupNameMap}
 />
-      </div>
+      )}
 
-      <div className="mobile-view">
+{isMobile === true && (
         <MobileView
           days={days}
           groupedAssignments={groupedAssignments}
           getPlannedCount={getPlannedCount}
           updateDailyInfo={updateDailyInfo}
         />
-      </div>
-
-      <style jsx>{`
-        .mobile-view {
-          display: none;
-        }
-
-        @media (max-width: 768px) {
-          .desktop-view {
-            display: none;
-          }
-
-          .mobile-view {
-            display: block;
-          }
-        }
-      `}</style>
+        )}
     </div>
   );
 }

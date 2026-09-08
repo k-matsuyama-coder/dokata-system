@@ -1,7 +1,7 @@
 // app/(system)/admin/assignments/two-month/components/Table.tsx
 "use client";
 
-import React, { useCallback, useRef } from "react";
+import React, { useCallback, useMemo, useRef } from "react";
 import TwoMonthTableHeader from "./TableHeader";
 import TwoMonthAssignmentRow from "./AssignmentRow";
 import type {
@@ -98,6 +98,24 @@ getPlannedCount,
   groupNameMap,
 }: Props) {
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+
+  const dailyInfoMap = useMemo(() => {
+    return new Map(
+      dailyInfos.map((dailyInfo) => [
+        `${dailyInfo.assignment_id}_${dailyInfo.work_date}`,
+        dailyInfo,
+      ])
+    );
+  }, [dailyInfos]);
+  
+  const getMemo = useCallback(
+    (assignmentId: string, workDate: string) => {
+      return (
+        dailyInfoMap.get(`${assignmentId}_${workDate}`)?.memo ?? ""
+      );
+    },
+    [dailyInfoMap]
+  );
 
   const handleAutoScroll = useCallback(
     (event: React.DragEvent<HTMLDivElement>) => {
@@ -201,15 +219,7 @@ getPlannedCount,
                   getPlannedCount={getPlannedCount}
                   getBandColor={getBandColor}
                   getDetailTags={getDetailTags}
-                  getMemo={(assignmentId, workDate) => {
-                    return (
-                      dailyInfos.find(
-                        (d) =>
-                          d.assignment_id === assignmentId &&
-                          d.work_date === workDate
-                      )?.memo ?? ""
-                    );
-                  }}
+                  getMemo={getMemo}
                   removeDetailTag={removeDetailTag}
                   addDetailTag={addDetailTag}
                   updateDailyInfo={updateDailyInfo}

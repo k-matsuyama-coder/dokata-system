@@ -10,6 +10,47 @@ import {
   td,
 } from "../styles";
 
+const plannedInputSelector = 'input[data-planned-input="true"]';
+
+function getAdjacentPlannedInput(
+  current: HTMLInputElement,
+  direction: 1 | -1
+): HTMLInputElement | null {
+  const currentRow = current.closest("tr");
+  if (!currentRow) return null;
+
+  const rowInputs = Array.from(
+    currentRow.querySelectorAll<HTMLInputElement>(plannedInputSelector)
+  );
+
+  const currentIndex = rowInputs.indexOf(current);
+  const sameRowInput = rowInputs[currentIndex + direction];
+
+  if (sameRowInput) return sameRowInput;
+
+  let nextRow =
+    direction === 1
+      ? currentRow.nextElementSibling
+      : currentRow.previousElementSibling;
+
+  while (nextRow) {
+    const inputs = Array.from(
+      nextRow.querySelectorAll<HTMLInputElement>(plannedInputSelector)
+    );
+
+    if (inputs.length > 0) {
+      return direction === 1 ? inputs[0] : inputs[inputs.length - 1];
+    }
+
+    nextRow =
+      direction === 1
+        ? nextRow.nextElementSibling
+        : nextRow.previousElementSibling;
+  }
+
+  return null;
+}
+
 type Props = {
   assignment: Assignment;
   days: string[];
@@ -336,6 +377,16 @@ left: 0,
             ? editingDetails[detailKey]
             : detailValue;
 
+            const isDetailVisible =
+            editingMemoKey !== detailKey &&
+            (
+              editingDetailKey === detailKey ||
+              (
+                hoveredMemoKey === detailKey &&
+                textareaValue.trim() !== ""
+              )
+            );
+
         return (
           <td
   key={date}
@@ -396,20 +447,10 @@ maxWidth: 50,
     opacity: isOutOfPeriod ? 0.55 : 1,
   }}
 >
-<div
-  style={{
-    display:
-  editingMemoKey !== detailKey &&
-  (
-    editingDetailKey === detailKey ||
-    (
-      hoveredMemoKey === detailKey &&
-      textareaValue.trim() !== ""
-    )
-  )
-    ? "block"
-    : "none",
-    position: "absolute",
+{isDetailVisible && (
+  <div
+    style={{
+      position: "absolute",
     top: "calc(100% + 4px)",
     left: "50%",
     transform: "translateX(-50%)",
@@ -426,7 +467,6 @@ maxWidth: 50,
                 className="detail-textarea"
                 data-detail-key={detailKey}
                   value={textareaValue}
-                  title={textareaValue}
                   onBlur={() => {
                     setEditingDetailKey(null);
                   }}
@@ -523,7 +563,9 @@ maxWidth: 50,
                   </div>
                 )}
               </div>
+              )}
 
+{!isOutOfPeriod && (
               <input
                 data-planned-input="true"
                 data-assignment-id={assignment.id}
@@ -533,44 +575,38 @@ maxWidth: 50,
                 inputMode="numeric"
                 defaultValue={count}
                 onKeyDown={(e) => {
-                  const inputs = Array.from(
-                    document.querySelectorAll<HTMLInputElement>(
-                      'input[data-planned-input="true"]'
-                    )
-                  );
-
-                  const currentIndex = inputs.indexOf(e.currentTarget);
-
-                  if (currentIndex === -1) return;
-
+                  let direction: 1 | -1 | null = null;
+                
                   if (e.key === "Tab") {
-                    e.preventDefault();
-
-                    const nextIndex = e.shiftKey
-                      ? currentIndex - 1
-                      : currentIndex + 1;
-
-                    inputs[nextIndex]?.focus();
-                    inputs[nextIndex]?.select();
+                    direction = e.shiftKey ? -1 : 1;
+                  } else if (e.key === "ArrowRight") {
+                    direction = 1;
+                  } else if (e.key === "ArrowLeft") {
+                    direction = -1;
                   }
-
-                  if (e.key === "ArrowRight") {
-                    e.preventDefault();
-                    inputs[currentIndex + 1]?.focus();
-                    inputs[currentIndex + 1]?.select();
-                  }
-
-                  if (e.key === "ArrowLeft") {
-                    e.preventDefault();
-                    inputs[currentIndex - 1]?.focus();
-                    inputs[currentIndex - 1]?.select();
-                  }
+                
+                  if (direction === null) return;
+                
+                  const nextInput = getAdjacentPlannedInput(
+                    e.currentTarget,
+                    direction
+                  );
+                
+                  if (!nextInput) return;
+                
+                  e.preventDefault();
+                  nextInput.focus();
+                  nextInput.select();
                 }}
                 onBlur={(e) => {
-                  const rawValue = e.target.value;
-
+                  const rawValue = e.currentTarget.value;
+                  const currentValue =
+                    count === "" ? "" : String(count);
+                
                   if (rawValue === "") {
-                    updateDailyInfo(
+                    if (currentValue === "") return;
+                
+                    void updateDailyInfo(
                       assignment.id,
                       date,
                       "planned_count",
@@ -578,11 +614,20 @@ maxWidth: 50,
                     );
                     return;
                   }
-
-                  const safeValue = String(Math.max(0, Number(rawValue)));
+                
+                  const numericValue = Number(rawValue);
+                
+                  if (!Number.isFinite(numericValue)) {
+                    e.currentTarget.value = currentValue;
+                    return;
+                  }
+                
+                  const safeValue = String(Math.max(0, numericValue));
                   e.currentTarget.value = safeValue;
-
-                  updateDailyInfo(
+                
+                  if (safeValue === currentValue) return;
+                
+                  void updateDailyInfo(
                     assignment.id,
                     date,
                     "planned_count",
@@ -601,6 +646,8 @@ maxWidth: 50,
                   MozAppearance: "textfield",
                 }}
               />
+              )}
+              
               {memo !== "" && editingMemoKey !== detailKey && (
   <div
     title="メモあり"
