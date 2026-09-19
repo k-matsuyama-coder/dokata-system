@@ -127,11 +127,16 @@ export default function AssignmentDayCell({
   }}
   onFocus={(e) => e.currentTarget.select()}
   onKeyDown={(e) => {
+    if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+      e.preventDefault();
+      return;
+    }
+  
     if (e.key === "ArrowLeft") {
       movePlannedCountFocus(e, "left");
       return;
     }
-
+  
     if (e.key === "ArrowRight") {
       movePlannedCountFocus(e, "right");
     }

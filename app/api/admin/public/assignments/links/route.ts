@@ -83,7 +83,7 @@ export async function GET(req: Request) {
       );
     }
 
-    if (!["admin", "master", "super_admin"].includes(employee.role ?? "")) {
+    if (employee.role !== "admin") {
       return NextResponse.json(
         {
           success: false,

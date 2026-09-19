@@ -221,9 +221,13 @@ export async function uploadAssignmentFiles(
         file_path: filePath,
       });
 
-    if (insertError) {
-      throw new Error("ファイル登録失敗: " + insertError.message);
-    }
+      if (insertError) {
+        await supabase.storage
+          .from("assignment-files")
+          .remove([filePath]);
+  
+        throw new Error("ファイル登録失敗: " + insertError.message);
+      }
   }
 }
 

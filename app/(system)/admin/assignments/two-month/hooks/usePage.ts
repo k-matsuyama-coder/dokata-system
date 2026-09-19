@@ -193,9 +193,11 @@ setDateMemos(
   }, [days]);
 
   const onSaveDateMemo = async (date: string, memo: string) => {
-    if (!organizationId) return;
+    if (!organizationId) {
+      throw new Error("会社情報を取得できていません。再読み込みしてください。");
+    }
   
-    const { error } = await supabase
+    const { error: saveError } = await supabase
       .from("assignment_date_memos")
       .upsert(
         {
@@ -208,14 +210,33 @@ setDateMemos(
         }
       );
   
-    if (error) {
-      alert(error.message);
-      return;
+    if (saveError) {
+      throw new Error(`日付メモの保存に失敗しました: ${saveError.message}`);
+    }
+  
+    // 開き直したときと同じ条件で、DBから取得できることを確認する
+    const { data: savedMemo, error: readError } = await supabase
+      .from("assignment_date_memos")
+      .select("work_date, memo")
+      .eq("organization_id", organizationId)
+      .eq("work_date", date)
+      .single();
+  
+    if (readError) {
+      throw new Error(
+        `保存後の読み込み確認に失敗しました: ${readError.message}`
+      );
+    }
+  
+    if (!savedMemo || savedMemo.memo !== memo) {
+      throw new Error(
+        "保存内容を確認できませんでした。入力内容を残しています。"
+      );
     }
   
     setDateMemos((prev) => {
       const next = new Map(prev);
-      next.set(date, memo);
+      next.set(savedMemo.work_date, savedMemo.memo ?? "");
       return next;
     });
   };

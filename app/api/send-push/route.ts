@@ -18,11 +18,7 @@ type PushRequestBody = {
   url?: unknown;
 };
 
-const adminRoles = new Set([
-  "admin",
-  "master",
-  "super_admin",
-]);
+const adminRoles = new Set(["admin"]);
 
 export async function POST(req: Request) {
   try {

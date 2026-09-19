@@ -72,6 +72,10 @@ export async function uploadFilesAction(
     });
 
     if (insertError) {
+      await supabase.storage
+        .from("assignment-files")
+        .remove([filePath]);
+
       return { error: insertError };
     }
   }

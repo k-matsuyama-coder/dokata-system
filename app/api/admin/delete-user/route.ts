@@ -70,6 +70,38 @@ export async function POST(req: Request) {
       return Response.json({ error: "社員が見つかりません" }, { status: 404 });
     }
 
+    if (employee.auth_user_id === userData.user.id) {
+      return Response.json(
+        { error: "自分自身のアカウントは削除できません" },
+        { status: 400 }
+      );
+    }
+    
+    if (employee.role === "admin") {
+      const { count, error: adminCountError } = await supabaseAdmin
+        .from("employees")
+        .select("id", {
+          count: "exact",
+          head: true,
+        })
+        .eq("organization_id", organizationId)
+        .eq("role", "admin");
+    
+      if (adminCountError) {
+        return Response.json(
+          { error: "管理者数の確認に失敗しました" },
+          { status: 500 }
+        );
+      }
+    
+      if ((count ?? 0) <= 1) {
+        return Response.json(
+          { error: "会社に最低1人の管理者が必要です" },
+          { status: 400 }
+        );
+      }
+    }
+
     if (employee.auth_user_id) {
       const { error: authDeleteError } =
         await supabaseAdmin.auth.admin.deleteUser(employee.auth_user_id);

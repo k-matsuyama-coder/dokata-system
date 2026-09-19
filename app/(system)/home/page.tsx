@@ -550,7 +550,7 @@ const totalOvertimeSum = dayOvertime + nightOvertime;
   <div
     style={{
       display: "grid",
-      gridTemplateColumns: "repeat(2, 1fr)",
+      gridTemplateColumns: "1fr",
       gap: 12,
       marginTop: 16,
       marginBottom: 20,
@@ -649,23 +649,6 @@ const totalOvertimeSum = dayOvertime + nightOvertime;
           }}
         >
           ＋ 日報を登録
-          </Link>
-  
-          <Link
-  href="/reports/new?copy=1"
-          style={{
-            textDecoration: "none",
-            backgroundColor: "#fff",
-            color: "#111",
-            padding: 16,
-            borderRadius: 14,
-            fontWeight: 700,
-            textAlign: "center",
-            border: "1px solid #ddd",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-          }}
-        >
-          前回コピー
           </Link>
       </div>
 

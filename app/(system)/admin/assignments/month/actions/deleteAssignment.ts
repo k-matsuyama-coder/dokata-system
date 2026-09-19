@@ -50,23 +50,35 @@ export async function deleteAssignmentAction({
     }
   }
 
-  await supabase
+  const { error: membersDeleteError } = await supabase
   .from("assignment_site_members")
   .delete()
   .eq("organization_id", organizationId)
   .eq("assignment_id", assignmentId);
 
-  await supabase
+if (membersDeleteError) {
+  return { error: membersDeleteError };
+}
+
+const { error: dailyInfosDeleteError } = await supabase
   .from("assignment_site_daily_infos")
   .delete()
   .eq("organization_id", organizationId)
   .eq("assignment_id", assignmentId);
 
-  await supabase
+if (dailyInfosDeleteError) {
+  return { error: dailyInfosDeleteError };
+}
+
+const { error: filesDeleteError } = await supabase
   .from("assignment_files")
   .delete()
   .eq("organization_id", organizationId)
   .eq("assignment_id", assignmentId);
+
+if (filesDeleteError) {
+  return { error: filesDeleteError };
+}
 
   const { error } = await supabase
   .from("assignments")

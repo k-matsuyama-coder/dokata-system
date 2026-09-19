@@ -107,6 +107,54 @@ export async function POST(req: Request) {
       );
     }
 
+    const { data: linkedEmployee, error: linkedEmployeeError } =
+  await supabaseAdmin
+    .from("employees")
+    .select("id, organization_id")
+    .eq("auth_user_id", authUser.id)
+    .maybeSingle();
+
+if (linkedEmployeeError) {
+  return Response.json(
+    { error: linkedEmployeeError.message },
+    { status: 500 }
+  );
+}
+
+if (
+  linkedEmployee &&
+  (
+    linkedEmployee.id !== targetEmployee.id ||
+    linkedEmployee.organization_id !== organizationId
+  )
+) {
+  return Response.json(
+    { error: "このメールアドレスは別の社員に使用されています" },
+    { status: 409 }
+  );
+}
+
+const { data: linkedSuperAdmin, error: linkedSuperAdminError } =
+  await supabaseAdmin
+    .from("super_admin_users")
+    .select("id")
+    .eq("auth_user_id", authUser.id)
+    .maybeSingle();
+
+if (linkedSuperAdminError) {
+  return Response.json(
+    { error: linkedSuperAdminError.message },
+    { status: 500 }
+  );
+}
+
+if (linkedSuperAdmin) {
+  return Response.json(
+    { error: "このメールアドレスはスーパー管理者に使用されています" },
+    { status: 409 }
+  );
+}
+
     const { error: updateError } = await supabaseAdmin
       .from("employees")
       .update({

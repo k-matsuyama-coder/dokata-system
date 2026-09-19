@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
@@ -55,6 +56,11 @@ export default function LoginPage() {
     }
 
     if (superAdminUser && !employee) {
+      sessionStorage.setItem(
+        "verified_super_admin_user_id",
+        user.id
+      );
+    
       router.replace("/super-admin");
       return;
     }
@@ -126,6 +132,17 @@ export default function LoginPage() {
       >
         {isLoading ? "ログイン中..." : "ログイン"}
       </button>
+
+      <div
+  style={{
+    marginTop: 16,
+    textAlign: "center",
+  }}
+>
+  <Link href="/forgot-password">
+    パスワードを忘れた方
+  </Link>
+</div>
     </div>
   );
 }

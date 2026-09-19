@@ -51,6 +51,41 @@ function getAdjacentPlannedInput(
   return null;
 }
 
+function getVerticalPlannedInput(
+  current: HTMLInputElement,
+  direction: 1 | -1
+): HTMLInputElement | null {
+  const currentRow = current.closest("tr");
+  const workDate = current.dataset.workDate;
+
+  if (!currentRow || !workDate) return null;
+
+  let nextRow =
+    direction === 1
+      ? currentRow.nextElementSibling
+      : currentRow.previousElementSibling;
+
+  while (nextRow) {
+    const nextInput = Array.from(
+      nextRow.querySelectorAll<HTMLInputElement>(plannedInputSelector)
+    ).find(
+      (input) =>
+        input.dataset.workDate === workDate &&
+        !input.disabled &&
+        !input.readOnly
+    );
+
+    if (nextInput) return nextInput;
+
+    nextRow =
+      direction === 1
+        ? nextRow.nextElementSibling
+        : nextRow.previousElementSibling;
+  }
+
+  return null;
+}
+
 type Props = {
   assignment: Assignment;
   days: string[];
@@ -123,6 +158,7 @@ const [isSiteMemoEditing, setIsSiteMemoEditing] = useState(false);
 const [isSiteMemoPreviewVisible, setIsSiteMemoPreviewVisible] = useState(false);
 const [siteMemoDraft, setSiteMemoDraft] = useState("");
 const siteMemoCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+const [isRowFocused, setIsRowFocused] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -136,7 +172,14 @@ const siteMemoCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     ) ?? "未設定グループ";
 
   return (
-    <tr>
+    <tr
+  onFocusCapture={() => setIsRowFocused(true)}
+  onBlurCapture={(e) => {
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      setIsRowFocused(false);
+    }
+  }}
+>
       <td
         draggable={sortMode === "manual"}
         onDragStart={() => setDraggingAssignmentId(assignment.id)}
@@ -172,7 +215,12 @@ const siteMemoCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     : stickyTd.zIndex,
           cursor: sortMode === "manual" ? "grab" : "default",
           backgroundColor:
-            draggingAssignmentId === assignment.id ? "#dbeafe" : "#fff",
+  isRowFocused || draggingAssignmentId === assignment.id
+    ? "#dbeafe"
+    : "#fff",
+boxShadow: isRowFocused
+  ? "inset 4px 0 0 #2563eb"
+  : undefined,
         }}
       >
         <div
@@ -570,11 +618,29 @@ maxWidth: 50,
                 data-planned-input="true"
                 data-assignment-id={assignment.id}
                 data-work-date={date}
-                type="number"
-                min={0}
-                inputMode="numeric"
+                type="text"
+inputMode="numeric"
                 defaultValue={count}
                 onKeyDown={(e) => {
+                  if (e.nativeEvent.isComposing) return;
+                
+                  if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+                    // 移動先がなくても、人数の増減は必ず止める
+                    e.preventDefault();
+                
+                    const nextInput = getVerticalPlannedInput(
+                      e.currentTarget,
+                      e.key === "ArrowDown" ? 1 : -1
+                    );
+                
+                    if (nextInput) {
+                      nextInput.focus();
+                      nextInput.select();
+                    }
+                
+                    return;
+                  }
+                
                   let direction: 1 | -1 | null = null;
                 
                   if (e.key === "Tab") {

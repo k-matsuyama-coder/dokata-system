@@ -80,97 +80,6 @@ const [operatorName, setOperatorName] = useState("");
     return result.organizationId as string | null;
   };
 
-  const copyPreviousReport = async (targetEmployeeName?: string) => {
-    const nameForSearch = targetEmployeeName || employeeName;
-
-    if (!nameForSearch) {
-      alert("社員名の取得後にもう一度押してください");
-      return;
-    }
-    const currentOrganizationId = await getCurrentOrganization();
-
-if (!currentOrganizationId) {
-  alert("会社情報が取得できません");
-  return;
-}
-
-const { data: previousReport, error } = await supabase
-.from("daily_reports")
-.select("*")
-.eq("organization_id", currentOrganizationId)
-.eq("worker_name", nameForSearch)
-.order("created_at", { ascending: false })
-.limit(1)
-.maybeSingle();
-
-    if (error || !previousReport) {
-      alert("前回の日報が見つかりません");
-      return;
-    }
-
-    const today = new Intl.DateTimeFormat("sv-SE", {
-      timeZone: "Asia/Tokyo",
-    }).format(new Date());
-    setReportDate(today);
-
-    setSite(previousReport.site_name ?? "");
-    setContractorName(previousReport.contractor_name ?? "");
-    setWork(previousReport.work_description ?? "");
-
-    const start = previousReport.start_time ?? "08:00";
-    const startHour = Number(start.split(":")[0]);
-
-    if (startHour >= 18 || startHour <= 5) {
-      setShiftType("night");
-    } else {
-      setShiftType("day");
-    }
-
-    setStartTime(previousReport.start_time ?? "08:00");
-    setEndTime(previousReport.end_time ?? "17:00");
-    setOvertimeMinutes(
-      String(Number(previousReport.overtime_minutes ?? 0) / 60)
-    );
-
-    setExpresswayMain(String(previousReport.expressway_main ?? ""));
-    setExpresswaySecondary(String(previousReport.expressway_secondary ?? ""));
-    setExpresswaySubcontract(String(previousReport.expressway_subcontract ?? ""));
-
-    setParkingMain(String(previousReport.parking_main ?? ""));
-    setParkingSecondary(String(previousReport.parking_secondary ?? ""));
-    setParkingSubcontract(String(previousReport.parking_subcontract ?? ""));
-
-    setFuelGasoline(String(previousReport.fuel_gasoline ?? ""));
-    setFuelDiesel(String(previousReport.fuel_diesel ?? ""));
-
-    setNote(previousReport.note ?? "");
-
-    setSelectedDrivers(
-      previousReport.driver_name
-        ? String(previousReport.driver_name)
-            .split(",")
-            .map((name) => name.trim())
-            .filter(Boolean)
-        : []
-    );
-
-    setSelectedMembers(
-      Array.isArray(previousReport.member_details)
-        ? previousReport.member_details
-        : previousReport.members
-        ? String(previousReport.members)
-            .split(",")
-            .map((name) => ({
-              name: name.trim(),
-              labor: "1",
-              overtime: "0",
-            }))
-        : []
-    );
-
-    toast.success("前回の日報をコピーしました");
-  };
-
   useEffect(() => {
     const fetchSiteSuggestions = async () => {
       const currentOrganizationId = await getCurrentOrganization();
@@ -231,18 +140,16 @@ const { data: previousReport, error } = await supabase
         return;
       }
       
-      let fetchedEmployeeName = "";
       const employee = employeeResult.data;
 
-        if (employee) {
-          fetchedEmployeeName = employee.name;
-          setEmployeeName(employee.name);
-        
-          window.sessionStorage.setItem(
-            `nippo_employee_name:${user.id}`,
-            employee.name
-          );
-        }
+      if (employee) {
+        setEmployeeName(employee.name);
+      
+        window.sessionStorage.setItem(
+          `nippo_employee_name:${user.id}`,
+          employee.name
+        );
+      }
 
       const { data: employeeList } = await supabase
   .from("employees")
@@ -314,20 +221,10 @@ if (assignmentIdParam && dateParam) {
     setHeavyEquipment(operator.heavy_equipment ?? "");
   }
 }
-
-      if (params.get("copy") === "1") {
-        setTimeout(() => {
-          copyPreviousReport(fetchedEmployeeName);
-        }, 300);
-      }
     };
 
     fetchInitialData();
   }, []);
-
-  const handleCopyPreviousReport = async () => {
-    await copyPreviousReport();
-  };
 
   const handleSubmit = async () => {
     console.log({
@@ -462,25 +359,6 @@ if (membersError) {
 
   return (
     <div>
-      <div style={{ maxWidth: 680, margin: "0 auto", padding: "16px 16px 0" }}>
-        <button
-          type="button"
-          onClick={handleCopyPreviousReport}
-          style={{
-            width: "100%",
-            padding: 12,
-            borderRadius: 8,
-            border: "1px solid #ccc",
-            backgroundColor: "#fff",
-            fontSize: 16,
-            fontWeight: 600,
-            cursor: "pointer",
-          }}
-        >
-          前回の日報をコピー
-        </button>
-      </div>
-
       <ReportForm
         reportDate={reportDate}
         setReportDate={setReportDate}

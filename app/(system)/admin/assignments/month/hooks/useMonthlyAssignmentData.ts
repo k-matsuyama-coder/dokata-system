@@ -54,8 +54,6 @@ export function useMonthlyAssignmentData({ days, organizationId }: Props) {
   const fetchMasterData = useCallback(async () => {
     if (!organizationId) return;
 
-    console.time("fetchMasterData");
-
     const [employeeData, vehicleData, contractorData, contactData] =
       await Promise.all([
         getEmployees(organizationId),
@@ -68,29 +66,15 @@ export function useMonthlyAssignmentData({ days, organizationId }: Props) {
     setVehicles(vehicleData);
     setContractors(contractorData);
     setContractorContacts(contactData);
-
-    console.timeEnd("fetchMasterData");
   }, [organizationId]);
 
   const fetchScheduleData = useCallback(async () => {
     if (!organizationId || !startDate || !endDate) {
       return;
     }
-
-    console.time("fetchScheduleData");
-    console.time("getAssignments");
-
     const assignmentData = await getAssignments(organizationId);
 
-    console.log(
-      assignmentData.some(
-        (a) => a.id === "d705ae07-f5be-4fb1-9b29-e6ea8b50d9e1"
-      )
-    );
-
     const assignmentIds = (assignmentData ?? []).map((assignment) => assignment.id);
-
-    console.timeEnd("getAssignments");
 
     setAssignments(assignmentData);
 
@@ -99,12 +83,8 @@ export function useMonthlyAssignmentData({ days, organizationId }: Props) {
       setSiteMembers([]);
       setDailyInfos([]);
       setShiftRequests([]);
-      console.timeEnd("fetchScheduleData");
       return;
     }
-
-    console.time("scheduleChildren");
-
     const [fileData, memberData, dailyInfoData, shiftRequestData] =
       await Promise.all([
         getAssignmentFiles(organizationId, assignmentIds),
@@ -113,25 +93,11 @@ export function useMonthlyAssignmentData({ days, organizationId }: Props) {
         getShiftRequests(organizationId, startDate, endDate),
       ]);
 
-      console.log(
-  "番割 7/23 現場",
-  [
-    ...new Set(
-      memberData
-        .filter((member) => member.work_date === "2026-07-23")
-        .map((member) => member.assignment_id)
-    ),
-  ]
-);
-
-    console.timeEnd("scheduleChildren");
-
     setAssignmentFiles(fileData);
     setSiteMembers(memberData);
     setDailyInfos(dailyInfoData);
     setShiftRequests(shiftRequestData);
 
-    console.timeEnd("fetchScheduleData");
   }, [organizationId, startDate, endDate]);
 
   const fetchData = useCallback(async () => {

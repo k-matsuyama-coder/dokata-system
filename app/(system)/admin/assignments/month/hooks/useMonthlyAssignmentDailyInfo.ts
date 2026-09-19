@@ -1,5 +1,5 @@
 // app/(system)/admin/assignments/month/hooks/useMonthlyAssignmentDailyInfo.ts
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 import type { Dispatch, SetStateAction } from "react";
 
 import { updateDailyInfoAction } from "../actions/updateDailyInfo";
@@ -13,15 +13,11 @@ type Props = {
   organizationId: string;
 };
 
-const DETAIL_SAVE_DELAY_MS = 350;
-
 export function useMonthlyAssignmentDailyInfo({
   organizationId,
   dailyInfos,
   setDailyInfos,
 }: Props) {
-  const saveTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
-
   const dailyInfoMap = useMemo(() => {
     const map = new Map<string, DailyInfo>();
 
@@ -34,15 +30,6 @@ export function useMonthlyAssignmentDailyInfo({
 
   const getDailyInfo = (assignmentId: string, workDate: string) => {
     return dailyInfoMap.get(`${assignmentId}_${workDate}`);
-  };
-
-  const clearSaveTimer = (key: string) => {
-    const timer = saveTimersRef.current[key];
-  
-    if (timer) {
-      clearTimeout(timer);
-      delete saveTimersRef.current[key];
-    }
   };
 
   const applySavedDailyInfo = (data: DailyInfo) => {
@@ -87,9 +74,6 @@ export function useMonthlyAssignmentDailyInfo({
 
     applySavedDailyInfo(data);
 
-    const key = `${assignmentId}_${workDate}`;
-
-    clearSaveTimer(key);
     return true;
   };
 
@@ -99,31 +83,13 @@ export function useMonthlyAssignmentDailyInfo({
     field: Field,
     value: string
   ) => {
-    if (field === "detail") {
-      const key = `${assignmentId}_${workDate}`;
-    
-      clearSaveTimer(key);
-    
-      saveTimersRef.current[key] = setTimeout(() => {
-        void saveDailyInfo(assignmentId, workDate, field, value);
-      }, DETAIL_SAVE_DELAY_MS);
-    
-      return;
-    }
-
     await saveDailyInfo(assignmentId, workDate, field, value);
   };
 
-  const flushDetailSave = async (assignmentId: string, workDate: string) => {
-    const key = `${assignmentId}_${workDate}`;
-    clearSaveTimer(key);
-  };
-
-  useEffect(() => {
-    return () => {
-      Object.values(saveTimersRef.current).forEach((timer) => clearTimeout(timer));
-    };
-  }, []);
+  const flushDetailSave = async (
+    _assignmentId: string,
+    _workDate: string
+  ) => {};
 
   return {
     dailyInfoMap,

@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { hasRole } from "@/app/types/auth";
 
@@ -70,7 +71,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const password = Math.random().toString(36).slice(-8);
+    const password = randomBytes(18).toString("base64url");
     const fullName = [lastName, firstName].filter(Boolean).join(" ");
 
     const { data, error } = await supabase.auth.admin.createUser({

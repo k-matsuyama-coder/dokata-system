@@ -38,18 +38,26 @@ export default function PasswordPage() {
       return;
     }
 
-    alert("パスワードを変更しました");
-    window.location.href = "/profile";
-
     const { data: userData } = await supabase.auth.getUser();
 const user = userData.user;
 
-if (user) {
-  await supabase
-    .from("employees")
-    .update({ must_change_password: false })
-    .eq("auth_user_id", user.id);
+if (!user) {
+  alert("ログイン情報が取得できません");
+  return;
 }
+
+const { error: employeeError } = await supabase
+  .from("employees")
+  .update({ must_change_password: false })
+  .eq("auth_user_id", user.id);
+
+if (employeeError) {
+  alert("社員情報更新失敗: " + employeeError.message);
+  return;
+}
+
+alert("パスワードを変更しました");
+window.location.href = "/profile";
   };
 
   const inputStyle = {

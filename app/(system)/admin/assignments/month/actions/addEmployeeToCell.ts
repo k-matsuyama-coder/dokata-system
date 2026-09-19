@@ -32,14 +32,5 @@ export async function addEmployeeToCellAction({
     )
     .single();
 
-    console.log("assignment_site_members insert result:", {
-      data,
-      error,
-      organizationId,
-      assignmentId,
-      workDate,
-      employeeName,
-    });
-
   return { data, error };
 }

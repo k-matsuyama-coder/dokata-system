@@ -48,14 +48,12 @@ const [savingBreakdownKey, setSavingBreakdownKey] =
     useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [settingsWarning, setSettingsWarning] = useState("");
-  const [viewerRole, setViewerRole] = useState<string | null>(null);
   const [viewerCompanyName, setViewerCompanyName] =
     useState<string | null>(null);
 
     const fetchAll = async (options?: {
-        role?: string | null;
-        companyName?: string | null;
-      }) => {
+      companyName?: string | null;
+    }) => {
         setLoading(true);
         setErrorMessage("");
         setSettingsWarning("");
@@ -159,13 +157,10 @@ const [savingBreakdownKey, setSavingBreakdownKey] =
             (report) => report.id
           );
     
-    const roleForFilter = options?.role ?? viewerRole;
-    const companyNameForFilter = options?.companyName ?? viewerCompanyName;
-    const isSuperAdmin = roleForFilter === "super_admin";
-    
-    const visibleEmployees = isSuperAdmin
-      ? safeEmployees
-      : safeEmployees.filter(
+          const companyNameForFilter =
+          options?.companyName ?? viewerCompanyName;
+        
+        const visibleEmployees = safeEmployees.filter(
           (employee) => employee.company_name === companyNameForFilter
         );
     
@@ -376,18 +371,15 @@ dailyOverrides
           }
       
           const isAdmin = hasRole(employee.role, "admin");
-          const isSuperAdmin = employee.role === "super_admin";
+
+if (!isAdmin) {
+  window.location.href = "/home";
+  return;
+}
       
-          if (!isAdmin && !isSuperAdmin) {
-            window.location.href = "/home";
-            return;
-          }
-      
-          setViewerRole(employee.role ?? null);
           setViewerCompanyName(employee.company_name ?? null);
       
           await fetchAll({
-            role: employee.role ?? null,
             companyName: employee.company_name ?? null,
           });
         } finally {
@@ -629,12 +621,7 @@ dailyOverrides
           return;
         }
       
-        const isSuperAdmin = viewerRole === "super_admin";
-      
-        if (
-          !isSuperAdmin &&
-          targetEmployee.company_name !== viewerCompanyName
-        ) {
+        if (targetEmployee.company_name !== viewerCompanyName) {
           alert("他社の給与設定は保存できません");
           return;
         }
@@ -822,8 +809,6 @@ setSavingBreakdownKey,
     setErrorMessage,
     settingsWarning,
     setSettingsWarning,
-    viewerRole,
-    setViewerRole,
     viewerCompanyName,
     setViewerCompanyName,
   };

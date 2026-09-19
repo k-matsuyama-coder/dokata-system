@@ -158,8 +158,17 @@ setOperatorName(report.operator_name ?? "");
   .eq("report_id", id);
 
 if (reportMembers && reportMembers.length > 0) {
+  const uniqueReportMembers = Array.from(
+    new Map(
+      reportMembers.map((member) => [
+        member.employee_name,
+        member,
+      ])
+    ).values()
+  );
+  
   setSelectedMembers(
-    reportMembers.map((member) => ({
+    uniqueReportMembers.map((member) => ({
       name: member.employee_name,
       labor: String(member.labor ?? 1),
       overtime: String(member.overtime ?? 0),
@@ -167,24 +176,34 @@ if (reportMembers && reportMembers.length > 0) {
   );
 
   setSelectedDrivers(
-    reportMembers
+    uniqueReportMembers
       .filter((member) => member.is_driver)
       .map((member) => member.employee_name)
   );
 } else {
-  setSelectedMembers(
-    Array.isArray(report.member_details)
-      ? report.member_details
-      : report.members
-        ? String(report.members)
-            .split(",")
-            .map((name) => ({
-              name: name.trim(),
-              labor: "1",
-              overtime: String(Number(report.overtime_minutes || 0) / 60),
-            }))
-        : []
+  const copiedMembers: MemberEntry[] = Array.isArray(
+    report.member_details
+  )
+    ? report.member_details
+    : report.members
+    ? String(report.members)
+          .split(",")
+          .map((name) => ({
+            name: name.trim(),
+            labor: "1",
+            overtime: "0",
+          }))
+      : [];
+  
+  const uniqueCopiedMembers = Array.from(
+    new Map(
+      copiedMembers
+        .filter((member) => member.name.trim())
+        .map((member) => [member.name.trim(), member])
+    ).values()
   );
+  
+  setSelectedMembers(uniqueCopiedMembers);
 
   setSelectedDrivers(
     report.driver_name
@@ -287,20 +306,7 @@ operator_name: operatorName,
       return;
     }
 
-    const { error: deleteMembersError } = await supabase
-  .from("report_members")
-  .delete()
-  .eq("organization_id", currentOrganizationId)
-  .eq("report_id", id);
-
-    if (deleteMembersError) {
-      alert("メンバー更新失敗: " + deleteMembersError.message);
-      return;
-    }
-
     const reportMembersPayload = selectedMembers.map((member) => ({
-      organization_id: currentOrganizationId,
-      report_id: id,
       employee_id:
         employees.find((employee) => employee.name === member.name)?.id ?? null,
       employee_name: member.name,
@@ -308,13 +314,18 @@ operator_name: operatorName,
       overtime: Number(member.overtime || 0),
       is_driver: selectedDrivers.includes(member.name),
     }));
-
-    const { error: insertMembersError } = await supabase
-      .from("report_members")
-      .insert(reportMembersPayload);
-
-    if (insertMembersError) {
-      alert("メンバー更新失敗: " + insertMembersError.message);
+    
+    const { error: replaceMembersError } = await supabase.rpc(
+      "replace_report_members",
+      {
+        p_report_id: id,
+        p_organization_id: currentOrganizationId,
+        p_members: reportMembersPayload,
+      }
+    );
+    
+    if (replaceMembersError) {
+      alert("メンバー更新失敗: " + replaceMembersError.message);
       return;
     }
 

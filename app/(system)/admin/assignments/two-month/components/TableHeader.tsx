@@ -231,9 +231,17 @@ const thirdCapacity =
     <button
       type="button"
       onClick={async () => {
-        await onSaveDateMemo(date, memoDraft);
-setEditingDate(null);
-setHoveredDate(date);
+        try {
+          await onSaveDateMemo(date, memoDraft);
+          setEditingDate(null);
+          setHoveredDate(date);
+        } catch (error) {
+          alert(
+            error instanceof Error
+              ? error.message
+              : "日付メモの保存に失敗しました"
+          );
+        }
       }}
       style={{
         display: "block",

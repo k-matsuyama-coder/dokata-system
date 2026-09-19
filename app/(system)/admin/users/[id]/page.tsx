@@ -85,7 +85,7 @@ if (!currentOrganizationId) {
       }
 
       setName(employee.name ?? "");
-      setRole(employee.role === "super_admin" ? "admin" : employee.role ?? "worker");
+      setRole(employee.role ?? "worker");
       setCompanyName(employee.company_name ?? "");
       setAuthUserId(employee.auth_user_id ?? "");
 

@@ -483,10 +483,14 @@ const handleSynchronizedScroll = useCallback(
 
                             <input
                               key={`${assignment.id}_${date}_${value}`}
-                              type="number"
-                              min={0}
-                              inputMode="numeric"
+                              type="text"
+inputMode="numeric"
                               defaultValue={value}
+                              onKeyDown={(e) => {
+                                if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+                                  e.preventDefault();
+                                }
+                              }}
                               onClick={(event) => event.stopPropagation()}
                               onTouchStart={(event) =>
                                 event.stopPropagation()

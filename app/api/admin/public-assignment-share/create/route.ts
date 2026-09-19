@@ -64,7 +64,7 @@ export async function POST(req: Request) {
       );
     }
 
-    if (employee.role !== "admin" && employee.role !== "super_admin") {
+    if (employee.role !== "admin") {
       return NextResponse.json(
         { success: false, message: "管理者のみ実行できます" },
         { status: 403 }
