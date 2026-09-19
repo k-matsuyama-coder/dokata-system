@@ -54,6 +54,11 @@ type Props = {
   role: string | null;
 };
 
+function getErrorMessage(error: unknown): string {
+  if (error && typeof error === "object" && "message" in error) return String(error.message);
+  return String(error);
+}
+
 export default function MyMonthlyScheduleModal({
   open,
   onClose,
@@ -104,161 +109,115 @@ const [selectedEmployee, setSelectedEmployee] = useState("");
     });
   }, [month]);
 
+  const [scheduleLoading, setScheduleLoading] = useState(false);
+  const [scheduleError, setScheduleError] = useState("");
+  const [employeeError, setEmployeeError] = useState("");
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState("");
+
+  // 社員一覧は月・選択した名前に依存させない。
   useEffect(() => {
-    if (!employeeName || !organizationId) return;
-
-const fetchSchedule = async () => {
-
-  const startDate = days[0];
-const endDate = days[days.length - 1];
-const targetEmployeeName = selectedEmployee || employeeName;
-
-const employeeListPromise = isAdmin
-  ? supabase
-      .from("employees")
-      .select("id, name, company_name")
-      .eq("organization_id", organizationId)
-      .order("name")
-  : Promise.resolve({
-      data: [] as CalendarEmployee[],
-      error: null,
-    });
-
-const memberPromise = supabase
-  .from("assignment_site_members")
-  .select("id, assignment_id, work_date, employee_name")
-  .eq("organization_id", organizationId)
-  .eq("employee_name", targetEmployeeName)
-  .gte("work_date", startDate)
-  .lte("work_date", endDate);
-
-const [employeeListResult, memberResult] = await Promise.all([
-  employeeListPromise,
-  memberPromise,
-]);
-
-if (employeeListResult.error) {
-  alert("社員一覧取得失敗: " + employeeListResult.error.message);
-  return;
-}
-
-if (memberResult.error) {
-  alert("予定取得失敗: " + memberResult.error.message);
-  return;
-}
-
-if (isAdmin) {
-  setEmployees(employeeListResult.data ?? []);
-}
-
-const ownMembers = memberResult.data ?? [];
-      setMembers(ownMembers);
-
-      const assignmentIds = Array.from(
-        new Set(ownMembers.map((member) => member.assignment_id))
-      );
-
-      if (assignmentIds.length === 0) {
-        setAssignments([]);
-        setAllMembers([]);
-        setSelectedSchedule(null);
-        return;
+    if (!open || !isAdmin || !organizationId) return;
+    let cancelled = false;
+    setEmployeeError("");
+    const loadEmployees = async () => {
+      try {
+        const { data, error } = await supabase.from("employees")
+          .select("id, name, company_name")
+          .eq("organization_id", organizationId).order("name");
+        if (error) throw error;
+        if (!cancelled) setEmployees(data ?? []);
+      } catch (error) {
+        if (!cancelled) setEmployeeError(`社員一覧取得失敗: ${getErrorMessage(error)}`);
       }
+    };
+    void loadEmployees();
+    return () => { cancelled = true; };
+  }, [open, isAdmin, organizationId]);
 
-      const [
-        assignmentResult,
-        fileResult,
-        dailyInfoResult,
-        allMemberResult,
-      ] = await Promise.all([
-        supabase
-          .from("assignments")
-          .select(`
-            id,
-            site_name,
-            contractor_name,
-            shift_type,
-            manager_name,
-            contact_phone,
-            address,
-            meeting_time,
-            construction_type,
-            start_date,
-            end_date
-          `)
-          .eq("organization_id", organizationId)
-          .in("id", assignmentIds),
-      
-        supabase
-          .from("assignment_files")
-          .select("id, assignment_id, file_name, file_path")
-          .eq("organization_id", organizationId)
-          .in("assignment_id", assignmentIds),
-      
-        supabase
-          .from("assignment_site_daily_infos")
-          .select("id, assignment_id, work_date, detail")
-          .eq("organization_id", organizationId)
-          .in("assignment_id", assignmentIds)
-          .gte("work_date", startDate)
-          .lte("work_date", endDate),
-      
-        supabase
-          .from("assignment_site_members")
+  // カレンダーは本人の配置と現場情報だけで表示する。
+  useEffect(() => {
+    setSelectedSchedule(null);
+    setMembers([]);
+    setAssignments([]);
+    setScheduleError("");
+    if (!open || !employeeName || !organizationId) return;
+    let cancelled = false;
+    setScheduleLoading(true);
+    const loadSchedule = async () => {
+      try {
+        const { data, error } = await supabase.from("assignment_site_members")
           .select("id, assignment_id, work_date, employee_name")
           .eq("organization_id", organizationId)
-          .in("assignment_id", assignmentIds)
-          .gte("work_date", startDate)
-          .lte("work_date", endDate),
-      ]);
-      
-      if (assignmentResult.error) {
-        alert("現場取得失敗: " + assignmentResult.error.message);
-        return;
+          .eq("employee_name", isAdmin ? selectedEmployee || employeeName : employeeName)
+          .gte("work_date", days[0]).lte("work_date", days[days.length - 1]);
+        if (error) throw error;
+        if (cancelled) return;
+        const ownMembers = data ?? [];
+        const ids = Array.from(new Set(ownMembers.map((member) => member.assignment_id)));
+        if (ids.length === 0) return;
+        const result = await supabase.from("assignments")
+          .select("id, site_name, contractor_name, shift_type, manager_name, contact_phone, address, meeting_time, construction_type, start_date, end_date")
+          .eq("organization_id", organizationId).in("id", ids);
+        if (result.error) throw result.error;
+        if (cancelled) return;
+        setMembers(ownMembers);
+        setAssignments(result.data ?? []);
+      } catch (error) {
+        if (!cancelled) setScheduleError(`予定取得失敗: ${getErrorMessage(error)}`);
+      } finally {
+        if (!cancelled) setScheduleLoading(false);
       }
-      
-      if (fileResult.error) {
-        alert("添付ファイル取得失敗: " + fileResult.error.message);
-        return;
-      }
-      
-      if (dailyInfoResult.error) {
-        alert("日別詳細取得失敗: " + dailyInfoResult.error.message);
-        return;
-      }
-      
-      if (allMemberResult.error) {
-        alert("配置メンバー取得失敗: " + allMemberResult.error.message);
-        return;
-      }
-      
-      const files = fileResult.data ?? [];
-
-const signedUrlMap = await createSignedUrlMap(
-  "assignment-files",
-  files.map((file) => file.file_path)
-);
-
-const filesWithSignedUrls: AssignmentFile[] = files.map((file) => ({
-  ...file,
-  file_url: signedUrlMap[file.file_path] ?? "",
-}));
-
-setAssignments(assignmentResult.data ?? []);
-setAssignmentFiles(filesWithSignedUrls);
-setDailyInfos(dailyInfoResult.data ?? []);
-setAllMembers(allMemberResult.data ?? []);
     };
+    void loadSchedule();
+    return () => { cancelled = true; };
+  }, [open, days, selectedEmployee, employeeName, organizationId, isAdmin]);
 
-    void fetchSchedule();
-  }, [
-    month,
-    days,
-    selectedEmployee,
-    employeeName,
-    organizationId,
-    isAdmin,
-  ]);
+  // 詳細は選択した現場・日付だけを取得する。
+  useEffect(() => {
+    setAllMembers([]);
+    setDailyInfos([]);
+    setAssignmentFiles([]);
+    setDetailError("");
+    if (!open || !selectedSchedule || !organizationId) return;
+    let cancelled = false;
+    setDetailLoading(true);
+    const { assignment, workDate } = selectedSchedule;
+    const loadDetails = async () => {
+      try {
+        const [dailyResult, memberResult, fileResult] = await Promise.all([
+          supabase.from("assignment_site_daily_infos")
+            .select("id, assignment_id, work_date, detail")
+            .eq("organization_id", organizationId)
+            .eq("assignment_id", assignment.id).eq("work_date", workDate),
+          supabase.from("assignment_site_members")
+            .select("id, assignment_id, work_date, employee_name")
+            .eq("organization_id", organizationId)
+            .eq("assignment_id", assignment.id).eq("work_date", workDate),
+          supabase.from("assignment_files")
+            .select("id, assignment_id, file_name, file_path")
+            .eq("organization_id", organizationId).eq("assignment_id", assignment.id),
+        ]);
+        if (cancelled) return;
+        const errors = [dailyResult.error, memberResult.error, fileResult.error]
+          .filter(Boolean).map(getErrorMessage);
+        setDailyInfos(dailyResult.data ?? []);
+        setAllMembers(memberResult.data ?? []);
+        if (errors.length) setDetailError(errors.join(" / "));
+        // URL発行を待たず、取得済みの作業内容・メンバーを表示する。
+        const files = fileResult.data ?? [];
+        const urls = await createSignedUrlMap("assignment-files", files.map((file) => file.file_path));
+        if (cancelled) return;
+        setAssignmentFiles(files.map((file) => ({ ...file, file_url: urls[file.file_path] ?? "" })));
+      } catch (error) {
+        if (!cancelled) setDetailError(`詳細取得失敗: ${getErrorMessage(error)}`);
+      } finally {
+        if (!cancelled) setDetailLoading(false);
+      }
+    };
+    void loadDetails();
+    return () => { cancelled = true; };
+  }, [open, selectedSchedule, organizationId]);
 
   const selectedMembers = useMemo(() => {
     if (!selectedSchedule) return [];
@@ -428,6 +387,9 @@ setAllMembers(allMemberResult.data ?? []);
   </select>
 )}
 
+        {scheduleLoading && <p role="status">予定を読み込み中…</p>}
+        {scheduleError && <p role="alert">{scheduleError}</p>}
+        {employeeError && <p role="alert">{employeeError}</p>}
         <div
           style={{
             display: "grid",
@@ -584,6 +546,8 @@ opacity: isCurrentMonth ? 1 : 0.7,
   }}
 >
               <h2 style={{ margin: 0 }}>{selectedSchedule.assignment.site_name}</h2>
+              {detailLoading && <p role="status">詳細・添付ファイルを読み込み中…</p>}
+              {detailError && <p role="alert">{detailError}</p>}
 
               <div>
                 <strong>日付：</strong>
