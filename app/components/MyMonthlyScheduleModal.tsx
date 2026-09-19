@@ -4,6 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { createSignedUrlMap } from "@/lib/storageSignedUrls";
 
+type CalendarEmployee = {
+  id: string;
+  name: string;
+  company_name: string | null;
+};
+
 type SiteMember = {
   id: string;
   assignment_id: string;
@@ -58,7 +64,7 @@ export default function MyMonthlyScheduleModal({
   const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const isAdmin = role === "admin";
 const [employees, setEmployees] = useState<
-  { id: string; name: string }[]
+  CalendarEmployee[]
 >([]);
 const [selectedEmployee, setSelectedEmployee] = useState("");
   const [members, setMembers] = useState<SiteMember[]>([]);
@@ -110,11 +116,11 @@ const targetEmployeeName = selectedEmployee || employeeName;
 const employeeListPromise = isAdmin
   ? supabase
       .from("employees")
-      .select("id, name")
+      .select("id, name, company_name")
       .eq("organization_id", organizationId)
       .order("name")
   : Promise.resolve({
-      data: [] as { id: string; name: string }[],
+      data: [] as CalendarEmployee[],
       error: null,
     });
 
@@ -284,6 +290,27 @@ setAllMembers(allMemberResult.data ?? []);
     );
   }, [selectedSchedule, assignmentFiles]);
 
+  const employeesByCompany = useMemo(() => {
+    const groups = new Map<string, CalendarEmployee[]>();
+    employees.forEach((employee) => {
+      const company = employee.company_name?.trim() || "";
+      const group = groups.get(company) ?? [];
+      group.push(employee);
+      groups.set(company, group);
+    });
+    return Array.from(groups.entries())
+      .sort(([a], [b]) => {
+        if (!a) return b ? 1 : 0;
+        if (!b) return -1;
+        return a.localeCompare(b, "ja");
+      })
+      .map(([company, members]) => ({
+        company,
+        label: company || "所属会社未設定",
+        members: [...members].sort((a, b) => a.name.localeCompare(b.name, "ja")),
+      }));
+  }, [employees]);
+
   const today = new Date().toISOString().slice(0, 10);
 
   if (!open) return null;
@@ -389,10 +416,14 @@ setAllMembers(allMemberResult.data ?? []);
       fontSize: 16,
     }}
   >
-    {employees.map((employee) => (
-      <option key={employee.id} value={employee.name}>
-        {employee.name}
-      </option>
+    {employeesByCompany.map((group) => (
+      <optgroup key={group.company} label={group.label}>
+        {group.members.map((employee) => (
+          <option key={employee.id} value={employee.name}>
+            {employee.name}
+          </option>
+        ))}
+      </optgroup>
     ))}
   </select>
 )}
