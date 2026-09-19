@@ -51,8 +51,6 @@ export default function MonthlyAssignmentsPage() {
 const [currentEmployeeName, setCurrentEmployeeName] = useState<string>("");
 const [dateMemos, setDateMemos] = useState<AssignmentDateMemo[]>([]);
 
-  const [creatingPublicLink, setCreatingPublicLink] = useState(false);
-  const [publicViewMode, setPublicViewMode] = useState<"week" | "next3days">("next3days");
   const { groupSettings, enabledGroups, groupNameMap } = useAssignmentGroups({
     organizationId: currentOrganizationId,
   });
@@ -68,55 +66,6 @@ const {
   userId: currentAuthUserId,
   userName: currentEmployeeName,
 });
-
-  const getAccessToken = async () => {
-    const { data: sessionData } = await supabase.auth.getSession();
-    return sessionData.session?.access_token ?? null;
-  };
-
-  const createPublicLink = async () => {
-    try {
-      setCreatingPublicLink(true);
-  
-      const token = await getAccessToken();
-  
-      if (!token) {
-        alert("ログイン情報がありません");
-        return;
-      }
-  
-      const res = await fetch("/api/admin/public/assignments/create-link", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          expiresInDays: 7,
-          viewMode: publicViewMode,
-          baseDate: new Date().toISOString().slice(0, 10),
-        }),
-      });
-  
-      const result = await res.json();
-      console.log("create public link result:", result);
-  
-      if (!res.ok || !result.success) {
-        alert(result.message ?? JSON.stringify(result) ?? "公開URLの発行に失敗しました");
-        return;
-      }
-  
-      const publicUrl = result.url as string;
-  
-      await navigator.clipboard.writeText(publicUrl);
-      alert(`公開URLを発行しました\nコピー済み:\n${publicUrl}`);
-    } catch (error) {
-      console.error("createPublicLink error:", error);
-      alert(error instanceof Error ? error.message : "公開URLの発行に失敗しました");
-    } finally {
-      setCreatingPublicLink(false);
-    }
-  };
 
   const {
     siteName,
@@ -747,10 +696,6 @@ stopEditing,
   showFinished={showFinished}
   setShowFinished={setShowFinished}
   setShowAddModal={setShowAddModal}
-  onCreatePublicLink={createPublicLink}
-  creatingPublicLink={creatingPublicLink}
-  publicViewMode={publicViewMode}
-  setPublicViewMode={setPublicViewMode}
   onExportExcel={handleExportMonthlyMatrix}
 />
 

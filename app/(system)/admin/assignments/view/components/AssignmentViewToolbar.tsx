@@ -1,6 +1,7 @@
 "use client";
 
-import React from "react";
+import React, { useRef, useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 type AssignmentGroupKey =
   | "group1"
@@ -44,6 +45,50 @@ export default function AssignmentViewToolbar({
   changeViewMode,
   downloadImage,
 }: Props) {
+  const [creatingPublicLink, setCreatingPublicLink] = useState(false);
+  const [publicViewMode, setPublicViewMode] = useState<"week" | "next3days">("next3days");
+  const [publicUrl, setPublicUrl] = useState("");
+  const [publicLinkMessage, setPublicLinkMessage] = useState("");
+  const creatingRef = useRef(false);
+
+  const createPublicLink = async () => {
+    if (creatingRef.current) return;
+    creatingRef.current = true;
+    setCreatingPublicLink(true);
+    setPublicUrl("");
+    setPublicLinkMessage("");
+    try {
+      const { data, error } = await supabase.auth.getSession();
+      if (error) throw new Error(error.message);
+      const token = data.session?.access_token;
+      if (!token) throw new Error("ログイン情報がありません。再ログインしてください。");
+      const response = await fetch("/api/admin/public/assignments/create-link", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ expiresInDays: 7, viewMode: publicViewMode, baseDate: date }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success || typeof result.url !== "string") {
+        throw new Error(result.message ?? "公開URLの発行に失敗しました");
+      }
+      setPublicUrl(result.url);
+      try {
+        await navigator.clipboard.writeText(result.url);
+        setPublicLinkMessage("公開URLをコピーしました（有効期限7日間）");
+      } catch {
+        setPublicLinkMessage("公開URLを発行しました。下のURLを選択してコピーしてください。");
+      }
+    } catch (error) {
+      setPublicLinkMessage(error instanceof Error ? error.message : "公開URLの発行に失敗しました");
+    } finally {
+      creatingRef.current = false;
+      setCreatingPublicLink(false);
+    }
+  };
+
   return (
     <div style={toolbarWrapStyle}>
       <button type="button" onClick={movePrev} style={viewButtonStyle}>
@@ -101,9 +146,25 @@ export default function AssignmentViewToolbar({
         ))}
       </select>
 
-      <button type="button" onClick={downloadImage} style={viewButtonStyle}>
-        画像保存
-      </button>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "nowrap", maxWidth: "100%", overflowX: "auto" }}>
+        <button type="button" onClick={downloadImage} style={{ ...viewButtonStyle, whiteSpace: "nowrap", flexShrink: 0 }}>
+          画像保存
+        </button>
+        <button type="button" onClick={createPublicLink} disabled={creatingPublicLink} style={{ ...viewButtonStyle, whiteSpace: "nowrap", flexShrink: 0 }}>
+          {creatingPublicLink ? "発行中..." : "公開URLを発行"}
+        </button>
+        <select aria-label="公開URLの表示期間" value={publicViewMode} disabled={creatingPublicLink} onChange={(e) => setPublicViewMode(e.target.value as "week" | "next3days")} style={viewInputStyle}>
+          <option value="next3days">公開：3日間</option>
+          <option value="week">公開：1週間</option>
+        </select>
+      </div>
+      <div style={{ width: "100%", fontSize: 12, color: "#475569" }}>
+        公開URLは選択日を基準に発行します。公開期間は右の選択欄で指定し、グループの絞り込みは反映されません。
+      </div>
+      {publicLinkMessage && <div role="status" style={{ width: "100%" }}>{publicLinkMessage}</div>}
+      {publicUrl && (
+        <input aria-label="発行した公開URL" value={publicUrl} readOnly onFocus={(e) => e.currentTarget.select()} style={{ ...viewInputStyle, width: "100%", boxSizing: "border-box" }} />
+      )}
     </div>
   );
 }
