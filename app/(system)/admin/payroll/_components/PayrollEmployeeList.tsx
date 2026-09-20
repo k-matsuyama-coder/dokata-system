@@ -221,7 +221,7 @@ printAllBreakdowns
               勤務日数
             </div>
             <div style={employeeSummaryValueStyle}>
-              {row.attendance_days}日
+            {row.day_labor_total + row.night_labor_total}日
             </div>
           </div>
 
