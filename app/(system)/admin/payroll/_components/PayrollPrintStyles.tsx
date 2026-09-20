@@ -3,7 +3,12 @@
 export default function PayrollPrintStyles() {
   return (
     <style jsx global>{`
-    .payroll-print-title {
+    .payroll-print-title,
+    .payroll-breakdown-print-value {
+      display: none;
+    }
+
+    @media print {
       @page {
         size: A4 portrait;
         margin: 5mm;
