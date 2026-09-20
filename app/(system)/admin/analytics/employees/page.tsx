@@ -124,7 +124,9 @@ if (!currentOrganizationId) {
       setRows(
         (data ?? []).map((row) => ({
           ...row,
-          daily_reports: row.daily_reports?.[0] ?? null,
+          daily_reports: Array.isArray(row.daily_reports)
+            ? row.daily_reports[0] ?? null
+            : row.daily_reports ?? null,
         }))
       );
       setLoading(false);
