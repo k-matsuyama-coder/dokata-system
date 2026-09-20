@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import {
-  EQUIPMENT,
-  type Capability,
-  type PlannerEmployee,
-} from "@/lib/assignmentPlanner";
+    EQUIPMENT,
+    buildPlan,
+    parseRequirements,
+    validDate,
+    type Capability,
+    type PlannerEmployee,
+    type PlannerAssignment,
+    type PlannerMember,
+  } from "@/lib/assignmentPlanner";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -138,6 +143,113 @@ export async function POST(request: Request) {
   try {
     const { client, organizationId } = await context(request);
     const body = await request.json();
+
+        // 配置案の作成。ここでは番割に保存しない。
+        if (body.action === "preview") {
+            if (
+              typeof body.date !== "string" ||
+              !validDate(body.date) ||
+              typeof body.assignmentId !== "string" ||
+              !body.assignmentId
+            ) {
+              throw new Error("現場と日付を選択してください。");
+            }
+      
+            const date = body.date;
+            const assignmentId = body.assignmentId;
+            const requirements = parseRequirements(body.requirements);
+      
+            const offsetDate = (offset: number) => {
+              const value = new Date(`${date}T00:00:00Z`);
+              value.setUTCDate(value.getUTCDate() + offset);
+              return value.toISOString().slice(0, 10);
+            };
+      
+            const [
+              employees,
+              capabilities,
+              assignments,
+              bookings,
+              holidays,
+              history,
+            ] = await Promise.all([
+              all<PlannerEmployee>(() =>
+                client
+                  .from("employees")
+                  .select("id, name, company_name")
+                  .eq("organization_id", organizationId)
+                  .order("id")
+              ),
+      
+              all<Capability>(() =>
+                client
+                  .from("assignment_employee_capabilities")
+                  .select("employee_id, equipment, can_drive")
+                  .eq("organization_id", organizationId)
+                  .order("employee_id")
+              ),
+      
+              all<PlannerAssignment>(() =>
+                client
+                  .from("assignments")
+                  .select(
+                    "id, site_name, start_date, end_date, shift_type, start_time, end_time"
+                  )
+                  .eq("organization_id", organizationId)
+                  .order("id")
+              ),
+      
+              // 日付をまたぐ夜勤も確認するため、前後の日を含める
+              all<PlannerMember>(() =>
+                client
+                  .from("assignment_site_members")
+                  .select("assignment_id, employee_name, work_date")
+                  .eq("organization_id", organizationId)
+                  .gte("work_date", offsetDate(-2))
+                  .lte("work_date", offsetDate(1))
+                  .order("id")
+              ),
+      
+              all<{
+                employee_name: string;
+                request_date: string;
+              }>(() =>
+                client
+                  .from("shift_requests")
+                  .select("employee_name, request_date")
+                  .eq("organization_id", organizationId)
+                  .gte("request_date", date)
+                  .lte("request_date", offsetDate(1))
+                  .order("id")
+              ),
+      
+              // 同じ現場の直近90日間の配置実績
+              all<PlannerMember>(() =>
+                client
+                  .from("assignment_site_members")
+                  .select("assignment_id, employee_name, work_date")
+                  .eq("organization_id", organizationId)
+                  .eq("assignment_id", assignmentId)
+                  .gte("work_date", offsetDate(-90))
+                  .lt("work_date", date)
+                  .order("id")
+              ),
+            ]);
+      
+            const plan = buildPlan({
+              employees,
+              capabilities,
+              assignments,
+              bookings,
+              holidays,
+              history,
+              assignmentId,
+              date,
+              requirements,
+            });
+      
+            return NextResponse.json({ plan });
+          }
 
     if (body.action !== "capability") {
       throw new Error("操作が不正です。");
