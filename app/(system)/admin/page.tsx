@@ -8,272 +8,494 @@ import { hasRole } from "@/app/types/auth";
 
 const menuGroups = [
   {
-    title: "配置",
+    title: "配置・工程",
     items: [
-      { label: "番割", href: "/admin/assignments/month", icon: "📅", desc: "月別の配置を確認・編集" },
-      { label: "2ヶ月工程表", href: "/admin/assignments/two-month", icon: "🗓️", desc: "2ヶ月工程の確認・編集" },
-      { label: "シフト管理表", href: "/admin/shift-management", icon: "📝", desc: "作業員のシフト管理" },
+      { label: "番割", href: "/admin/assignments/month" },
+      { label: "2ヶ月工程表", href: "/admin/assignments/two-month" },
+      { label: "シフト管理表", href: "/admin/shift-management" },
     ],
   },
   {
-    title: "人員",
+    title: "日報・請求",
     items: [
-      { label: "社員一覧", href: "/admin/users", icon: "👷", desc: "社員の確認・追加" },
-      { label: "作業員名簿", href: "/admin/employee-roster", icon: "📋", desc: "住所・連絡先などの個人情報を管理" },
-      { label: "会社管理", href: "/admin/companies", icon: "🏢", desc: "所属会社の管理" },
-      { label: "元請管理", href: "/admin/contractors", icon: "🤝", desc: "元請・担当者の管理" },
+      { label: "日報管理", href: "/admin/reports" },
+      { label: "日別日報確認", href: "/admin/reports/daily" },
+      { label: "日報送付確認", href: "/admin/report-status" },
+      { label: "請求用月次日報", href: "/admin/reports/monthly-sheet" },
     ],
   },
   {
-    title: "日報",
+    title: "社員・給与",
     items: [
-      {
-        label: "日報管理",
-        href: "/admin/reports",
-        icon: "📝",
-        desc: "日報の確認・管理",
-      },
-      {
-        label: "日別日報確認",
-        href: "/admin/reports/daily",
-        icon: "📆",
-        desc: "日付ごとの日報確認",
-      },
-      {
-        label: "日報送付確認",
-        href: "/admin/report-status",
-        icon: "✅",
-        desc: "番割予定と日報提出状況を確認",
-      },
-      {
-        label: "請求用月次日報",
-        href: "/admin/reports/monthly-sheet",
-        icon: "📄",
-        desc: "請求書用の現場別月次日報を確認",
-      },
+      { label: "社員一覧", href: "/admin/users" },
+      { label: "作業員名簿", href: "/admin/employee-roster" },
+      { label: "給与計算", href: "/admin/payroll" },
     ],
   },
   {
-    title: "その他",
+    title: "会社・取引先",
     items: [
-      { label: "車両管理", href: "/admin/vehicles", icon: "🚚", desc: "車両の登録・削除" },
-      { label: "物品管理", href: "/admin/items", icon: "📦", desc: "物品の登録・管理" },
-      { label: "物品申請確認", href: "/admin/items/requests", icon: "✅", desc: "使用申請・返却申請の確認" },
-      { label: "物品使用履歴", href: "/admin/items/history", icon: "📋", desc: "物品の使用履歴を確認" },
-      { label: "分析", href: "/admin/analysis", icon: "📊", desc: "集計・分析" },
-      { label: "給与計算", href: "/admin/payroll", icon: "💴", desc: "日報から月次給与を集計" },
-      { label: "設定", href: "/admin/settings", icon: "⚙️", desc: "グループ名やON/OFFを設定" },
+      { label: "会社管理", href: "/admin/companies" },
+      { label: "元請管理", href: "/admin/contractors" },
+    ],
+  },
+  {
+    title: "車両・物品",
+    items: [
+      { label: "車両管理", href: "/admin/vehicles" },
+      { label: "物品管理", href: "/admin/items" },
+      { label: "物品申請確認", href: "/admin/items/requests" },
+      { label: "物品使用履歴", href: "/admin/items/history" },
     ],
   },
 ];
 
+const shortcuts = [
+  {
+    label: "番割",
+    href: "/admin/assignments/month",
+    desc: "現場への配置を確認・編集",
+    mark: "配",
+  },
+  {
+    label: "2ヶ月工程表",
+    href: "/admin/assignments/two-month",
+    desc: "先の工程と必要人数を確認",
+    mark: "工",
+  },
+  {
+    label: "日別日報確認",
+    href: "/admin/reports/daily",
+    desc: "日付ごとの作業実績を確認",
+    mark: "日",
+  },
+  {
+    label: "日報送付確認",
+    href: "/admin/report-status",
+    desc: "日報の提出状況を確認",
+    mark: "確",
+  },
+  {
+    label: "請求用月次日報",
+    href: "/admin/reports/monthly-sheet",
+    desc: "現場別の月次実績を確認",
+    mark: "請",
+  },
+  {
+    label: "給与計算",
+    href: "/admin/payroll",
+    desc: "勤務実績から月次給与を確認",
+    mark: "給",
+  },
+];
+
 export default function AdminPage() {
-  const [activeTab, setActiveTab] = useState("配置");
-  const [isMobile, setIsMobile] = useState(false);
+  const [openGroup, setOpenGroup] = useState<string | null>("配置・工程");
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [ready, setReady] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data: userData } = await supabase.auth.getUser();
-  
-      if (!userData.user) {
-        window.location.href = "/login";
-        return;
+    let active = true;
+
+    async function checkAuth() {
+      try {
+        const { data: userData, error: userError } =
+          await supabase.auth.getUser();
+
+        if (userError || !userData.user) {
+          window.location.href = "/login";
+          return;
+        }
+
+        const { data: employee, error: employeeError } = await supabase
+          .from("employees")
+          .select("role")
+          .eq("auth_user_id", userData.user.id)
+          .single();
+
+        if (employeeError || !employee || !hasRole(employee.role, "admin")) {
+          window.location.href = "/home";
+          return;
+        }
+
+        if (active) setReady(true);
+      } catch {
+        if (active) {
+          setError("管理画面を読み込めませんでした。再読み込みしてください。");
+        }
       }
-  
-      const { data: employee } = await supabase
-        .from("employees")
-        .select("role")
-        .eq("auth_user_id", userData.user.id)
-        .single();
-  
-      if (!employee || !hasRole(employee.role, "admin")) {
-        window.location.href = "/home";
-        return;
-      }
+    }
+
+    void checkAuth();
+    return () => {
+      active = false;
     };
-  
-    checkAuth();
-  
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-  
-    checkMobile();
-  
-    window.addEventListener("resize", checkMobile);
-  
-    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
+  if (!ready) {
+    return (
+      <div style={{ padding: 24 }} role="status">
+        {error || "読み込み中…"}
+      </div>
+    );
+  }
+
   return (
-    <div
-  style={{
-    minHeight: "100vh",
-    backgroundColor: "#f5f6f8",
-    width: "100%",
-    overflowX: "hidden",
-  }}
->
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: isMobile
-  ? "1fr"
-  : "240px 1fr",
-          minHeight: "100vh",
-        }}
+    <div className="admin-shell">
+      <button
+        type="button"
+        className="mobile-toggle"
+        aria-expanded={mobileOpen}
+        aria-controls="admin-navigation"
+        onClick={() => setMobileOpen((value) => !value)}
       >
-        {!isMobile && (
-  <aside
-  
-          style={{
-            backgroundColor: "#111827",
-            color: "#fff",
-            padding: 20,
-          }}
-        >
-          <h2 style={{ marginTop: 0 }}>管理メニュー</h2>
+        {mobileOpen ? "× メニューを閉じる" : "☰ メニュー"}
+      </button>
 
-          <div style={{ display: "grid", gap: 18 }}>
-            {menuGroups.map((group) => (
-              <div key={group.title}>
-                <div
-                  style={{
-                    fontSize: 12,
-                    color: "#9ca3af",
-                    marginBottom: 8,
-                    fontWeight: 700,
-                  }}
+      <aside className={`sidebar ${mobileOpen ? "mobile-open" : ""}`}>
+        <div className="sidebar-heading">管理メニュー</div>
+
+        <nav id="admin-navigation" aria-label="管理メニュー">
+          {menuGroups.map((group, index) => {
+            const expanded = openGroup === group.title;
+
+            return (
+              <div className="menu-group" key={group.title}>
+                <button
+                  type="button"
+                  className={`group-button ${expanded ? "expanded" : ""}`}
+                  aria-expanded={expanded}
+                  aria-controls={`admin-group-${index}`}
+                  onClick={() =>
+                    setOpenGroup(expanded ? null : group.title)
+                  }
                 >
-                  {group.title}
-                </div>
+                  <span>{group.title}</span>
+                  <span aria-hidden="true">{expanded ? "−" : "＋"}</span>
+                </button>
 
-                <div style={{ display: "grid", gap: 6 }}>
-　　{group.items.map((item) => (
-      <Link
-        key={item.href}
-        href={item.href}
-        style={{
-          color: "#fff",
-          textDecoration: "none",
-          padding: "9px 10px",
-          borderRadius: 8,
-          backgroundColor: "rgba(255,255,255,0.06)",
-          fontSize: 14,
-          fontWeight: 700,
-        }}
-      >
-        {item.icon} {item.label}
-      </Link>
-    ))}
-</div>
+                <div id={`admin-group-${index}`} hidden={!expanded}>
+                  <div className="group-links">
+                    {group.items.map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className="nav-link"
+                        onClick={() => setMobileOpen(false)}
+                      >
+                        {item.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
               </div>
+            );
+          })}
+
+          <Link href="/admin/analysis" className="standalone-link">
+            <span>分析</span>
+            <span aria-hidden="true">↗</span>
+          </Link>
+        </nav>
+
+        <div className="settings-area">
+          <Link href="/admin/settings" className="standalone-link">
+            <span>設定</span>
+            <span aria-hidden="true">⚙</span>
+          </Link>
+        </div>
+      </aside>
+
+      <main className="main">
+        <BackButton />
+
+        <header className="page-heading">
+          <h1>管理</h1>
+          <p>配置・日報・社員情報を管理できます。</p>
+        </header>
+
+        <section aria-labelledby="shortcut-title">
+          <h2 id="shortcut-title">よく使う機能</h2>
+
+          <div className="shortcut-grid">
+            {shortcuts.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="shortcut"
+              >
+                <span className="shortcut-mark" aria-hidden="true">
+                  {item.mark}
+                </span>
+                <span className="shortcut-content">
+                  <strong>{item.label}</strong>
+                  <span>{item.desc}</span>
+                </span>
+                <span className="shortcut-arrow" aria-hidden="true">
+                  ›
+                </span>
+              </Link>
             ))}
           </div>
-        </aside>
-        )}
 
-<main
-  style={{
-    padding: isMobile ? 12 : 24,
-    width: "100%",
-    maxWidth: "100%",
-    boxSizing: "border-box",
-    overflowX: "hidden",
-  }}
->
-          <BackButton />
+          <p className="hint">その他の機能はメニューから選択できます。</p>
+        </section>
+      </main>
 
-          <h1>管理者画面</h1>
+      <style jsx>{`
+        .admin-shell {
+          display: grid;
+          grid-template-columns: 224px minmax(0, 1fr);
+          min-height: calc(100dvh - 72px);
+          background: #f6f7f9;
+          color: #172033;
+        }
 
-          <div
-  style={{
-    display: "flex",
-    flexWrap: "wrap",
-    gap: 8,
-    overflowX: "hidden",
-    marginBottom: 20,
-    paddingBottom: 4,
-    maxWidth: "100%",
-  }}
->
-  {menuGroups.map((group) => (
-    <button
-      key={group.title}
-      type="button"
-      onClick={() => setActiveTab(group.title)}
-      style={{
-        border: "none",
-        padding: "10px 16px",
-        borderRadius: 999,
-        cursor: "pointer",
-        whiteSpace: "nowrap",
-        fontWeight: 700,
-        maxWidth: "100%",
-        boxSizing: "border-box",
-        backgroundColor:
-          activeTab === group.title
-            ? "#111"
-            : "#e5e7eb",
-        color:
-          activeTab === group.title
-            ? "#fff"
-            : "#111",
-      }}
-    >
-      {group.title}
-    </button>
-  ))}
-</div>
+        .sidebar {
+          display: flex;
+          flex-direction: column;
+          padding: 28px 14px 20px;
+          background: #fff;
+          border-right: 1px solid #e5e9ef;
+        }
 
-          <p style={{ color: "#666" }}>よく使う機能を選択してください。</p>
+        .sidebar-heading {
+          padding: 0 12px 22px;
+          font-size: 12px;
+          font-weight: 700;
+          color: #8992a3;
+          letter-spacing: 0.06em;
+        }
 
-          {menuGroups
-  .filter(
-    (group) =>
-      group.title === activeTab
-  )
-  .map((group) => (
-            <section key={group.title} style={{ marginTop: 28 }}>
-              <h2>{group.title}</h2>
+        .menu-group {
+          margin-bottom: 6px;
+        }
 
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: isMobile
-  ? "1fr"
-  : "repeat(auto-fit, minmax(220px, 1fr))",
-                  gap: 14,
-                }}
-              >
-                {group.items.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    style={{
-                      backgroundColor: "#fff",
-                      border: "1px solid #e5e7eb",
-                      borderRadius: 14,
-                      padding: 18,
-                      textDecoration: "none",
-                      color: "#111",
-                      boxShadow: "0 4px 12px rgba(0,0,0,0.04)",
-                    }}
-                  >
-                    <div style={{ fontSize: 30 }}>{item.icon}</div>
-                    <div style={{ fontWeight: 800, marginTop: 8 }}>
-                      {item.label}
-                    </div>
-                    <div style={{ fontSize: 13, color: "#666", marginTop: 6 }}>
-                      {item.desc}
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </section>
-          ))}
-        </main>
-      </div>
+        .group-button {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          width: 100%;
+          padding: 12px;
+          border: 0;
+          border-radius: 9px;
+          background: transparent;
+          color: #475569;
+          font-size: 14px;
+          font-weight: 700;
+          text-align: left;
+          cursor: pointer;
+        }
+
+        .group-button.expanded {
+          background: #eef2ff;
+          color: #4338ca;
+        }
+
+        .group-links {
+          display: grid;
+          gap: 2px;
+          margin: 8px 0 12px 12px;
+          padding-left: 10px;
+          border-left: 1px solid #e2e8f0;
+        }
+
+        .sidebar :global(.nav-link) {
+          display: block;
+          padding: 9px 10px;
+          border-radius: 7px;
+          color: #64748b;
+          font-size: 13px;
+          text-decoration: none;
+        }
+
+        .sidebar :global(.standalone-link) {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 12px;
+          border-radius: 9px;
+          color: #475569;
+          font-size: 14px;
+          font-weight: 700;
+          text-decoration: none;
+        }
+
+        .group-button:hover,
+        .sidebar :global(.nav-link:hover),
+        .sidebar :global(.standalone-link:hover) {
+          background: #f1f5f9;
+          color: #1e293b;
+        }
+
+        .settings-area {
+          margin-top: auto;
+          padding-top: 16px;
+          border-top: 1px solid #e5e9ef;
+        }
+
+        .main {
+          min-width: 0;
+          padding: 28px 36px;
+        }
+
+        .page-heading {
+          margin: 28px 0 36px;
+        }
+
+        .page-heading h1 {
+          margin: 0;
+          font-size: 26px;
+          font-weight: 800;
+        }
+
+        .page-heading p {
+          margin: 8px 0 0;
+          color: #64748b;
+          font-size: 14px;
+        }
+
+        section {
+          max-width: 1120px;
+        }
+
+        h2 {
+          margin: 0 0 16px;
+          font-size: 15px;
+          font-weight: 700;
+        }
+
+        .shortcut-grid {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 14px;
+        }
+
+        .main :global(.shortcut) {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          padding: 22px 18px;
+          border: 1px solid #e5e9ef;
+          border-radius: 12px;
+          background: #fff;
+          color: inherit;
+          text-decoration: none;
+          transition: border-color 0.15s, box-shadow 0.15s;
+        }
+
+        .main :global(.shortcut:hover) {
+          border-color: #a5b4fc;
+          box-shadow: 0 4px 16px #4338ca0a;
+        }
+
+        .shortcut-mark {
+          display: grid;
+          place-items: center;
+          flex-shrink: 0;
+          width: 42px;
+          height: 42px;
+          border-radius: 11px;
+          background: #eef2ff;
+          color: #4f46e5;
+          font-size: 17px;
+          font-weight: 700;
+        }
+
+        .shortcut-content {
+          display: grid;
+          gap: 6px;
+          min-width: 0;
+        }
+
+        .shortcut-content strong {
+          font-size: 14px;
+        }
+
+        .shortcut-content > span {
+          color: #8490a2;
+          font-size: 12px;
+          line-height: 1.6;
+        }
+
+        .shortcut-arrow {
+          margin-left: auto;
+          color: #94a3b8;
+          font-size: 22px;
+        }
+
+        .hint {
+          margin-top: 20px;
+          color: #8490a2;
+          font-size: 12px;
+        }
+
+        .mobile-toggle {
+          display: none;
+        }
+
+        @media (max-width: 1150px) {
+          .shortcut-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+        }
+
+        @media (max-width: 767px) {
+          .admin-shell {
+            display: block;
+          }
+
+          .mobile-toggle {
+            display: block;
+            width: 100%;
+            padding: 14px 18px;
+            border: 0;
+            border-bottom: 1px solid #e5e9ef;
+            background: #fff;
+            color: #334155;
+            font-size: 14px;
+            font-weight: 700;
+            text-align: left;
+            cursor: pointer;
+          }
+
+          .sidebar {
+            display: none;
+            border-right: 0;
+            border-bottom: 1px solid #e5e9ef;
+          }
+
+          .sidebar.mobile-open {
+            display: flex;
+          }
+
+          .sidebar-heading {
+            display: none;
+          }
+
+          .settings-area {
+            margin-top: 16px;
+          }
+
+          .main {
+            padding: 20px 16px;
+          }
+
+          .page-heading {
+            margin: 22px 0 28px;
+          }
+
+          .shortcut-grid {
+            grid-template-columns: 1fr;
+            gap: 10px;
+          }
+
+          .main :global(.shortcut) {
+            padding: 16px;
+          }
+        }
+      `}</style>
     </div>
   );
 }
