@@ -31,6 +31,7 @@ import { exportMonthlyMatrix } from "./utils/exportMonthlyMatrix";
 import { useAssignmentGroups } from "./hooks/useAssignmentGroups";
 import { useAssignmentEditPresence } from "./hooks/useAssignmentEditPresence";
 import { updateAssignmentMemoAction } from "./actions/updateAssignmentMemoAction";
+import EmployeeCapabilities from "@/app/components/assignments/EmployeeCapabilities";
 import {
   MonthlyAssignmentSelectionContext,
   type MonthlyAssignmentSelectionContextValue,
@@ -698,6 +699,8 @@ stopEditing,
   setShowAddModal={setShowAddModal}
   onExportExcel={handleExportMonthlyMatrix}
 />
+
+<EmployeeCapabilities organizationId={currentOrganizationId} />
 
 <AddAssignmentModal
   showAddModal={showAddModal}
