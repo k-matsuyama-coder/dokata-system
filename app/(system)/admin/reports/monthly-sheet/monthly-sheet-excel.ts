@@ -309,21 +309,20 @@ export async function exportMonthlySheetsToExcel(params: {
 
       worksheet.pageSetup.horizontalCentered = true;
 
+      let startRow = 1;
+
       officeSheets.forEach((sheet, index) => {
-        const position = index % 3;
-        const group = Math.floor(index / 3);
-
-        const startColumn = 1 + position * 10;
-        const startRow = 1 + group * (sheet.rows.length + 8);
-
         writeSheetBlock({
           worksheet,
           sheet,
           month,
           number: index + 1,
           startRow,
-          startColumn,
+          startColumn: 1,
         });
+
+        // 見出し5行＋日別明細＋合計1行の後に、空白を2行入れる。
+        startRow += sheet.rows.length + 8;
       });
     }
   );
