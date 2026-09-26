@@ -1,4 +1,3 @@
-// app/(system)/admin/assignments/month/actions/updateDailyInfoAction.ts
 import { supabase } from "@/lib/supabase";
 import type { DailyInfo } from "../types";
 
@@ -13,58 +12,61 @@ type Props = {
   existing?: DailyInfo;
 };
 
-const toNullableDetail = (value: string) => {
-  const trimmed = value.trim();
-  return trimmed === "" ? null : value;
-};
-
-const toVehicleNames = (value: string) => {
-  return value
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
-};
-
 export async function updateDailyInfoAction({
   assignmentId,
   workDate,
   field,
   value,
   organizationId,
-  existing,
 }: Props) {
+  if (!organizationId || !assignmentId || !workDate) {
+    return {
+      data: null,
+      error: { message: "会社・現場・日付を確認できません。" },
+    };
+  }
+
+  let savedValue: number | string | string[] | null;
+
+  if (field === "planned_count") {
+    savedValue = value.trim() === "" ? null : Number(value);
+
+    if (
+      savedValue !== null &&
+      (!Number.isFinite(savedValue) || savedValue < 0)
+    ) {
+      return {
+        data: null,
+        error: { message: "人数は0以上の数値で入力してください。" },
+      };
+    }
+  } else if (field === "vehicle_names") {
+    savedValue = value
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+  } else {
+    savedValue = value.trim() === "" ? null : value;
+  }
+
+  // 編集した項目だけ送る。
+  // 画面に残っている古いメモなどは送らない。
   const payload = {
     organization_id: organizationId,
     assignment_id: assignmentId,
     work_date: workDate,
-    planned_count:
-      field === "planned_count"
-        ? value === ""
-          ? null
-          : Number(value)
-        : existing?.planned_count ?? null,
-    detail:
-      field === "detail"
-        ? toNullableDetail(value)
-        : existing?.detail ?? null,
-
-        memo:
-        field === "memo"
-          ? toNullableDetail(value)
-          : existing?.memo ?? null,
-          
-    vehicle_names:
-      field === "vehicle_names"
-        ? toVehicleNames(value)
-        : existing?.vehicle_names ?? [],
+    [field]: savedValue,
   };
 
   const { data, error } = await supabase
     .from("assignment_site_daily_infos")
-    .upsert(payload, {
+    .upsert([payload], {
       onConflict: "organization_id,assignment_id,work_date",
+      defaultToNull: false,
     })
-    .select("id, assignment_id, work_date, planned_count, detail, memo, vehicle_names")
+    .select(
+      "id, assignment_id, work_date, planned_count, detail, memo, vehicle_names"
+    )
     .single();
 
   return { data, error };

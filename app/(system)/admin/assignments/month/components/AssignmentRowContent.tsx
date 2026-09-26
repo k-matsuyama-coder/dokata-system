@@ -515,14 +515,27 @@ width: isMobile
 
     <button
       type="button"
-      onClick={async () => {
-        await updateAssignmentMemo(
-          assignment.id,
-          siteMemoDraft
-        );
-      
-        setIsSiteMemoEditing(false);
-        setIsSiteMemoPreviewVisible(false);
+      onClick={async (event) => {
+        const button = event.currentTarget;
+        button.disabled = true;
+
+        try {
+          await updateAssignmentMemo(
+            assignment.id,
+            siteMemoDraft
+          );
+
+          setIsSiteMemoEditing(false);
+          setIsSiteMemoPreviewVisible(false);
+        } catch (error) {
+          alert(
+            error instanceof Error
+              ? error.message
+              : "保存できませんでした。入力内容は残しています。"
+          );
+        } finally {
+          button.disabled = false;
+        }
       }}
       style={{
         width: "100%",

@@ -275,17 +275,30 @@ const [isMemoPreviewVisible, setIsMemoPreviewVisible] = useState(false);
 
     <button
       type="button"
-      onClick={async () => {
-        await updateDailyInfo(
-          assignment.id,
-          date,
-          "memo",
-          memoDraft
-        );
-      
-        setIsMemoEditing(false);
-        setIsMemoPreviewVisible(false);
-        setMemoDraft("");
+      onClick={async (event) => {
+        const button = event.currentTarget;
+        button.disabled = true;
+
+        try {
+          await updateDailyInfo(
+            assignment.id,
+            date,
+            "memo",
+            memoDraft
+          );
+
+          setIsMemoEditing(false);
+          setIsMemoPreviewVisible(false);
+          setMemoDraft("");
+        } catch (error) {
+          alert(
+            error instanceof Error
+              ? error.message
+              : "メモを保存できませんでした。入力内容は残しています。"
+          );
+        } finally {
+          button.disabled = false;
+        }
       }}
       style={{
         marginTop: 8,

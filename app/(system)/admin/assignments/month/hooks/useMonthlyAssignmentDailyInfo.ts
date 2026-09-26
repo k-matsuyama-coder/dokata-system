@@ -68,7 +68,13 @@ export function useMonthlyAssignmentDailyInfo({
     });
 
     if (error || !data) {
-      alert("更新失敗: " + (error?.message || "取得失敗"));
+      const message = "更新失敗: " + (error?.message || "取得失敗");
+
+      if (field === "memo") {
+        throw new Error(message);
+      }
+
+      alert(message);
       return false;
     }
 
