@@ -16,12 +16,28 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "DOKATA-System",
+  title: "DOBIX SYSTEM",
   description: "番割・日報・シフト管理システム",
   manifest: "/manifest.json",
+  icons: {
+    icon: [
+      {
+        url: "/dobix-favicon.png",
+        sizes: "32x32",
+        type: "image/png",
+      },
+    ],
+    apple: [
+      {
+        url: "/dobix-apple-icon.png",
+        sizes: "180x180",
+        type: "image/png",
+      },
+    ],
+  },
   appleWebApp: {
     capable: true,
-    title: "DOKATA-System",
+    title: "DOBIX SYSTEM",
     statusBarStyle: "default",
   },
 };

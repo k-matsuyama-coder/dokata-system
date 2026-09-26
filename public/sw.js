@@ -10,10 +10,10 @@ self.addEventListener("install", () => {
     const data = event.data ? event.data.json() : {};
   
     event.waitUntil(
-      self.registration.showNotification(data.title || "DOKATA-System", {
+      self.registration.showNotification(data.title || "DOBIX-SYSTEM", {
         body: data.body || "通知があります",
-        icon: "/icon-192.png",
-        badge: "/icon-192.png",
+        icon: "/dobix-icon-192.png",
+        badge: "/dobix-icon-192.png",
         data: {
           url: data.url || "/reports/new",
         },
