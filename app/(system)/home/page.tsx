@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { hasRole } from "@/app/types/auth";
+import ExpenseMenuLink from "@/app/components/ExpenseMenuLink";
 
 type ReportRow = {
   id: string;
@@ -648,8 +649,10 @@ const totalOvertimeSum = dayOvertime + nightOvertime;
             boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
           }}
         >
-          ＋ 日報を登録
+                    ＋ 日報を登録
           </Link>
+
+          <ExpenseMenuLink />
       </div>
 
       <div

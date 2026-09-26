@@ -5,6 +5,7 @@ import Link from "next/link";
 import BackButton from "@/app/components/BackButton";
 import { supabase } from "@/lib/supabase";
 import { hasRole } from "@/app/types/auth";
+import ExpenseMenuLink from "@/app/components/ExpenseMenuLink";
 
 const menuGroups = [
   {
@@ -192,6 +193,8 @@ export default function AdminPage() {
               </div>
             );
           })}
+
+<ExpenseMenuLink admin />
 
           <Link href="/admin/analysis" className="standalone-link">
             <span>分析</span>
