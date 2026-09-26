@@ -22,14 +22,14 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       {
-        url: "/dobix-favicon.png",
+        url: "/dobix-favicon-v2.png",
         sizes: "32x32",
         type: "image/png",
       },
     ],
     apple: [
       {
-        url: "/dobix-apple-icon.png",
+        url: "/dobix-apple-icon-v2.png",
         sizes: "180x180",
         type: "image/png",
       },

@@ -12,8 +12,8 @@ self.addEventListener("install", () => {
     event.waitUntil(
       self.registration.showNotification(data.title || "DOBIX-SYSTEM", {
         body: data.body || "通知があります",
-        icon: "/dobix-icon-192.png",
-        badge: "/dobix-icon-192.png",
+        icon: "/dobix-icon-v2-192.png",
+        badge: "/dobix-icon-v2-192.png",
         data: {
           url: data.url || "/reports/new",
         },
