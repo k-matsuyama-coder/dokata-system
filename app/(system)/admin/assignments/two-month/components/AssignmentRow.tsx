@@ -785,21 +785,34 @@ inputMode="numeric"
 />
 <button
   type="button"
-  onClick={async () => {
-    await updateDailyInfo(
-      assignment.id,
-      date,
-      "memo",
-      editingMemos[detailKey] ?? ""
-    );
-  
-    setEditingMemoKey(null);
-  
-    setEditingMemos((prev) => {
-      const next = { ...prev };
-      delete next[detailKey];
-      return next;
-    });
+  onClick={async (event) => {
+    const button = event.currentTarget;
+    button.disabled = true;
+
+    try {
+      await updateDailyInfo(
+        assignment.id,
+        date,
+        "memo",
+        editingMemos[detailKey] ?? memo ?? ""
+      );
+
+      setEditingMemoKey(null);
+
+      setEditingMemos((prev) => {
+        const next = { ...prev };
+        delete next[detailKey];
+        return next;
+      });
+    } catch (error) {
+      alert(
+        error instanceof Error
+          ? error.message
+          : "保存できませんでした。入力内容は残しています。"
+      );
+    } finally {
+      button.disabled = false;
+    }
   }}
   style={{
     marginTop: 8,

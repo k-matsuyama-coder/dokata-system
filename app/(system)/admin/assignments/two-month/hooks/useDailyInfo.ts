@@ -1,4 +1,3 @@
-// app/(system)/admin/assignments/two-month/hooks/useDailyInfo.ts
 import type { DailyInfo } from "../types";
 import { updateDailyInfoApi } from "../api";
 
@@ -32,72 +31,87 @@ export function useDailyInfo({
     field: "planned_count" | "detail" | "memo",
     value: string
   ) => {
-    if (!organizationId) {
-      alert("会社情報が取得できません");
-      return;
-    }
-
-    if (!assignmentId || assignmentId === "undefined") {
-      alert("現場IDが取得できません");
-      return;
-    }
-
-    const existing = dailyInfos.find(
-      (d) => d.assignment_id === assignmentId && d.work_date === workDate
-    );
-
-    const before = String(existing?.planned_count ?? "");
-
-    if (!isUndoRedo && field === "planned_count" && before !== value) {
-      setUndoStack((prev) => [
-        ...prev,
-        {
-          assignmentId,
-          workDate,
-          before,
-          after: value,
-        },
-      ]);
-      setRedoStack([]);
-    }
-
-    const payload = {
-      assignment_id: assignmentId,
-      work_date: workDate,
-      planned_count:
-        field === "planned_count"
-          ? value === ""
-            ? null
-            : Number(value)
-          : existing?.planned_count ?? null,
-      detail: field === "detail" ? value : existing?.detail ?? null,
-      memo: field === "memo" ? value : existing?.memo ?? null,
-    };
-
     try {
+      if (!organizationId) {
+        throw new Error("会社情報が取得できません");
+      }
+
+      if (!assignmentId || assignmentId === "undefined") {
+        throw new Error("現場IDが取得できません");
+      }
+
+      const existing = dailyInfos.find(
+        (item) =>
+          item.assignment_id === assignmentId &&
+          item.work_date === workDate
+      );
+
+      const before = String(existing?.planned_count ?? "");
+
+      const payload: {
+        assignment_id: string;
+        work_date: string;
+        planned_count?: number | null;
+        detail?: string | null;
+        memo?: string | null;
+      } = {
+        assignment_id: assignmentId,
+        work_date: workDate,
+      };
+
+      // 変更した項目だけ保存する
+      if (field === "planned_count") {
+        const count = value.trim() === "" ? null : Number(value);
+
+        if (count !== null && (!Number.isFinite(count) || count < 0)) {
+          throw new Error("人数は0以上の数値で入力してください");
+        }
+
+        payload.planned_count = count;
+      } else if (field === "detail") {
+        payload.detail = value.trim() === "" ? null : value;
+      } else {
+        payload.memo = value.trim() === "" ? null : value;
+      }
+
       const data = await updateDailyInfoApi(payload, organizationId);
 
       setDailyInfos((prev) => {
         const exists = prev.some(
-          (d) => d.assignment_id === assignmentId && d.work_date === workDate
+          (item) =>
+            item.assignment_id === assignmentId &&
+            item.work_date === workDate
         );
 
-        if (exists) {
-          return prev.map((d) =>
-            d.assignment_id === assignmentId && d.work_date === workDate
-              ? data
-              : d
-          );
-        }
+        if (!exists) return [...prev, data];
 
-        return [...prev, data];
+        return prev.map((item) =>
+          item.assignment_id === assignmentId &&
+          item.work_date === workDate
+            ? data
+            : item
+        );
       });
+
+      // 保存できた操作だけ履歴に記録する
+      if (!isUndoRedo && field === "planned_count" && before !== value) {
+        setUndoStack((prev) => [
+          ...prev,
+          { assignmentId, workDate, before, after: value },
+        ]);
+        setRedoStack([]);
+      }
     } catch (error) {
-      alert(error instanceof Error ? "更新失敗: " + error.message : "更新失敗");
+      const message =
+        error instanceof Error ? error.message : "保存に失敗しました";
+
+      if (field === "memo") {
+        throw new Error(message);
+      }
+
+      alert("更新失敗: " + message);
     }
   };
 
-  return {
-    updateDailyInfo,
-  };
+  return { updateDailyInfo };
 }

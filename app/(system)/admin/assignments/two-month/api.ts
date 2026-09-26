@@ -473,9 +473,9 @@ export async function updateDailyInfoApi(
   payload: {
     assignment_id: string;
     work_date: string;
-    planned_count: number | null;
-    detail: string | null;
-    memo: string | null;
+    planned_count?: number | null;
+    detail?: string | null;
+    memo?: string | null;
   },
   organizationId: string
 ) {
@@ -484,19 +484,22 @@ export async function updateDailyInfoApi(
   const { data, error } = await supabase
     .from("assignment_site_daily_infos")
     .upsert(
-      {
+      [{
         organization_id: safeOrganizationId,
         ...payload,
-      },
+      }],
       {
         onConflict: "organization_id,assignment_id,work_date",
+        defaultToNull: false,
       }
     )
-    .select("id, assignment_id, work_date, planned_count, detail, memo, vehicle_names")
+    .select(
+      "id, assignment_id, work_date, planned_count, detail, memo, vehicle_names"
+    )
     .single();
 
   if (error || !data) {
-    throw new Error(error?.message ?? "取得失敗");
+    throw new Error(error?.message ?? "保存結果を取得できませんでした");
   }
 
   return data;
