@@ -78,10 +78,16 @@ export default function SystemLayout({
     accessInfo?.mustChangePassword === true &&
     pathname !== "/change-password";
 
+    // workerにも許可する番割の閲覧画面
+    const canViewAssignments =
+    pathname === "/admin/assignments/view" &&
+    hasRole(accessInfo?.role, "worker");
+
   const adminAccessDenied =
     accessInfo !== null &&
     pathname.startsWith("/admin") &&
-    !hasRole(accessInfo.role, "admin");
+    !hasRole(accessInfo.role, "admin") &&
+    !canViewAssignments;
 
   useEffect(() => {
     if (mustChangePassword) {
