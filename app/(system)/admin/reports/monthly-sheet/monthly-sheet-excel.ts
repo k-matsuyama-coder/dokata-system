@@ -260,6 +260,73 @@ function writeSheetBlock(params: {
   worksheet.getColumn(startColumn + 6).width = 11;
   worksheet.getColumn(startColumn + 7).width = 11;
   worksheet.getColumn(startColumn + 8).width = 24;
+    // フォントを明示し、環境による表示の差を減らす
+    for (let row = startRow; row <= totalRow; row += 1) {
+      worksheet.getRow(row).height = 24;
+  
+      for (let column = startColumn; column <= lastColumn; column += 1) {
+        const cell = worksheet.getCell(row, column);
+  
+        cell.font = {
+          ...cell.font,
+          name: "ＭＳ Ｐゴシック",
+          size: row === startRow ? 14 : 11,
+        };
+      }
+    }
+  
+    // 日本語を約2文字幅として、折り返しに必要な行数を見積もる
+    const textLines = (text: string, width: number) => {
+      return text.split(/\r\n|\r|\n/).reduce((sum, line) => {
+        const units = Array.from(line).reduce(
+          (count, character) =>
+            count + (/[\u0020-\u007e]/.test(character) ? 1 : 2),
+          0
+        );
+  
+        return sum + Math.max(1, Math.ceil(units / width));
+      }, 0);
+    };
+  
+    // タイトル・現場名・昼夜・出張所担当・列見出し
+    worksheet.getRow(startRow).height = 30;
+  
+    worksheet.getRow(startRow + 1).height = Math.max(
+      26,
+      textLines(sheet.siteName ?? "", 100) * 17 + 8
+    );
+  
+    worksheet.getRow(startRow + 2).height = 24;
+  
+    worksheet.getCell(startRow + 3, startColumn).value =
+      "出張所\n担当";
+  
+    worksheet.getRow(startRow + 3).height = Math.max(
+      40,
+      textLines(sheet.contractorName ?? "", 26) * 17 + 8,
+      textLines(sheet.managerName ?? "", 50) * 17 + 8
+    );
+  
+    worksheet.getRow(startRow + 4).height = 42;
+  
+    // 備考が長い日は、折り返した文字が収まる高さにする
+    sheet.rows.forEach((row, index) => {
+      const rowNumber = startRow + 5 + index;
+      const note = row.notes.join(" / ");
+  
+      worksheet.getRow(rowNumber).height = Math.max(
+        24,
+        textLines(note, 20) * 17 + 8
+      );
+  
+      worksheet.getCell(rowNumber, lastColumn).alignment = {
+        horizontal: "left",
+        vertical: "middle",
+        wrapText: true,
+      };
+    });
+  
+    worksheet.getRow(totalRow).height = 28;
 }
 
 export async function exportMonthlySheetsToExcel(params: {
