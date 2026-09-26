@@ -370,7 +370,7 @@ export default function NavBar() {
           cursor: "pointer",
         }}
       >
-        DOKATA-System
+        DOBIX-SYSTEM
       </a>
 
       <div
@@ -571,7 +571,7 @@ export default function NavBar() {
               paddingBottom: 12,
             }}
           >
-            DOKATA-System
+            DOBIX-SYSTEM
           </div>
 
           {impersonating && (
