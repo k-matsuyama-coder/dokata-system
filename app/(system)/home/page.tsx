@@ -228,12 +228,14 @@ return;
         void (async () => {
           try {
             const monthEnd = new Date(
-          Number(todayString.slice(0, 4)),
-          Number(todayString.slice(5, 7)),
-          0
-        )
-          .toISOString()
-          .slice(0, 10);
+              Date.UTC(
+                Number(todayString.slice(0, 4)),
+                Number(todayString.slice(5, 7)),
+                0
+              )
+            )
+              .toISOString()
+              .slice(0, 10);
       
           const [
             { data: todayReports },
@@ -260,12 +262,21 @@ supabase
   .eq("organization_id", currentOrganizationId)
   .eq("work_date", todayString),
           
-            supabase
-              .from("assignment_site_daily_infos")
-              .select("planned_count, work_date")
-              .eq("organization_id", currentOrganizationId)
-              .gte("work_date", monthStart)
-              .lte("work_date", monthEnd),
+  supabase
+  .from("assignment_site_daily_infos")
+  .select(`
+    planned_count,
+    work_date,
+    assignments!inner (
+      start_date,
+      end_date,
+      organization_id
+    )
+  `)
+  .eq("organization_id", currentOrganizationId)
+  .eq("assignments.organization_id", currentOrganizationId)
+  .gte("work_date", monthStart)
+  .lte("work_date", monthEnd),
           
             supabase
               .from("daily_reports")
@@ -327,10 +338,42 @@ const todayReportCount = Array.from(
 
 const todayWorkerCount = safeTodayScheduledMembers.length;
       
-        const monthlyPlannedLabor = (monthlyDailyInfos ?? []).reduce(
-          (sum, row) => sum + Number(row.planned_count ?? 0),
-          0
-        );
+const monthlyPlannedLabor = (monthlyDailyInfos ?? []).reduce(
+  (sum, row) => {
+    type AssignmentPeriod = {
+      start_date: string | null;
+      end_date: string | null;
+    };
+
+    const related = row.assignments as unknown as
+      | AssignmentPeriod
+      | AssignmentPeriod[]
+      | null;
+
+    const assignment = Array.isArray(related)
+      ? related[0]
+      : related;
+
+    if (!assignment) return sum;
+
+    if (
+      assignment.start_date &&
+      row.work_date < assignment.start_date
+    ) {
+      return sum;
+    }
+
+    if (
+      assignment.end_date &&
+      row.work_date > assignment.end_date
+    ) {
+      return sum;
+    }
+
+    return sum + Number(row.planned_count ?? 0);
+  },
+  0
+);
       
         const monthlyActualLabor = (monthlyReports ?? []).reduce(
           (sum, report) => sum + Number(report.worker_count ?? 0),
