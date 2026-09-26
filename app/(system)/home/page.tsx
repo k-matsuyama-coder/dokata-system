@@ -594,7 +594,7 @@ const totalOvertimeSum = dayOvertime + nightOvertime;
   <div
     style={{
       display: "grid",
-      gridTemplateColumns: "1fr",
+      gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
       gap: 12,
       marginTop: 16,
       marginBottom: 20,
