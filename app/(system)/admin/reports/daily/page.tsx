@@ -662,8 +662,10 @@ width: "100%",
   {(() => {
     const value = Number(report.overtime_minutes ?? 0);
     const hours = value > 0 && value < 30 ? value : value / 60;
+    const workerCount = Number(report.worker_count ?? 0);
+    const totalHours = hours * workerCount;
 
-    return `${Number(hours.toFixed(2))}時間`;
+    return `${Number(totalHours.toFixed(2))}時間`;
   })()}
 </td>
 
