@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
 import { hasRole } from "@/app/types/auth";
+import { getJapanDate } from "@/lib/japanDate";
 
 type Report = {
   id: string;
@@ -58,9 +59,7 @@ function formatLocalDate(d: Date): string {
 }
 
 export default function DailyReportAdminPage() {
-  const [date, setDate] = useState(() => {
-    return new Date().toISOString().slice(0, 10);
-  });
+  const [date, setDate] = useState(() => getJapanDate());
 
   const [reports, setReports] = useState<Report[]>([]);
   const [monthReports, setMonthReports] = useState<Report[]>([]);
@@ -456,7 +455,7 @@ width: "100%",
           border:
             day.dateString === date
               ? "3px solid #2563eb"
-              : day.dateString === formatLocalDate(new Date())
+              : day.dateString === getJapanDate()
                 ? "2px solid #16a34a"
                 : "1px solid #ddd",
         }}

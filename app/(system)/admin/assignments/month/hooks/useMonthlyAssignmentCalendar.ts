@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { th, cellTd } from "../styles";
 import { toDateString } from "../utils";
 import { getDateAccentColors } from "../utils/dateColors";
+import { getJapanDate } from "@/lib/japanDate";
 
 type Props = {
   month: string;
@@ -48,7 +49,7 @@ export function useMonthlyAssignmentCalendar({
     return result;
   }, [month, viewMode, weekStart]);
 
-  const todayString = new Date().toISOString().slice(0, 10);
+  const todayString = getJapanDate();
 
   const getDateHeaderStyle = (date: string) => {
     const colors = getDateAccentColors(date);

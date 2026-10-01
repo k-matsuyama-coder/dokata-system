@@ -2,9 +2,10 @@ import type {
     PayrollMonthlyAdjustment,
     PayrollSetting,
   } from "./payroll-types";
+import { getJapanMonth } from "@/lib/japanDate";
 
   export function getCurrentMonthString() {
-    return new Date().toISOString().slice(0, 7);
+    return getJapanMonth();
   }
   
   export function getMonthRange(month: string) {

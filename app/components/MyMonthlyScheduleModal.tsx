@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { createSignedUrlMap } from "@/lib/storageSignedUrls";
+import { getJapanDate, getJapanMonth } from "@/lib/japanDate";
 
 type CalendarEmployee = {
   id: string;
@@ -66,7 +67,7 @@ export default function MyMonthlyScheduleModal({
   organizationId,
   role,
 }: Props) {
-  const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
+  const [month, setMonth] = useState(() => getJapanMonth());
   const isAdmin = role === "admin";
 const [employees, setEmployees] = useState<
   CalendarEmployee[]
@@ -270,7 +271,7 @@ const [selectedEmployee, setSelectedEmployee] = useState("");
       }));
   }, [employees]);
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getJapanDate();
 
   if (!open) return null;
 

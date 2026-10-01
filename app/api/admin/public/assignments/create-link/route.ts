@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { randomBytes } from "crypto";
 import { createClient } from "@supabase/supabase-js";
+import { getJapanDate } from "@/lib/japanDate";
 
 export const runtime = "nodejs";
 
@@ -57,8 +58,8 @@ export async function POST(req: Request) {
         ? body.viewMode
         : "next3days";
 
-    const today = new Date();
-    const fallbackBaseDate = today.toISOString().slice(0, 10);
+        const today = new Date();
+        const fallbackBaseDate = getJapanDate(today);
     const baseDate =
       typeof body.baseDate === "string" && isValidDateString(body.baseDate)
         ? body.baseDate

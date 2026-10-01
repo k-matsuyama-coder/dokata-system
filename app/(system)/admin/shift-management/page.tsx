@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
 import { hasRole } from "@/app/types/auth";
+import { getJapanMonth } from "@/lib/japanDate";
 
 type Employee = {
   name: string;
@@ -22,7 +23,7 @@ type ShiftRequest = {
 
 export default function ShiftManagementPage() {
   const [month, setMonth] = useState(() =>
-    new Date().toISOString().slice(0, 7)
+  getJapanMonth()
   );
 
   const [loginEmployee, setLoginEmployee] = useState<Employee | null>(null);

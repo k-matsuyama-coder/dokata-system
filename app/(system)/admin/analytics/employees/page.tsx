@@ -31,7 +31,7 @@ type SummaryRow = {
 
 const getNextMonth = (ym: string) => {
   const [y, m] = ym.split("-").map(Number);
-  return new Date(y, m, 1).toISOString().slice(0, 10);
+  return new Date(Date.UTC(y, m, 1)).toISOString().slice(0, 10);
 };
 
 const formatHours = (value: number): string => {

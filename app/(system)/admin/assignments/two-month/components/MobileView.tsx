@@ -3,6 +3,7 @@
 
 import { useCallback, useMemo, useRef } from "react";
 import type { Assignment } from "../types";
+import { getJapanDate } from "@/lib/japanDate";
 
 type GroupedAssignment = {
   label: string;
@@ -203,7 +204,7 @@ const handleSynchronizedScroll = useCallback(
   []
 );
 
-  const today = new Date().toISOString().slice(0, 10);
+const today = getJapanDate();
 
   if (days.length === 0) {
     return (

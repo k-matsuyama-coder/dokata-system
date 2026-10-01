@@ -36,7 +36,9 @@ type CompanyRow = {
 
 const getNextMonth = (ym: string) => {
   const [year, month] = ym.split("-").map(Number);
-  return new Date(year, month, 1).toISOString().slice(0, 10);
+  return new Date(Date.UTC(year, month, 1))
+    .toISOString()
+    .slice(0, 10);
 };
 
 export default function CompanyAnalyticsPage() {

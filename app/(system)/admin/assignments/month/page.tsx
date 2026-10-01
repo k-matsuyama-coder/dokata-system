@@ -31,6 +31,7 @@ import { exportMonthlyMatrix } from "./utils/exportMonthlyMatrix";
 import { useAssignmentGroups } from "./hooks/useAssignmentGroups";
 import { useAssignmentEditPresence } from "./hooks/useAssignmentEditPresence";
 import { updateAssignmentMemoAction } from "./actions/updateAssignmentMemoAction";
+import { getJapanMonth } from "@/lib/japanDate";
 import {
   MonthlyAssignmentSelectionContext,
   type MonthlyAssignmentSelectionContextValue,
@@ -43,7 +44,7 @@ import { getWeekStart } from "./utils";
 import type { AssignmentDateMemo } from "./types";
 
 export default function MonthlyAssignmentsPage() {
-  const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
+  const [month, setMonth] = useState(() => getJapanMonth());
   const [viewMode, setViewMode] = useState<"month" | "week">("month");
   const [weekStart, setWeekStart] = useState(getWeekStart);
   const [currentOrganizationId, setCurrentOrganizationId] = useState<string | null>(null);

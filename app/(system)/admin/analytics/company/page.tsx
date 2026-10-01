@@ -80,9 +80,11 @@ if (!currentOrganizationId) {
   
       const start = `${month}-01`;
       const end = new Date(
-        Number(month.slice(0, 4)),
-        Number(month.slice(5, 7)),
-        0
+        Date.UTC(
+          Number(month.slice(0, 4)),
+          Number(month.slice(5, 7)),
+          0
+        )
       )
         .toISOString()
         .slice(0, 10);
