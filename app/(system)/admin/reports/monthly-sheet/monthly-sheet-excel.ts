@@ -257,8 +257,8 @@ function writeSheetBlock(params: {
   worksheet.getColumn(startColumn + 3).width = 8;
   worksheet.getColumn(startColumn + 4).width = 8;
   worksheet.getColumn(startColumn + 5).width = 11;
-  worksheet.getColumn(startColumn + 6).width = 11;
-  worksheet.getColumn(startColumn + 7).width = 11;
+  worksheet.getColumn(startColumn + 6).width = 14;
+  worksheet.getColumn(startColumn + 7).width = 14;
   worksheet.getColumn(startColumn + 8).width = 24;
     // フォントを明示し、環境による表示の差を減らす
     for (let row = startRow; row <= totalRow; row += 1) {
@@ -301,13 +301,13 @@ function writeSheetBlock(params: {
     worksheet.getCell(startRow + 3, startColumn).value =
       "出張所\n担当";
   
-    worksheet.getRow(startRow + 3).height = Math.max(
-      40,
-      textLines(sheet.contractorName ?? "", 26) * 17 + 8,
-      textLines(sheet.managerName ?? "", 50) * 17 + 8
-    );
+      worksheet.getRow(startRow + 3).height = Math.max(
+        54,
+        textLines(sheet.contractorName ?? "", 26) * 20 + 14,
+        textLines(sheet.managerName ?? "", 50) * 20 + 14
+      );
   
-    worksheet.getRow(startRow + 4).height = 42;
+      worksheet.getRow(startRow + 4).height = 60;
   
     // 備考が長い日は、折り返した文字が収まる高さにする
     sheet.rows.forEach((row, index) => {
@@ -340,7 +340,7 @@ export async function exportMonthlySheetsToExcel(params: {
   }
 
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = "DOKATA-System";
+  workbook.creator = "DOBIX-SYSTEM";
   workbook.created = new Date();
 
   const officeMap = new Map<string, Sheet[]>();
