@@ -110,7 +110,7 @@ boxSizing: "border-box",
             fontWeight: 900,
           }}
         >
-          DOKATA-System
+          DOBIX-SYSTEM
         </h2>
 
         <button

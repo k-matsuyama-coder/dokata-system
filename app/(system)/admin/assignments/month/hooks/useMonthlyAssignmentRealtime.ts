@@ -1,4 +1,5 @@
 // app/(system)/admin/assignments/month/hooks/useMonthlyAssignmentRealtime.ts
+
 import { useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 
@@ -9,7 +10,7 @@ type Props = {
   fetchScheduleData: () => Promise<void>;
 };
 
-const REALTIME_FETCH_DEBOUNCE_MS = 300;
+const REALTIME_FETCH_DEBOUNCE_MS = 500;
 
 export function useMonthlyAssignmentRealtime({
   month,
@@ -19,6 +20,14 @@ export function useMonthlyAssignmentRealtime({
 }: Props) {
   const fetchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // 常に最新のfetchScheduleDataを保持
+  const fetchScheduleDataRef = useRef(fetchScheduleData);
+
+  useEffect(() => {
+    fetchScheduleDataRef.current = fetchScheduleData;
+  }, [fetchScheduleData]);
+
+  // Realtime購読はマウント時に1回だけ
   useEffect(() => {
     const scheduleFetch = () => {
       if (fetchTimeoutRef.current) {
@@ -26,7 +35,7 @@ export function useMonthlyAssignmentRealtime({
       }
 
       fetchTimeoutRef.current = setTimeout(() => {
-        void fetchScheduleData();
+        void fetchScheduleDataRef.current();
       }, REALTIME_FETCH_DEBOUNCE_MS);
     };
 
@@ -73,13 +82,15 @@ export function useMonthlyAssignmentRealtime({
     return () => {
       if (fetchTimeoutRef.current) {
         clearTimeout(fetchTimeoutRef.current);
+        fetchTimeoutRef.current = null;
       }
 
       void supabase.removeChannel(channel);
     };
-  }, [fetchScheduleData]);
+  }, []);
 
+  // 表示範囲が変わった時だけ取得
   useEffect(() => {
-    void fetchScheduleData();
-  }, [month, viewMode, weekStart, fetchScheduleData]);
+    void fetchScheduleDataRef.current();
+  }, [month, viewMode, weekStart]);
 }

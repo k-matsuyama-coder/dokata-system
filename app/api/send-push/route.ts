@@ -5,7 +5,7 @@ import { supabaseAdmin } from "@/app/api/_lib/supabaseAdmin";
 export const runtime = "nodejs";
 
 webpush.setVapidDetails(
-  "mailto:admin@dokata-system.com",
+  "mailto:admin@DOBIX-SYSTEM.com",
   process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
   process.env.VAPID_PRIVATE_KEY!
 );

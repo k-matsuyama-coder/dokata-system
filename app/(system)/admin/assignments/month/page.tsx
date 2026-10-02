@@ -8,6 +8,7 @@ import AddAssignmentModal from "./components/AddAssignmentModal";
 import MemberPanel from "./components/MemberPanel";
 import MonthlyAssignmentsTable from "./components/MonthlyAssignmentsTable";
 import AssignmentToolbar from "./components/AssignmentToolbar";
+import AssignmentAIChat from "@/app/components/assignments/AssignmentAIChat";
 import { useResponsive } from "./hooks/useResponsive";
 import MobileMemberModal from "./components/MobileMemberModal";
 import AssignmentGroups from "./components/AssignmentGroups";
@@ -255,6 +256,7 @@ const {
     fetchScheduleData,
   } = useMonthlyAssignmentData({
     days,
+    month,
     organizationId: currentOrganizationId,
   });
 
@@ -449,56 +451,93 @@ const {
     assignmentId: string,
     memo: string
   ) => {
-    if (!currentOrganizationId) return;
-  
-    const { error } = await updateAssignmentMemoAction({
+    if (!currentOrganizationId) {
+      throw new Error(
+        "会社情報を取得できていません。再読み込みしてください。"
+      );
+    }
+
+    const { data, error } = await updateAssignmentMemoAction({
       assignmentId,
       memo,
       organizationId: currentOrganizationId,
     });
-  
-    if (error) {
-      alert("現場メモの保存に失敗しました: " + error.message);
-      return;
+
+    if (error || !data) {
+      throw new Error(
+        "現場メモの保存に失敗しました: " +
+          (error?.message ?? "保存結果を取得できませんでした")
+      );
     }
-  
-    await fetchScheduleData();
+
+    const expectedMemo = memo.trim() === "" ? null : memo;
+
+    if (data.memo !== expectedMemo) {
+      throw new Error(
+        "保存内容が一致しません。入力内容は残しています。"
+      );
+    }
+
+    setAssignments((current) =>
+      current.map((assignment) =>
+        assignment.id === assignmentId
+          ? { ...assignment, memo: data.memo }
+          : assignment
+      )
+    );
   };
 
   const onSaveDateMemo = async (date: string, memo: string) => {
-    if (!currentOrganizationId) return;
-  
-    const { error } = await supabase
-  .from("assignment_date_memos")
-  .upsert(
-    {
-      organization_id: currentOrganizationId,
-      work_date: date,
-      memo,
-    },
-    {
-      onConflict: "organization_id,work_date",
+    if (!currentOrganizationId) {
+      throw new Error(
+        "会社情報を取得できていません。再読み込みしてください。"
+      );
     }
-  );
-  
-  if (error) {
-    console.error("日付メモの保存に失敗しました:", error);
-    return;
-  }
-  
-    setDateMemos((current) => {
-      const others = current.filter((m) => m.work_date !== date);
-  
-      return [
-        ...others,
+
+    const { error: saveError } = await supabase
+      .from("assignment_date_memos")
+      .upsert(
         {
-          id: crypto.randomUUID(),
           organization_id: currentOrganizationId,
           work_date: date,
           memo,
         },
-      ];
-    });
+        {
+          onConflict: "organization_id,work_date",
+        }
+      );
+
+    if (saveError) {
+      throw new Error(
+        "日付メモの保存に失敗しました: " + saveError.message
+      );
+    }
+
+    // 再読み込み時と同じ条件で保存内容を確認
+    const { data: savedMemo, error: readError } = await supabase
+      .from("assignment_date_memos")
+      .select("id, organization_id, work_date, memo")
+      .eq("organization_id", currentOrganizationId)
+      .eq("work_date", date)
+      .single();
+
+    if (readError || !savedMemo) {
+      throw new Error(
+        "保存後の確認に失敗しました: " +
+          (readError?.message ?? "メモを取得できませんでした")
+      );
+    }
+
+    if ((savedMemo.memo ?? "") !== memo) {
+      throw new Error(
+        "保存内容が一致しません。入力内容は残しています。"
+      );
+    }
+
+    setDateMemos((current) => [
+      ...current.filter((item) => item.work_date !== date),
+      savedMemo,
+    ]);
   };
 
   const assignmentContextValue = useMemo<MonthlyAssignmentContextValue>(
@@ -699,6 +738,8 @@ stopEditing,
   setShowAddModal={setShowAddModal}
   onExportExcel={handleExportMonthlyMatrix}
 />
+
+<AssignmentAIChat key={currentOrganizationId} />
 
 <AddAssignmentModal
   showAddModal={showAddModal}

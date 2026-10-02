@@ -32,10 +32,15 @@ type Vehicle = {
 
 type Props = {
   days: string[];
+  month: string;
   organizationId: string | null;
 };
 
-export function useMonthlyAssignmentData({ days, organizationId }: Props) {
+export function useMonthlyAssignmentData({
+  days,
+  month,
+  organizationId,
+}: Props) {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [assignmentFiles, setAssignmentFiles] = useState<AssignmentFile[]>([]);
   const [siteMembers, setSiteMembers] = useState<SiteMember[]>([]);
@@ -50,6 +55,21 @@ export function useMonthlyAssignmentData({ days, organizationId }: Props) {
 
   const startDate = useMemo(() => days[0] ?? "", [days]);
   const endDate = useMemo(() => days[days.length - 1] ?? "", [days]);
+
+    // 表示中の日付に加えて、集計対象の月全体を取得する
+    const memberStartDate = useMemo(() => {
+      const monthStart = `${month}-01`;
+      return startDate && startDate < monthStart ? startDate : monthStart;
+    }, [startDate, month]);
+  
+    const memberEndDate = useMemo(() => {
+      const [year, monthNumber] = month.split("-").map(Number);
+      const monthEnd = new Date(Date.UTC(year, monthNumber, 0))
+        .toISOString()
+        .slice(0, 10);
+  
+      return endDate && endDate > monthEnd ? endDate : monthEnd;
+    }, [endDate, month]);
 
   const fetchMasterData = useCallback(async () => {
     if (!organizationId) return;
@@ -88,7 +108,12 @@ export function useMonthlyAssignmentData({ days, organizationId }: Props) {
     const [fileData, memberData, dailyInfoData, shiftRequestData] =
       await Promise.all([
         getAssignmentFiles(organizationId, assignmentIds),
-        getSiteMembers(organizationId, assignmentIds, startDate, endDate),
+        getSiteMembers(
+          organizationId,
+          assignmentIds,
+          memberStartDate,
+          memberEndDate
+        ),
         getDailyInfos(organizationId, assignmentIds, startDate, endDate),
         getShiftRequests(organizationId, startDate, endDate),
       ]);
@@ -98,7 +123,13 @@ export function useMonthlyAssignmentData({ days, organizationId }: Props) {
     setDailyInfos(dailyInfoData);
     setShiftRequests(shiftRequestData);
 
-  }, [organizationId, startDate, endDate]);
+  }, [
+    organizationId,
+    startDate,
+    endDate,
+    memberStartDate,
+    memberEndDate,
+  ]);
 
   const fetchData = useCallback(async () => {
     await Promise.all([fetchMasterData(), fetchScheduleData()]);

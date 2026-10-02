@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import type { DailyInfo } from "../types";
 
@@ -12,6 +12,14 @@ export function useRealtime(
   organizationId: string | null,
   setDailyInfos: SetDailyInfos
 ) {
+  const fetchDataRef = useRef(fetchData);
+
+  // 常に最新のfetchDataを保持
+  useEffect(() => {
+    fetchDataRef.current = fetchData;
+  }, [fetchData]);
+
+  // Realtime購読
   useEffect(() => {
     if (!organizationId) return;
 
@@ -24,7 +32,7 @@ export function useRealtime(
 
       fetchTimer = setTimeout(() => {
         fetchTimer = null;
-        void fetchData();
+        void fetchDataRef.current();
       }, 500);
     };
 
@@ -52,6 +60,7 @@ export function useRealtime(
             setDailyInfos((prev) =>
               prev.filter((row) => row.id !== deletedRow.id)
             );
+
             return;
           }
 
@@ -90,6 +99,7 @@ export function useRealtime(
 
             const next = [...prev];
             next[index] = changedRow;
+
             return next;
           });
         }
@@ -119,14 +129,18 @@ export function useRealtime(
     return () => {
       if (fetchTimer) {
         clearTimeout(fetchTimer);
+        fetchTimer = null;
       }
 
       void supabase.removeChannel(channel);
     };
-  }, [
-    baseMonth,
-    organizationId,
-    fetchData,
-    setDailyInfos,
-  ]);
+  }, [organizationId, setDailyInfos]);
+
+  // 月が変わったときはデータだけ再取得。
+  // Realtimeチャンネルは作り直さない。
+  useEffect(() => {
+    if (!organizationId) return;
+
+    void fetchDataRef.current();
+  }, [baseMonth, organizationId]);
 }
