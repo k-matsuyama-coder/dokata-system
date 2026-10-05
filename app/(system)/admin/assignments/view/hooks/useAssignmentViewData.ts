@@ -4,6 +4,113 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { createSignedUrlMap } from "@/lib/storageSignedUrls";
 
+type AssignmentGroupKey =
+  | "group1"
+  | "group2"
+  | "group3"
+  | "group4"
+  | "group5";
+
+export type AssignmentGroupSetting = {
+  id: string;
+  group_key: AssignmentGroupKey;
+  display_name: string;
+  is_enabled: boolean;
+  sort_order: number;
+  header_color: string | null;
+};
+
+export type Assignment = {
+  id: string;
+  site_name: string | null;
+  contractor_name: string | null;
+  manager_name: string | null;
+  contact_phone: string | null;
+  address: string | null;
+  meeting_time: string | null;
+  shift_type: string | null;
+  group_key: AssignmentGroupKey | null;
+};
+
+export type SiteMember = {
+  id: string;
+  assignment_id: string;
+  work_date: string;
+  employee_name: string;
+  is_driver: boolean | null;
+  is_operator: boolean | null;
+  heavy_equipment: string | null;
+  is_foreman: boolean | null;
+};
+
+export type DailyInfo = {
+  id: string;
+  assignment_id: string;
+  work_date: string;
+  planned_count: number | null;
+  detail: string | null;
+  vehicle_names: string[] | null;
+};
+
+export type AssignmentFile = {
+  id: string;
+  assignment_id: string;
+  file_name: string;
+  file_url: string;
+  file_path: string;
+};
+
+function defaultGroupSettings(): AssignmentGroupSetting[] {
+  return [
+    {
+      id: "group1",
+      group_key: "group1",
+      display_name: "グループ①",
+      is_enabled: true,
+      sort_order: 0,
+      header_color: "#e5e7eb",
+    },
+    {
+      id: "group2",
+      group_key: "group2",
+      display_name: "グループ②",
+      is_enabled: true,
+      sort_order: 1,
+      header_color: "#dbeafe",
+    },
+    {
+      id: "group3",
+      group_key: "group3",
+      display_name: "グループ③",
+      is_enabled: false,
+      sort_order: 2,
+      header_color: "#dcfce7",
+    },
+    {
+      id: "group4",
+      group_key: "group4",
+      display_name: "グループ④",
+      is_enabled: false,
+      sort_order: 3,
+      header_color: "#fef3c7",
+    },
+    {
+      id: "group5",
+      group_key: "group5",
+      display_name: "グループ⑤",
+      is_enabled: false,
+      sort_order: 4,
+      header_color: "#fce7f3",
+    },
+  ];
+}
+
+type Props = {
+  displayDates: string[];
+  date: string;
+  viewMode: "day" | "3days" | "week";
+};
+
 export function useAssignmentViewData({
   displayDates,
   date,

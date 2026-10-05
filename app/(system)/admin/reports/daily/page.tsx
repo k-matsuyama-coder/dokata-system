@@ -11,6 +11,7 @@ type Report = {
   report_date: string;
   contractor_name: string | null;
   worker_name: string | null;
+  manager_name?: string | null;
   site_name: string | null;
   shift_type: string | null;
   start_time: string | null;
@@ -155,7 +156,42 @@ export default function DailyReportAdminPage() {
       return;
     }
   
-    const allReports = data ?? [];
+    const { data: assignments, error: assignmentError } = await supabase
+    .from("assignments")
+    .select("site_name, contractor_name, shift_type, manager_name")
+    .eq("organization_id", currentOrganizationId);
+
+  if (assignmentError) {
+    alert("現場担当者の取得失敗: " + assignmentError.message);
+    return;
+  }
+
+  const normalize = (value: string | null | undefined) =>
+    (value ?? "").trim();
+
+  const allReports: Report[] = (data ?? []).map((report) => {
+    // 同じ営業所・現場名・昼夜の番割から担当者を取得
+    const matches = (assignments ?? []).filter(
+      (assignment) =>
+        normalize(assignment.site_name) === normalize(report.site_name) &&
+        normalize(assignment.contractor_name) ===
+          normalize(report.contractor_name) &&
+        (assignment.shift_type ?? "day") === (report.shift_type ?? "day")
+    );
+
+    const managerNames = [
+      ...new Set(
+        matches
+          .map((assignment) => normalize(assignment.manager_name))
+          .filter(Boolean)
+      ),
+    ];
+
+    return {
+      ...report,
+      manager_name: managerNames.length === 1 ? managerNames[0] : null,
+    };
+  });
   
     setMonthReports(allReports);
     setReports(
@@ -638,7 +674,7 @@ width: "100%",
   </td>
 
   <td style={tdStyle}>
-    {report.worker_name || "-"}
+  {report.manager_name || "-"}
   </td>
 
   <td style={tdStyle}>
