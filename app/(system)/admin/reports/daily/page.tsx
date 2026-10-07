@@ -11,6 +11,9 @@ type Report = {
   report_date: string;
   contractor_name: string | null;
   worker_name: string | null;
+  report_members: {
+    overtime: number | null;
+  }[] | null;
   manager_name?: string | null;
   site_name: string | null;
   shift_type: string | null;
@@ -142,7 +145,10 @@ export default function DailyReportAdminPage() {
           heavy_equipment,
           operator_name,
           is_checked,
-          organization_id
+          organization_id,
+          report_members (
+            overtime
+          )
         `
       )
       .eq("organization_id", currentOrganizationId)
@@ -695,10 +701,10 @@ width: "100%",
 
   <td style={{ ...tdStyle, textAlign: "center" }}>
   {(() => {
-    const value = Number(report.overtime_minutes ?? 0);
-    const hours = value > 0 && value < 30 ? value : value / 60;
-    const workerCount = Number(report.worker_count ?? 0);
-    const totalHours = hours * workerCount;
+    const totalHours = (report.report_members ?? []).reduce(
+      (total, member) => total + Number(member.overtime ?? 0),
+      0
+    );
 
     return `${Number(totalHours.toFixed(2))}時間`;
   })()}
