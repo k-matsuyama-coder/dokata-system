@@ -16,6 +16,7 @@ type Report = {
     employee_id: string | null;
     labor: number | null;
     overtime: number | null;
+    is_driver: boolean | null;
   }[] | null;
   vehicle_count: number | null;
   parking_main: number | null;
@@ -24,6 +25,16 @@ type Report = {
   fuel_gasoline: number | null;
   fuel_diesel: number | null;
   note: string | null;
+};
+
+type CompanyCost = {
+  contractor_name: string;
+  site_name: string;
+  shift_type: string;
+  work_date: string;
+  parking: number;
+  gasoline: number;
+  diesel: number;
 };
 
 type Assignment = {
@@ -112,6 +123,17 @@ export default function MonthlyInvoiceSheetPage() {
   useState<"all" | "own">("all");
 const [ownCompanyName, setOwnCompanyName] = useState("");
 const [ownEmployeeIds, setOwnEmployeeIds] = useState<string[]>([]);
+const [currentOrganizationId, setCurrentOrganizationId] =
+useState<string | null>(null);
+const [companyCosts, setCompanyCosts] = useState<CompanyCost[]>([]);
+const [costDrafts, setCostDrafts] = useState<
+Record<string, {
+  parking: string;
+  gasoline: string;
+  diesel: string;
+}>
+>({});
+const [savingCostKey, setSavingCostKey] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -189,6 +211,37 @@ const [ownEmployeeIds, setOwnEmployeeIds] = useState<string[]>([]);
 
         const { firstDate, lastDate } = getMonthRange(month);
 
+        const loadedCompanyCosts: CompanyCost[] = [];
+
+        if (companyName) {
+          const pageSize = 1000;
+
+          for (let from = 0; ; from += pageSize) {
+            const { data: costData, error: costError } = await supabase
+              .from("monthly_invoice_company_costs")
+              .select(
+                "contractor_name, site_name, shift_type, work_date, parking, gasoline, diesel"
+              )
+              .eq("organization_id", organizationId)
+              .eq("company_name", companyName)
+              .gte("work_date", firstDate)
+              .lte("work_date", lastDate)
+              .order("id", { ascending: true })
+              .range(from, from + pageSize - 1);
+
+            if (costError) {
+              throw costError;
+            }
+
+            const costPage = (costData ?? []) as CompanyCost[];
+            loadedCompanyCosts.push(...costPage);
+
+            if (costPage.length < pageSize) {
+              break;
+            }
+          }
+        }
+
         const [reportResult, assignmentResult] = await Promise.all([
           supabase
             .from("daily_reports")
@@ -209,7 +262,8 @@ const [ownEmployeeIds, setOwnEmployeeIds] = useState<string[]>([]);
               report_members (
                 employee_id,
                 labor,
-                overtime
+                overtime,
+                is_driver
               )
             `)
             .eq("organization_id", organizationId)
@@ -238,8 +292,10 @@ const [ownEmployeeIds, setOwnEmployeeIds] = useState<string[]>([]);
 
         if (!active) return;
 
+        setCurrentOrganizationId(organizationId);
         setOwnCompanyName(companyName);
         setOwnEmployeeIds(companyEmployeeIds);
+        setCompanyCosts(loadedCompanyCosts);
         setReports((reportResult.data ?? []) as Report[]);
         setAssignments((assignmentResult.data ?? []) as Assignment[]);
       } catch (error) {
@@ -343,9 +399,13 @@ const [ownEmployeeIds, setOwnEmployeeIds] = useState<string[]>([]);
       (total, member) => total + Number(member.overtime ?? 0),
       0
     );
-            // 車両・駐車場・燃料は「全体」の場合だけ集計
-            if (aggregationScope === "all") {
-              row.vehicleCount += Number(report.vehicle_count ?? 0);
+    row.vehicleCount +=
+    aggregationScope === "own"
+      ? targetMembers.filter((member) => member.is_driver === true).length
+      : Number(report.vehicle_count ?? 0);
+
+  // 日報の駐車場・燃料は「全体」の場合だけ集計
+  if (aggregationScope === "all") {
               row.parking +=
                 Number(report.parking_main ?? 0) +
                 Number(report.parking_secondary ?? 0) +
@@ -360,6 +420,30 @@ const [ownEmployeeIds, setOwnEmployeeIds] = useState<string[]>([]);
         row.notes.push(note);
       }
     });
+
+        // 日報の集計後に、自社用の入力値を日付ごとに反映
+        if (aggregationScope === "own") {
+          companyCosts.forEach((cost) => {
+            const sheet = Array.from(sheetMap.values()).find(
+              (item) =>
+                item.contractorName === cost.contractor_name &&
+                item.siteName === cost.site_name &&
+                item.shiftType === cost.shift_type
+            );
+    
+            if (!sheet) return;
+    
+            const row = sheet.rows.find(
+              (item) => item.date === cost.work_date
+            );
+    
+            if (!row) return;
+    
+            row.parking = Number(cost.parking);
+            row.gasoline = Number(cost.gasoline);
+            row.diesel = Number(cost.diesel);
+          });
+        }
 
     return Array.from(sheetMap.values()).sort((a, b) => {
         const officeCompare = a.contractorName.localeCompare(
@@ -386,6 +470,7 @@ const [ownEmployeeIds, setOwnEmployeeIds] = useState<string[]>([]);
       aggregationScope,
       ownEmployeeIds,
       ownCompanyName,
+      companyCosts,
     ]);
 
   const offices = useMemo(() => {
@@ -404,8 +489,126 @@ const [ownEmployeeIds, setOwnEmployeeIds] = useState<string[]>([]);
     );
   }, [sheets, selectedOffice]);
 
+  const getCostKey = (sheet: Sheet, date: string) =>
+  JSON.stringify([
+    ownCompanyName,
+    sheet.contractorName,
+    sheet.siteName,
+    sheet.shiftType,
+    date,
+  ]);
+
+const saveCompanyCost = async (sheet: Sheet, row: DailyRow) => {
+  if (
+    aggregationScope !== "own" ||
+    !currentOrganizationId ||
+    !ownCompanyName ||
+    savingCostKey
+  ) {
+    return;
+  }
+
+  const key = getCostKey(sheet, row.date);
+  const draft = costDrafts[key];
+
+  if (!draft) return;
+
+  const values = [draft.parking, draft.gasoline, draft.diesel];
+
+  const isValid = values.every((value) => {
+    const text = value.trim();
+
+    return (
+      text === "" ||
+      (/^\d+(\.\d{1,2})?$/.test(text) &&
+        Number(text) <= 9999999999.99)
+    );
+  });
+
+  if (!isValid) {
+    alert("0以上の数値を、小数点以下2桁までで入力してください。");
+    return;
+  }
+
+  const cost: CompanyCost = {
+    contractor_name: sheet.contractorName,
+    site_name: sheet.siteName,
+    shift_type: sheet.shiftType,
+    work_date: row.date,
+    parking: Number(draft.parking.trim() || 0),
+    gasoline: Number(draft.gasoline.trim() || 0),
+    diesel: Number(draft.diesel.trim() || 0),
+  };
+
+  setSavingCostKey(key);
+
+  try {
+    const { data, error } = await supabase
+      .from("monthly_invoice_company_costs")
+      .upsert(
+        {
+          ...cost,
+          organization_id: currentOrganizationId,
+          company_name: ownCompanyName,
+          updated_at: new Date().toISOString(),
+        },
+        {
+          onConflict:
+            "organization_id,company_name,contractor_name,site_name,shift_type,work_date",
+        }
+      )
+      .select(
+        "contractor_name, site_name, shift_type, work_date, parking, gasoline, diesel"
+      )
+      .single();
+
+    if (error) throw error;
+    if (!data) throw new Error("保存結果を確認できませんでした。");
+
+    const savedCost = data as CompanyCost;
+
+    setCompanyCosts((current) => [
+      ...current.filter(
+        (item) =>
+          !(
+            item.contractor_name === cost.contractor_name &&
+            item.site_name === cost.site_name &&
+            item.shift_type === cost.shift_type &&
+            item.work_date === cost.work_date
+          )
+      ),
+      savedCost,
+    ]);
+
+    setCostDrafts((current) => {
+      const next = { ...current };
+      delete next[key];
+      return next;
+    });
+  } catch (error) {
+    alert(
+      "保存に失敗しました: " +
+        (error instanceof Error
+          ? error.message
+          : (error as { message?: string })?.message ??
+            "もう一度お試しください。")
+    );
+  } finally {
+    setSavingCostKey(null);
+  }
+};
+
   const { year, monthNumber } = getMonthRange(month);
   const handleExportExcel = async () => {
+    if (loading || loadError || savingCostKey !== null) {
+      alert("読み込み・保存が完了していることを確認してください。");
+      return;
+    }
+
+    if (Object.keys(costDrafts).length > 0) {
+      alert("未保存の入力があります。「この行を保存」を押してから出力してください。");
+      return;
+    }
     if (filteredSheets.length === 0) {
       alert("出力対象の現場がありません");
       return;
@@ -444,7 +647,7 @@ const [ownEmployeeIds, setOwnEmployeeIds] = useState<string[]>([]);
           <h1>請求用月次日報</h1>
           <p>
             {aggregationScope === "own"
-              ? `${ownCompanyName}所属の社員の人工・残業を集計します。車両・駐車場・燃料は集計対象外です。`
+                            ? `${ownCompanyName}所属の社員の人工・残業・運転手人数を集計します。車両欄には運転手人数を表示します。`
               : "全体の日報を現場別・月別に集計します。"}
           </p>
         </div>
@@ -453,7 +656,7 @@ const [ownEmployeeIds, setOwnEmployeeIds] = useState<string[]>([]);
         <select
             aria-label="集計対象"
             value={aggregationScope}
-            disabled={loading}
+            disabled={loading || savingCostKey !== null}
             onChange={(event) => {
               setAggregationScope(
                 event.target.value === "own" ? "own" : "all"
@@ -483,6 +686,7 @@ const [ownEmployeeIds, setOwnEmployeeIds] = useState<string[]>([]);
           <input
             type="month"
             value={month}
+            disabled={loading || savingCostKey !== null}
             onChange={(event) => setMonth(event.target.value)}
           />
 
@@ -494,7 +698,20 @@ const [ownEmployeeIds, setOwnEmployeeIds] = useState<string[]>([]);
   {exportingExcel ? "作成中..." : "Excel出力"}
 </button>
 
-          <button type="button" onClick={() => window.print()}>
+<button
+            type="button"
+            disabled={loading || !!loadError || savingCostKey !== null}
+            onClick={() => {
+              if (Object.keys(costDrafts).length > 0) {
+                alert(
+                  "未保存の入力があります。「この行を保存」を押してから印刷してください。"
+                );
+                return;
+              }
+
+              window.print();
+            }}
+          >
             印刷
           </button>
         </div>
@@ -594,6 +811,13 @@ const [ownEmployeeIds, setOwnEmployeeIds] = useState<string[]>([]);
                     <tbody>
                       {sheet.rows.map((row) => {
                         const date = new Date(`${row.date}T00:00:00`);
+                        const costKey = getCostKey(sheet, row.date);
+                        const initialCost = {
+                          parking: row.parking ? String(row.parking) : "",
+                          gasoline: row.gasoline ? String(row.gasoline) : "",
+                          diesel: row.diesel ? String(row.diesel) : "",
+                        };
+                        const costDraft = costDrafts[costKey] ?? initialCost;
                         const hasData =
                           row.workerCount !== 0 ||
                           row.overtimeHours !== 0 ||
@@ -616,22 +840,81 @@ const [ownEmployeeIds, setOwnEmployeeIds] = useState<string[]>([]);
                                 : ""}
                             </td>
                             <td>{row.vehicleCount || ""}</td>
+                            {(["parking", "gasoline", "diesel"] as const).map(
+                              (field) => {
+                                const label =
+                                  field === "parking"
+                                    ? "駐車場（円）"
+                                    : field === "gasoline"
+                                      ? "ガソリン（リットル）"
+                                      : "軽油（リットル）";
+
+                                const savedValue = row[field]
+                                  ? field === "parking"
+                                    ? `¥${row[field].toLocaleString()}`
+                                    : Number(row[field].toFixed(2))
+                                  : "";
+
+                                return (
+                                  <td key={field}>
+                                    {aggregationScope === "own" ? (
+                                      <>
+                                        <input
+                                          className="cost-input"
+                                          type="text"
+                                          inputMode="decimal"
+                                          aria-label={`${sheet.siteName} ${row.date} ${label}`}
+                                          value={costDraft[field]}
+                                          disabled={savingCostKey !== null}
+                                          onChange={(event) => {
+                                            const value = event.target.value;
+
+                                            setCostDrafts((current) => ({
+                                              ...current,
+                                              [costKey]: {
+                                                ...(current[costKey] ?? initialCost),
+                                                [field]: value,
+                                              },
+                                            }));
+                                          }}
+                                          style={{
+                                            width: "100%",
+                                            minWidth: 55,
+                                            boxSizing: "border-box",
+                                            textAlign: "right",
+                                            padding: "4px",
+                                          }}
+                                        />
+                                        <span className="cost-print-value">
+                                          {savedValue}
+                                        </span>
+                                      </>
+                                    ) : (
+                                      savedValue
+                                    )}
+                                  </td>
+                                );
+                              }
+                            )}
+
                             <td>
-                              {row.parking
-                                ? `¥${row.parking.toLocaleString()}`
-                                : ""}
+                              {row.notes.join(" / ")}
+
+                              {aggregationScope === "own" &&
+                                costDrafts[costKey] && (
+                                  <div className="cost-save-controls">
+                                    <button
+                                      type="button"
+                                      disabled={savingCostKey !== null}
+                                      onClick={() => void saveCompanyCost(sheet, row)}
+                                    >
+                                      {savingCostKey === costKey
+                                        ? "保存中..."
+                                        : "この行を保存"}
+                                    </button>
+                                  </div>
+                                )}
                             </td>
-                            <td>
-                              {row.gasoline
-                                ? Number(row.gasoline.toFixed(2))
-                                : ""}
-                            </td>
-                            <td>
-                              {row.diesel
-                                ? Number(row.diesel.toFixed(2))
-                                : ""}
-                            </td>
-                            <td>{row.notes.join(" / ")}</td>
                           </tr>
                         );
                       })}
@@ -644,24 +927,10 @@ const [ownEmployeeIds, setOwnEmployeeIds] = useState<string[]>([]);
                         <th>
                           {Number(totals.overtimeHours.toFixed(2))}
                         </th>
-                        <th>
-                          {aggregationScope === "own" ? "" : totals.vehicleCount}
-                        </th>
-                        <th>
-                          {aggregationScope === "own"
-                            ? ""
-                            : `¥${totals.parking.toLocaleString()}`}
-                        </th>
-                        <th>
-                          {aggregationScope === "own"
-                            ? ""
-                            : Number(totals.gasoline.toFixed(2))}
-                        </th>
-                        <th>
-                          {aggregationScope === "own"
-                            ? ""
-                            : Number(totals.diesel.toFixed(2))}
-                        </th>
+                        <th>{totals.vehicleCount}</th>
+                        <th>¥{totals.parking.toLocaleString()}</th>
+                        <th>{Number(totals.gasoline.toFixed(2))}</th>
+                        <th>{Number(totals.diesel.toFixed(2))}</th>
                         <th />
                       </tr>
                     </tfoot>
@@ -674,6 +943,9 @@ const [ownEmployeeIds, setOwnEmployeeIds] = useState<string[]>([]);
       )}
 
       <style jsx>{`
+              .cost-print-value {
+                display: none;
+              }
         .monthly-sheet-page {
           min-height: 100vh;
           padding: 16px;
@@ -862,6 +1134,14 @@ const [ownEmployeeIds, setOwnEmployeeIds] = useState<string[]>([]);
         }
 
         @media print {
+          .cost-input,
+          .cost-save-controls {
+            display: none !important;
+          }
+
+          .cost-print-value {
+            display: inline !important;
+          }
             @page {
               size: A4 portrait;
               margin: 5mm;

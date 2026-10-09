@@ -215,19 +215,15 @@ function writeSheetBlock(params: {
   worksheet.getCell(totalRow, startColumn + 3).value =
     Number(totals.overtimeHours.toFixed(2));
     worksheet.getCell(totalRow, startColumn + 4).value =
-    sheet.ownCompanyName ? "" : totals.vehicleCount;
-  worksheet.getCell(totalRow, startColumn + 5).value =
-    sheet.ownCompanyName ? "" : totals.parking;
+    totals.vehicleCount;
+    worksheet.getCell(totalRow, startColumn + 5).value =
+    totals.parking;
   worksheet.getCell(totalRow, startColumn + 5).numFmt =
     '"¥"#,##0';
   worksheet.getCell(totalRow, startColumn + 6).value =
-    sheet.ownCompanyName
-      ? ""
-      : Number(totals.gasoline.toFixed(2));
+    Number(totals.gasoline.toFixed(2));
   worksheet.getCell(totalRow, startColumn + 7).value =
-    sheet.ownCompanyName
-      ? ""
-      : Number(totals.diesel.toFixed(2));
+    Number(totals.diesel.toFixed(2));
 
   for (let row = startRow; row <= totalRow; row += 1) {
     for (
