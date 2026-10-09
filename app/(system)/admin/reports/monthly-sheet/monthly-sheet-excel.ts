@@ -72,7 +72,10 @@ function writeSheetBlock(params: {
 
   worksheet.getCell(startRow, startColumn).value =
     `${year}年${monthNumber}月`;
-  worksheet.getCell(startRow, startColumn + 3).value = "作業員日報";
+    worksheet.getCell(startRow, startColumn + 3).value =
+    sheet.ownCompanyName
+      ? `作業員日報（${sheet.ownCompanyName}のみ）`
+      : "作業員日報";
   worksheet.getCell(startRow, lastColumn).value = number;
 
   worksheet.getCell(startRow + 1, startColumn).value = "現場名";
@@ -211,16 +214,20 @@ function writeSheetBlock(params: {
     totals.workerCount;
   worksheet.getCell(totalRow, startColumn + 3).value =
     Number(totals.overtimeHours.toFixed(2));
-  worksheet.getCell(totalRow, startColumn + 4).value =
-    totals.vehicleCount;
+    worksheet.getCell(totalRow, startColumn + 4).value =
+    sheet.ownCompanyName ? "" : totals.vehicleCount;
   worksheet.getCell(totalRow, startColumn + 5).value =
-    totals.parking;
+    sheet.ownCompanyName ? "" : totals.parking;
   worksheet.getCell(totalRow, startColumn + 5).numFmt =
     '"¥"#,##0';
   worksheet.getCell(totalRow, startColumn + 6).value =
-    Number(totals.gasoline.toFixed(2));
+    sheet.ownCompanyName
+      ? ""
+      : Number(totals.gasoline.toFixed(2));
   worksheet.getCell(totalRow, startColumn + 7).value =
-    Number(totals.diesel.toFixed(2));
+    sheet.ownCompanyName
+      ? ""
+      : Number(totals.diesel.toFixed(2));
 
   for (let row = startRow; row <= totalRow; row += 1) {
     for (
@@ -289,7 +296,14 @@ function writeSheetBlock(params: {
     };
   
     // タイトル・現場名・昼夜・出張所担当・列見出し
-    worksheet.getRow(startRow).height = 30;
+    const title = sheet.ownCompanyName
+    ? `作業員日報（${sheet.ownCompanyName}のみ）`
+    : "作業員日報";
+
+  worksheet.getRow(startRow).height = Math.max(
+    30,
+    textLines(title, 30) * 22 + 12
+  );
   
     worksheet.getRow(startRow + 1).height = Math.max(
       26,
@@ -396,8 +410,18 @@ export async function exportMonthlySheetsToExcel(params: {
 
   const buffer = await workbook.xlsx.writeBuffer();
 
+  const companyName = sheets[0]?.ownCompanyName;
+  const scopeLabel = companyName
+    ? `自社のみ_${companyName}`
+    : "全体";
+
+  const safeScopeLabel = scopeLabel.replace(
+    /[\\/:*?"<>|\u0000-\u001f]/g,
+    "_"
+  );
+
   downloadExcel(
     buffer as ArrayBuffer,
-    `請求用月次日報_${month}.xlsx`
+    `請求用月次日報_${month}_${safeScopeLabel}.xlsx`
   );
 }

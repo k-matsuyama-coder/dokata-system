@@ -13,6 +13,8 @@ type Report = {
   shift_type: string | null;
   worker_count: number | null;
   report_members: {
+    employee_id: string | null;
+    labor: number | null;
     overtime: number | null;
   }[] | null;
   vehicle_count: number | null;
@@ -43,6 +45,7 @@ export type DailyRow = {
 };
 
 export type Sheet = {
+  ownCompanyName?: string;
   key: string;
   siteName: string;
   contractorName: string;
@@ -105,6 +108,10 @@ export default function MonthlyInvoiceSheetPage() {
   const [loadError, setLoadError] = useState("");
   const [selectedOffice, setSelectedOffice] = useState("all");
   const [exportingExcel, setExportingExcel] = useState(false);
+  const [aggregationScope, setAggregationScope] =
+  useState<"all" | "own">("all");
+const [ownCompanyName, setOwnCompanyName] = useState("");
+const [ownEmployeeIds, setOwnEmployeeIds] = useState<string[]>([]);
 
   useEffect(() => {
     let active = true;
@@ -134,7 +141,7 @@ export default function MonthlyInvoiceSheetPage() {
 
         const { data: employee, error: employeeError } = await supabase
           .from("employees")
-          .select("role")
+          .select("role, company_name")
           .eq("organization_id", organizationId)
           .eq("auth_user_id", user.id)
           .maybeSingle();
@@ -146,6 +153,38 @@ export default function MonthlyInvoiceSheetPage() {
         ) {
           window.location.href = "/home";
           return;
+        }
+
+        const companyName = normalize(employee.company_name);
+        const companyEmployeeIds: string[] = [];
+
+        if (companyName) {
+          const pageSize = 1000;
+
+          for (let from = 0; ; from += pageSize) {
+            const { data: companyEmployees, error: companyError } =
+              await supabase
+                .from("employees")
+                .select("id")
+                .eq("organization_id", organizationId)
+                .eq("company_name", employee.company_name)
+                .order("id", { ascending: true })
+                .range(from, from + pageSize - 1);
+
+            if (companyError) {
+              throw companyError;
+            }
+
+            const employeesPage = companyEmployees ?? [];
+
+            companyEmployeeIds.push(
+              ...employeesPage.map((item) => item.id)
+            );
+
+            if (employeesPage.length < pageSize) {
+              break;
+            }
+          }
         }
 
         const { firstDate, lastDate } = getMonthRange(month);
@@ -167,9 +206,11 @@ export default function MonthlyInvoiceSheetPage() {
               fuel_gasoline,
               fuel_diesel,
               note,
-report_members (
-  overtime
-)
+              report_members (
+                employee_id,
+                labor,
+                overtime
+              )
             `)
             .eq("organization_id", organizationId)
             .gte("report_date", firstDate)
@@ -197,6 +238,8 @@ report_members (
 
         if (!active) return;
 
+        setOwnCompanyName(companyName);
+        setOwnEmployeeIds(companyEmployeeIds);
         setReports((reportResult.data ?? []) as Report[]);
         setAssignments((assignmentResult.data ?? []) as Assignment[]);
       } catch (error) {
@@ -226,7 +269,21 @@ report_members (
     const { lastDay } = getMonthRange(month);
     const sheetMap = new Map<string, Sheet>();
 
+    const ownEmployeeIdSet = new Set(ownEmployeeIds);
+
     reports.forEach((report) => {
+      const targetMembers = (report.report_members ?? []).filter(
+        (member) =>
+          aggregationScope === "all" ||
+          (member.employee_id !== null &&
+            ownEmployeeIdSet.has(member.employee_id))
+      );
+
+      // 自社社員が参加していない日報は集計対象外
+      if (aggregationScope === "own" && targetMembers.length === 0) {
+        return;
+      }
+
       const siteName = normalize(report.site_name) || "現場名未設定";
       const contractorName =
         normalize(report.contractor_name) || "元請未設定";
@@ -255,6 +312,8 @@ report_members (
         }));
 
         sheetMap.set(key, {
+          ownCompanyName:
+            aggregationScope === "own" ? ownCompanyName : undefined,
           key,
           siteName,
           contractorName,
@@ -272,18 +331,28 @@ report_members (
 
       if (!row) return;
 
-      row.workerCount += Number(report.worker_count ?? 0);
-      row.overtimeHours += (report.report_members ?? []).reduce(
-        (total, member) => total + Number(member.overtime ?? 0),
-        0
-      );
-      row.vehicleCount += Number(report.vehicle_count ?? 0);
-      row.parking +=
-        Number(report.parking_main ?? 0) +
-        Number(report.parking_secondary ?? 0) +
-        Number(report.parking_subcontract ?? 0);
-      row.gasoline += Number(report.fuel_gasoline ?? 0);
-      row.diesel += Number(report.fuel_diesel ?? 0);
+      row.workerCount +=
+      aggregationScope === "own"
+        ? targetMembers.reduce(
+            (total, member) => total + Number(member.labor ?? 0),
+            0
+          )
+        : Number(report.worker_count ?? 0);
+
+    row.overtimeHours += targetMembers.reduce(
+      (total, member) => total + Number(member.overtime ?? 0),
+      0
+    );
+            // 車両・駐車場・燃料は「全体」の場合だけ集計
+            if (aggregationScope === "all") {
+              row.vehicleCount += Number(report.vehicle_count ?? 0);
+              row.parking +=
+                Number(report.parking_main ?? 0) +
+                Number(report.parking_secondary ?? 0) +
+                Number(report.parking_subcontract ?? 0);
+              row.gasoline += Number(report.fuel_gasoline ?? 0);
+              row.diesel += Number(report.fuel_diesel ?? 0);
+            }
 
       const note = normalize(report.note);
 
@@ -310,7 +379,14 @@ report_members (
       
         return a.shiftType.localeCompare(b.shiftType);
       });
-  }, [reports, assignments, month]);
+    }, [
+      reports,
+      assignments,
+      month,
+      aggregationScope,
+      ownEmployeeIds,
+      ownCompanyName,
+    ]);
 
   const offices = useMemo(() => {
     return Array.from(
@@ -366,10 +442,32 @@ report_members (
 
         <div>
           <h1>請求用月次日報</h1>
-          <p>日報を現場別・月別に集計します。</p>
+          <p>
+            {aggregationScope === "own"
+              ? `${ownCompanyName}所属の社員の人工・残業を集計します。車両・駐車場・燃料は集計対象外です。`
+              : "全体の日報を現場別・月別に集計します。"}
+          </p>
         </div>
 
         <div className="toolbar-actions">
+        <select
+            aria-label="集計対象"
+            value={aggregationScope}
+            disabled={loading}
+            onChange={(event) => {
+              setAggregationScope(
+                event.target.value === "own" ? "own" : "all"
+              );
+              setSelectedOffice("all");
+            }}
+          >
+            <option value="all">全体</option>
+            <option value="own" disabled={!ownCompanyName}>
+              {ownCompanyName
+                ? `自社のみ（${ownCompanyName}）`
+                : "自社のみ（所属会社未設定）"}
+            </option>
+          </select>
         <select
   value={selectedOffice}
   onChange={(event) => setSelectedOffice(event.target.value)}
@@ -444,7 +542,11 @@ report_members (
                     <strong>
                       {year}年{monthNumber}月
                     </strong>
-                    <strong>作業員日報</strong>
+                    <strong>
+                      {sheet.ownCompanyName
+                        ? `作業員日報（${sheet.ownCompanyName}のみ）`
+                        : "作業員日報"}
+                    </strong>
                     <strong>{sheetIndex + 1}</strong>
                   </div>
 
@@ -542,10 +644,24 @@ report_members (
                         <th>
                           {Number(totals.overtimeHours.toFixed(2))}
                         </th>
-                        <th>{totals.vehicleCount}</th>
-                        <th>¥{totals.parking.toLocaleString()}</th>
-                        <th>{Number(totals.gasoline.toFixed(2))}</th>
-                        <th>{Number(totals.diesel.toFixed(2))}</th>
+                        <th>
+                          {aggregationScope === "own" ? "" : totals.vehicleCount}
+                        </th>
+                        <th>
+                          {aggregationScope === "own"
+                            ? ""
+                            : `¥${totals.parking.toLocaleString()}`}
+                        </th>
+                        <th>
+                          {aggregationScope === "own"
+                            ? ""
+                            : Number(totals.gasoline.toFixed(2))}
+                        </th>
+                        <th>
+                          {aggregationScope === "own"
+                            ? ""
+                            : Number(totals.diesel.toFixed(2))}
+                        </th>
                         <th />
                       </tr>
                     </tfoot>
