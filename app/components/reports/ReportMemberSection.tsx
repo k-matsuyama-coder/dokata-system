@@ -206,7 +206,7 @@ export default function ReportMemberSection({
               <div>
                 {editingLaborName === member.name ? (
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                    {["0", "0.5", "1", "1.5"].map((val) => (
+                    {["0", "0.5", "1", "1.5", "2"].map((val) => (
                       <button
                         key={val}
                         type="button"
