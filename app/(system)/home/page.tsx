@@ -241,7 +241,7 @@ return;
                 { data: todayReports, error: todayReportsError },
                 { data: todayScheduledMembers, error: scheduledMembersError },
                 { data: monthlyDailyInfos, error: dailyInfosError },
-                { data: monthlyReports, error: monthlyReportsError },
+                { data: monthlyLaborTotal, error: monthlyReportsError },
                 { count: pendingItemRequests, error: pendingRequestsError },
                 { count: returnItemRequests, error: returnRequestsError },
               ] = await Promise.all([
@@ -278,12 +278,11 @@ supabase
   .gte("work_date", monthStart)
   .lte("work_date", monthEnd),
           
-            supabase
-              .from("daily_reports")
-              .select("worker_count")
-              .eq("organization_id", currentOrganizationId)
-              .gte("report_date", monthStart)
-              .lte("report_date", monthEnd),
+  supabase.rpc("sum_report_worker_count", {
+    p_organization_id: currentOrganizationId,
+    p_start_date: monthStart,
+    p_end_date: monthEnd,
+  }),
           
             supabase
               .from("item_requests")
@@ -387,10 +386,7 @@ const monthlyPlannedLabor = (monthlyDailyInfos ?? []).reduce(
   0
 );
       
-        const monthlyActualLabor = (monthlyReports ?? []).reduce(
-          (sum, report) => sum + Number(report.worker_count ?? 0),
-          0
-        );
+const monthlyActualLabor = Number(monthlyLaborTotal ?? 0);
       
         setAdminSummary({
           todayReportCount: todayReportCount ?? 0,
