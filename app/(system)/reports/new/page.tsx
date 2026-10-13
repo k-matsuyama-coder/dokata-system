@@ -118,23 +118,22 @@ const [operatorName, setOperatorName] = useState("");
       // 他の初期表示処理は、この通信の完了を待たずに進める
       void (async () => {
         try {
-          const { data, error } = await supabase
-            .from("daily_reports")
-            .select("site_name")
-            .eq("organization_id", currentOrganizationId)
-            .order("created_at", { ascending: false });
+          const { data, error } = await supabase.rpc(
+            "get_report_site_suggestions",
+            {
+              p_organization_id: currentOrganizationId,
+            }
+          );
 
           if (error) throw error;
 
-          const uniqueSites = Array.from(
-            new Set(
-              (data ?? [])
-                .map((item) => item.site_name)
-                .filter(Boolean)
-            )
-          );
+          const sites = (data ?? []) as {
+            site_name: string;
+          }[];
 
-          setSiteSuggestions(uniqueSites);
+          setSiteSuggestions(
+            sites.map((item) => item.site_name)
+          );
         } catch (error) {
           console.error("現場候補の取得に失敗:", error);
         }
