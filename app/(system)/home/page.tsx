@@ -237,14 +237,14 @@ return;
               .toISOString()
               .slice(0, 10);
       
-          const [
-            { data: todayReports },
-            { data: todayScheduledMembers },
-            { data: monthlyDailyInfos },
-            { data: monthlyReports },
-            { count: pendingItemRequests },
-            { count: returnItemRequests },
-          ] = await Promise.all([
+              const [
+                { data: todayReports, error: todayReportsError },
+                { data: todayScheduledMembers, error: scheduledMembersError },
+                { data: monthlyDailyInfos, error: dailyInfosError },
+                { data: monthlyReports, error: monthlyReportsError },
+                { count: pendingItemRequests, error: pendingRequestsError },
+                { count: returnItemRequests, error: returnRequestsError },
+              ] = await Promise.all([
             supabase
   .from("daily_reports")
   .select("site_name")
@@ -297,6 +297,18 @@ supabase
               .eq("organization_id", currentOrganizationId)
               .eq("status", "return_requested"),
           ]);
+
+          const summaryError =
+          todayReportsError ??
+          scheduledMembersError ??
+          dailyInfosError ??
+          monthlyReportsError ??
+          pendingRequestsError ??
+          returnRequestsError;
+
+        if (summaryError) {
+          throw summaryError;
+        }
 
           const safeTodayReports =
   (todayReports ?? []) as TodayReport[];
