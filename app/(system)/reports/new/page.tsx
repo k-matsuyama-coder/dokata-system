@@ -81,32 +81,6 @@ const [operatorName, setOperatorName] = useState("");
   };
 
   useEffect(() => {
-    const fetchSiteSuggestions = async () => {
-      const currentOrganizationId = await getCurrentOrganization();
-  
-      if (!currentOrganizationId) {
-        return;
-      }
-  
-      const { data, error } = await supabase
-        .from("daily_reports")
-        .select("site_name")
-        .eq("organization_id", currentOrganizationId)
-        .order("created_at", { ascending: false });
-
-      if (error || !data) return;
-
-      const uniqueSites = Array.from(
-        new Set(data.map((item) => item.site_name).filter(Boolean))
-      );
-
-      setSiteSuggestions(uniqueSites);
-    };
-
-    fetchSiteSuggestions();
-  }, []);
-
-  useEffect(() => {
     const fetchInitialData = async () => {
       const {
         data: { session },
@@ -139,6 +113,32 @@ const [operatorName, setOperatorName] = useState("");
         alert("会社情報が取得できません");
         return;
       }
+
+            // 取得済みの会社IDで現場候補を読み込む
+      // 他の初期表示処理は、この通信の完了を待たずに進める
+      void (async () => {
+        try {
+          const { data, error } = await supabase
+            .from("daily_reports")
+            .select("site_name")
+            .eq("organization_id", currentOrganizationId)
+            .order("created_at", { ascending: false });
+
+          if (error) throw error;
+
+          const uniqueSites = Array.from(
+            new Set(
+              (data ?? [])
+                .map((item) => item.site_name)
+                .filter(Boolean)
+            )
+          );
+
+          setSiteSuggestions(uniqueSites);
+        } catch (error) {
+          console.error("現場候補の取得に失敗:", error);
+        }
+      })();
       
       const employee = employeeResult.data;
 
@@ -176,12 +176,33 @@ if (dateParam) {
 }
 
 if (assignmentIdParam && dateParam) {
-  const { data: assignment } = await supabase
-    .from("assignments")
-    .select("site_name, contractor_name, shift_type, start_time, end_time")
-    .eq("id", assignmentIdParam)
-    .eq("organization_id", currentOrganizationId)
-    .single();
+  const [assignmentResult, membersResult] = await Promise.all([
+    supabase
+      .from("assignments")
+      .select("site_name, contractor_name, shift_type, start_time, end_time")
+      .eq("id", assignmentIdParam)
+      .eq("organization_id", currentOrganizationId)
+      .single(),
+
+    supabase
+      .from("assignment_site_members")
+      .select("employee_name, is_driver, is_operator, heavy_equipment")
+      .eq("organization_id", currentOrganizationId)
+      .eq("assignment_id", assignmentIdParam)
+      .eq("work_date", dateParam),
+  ]);
+
+  if (assignmentResult.error || membersResult.error) {
+    console.error(
+      "番割情報の取得失敗:",
+      assignmentResult.error ?? membersResult.error
+    );
+    alert("番割情報を取得できませんでした。画面を開き直してください。");
+    return;
+  }
+
+  const assignment = assignmentResult.data;
+  const assignmentMembers = membersResult.data;
 
   if (assignment) {
     setSite(assignment.site_name ?? "");
@@ -190,13 +211,6 @@ if (assignmentIdParam && dateParam) {
     setStartTime(assignment.start_time ?? "08:00");
     setEndTime(assignment.end_time ?? "17:00");
   }
-
-  const { data: assignmentMembers } = await supabase
-    .from("assignment_site_members")
-    .select("employee_name, is_driver, is_operator, heavy_equipment")
-    .eq("organization_id", currentOrganizationId)
-    .eq("assignment_id", assignmentIdParam)
-    .eq("work_date", dateParam);
 
   setSelectedMembers(
     (assignmentMembers ?? []).map((member) => ({
