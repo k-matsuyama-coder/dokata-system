@@ -113,31 +113,6 @@ const [operatorName, setOperatorName] = useState("");
         alert("会社情報が取得できません");
         return;
       }
-
-            // 取得済みの会社IDで現場候補を読み込む
-      // 他の初期表示処理は、この通信の完了を待たずに進める
-      void (async () => {
-        try {
-          const { data, error } = await supabase.rpc(
-            "get_report_site_suggestions",
-            {
-              p_organization_id: currentOrganizationId,
-            }
-          );
-
-          if (error) throw error;
-
-          const sites = (data ?? []) as {
-            site_name: string;
-          }[];
-
-          setSiteSuggestions(
-            sites.map((item) => item.site_name)
-          );
-        } catch (error) {
-          console.error("現場候補の取得に失敗:", error);
-        }
-      })();
       
       const employee = employeeResult.data;
 

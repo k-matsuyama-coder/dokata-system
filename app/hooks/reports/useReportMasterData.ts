@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type { Contractor, Site } from "../../types/report";
 
@@ -7,81 +7,172 @@ type Props = {
   reportDate: string;
 };
 
-export function useReportMasterData({ employeeName, reportDate }: Props) {
+export function useReportMasterData({
+  employeeName,
+  reportDate,
+}: Props) {
+  const [organizationId, setOrganizationId] = useState("");
   const [contractors, setContractors] = useState<Contractor[]>([]);
-  const [sites, setSites] = useState<Site[]>([]);
+  const [rawSites, setRawSites] = useState<Site[]>([]);
+  const [myAssignments, setMyAssignments] = useState({
+    key: "",
+    ids: [] as string[],
+  });
 
+  // 会社情報は、この画面を開いた時に取得する
   useEffect(() => {
-    const fetchMasterData = async () => {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
+    let active = true;
+    const controller = new AbortController();
 
-      if (!token) return;
+    const load = async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        if (!active) return;
 
-      const res = await fetch("/api/current-organization", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+        const token = data.session?.access_token;
+        if (!token) return;
 
-      const result = await res.json();
+        const res = await fetch("/api/current-organization", {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: controller.signal,
+        });
 
-      if (!res.ok || !result.organizationId) {
-        alert("会社情報が取得できません");
-        return;
+        const result = await res.json();
+
+        if (!res.ok || !result.organizationId) {
+          throw new Error("会社情報が取得できません");
+        }
+
+        if (active) setOrganizationId(result.organizationId);
+      } catch (error) {
+        if (active) console.error("会社情報の取得失敗:", error);
       }
-
-      const organizationId = result.organizationId as string;
-
-      const { data: contractorData } = await supabase
-        .from("contractors")
-        .select("name")
-        .eq("organization_id", organizationId)
-        .order("name", { ascending: true });
-
-      setContractors(contractorData ?? []);
-
-      const { data: siteData } = await supabase
-        .from("assignments")
-        .select("id, site_name, contractor_name, manager_name")
-        .eq("organization_id", organizationId)
-        .not("site_name", "is", null)
-        .order("site_name", { ascending: true });
-
-      const { data: myAssignmentData } = await supabase
-        .from("assignment_site_members")
-        .select("assignment_id")
-        .eq("organization_id", organizationId)
-        .eq("employee_name", employeeName)
-        .eq("work_date", reportDate);
-
-      const myAssignmentIds = new Set(
-        (myAssignmentData ?? []).map((row) => row.assignment_id)
-      );
-
-      const uniqueSites: Site[] = Array.from(
-        new Map(
-          (siteData ?? []).map((site) => [
-            `${site.contractor_name}-${site.site_name}`,
-            {
-              id: site.id,
-              site_name: site.site_name,
-              contractor_name: site.contractor_name,
-              manager_name: site.manager_name,
-              is_my_assignment: myAssignmentIds.has(site.id),
-            },
-          ])
-        ).values()
-      );
-
-      setSites(uniqueSites);
     };
 
-    fetchMasterData();
-  }, [employeeName, reportDate]);
+    void load();
 
-  return {
-    contractors,
-    sites,
-  };
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, []);
+
+  // 元請と現場を同時に取得し、届いた方から表示する
+  useEffect(() => {
+    if (!organizationId) return;
+
+    let active = true;
+    const controller = new AbortController();
+
+    const loadContractors = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("contractors")
+          .select("name")
+          .eq("organization_id", organizationId)
+          .order("name", { ascending: true })
+          .abortSignal(controller.signal);
+
+        if (error) throw error;
+        if (active) setContractors(data ?? []);
+      } catch (error) {
+        if (active) console.error("元請一覧の取得失敗:", error);
+      }
+    };
+
+    const loadSites = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("assignments")
+          .select("id, site_name, contractor_name, manager_name")
+          .eq("organization_id", organizationId)
+          .not("site_name", "is", null)
+          .order("site_name", { ascending: true })
+          .abortSignal(controller.signal);
+
+        if (error) throw error;
+        if (active) setRawSites(data ?? []);
+      } catch (error) {
+        if (active) console.error("現場一覧の取得失敗:", error);
+      }
+    };
+
+    void loadContractors();
+    void loadSites();
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [organizationId]);
+
+  // 名前・日付が変わったら、自分の配置だけを取り直す
+  useEffect(() => {
+    if (!organizationId || !employeeName || !reportDate) return;
+
+    let active = true;
+    const controller = new AbortController();
+    const key = JSON.stringify([
+      organizationId,
+      employeeName,
+      reportDate,
+    ]);
+
+    const load = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("assignment_site_members")
+          .select("assignment_id")
+          .eq("organization_id", organizationId)
+          .eq("employee_name", employeeName)
+          .eq("work_date", reportDate)
+          .abortSignal(controller.signal);
+
+        if (error) throw error;
+
+        if (active) {
+          setMyAssignments({
+            key,
+            ids: (data ?? []).map((row) => row.assignment_id),
+          });
+        }
+      } catch (error) {
+        if (active) console.error("自分の配置の取得失敗:", error);
+      }
+    };
+
+    void load();
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [organizationId, employeeName, reportDate]);
+
+  const sites = useMemo(() => {
+    const currentKey = JSON.stringify([
+      organizationId,
+      employeeName,
+      reportDate,
+    ]);
+
+    const ids = new Set(
+      myAssignments.key === currentKey ? myAssignments.ids : []
+    );
+
+    return Array.from(
+      new Map(
+        rawSites.map((site) => [
+          `${site.contractor_name}-${site.site_name}`,
+          {
+            ...site,
+            is_my_assignment: ids.has(site.id),
+          },
+        ])
+      ).values()
+    );
+  }, [rawSites, myAssignments, organizationId, employeeName, reportDate]);
+
+  return { contractors, sites };
 }
