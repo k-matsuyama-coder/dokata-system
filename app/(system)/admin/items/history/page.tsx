@@ -125,7 +125,11 @@ setRequests(
     return_photo_url: request.return_photo_path
       ? signedUrlMap[request.return_photo_path] ?? null
       : null,
-    items: request.items?.[0] ?? null,
+      items: (
+        Array.isArray(request.items)
+          ? request.items[0] ?? null
+          : request.items ?? null
+      ) as ItemRequest["items"],
   }))
 );
   };
