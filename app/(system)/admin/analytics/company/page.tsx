@@ -229,6 +229,7 @@ if (!currentOrganizationId) {
                 <th style={th}>昼</th>
                 <th style={th}>夜</th>
                 <th style={th}>合計</th>
+                <th style={th}>全体比率</th>
                 <th style={th}>昼%</th>
                 <th style={th}>夜%</th>
                 <th style={th}>車両</th>
@@ -239,7 +240,7 @@ if (!currentOrganizationId) {
             <tbody>
               {rows.length === 0 ? (
                 <tr>
-                  <td style={td} colSpan={8}>
+                  <td style={td} colSpan={9}>
                     データがありません
                   </td>
                 </tr>
@@ -256,6 +257,12 @@ if (!currentOrganizationId) {
                       {row.night}
                     </td>
                     <td style={{ ...td, fontWeight: 800 }}>{row.total}</td>
+                    <td style={{ ...td, fontWeight: 700 }}>
+                      {totalLabor > 0
+                        ? ((row.total / totalLabor) * 100).toFixed(1)
+                        : "0.0"}
+                      %
+                    </td>
                     <td style={td}>{row.dayRate}%</td>
                     <td style={td}>{row.nightRate}%</td>
                     <td style={td}>{row.vehicles}</td>
