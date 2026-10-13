@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
 import { hasRole } from "@/app/types/auth";
@@ -14,6 +14,12 @@ type Report = {
 
 export default function ReportsAdminPage() {
   const [reports, setReports] = useState<Report[]>([]);
+  const [organizationId, setOrganizationId] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<Report | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+  const deleteDialogRef = useRef<HTMLDialogElement>(null);
+  const deletingRef = useRef(false);
   const getCurrentOrganization = async () => {
     const { data: sessionData } = await supabase.auth.getSession();
     const token = sessionData.session?.access_token;
@@ -65,17 +71,150 @@ if (!currentOrganizationId) {
         .eq("organization_id", currentOrganizationId)
         .order("report_date", { ascending: false });
 
+      setOrganizationId(currentOrganizationId);
       setReports(data ?? []);
     };
 
     fetchReports();
   }, []);
 
+  const handleDelete = async () => {
+    if (!deleteTarget || deletingRef.current) return;
+
+    deletingRef.current = true;
+    setIsDeleting(true);
+    setDeleteError("");
+
+    try {
+      const currentOrganizationId = await getCurrentOrganization();
+
+      if (
+        !currentOrganizationId ||
+        currentOrganizationId !== organizationId
+      ) {
+        throw new Error("会社情報が変わりました。画面を開き直してください。");
+      }
+
+      const { data, error } = await supabase
+        .from("daily_reports")
+        .delete()
+        .eq("id", deleteTarget.id)
+        .eq("organization_id", organizationId)
+        .select("id")
+        .single();
+
+      if (error) throw error;
+      if (!data) throw new Error("削除結果を確認できませんでした。");
+
+      setReports((previous) =>
+        previous.filter((report) => report.id !== data.id)
+      );
+
+      deleteDialogRef.current?.close();
+      setDeleteTarget(null);
+    } catch (error) {
+      console.error("日報削除失敗:", error);
+      setDeleteError(
+        "削除を完了できませんでした。権限・通信状態を確認してください。"
+      );
+    } finally {
+      deletingRef.current = false;
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div style={{ maxWidth: 800, margin: "0 auto", padding: 16 }}>
       <BackButton />
 
       <h1>日報管理</h1>
+
+      <dialog
+        ref={deleteDialogRef}
+        aria-labelledby="delete-report-title"
+        onCancel={(event) => {
+          if (deletingRef.current) event.preventDefault();
+        }}
+        onClose={() => {
+          setDeleteTarget(null);
+          setDeleteError("");
+        }}
+        style={{
+          width: "calc(100% - 32px)",
+          maxWidth: 440,
+          boxSizing: "border-box",
+          border: "none",
+          borderRadius: 12,
+          padding: 24,
+        }}
+      >
+        <h2 id="delete-report-title" style={{ marginTop: 0 }}>
+          本当に削除しますか？
+        </h2>
+
+        <p>この日報と、紐づくメンバーの記録を削除します。</p>
+
+        <div
+          style={{
+            backgroundColor: "#f3f4f6",
+            padding: 12,
+            borderRadius: 8,
+          }}
+        >
+          <div>日付：{deleteTarget?.report_date}</div>
+          <div>名前：{deleteTarget?.worker_name}</div>
+          <div>現場：{deleteTarget?.site_name}</div>
+        </div>
+
+        <p style={{ color: "#dc2626" }}>
+          削除すると元に戻せません。
+        </p>
+
+        {deleteError && (
+          <p role="alert" style={{ color: "#dc2626" }}>
+            {deleteError}
+          </p>
+        )}
+
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: 12,
+            marginTop: 20,
+          }}
+        >
+          <button
+            type="button"
+            autoFocus
+            disabled={isDeleting}
+            onClick={() => deleteDialogRef.current?.close()}
+            style={{
+              padding: "10px 16px",
+              borderRadius: 8,
+              border: "1px solid #ccc",
+              backgroundColor: "#fff",
+            }}
+          >
+            キャンセル
+          </button>
+
+          <button
+            type="button"
+            disabled={isDeleting}
+            onClick={handleDelete}
+            style={{
+              padding: "10px 16px",
+              borderRadius: 8,
+              border: "none",
+              backgroundColor: "#dc2626",
+              color: "#fff",
+            }}
+          >
+            {isDeleting ? "削除中..." : "削除する"}
+          </button>
+        </div>
+      </dialog>
 
       {/* 🔥 CSV一括登録 */}
       <div style={{ marginBottom: 20 }}>
@@ -254,6 +393,29 @@ if (!currentOrganizationId) {
 >
   編集
 </a>
+
+<button
+  type="button"
+  disabled={!organizationId || isDeleting}
+  onClick={() => {
+    setDeleteTarget(r);
+    setDeleteError("");
+    deleteDialogRef.current?.showModal();
+  }}
+  style={{
+    marginLeft: 8,
+    padding: "8px 12px",
+    borderRadius: 8,
+    border: "1px solid #dc2626",
+    backgroundColor: "#fff",
+    color: "#dc2626",
+    fontSize: 14,
+    fontWeight: 600,
+    cursor: "pointer",
+  }}
+>
+  削除
+</button>
               </div>
             ))}
           </div>
