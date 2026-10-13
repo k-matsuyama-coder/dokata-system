@@ -240,7 +240,7 @@ return;
               const [
                 { data: todayReports, error: todayReportsError },
                 { data: todayScheduledMembers, error: scheduledMembersError },
-                { data: monthlyDailyInfos, error: dailyInfosError },
+                { data: plannedLaborTotal, error: dailyInfosError },
                 { data: monthlyLaborTotal, error: monthlyReportsError },
                 { count: pendingItemRequests, error: pendingRequestsError },
                 { count: returnItemRequests, error: returnRequestsError },
@@ -262,21 +262,11 @@ supabase
   .eq("organization_id", currentOrganizationId)
   .eq("work_date", todayString),
           
-  supabase
-  .from("assignment_site_daily_infos")
-  .select(`
-    planned_count,
-    work_date,
-    assignments!inner (
-      start_date,
-      end_date,
-      organization_id
-    )
-  `)
-  .eq("organization_id", currentOrganizationId)
-  .eq("assignments.organization_id", currentOrganizationId)
-  .gte("work_date", monthStart)
-  .lte("work_date", monthEnd),
+  supabase.rpc("sum_planned_labor", {
+    p_organization_id: currentOrganizationId,
+    p_start_date: monthStart,
+    p_end_date: monthEnd,
+  }),
           
   supabase.rpc("sum_report_worker_count", {
     p_organization_id: currentOrganizationId,
@@ -349,42 +339,7 @@ const todayReportCount = Array.from(
 
 const todayWorkerCount = safeTodayScheduledMembers.length;
       
-const monthlyPlannedLabor = (monthlyDailyInfos ?? []).reduce(
-  (sum, row) => {
-    type AssignmentPeriod = {
-      start_date: string | null;
-      end_date: string | null;
-    };
-
-    const related = row.assignments as unknown as
-      | AssignmentPeriod
-      | AssignmentPeriod[]
-      | null;
-
-    const assignment = Array.isArray(related)
-      ? related[0]
-      : related;
-
-    if (!assignment) return sum;
-
-    if (
-      assignment.start_date &&
-      row.work_date < assignment.start_date
-    ) {
-      return sum;
-    }
-
-    if (
-      assignment.end_date &&
-      row.work_date > assignment.end_date
-    ) {
-      return sum;
-    }
-
-    return sum + Number(row.planned_count ?? 0);
-  },
-  0
-);
+const monthlyPlannedLabor = Number(plannedLaborTotal ?? 0);
       
 const monthlyActualLabor = Number(monthlyLaborTotal ?? 0);
       
