@@ -1,11 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import ReportForm from "@/app/components/reports/ReportForm";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import {
+  createReportDraftKey,
+  readReportDraft,
+  saveReportDraft,
+  removeReportDraft,
+  type ReportDraft,
+} from "@/lib/reportDraft";
+import { withTimeout } from "@/lib/withTimeout";
 
 type Employee = {
   id: string;
@@ -49,6 +57,42 @@ export default function NewReportPage() {
   const [selectedDrivers, setSelectedDrivers] = useState<string[]>([]);
   const [heavyEquipment, setHeavyEquipment] = useState("");
 const [operatorName, setOperatorName] = useState("");
+const [draftKey, setDraftKey] = useState("");
+const [draftReady, setDraftReady] = useState(false);
+const [draftNotice, setDraftNotice] = useState("");
+const [initialError, setInitialError] = useState("");
+const [draftSaveError, setDraftSaveError] = useState("");
+const [draftSaved, setDraftSaved] = useState(false);
+const [submitted, setSubmitted] = useState(false);
+
+const draftStoppedRef = useRef(false);
+const lastDraftJsonRef = useRef<string | null>(null);
+
+const restoreDraft = (draft: ReportDraft) => {
+  setReportDate(draft.reportDate);
+  setSite(draft.site);
+  setContractorName(draft.contractorName);
+  setWork(draft.work);
+  setShiftType(draft.shiftType);
+  setStartTime(draft.startTime);
+  setEndTime(draft.endTime);
+  setOvertimeMinutes(draft.overtimeMinutes);
+  setNote(draft.note);
+  setExpresswayMain(draft.expresswayMain);
+  setExpresswaySecondary(draft.expresswaySecondary);
+  setExpresswaySubcontract(draft.expresswaySubcontract);
+  setParkingMain(draft.parkingMain);
+  setParkingSecondary(draft.parkingSecondary);
+  setParkingSubcontract(draft.parkingSubcontract);
+  setFuelGasoline(draft.fuelGasoline);
+  setFuelDiesel(draft.fuelDiesel);
+  setMemberInput(draft.memberInput);
+  setDriverInput(draft.driverInput);
+  setHeavyEquipment(draft.heavyEquipment);
+  setOperatorName(draft.operatorName);
+  setSelectedMembers(draft.selectedMembers);
+  setSelectedDrivers(draft.selectedDrivers);
+};
 
   const router = useRouter();
   const getCurrentOrganization = async (accessToken?: string) => {
@@ -81,10 +125,14 @@ const [operatorName, setOperatorName] = useState("");
   };
 
   useEffect(() => {
+    let active = true;
+  
     const fetchInitialData = async () => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
+
+      if (!active) return;
       
       const user = session?.user;
 
@@ -108,13 +156,18 @@ const [operatorName, setOperatorName] = useState("");
           .eq("auth_user_id", user.id)
           .single(),
       ]);
+
+      if (!active) return;
       
       if (!currentOrganizationId) {
-        alert("会社情報が取得できません");
-        return;
+        throw new Error("会社情報を取得できませんでした。");
       }
       
       const employee = employeeResult.data;
+
+      if (employeeResult.error || !employee) {
+        throw new Error("社員情報を取得できませんでした。");
+      }
 
       if (employee) {
         setEmployeeName(employee.name);
@@ -125,14 +178,42 @@ const [operatorName, setOperatorName] = useState("");
         );
       }
 
-      const { data: employeeList } = await supabase
+      const {
+        data: employeeList,
+        error: employeeListError,
+      } = await supabase
   .from("employees")
   .select("id, name")
   .eq("organization_id", currentOrganizationId)
   .order("name", { ascending: true });
 
+  if (!active) return;
+
+  if (employeeListError) {
+    throw employeeListError;
+  }
+
       if (employeeList) {
         setEmployees(employeeList);
+      }
+
+      const key = createReportDraftKey(
+        user.id,
+        currentOrganizationId,
+        window.location.search
+      );
+      
+      const savedDraft = readReportDraft(key);
+      
+      setDraftKey(key);
+      
+      if (savedDraft) {
+        restoreDraft(savedDraft.data);
+        setDraftNotice(
+          "入力途中の下書きを復元しました。日付と内容を確認してください。"
+        );
+        setDraftReady(true);
+        return;
       }
 
       const params = new URLSearchParams(window.location.search);
@@ -166,13 +247,16 @@ if (assignmentIdParam && dateParam) {
       .eq("work_date", dateParam),
   ]);
 
+  if (!active) return;
+
   if (assignmentResult.error || membersResult.error) {
     console.error(
       "番割情報の取得失敗:",
       assignmentResult.error ?? membersResult.error
     );
-    alert("番割情報を取得できませんでした。画面を開き直してください。");
-    return;
+    throw new Error(
+      "番割情報を取得できませんでした。画面を開き直してください。"
+    );
   }
 
   const assignment = assignmentResult.data;
@@ -209,12 +293,98 @@ if (assignmentIdParam && dateParam) {
     setHeavyEquipment(operator.heavy_equipment ?? "");
   }
 }
+
+      if (active) {
+        setDraftReady(true);
+      }
     };
 
-    fetchInitialData();
+    void withTimeout(
+      fetchInitialData(),
+      20000,
+      "日報の準備に時間がかかっています。再度開き直してください。"
+    ).catch((error) => {
+      if (!active) return;
+
+      // 遅れて返った初期値でフォームを書き換えない
+      active = false;
+
+      console.error("日報の初期取得失敗:", error);
+      setInitialError(
+        error instanceof Error
+          ? error.message
+          : "日報の準備ができませんでした。"
+      );
+    });
+
+    return () => {
+      active = false;
+    };
   }, []);
 
+  const draft: ReportDraft = {
+    reportDate,
+    site,
+    contractorName,
+    work,
+    shiftType,
+    startTime,
+    endTime,
+    overtimeMinutes,
+    note,
+    expresswayMain,
+    expresswaySecondary,
+    expresswaySubcontract,
+    parkingMain,
+    parkingSecondary,
+    parkingSubcontract,
+    fuelGasoline,
+    fuelDiesel,
+    memberInput,
+    driverInput,
+    heavyEquipment,
+    operatorName,
+    selectedMembers,
+    selectedDrivers,
+  };
+  
+  const draftJson = JSON.stringify(draft);
+  
+  useEffect(() => {
+    if (!draftReady || !draftKey || draftStoppedRef.current) {
+      return;
+    }
+  
+    // 初期値を表示しただけでは、新しい下書きを作らない
+    if (lastDraftJsonRef.current === null) {
+      lastDraftJsonRef.current = draftJson;
+      return;
+    }
+  
+    if (lastDraftJsonRef.current === draftJson) {
+      return;
+    }
+  
+    try {
+      saveReportDraft(
+        draftKey,
+        JSON.parse(draftJson) as ReportDraft
+      );
+  
+      lastDraftJsonRef.current = draftJson;
+      setDraftSaved(true);
+      setDraftSaveError("");
+    } catch (error) {
+      console.error("日報の下書き保存失敗:", error);
+      setDraftSaved(false);
+      setDraftSaveError(
+        "この端末に下書きを保存できません。画面を閉じると入力内容が失われる可能性があります。"
+      );
+    }
+  }, [draftKey, draftReady, draftJson]);
+
   const handleSubmit = async () => {
+    if (!draftReady || draftStoppedRef.current) return;
     console.log({
       employeeName,
       reportDate,
@@ -223,10 +393,10 @@ if (assignmentIdParam && dateParam) {
 
     const currentOrganizationId = await getCurrentOrganization();
 
-if (!currentOrganizationId) {
-  alert("会社情報が取得できません");
-  return;
-}
+    if (!currentOrganizationId) {
+      alert("会社情報が取得できません");
+      return;
+    }
     
 const { data: existingReport } = await supabase
 .from("daily_reports")
@@ -248,6 +418,19 @@ if (existingReport) {
 
     if (!user) {
       alert("ログインしてください");
+      return;
+    }
+
+    const currentDraftKey = createReportDraftKey(
+      user.id,
+      currentOrganizationId,
+      window.location.search
+    );
+    
+    if (currentDraftKey !== draftKey) {
+      alert(
+        "利用者または会社情報が変わっています。元の利用者・会社に戻してから登録してください。"
+      );
       return;
     }
 
@@ -336,6 +519,20 @@ if (membersError) {
   return;
       }
 
+      // 日報とメンバーの保存が両方成功してから削除する
+draftStoppedRef.current = true;
+setSubmitted(true);
+
+try {
+  removeReportDraft(draftKey);
+} catch (error) {
+  console.error("登録済み下書きの削除失敗:", error);
+  toast.error(
+    "日報は登録済みですが、端末の下書きを削除できませんでした。",
+    { duration: 6000 }
+  );
+}
+
       toast.success("日報を登録しました", {
         duration: 1200,
       });
@@ -345,9 +542,60 @@ if (membersError) {
       }, 900);
     };
 
-  return (
-    <div>
-      <ReportForm
+    if (submitted) {
+      return (
+        <div style={{ padding: 24 }}>
+          <p role="status">日報を登録しました。</p>
+          <Link href="/home">ホームへ戻る</Link>
+        </div>
+      );
+    }
+
+    if (!draftReady) {
+      return (
+        <div style={{ padding: 24 }}>
+          {initialError ? (
+            <div role="alert">
+              <p>{initialError}</p>
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+              >
+                再試行
+              </button>
+            </div>
+          ) : (
+            <p role="status">日報を準備しています…</p>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <div>
+        {draftNotice && (
+          <p role="status" style={{ padding: "12px 16px" }}>
+            {draftNotice}
+          </p>
+        )}
+
+{draftSaveError ? (
+  <p
+    role="alert"
+    style={{ padding: "0 16px", color: "#b91c1c" }}
+  >
+    {draftSaveError}
+  </p>
+) : draftSaved ? (
+  <p
+    role="status"
+    style={{ padding: "0 16px", color: "#555", fontSize: 13 }}
+  >
+    この端末に下書きを保存しました。
+  </p>
+) : null}
+    
+        <ReportForm
         reportDate={reportDate}
         setReportDate={setReportDate}
         contractorName={contractorName}

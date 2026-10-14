@@ -234,12 +234,28 @@ const { contractors, sites } = useReportMasterData({
     reportDate,
   });
 
-  useEffect(() => {
+  const resetMemberSelection = () => {
     setMembersConfirmed(false);
     setCheckedAssignmentMembers([]);
     setSelectedMembers([]);
     setEditMembersMode(false);
-  }, [selectedAssignmentId, reportDate]);
+  };
+  
+  const handleReportDateChange = (value: string) => {
+    if (value !== reportDate) {
+      resetMemberSelection();
+    }
+  
+    setReportDate(value);
+  };
+  
+  const handleAssignmentChange = (value: string | null) => {
+    if (value !== selectedAssignmentId) {
+      resetMemberSelection();
+    }
+  
+    setSelectedAssignmentId(value);
+  };
 
   const totalLabor = selectedMembers.reduce(
     (sum, member) => sum + Number(member.labor || 0),
@@ -305,7 +321,7 @@ const { contractors, sites } = useReportMasterData({
   sectionStyle={sectionStyle}
   inputStyle={inputStyle}
   reportDate={reportDate}
-  setReportDate={setReportDate}
+  setReportDate={handleReportDateChange}
   employeeName={employeeName}
   contractorName={contractorName}
   setContractorName={setContractorName}
@@ -321,7 +337,7 @@ const { contractors, sites } = useReportMasterData({
   setShowContractorSuggestions={setShowContractorSuggestions}
   showSiteSuggestions={showSiteSuggestions}
   setShowSiteSuggestions={setShowSiteSuggestions}
-  setSelectedAssignmentId={setSelectedAssignmentId}
+  setSelectedAssignmentId={handleAssignmentChange}
 />
 
 <ReportTimeSection

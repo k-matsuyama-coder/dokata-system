@@ -5,6 +5,8 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { hasRole } from "@/app/types/auth";
 import ExpenseMenuLink from "@/app/components/ExpenseMenuLink";
+import { useAppRefresh } from "@/app/hooks/useAppRefresh";
+import { withTimeout } from "@/lib/withTimeout";
 
 type ReportRow = {
   id: string;
@@ -54,6 +56,8 @@ type AdminSummary = {
 };
 
 export default function HomePage() {
+  const refreshVersion = useAppRefresh();
+  const [homeRetryCount, setHomeRetryCount] = useState(0);
   const [employeeName, setEmployeeName] = useState("");
   const [role, setRole] = useState<string | null>(null);
   const [adminSummary, setAdminSummary] = useState<AdminSummary>({
@@ -84,10 +88,14 @@ const [licenseLoadError, setLicenseLoadError] = useState(false);
 const [workSummaryLoading, setWorkSummaryLoading] = useState(true);
 const [workSummaryError, setWorkSummaryError] = useState(false);
 
-const getCurrentOrganization = async (token: string) => {
+const getCurrentOrganization = async (
+  token: string,
+  signal: AbortSignal
+) => {
 
   const res = await fetch("/api/current-organization", {
     method: "GET",
+    signal,
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -99,7 +107,6 @@ const getCurrentOrganization = async (token: string) => {
     console.error(result.error || "organization取得失敗");
     return null;
   }
-  setImpersonating(Boolean(result.impersonating));
 
   return {
     organizationId: result.organizationId as string | null,
@@ -110,10 +117,53 @@ const getCurrentOrganization = async (token: string) => {
 
 
 useEffect(() => {
-    const fetchHomeData = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+  let active = true;
+  const controller = new AbortController();
+
+  const runTimedQuery = async <T,>(
+    query: (signal: AbortSignal) => PromiseLike<T>,
+    message: string
+  ): Promise<T> => {
+    const requestController = new AbortController();
+  
+    const abortRequest = () => {
+      requestController.abort();
+    };
+  
+    controller.signal.addEventListener("abort", abortRequest);
+  
+    try {
+      if (controller.signal.aborted) {
+        throw new Error("取得を中断しました。");
+      }
+  
+      return await withTimeout(
+        query(requestController.signal),
+        15000,
+        message
+      );
+    } finally {
+      controller.signal.removeEventListener("abort", abortRequest);
+      requestController.abort();
+    }
+  };
+
+  setAdminSummaryError(false);
+  setLicenseLoadError(false);
+  setWorkSummaryError(false);
+
+  const fetchHomeData = async () => {
+    const {
+      data: { session },
+      error: sessionError,
+    } = await withTimeout(
+      supabase.auth.getSession(),
+      15000,
+      "ログイン情報の確認に時間がかかっています。"
+    );
+    
+    if (!active) return;
+    if (sessionError) throw sessionError;
       
       const user = session?.user;
       const token = session?.access_token;
@@ -139,24 +189,31 @@ useEffect(() => {
         setRole(cachedEmployeeRole);
       }
       
-      const [currentOrganization, employeeResult] = await Promise.all([
-        getCurrentOrganization(token),
+      const [currentOrganization, employeeResult] = await withTimeout(
+        Promise.all([
+          getCurrentOrganization(token, controller.signal),
       
-        supabase
-          .from("employees")
-          .select(`
-            id,
-            name,
-            role,
-            must_change_password,
-            organization_id,
-            organizations (
-              status
-            )
-          `)
-          .eq("auth_user_id", user.id)
-          .single(),
-      ]);
+          supabase
+            .from("employees")
+            .select(`
+              id,
+              name,
+              role,
+              must_change_password,
+              organization_id,
+              organizations (
+                status
+              )
+            `)
+            .eq("auth_user_id", user.id)
+            .abortSignal(controller.signal)
+            .single(),
+        ]),
+        15000,
+        "会社・社員情報の取得に時間がかかっています。"
+      );
+
+      if (!active) return;
       
       if (!currentOrganization?.organizationId) {
         if (currentOrganization?.isSuperAdmin) {
@@ -164,8 +221,7 @@ useEffect(() => {
           return;
         }
       
-        alert("会社情報が取得できません");
-        return;
+        throw new Error("会社情報が取得できませんでした。");
       }
       
       const currentOrganizationId = currentOrganization.organizationId;
@@ -181,11 +237,10 @@ useEffect(() => {
         !employee ||
         employee.organization_id !== currentOrganizationId
       ) {
-        console.error(
-          "社員情報取得失敗:",
-          employeeError?.message ?? "社員の会社情報が一致しません"
+        throw new Error(
+          employeeError?.message ??
+            "社員の会社情報を確認できませんでした。"
         );
-        return;
       }
   
   if (employee.must_change_password) {
@@ -244,48 +299,62 @@ return;
                 { data: monthlyLaborTotal, error: monthlyReportsError },
                 { count: pendingItemRequests, error: pendingRequestsError },
                 { count: returnItemRequests, error: returnRequestsError },
-              ] = await Promise.all([
-            supabase
-  .from("daily_reports")
-  .select("site_name")
-  .eq("organization_id", currentOrganizationId)
-  .eq("report_date", todayString),
+              ] = await runTimedQuery(
+                (signal) =>
+                  Promise.all([
+                    supabase
+                      .from("daily_reports")
+                      .select("site_name")
+                      .eq("organization_id", currentOrganizationId)
+                      .eq("report_date", todayString)
+                      .abortSignal(signal),
+              
+                    supabase
+                      .from("assignment_site_members")
+                      .select(`
+                        assignment_id,
+                        assignments!inner (
+                          site_name
+                        )
+                      `)
+                      .eq("organization_id", currentOrganizationId)
+                      .eq("work_date", todayString)
+                      .abortSignal(signal),
+              
+                    supabase
+                      .rpc("sum_planned_labor", {
+                        p_organization_id: currentOrganizationId,
+                        p_start_date: monthStart,
+                        p_end_date: monthEnd,
+                      })
+                      .abortSignal(signal),
+              
+                    supabase
+                      .rpc("sum_report_worker_count", {
+                        p_organization_id: currentOrganizationId,
+                        p_start_date: monthStart,
+                        p_end_date: monthEnd,
+                      })
+                      .abortSignal(signal),
+              
+                    supabase
+                      .from("item_requests")
+                      .select("id", { count: "exact", head: true })
+                      .eq("organization_id", currentOrganizationId)
+                      .eq("status", "pending")
+                      .abortSignal(signal),
+              
+                    supabase
+                      .from("item_requests")
+                      .select("id", { count: "exact", head: true })
+                      .eq("organization_id", currentOrganizationId)
+                      .eq("status", "return_requested")
+                      .abortSignal(signal),
+                  ]),
+                "管理者集計の取得に時間がかかっています。"
+              );
 
-supabase
-  .from("assignment_site_members")
-  .select(`
-    assignment_id,
-    assignments!inner (
-      site_name
-    )
-  `)
-  .eq("organization_id", currentOrganizationId)
-  .eq("work_date", todayString),
-          
-  supabase.rpc("sum_planned_labor", {
-    p_organization_id: currentOrganizationId,
-    p_start_date: monthStart,
-    p_end_date: monthEnd,
-  }),
-          
-  supabase.rpc("sum_report_worker_count", {
-    p_organization_id: currentOrganizationId,
-    p_start_date: monthStart,
-    p_end_date: monthEnd,
-  }),
-          
-            supabase
-              .from("item_requests")
-              .select("id", { count: "exact", head: true })
-              .eq("organization_id", currentOrganizationId)
-              .eq("status", "pending"),
-          
-            supabase
-              .from("item_requests")
-              .select("id", { count: "exact", head: true })
-              .eq("organization_id", currentOrganizationId)
-              .eq("status", "return_requested"),
-          ]);
+          if (!active) return;
 
           const summaryError =
           todayReportsError ??
@@ -353,12 +422,14 @@ todayWorkerCount: todayWorkerCount ?? 0,
           pendingItemRequests: pendingItemRequests ?? 0,
 returnItemRequests: returnItemRequests ?? 0,
         });
-            } catch (error) {
-              console.error("管理者集計取得失敗:", error);
-              setAdminSummaryError(true);
-            } finally {
-              setAdminSummaryLoading(false);
-            }
+      } catch (error) {
+        if (active) {
+          console.error("管理者集計取得失敗:", error);
+          setAdminSummaryError(true);
+        }
+      } finally {
+        if (active) setAdminSummaryLoading(false);
+      }
           })();
         } else {
           setAdminSummaryLoading(false);
@@ -367,16 +438,29 @@ returnItemRequests: returnItemRequests ?? 0,
         if (!isImpersonating) {
           void (async () => {
             try {
-              const { data: licenses, error } = await supabase
-                .from("licenses")
-                .select("license_name, expiry_date")
-                .eq("employee_id", employee.id)
-                .order("created_at", { ascending: false })
-                .limit(1);
+              const { data: licenses, error } = await runTimedQuery(
+                (signal) =>
+                  supabase
+                    .from("licenses")
+                    .select("license_name, expiry_date")
+                    .eq("employee_id", employee.id)
+                    .order("created_at", { ascending: false })
+                    .limit(1)
+                    .abortSignal(signal),
+                "免許情報の取得に時間がかかっています。"
+              );
+
+                if (!active) return;
         
               if (error) {
                 throw error;
               }
+
+              // 取得成功時は、未登録・期限未設定への変更も反映する
+setLicenseName("");
+setLicenseExpiryDate("");
+setLicenseStatus("");
+setLicenseRemainingDays(null);
         
               if (licenses && licenses.length > 0) {
                 const license = licenses[0];
@@ -386,7 +470,6 @@ returnItemRequests: returnItemRequests ?? 0,
         
                 if (license.expiry_date) {
                   const today = new Date();
-
                   const expiry = new Date(license.expiry_date);
 const diffTime = expiry.getTime() - today.getTime();
 const diffDays = Math.ceil(
@@ -405,10 +488,12 @@ if (diffDays < 0) {
 }
 }
 } catch (error) {
-  console.error("免許情報取得失敗:", error);
-  setLicenseLoadError(true);
+  if (active) {
+    console.error("免許情報取得失敗:", error);
+    setLicenseLoadError(true);
+  }
 } finally {
-  setLicenseLoading(false);
+  if (active) setLicenseLoading(false);
 }
 })();
 } else {
@@ -419,23 +504,30 @@ void (async () => {
   try {
     const today = new Date();
 
-    const monthlyResult = await supabase
-    .from("report_members")
-    .select(`
-      overtime,
-      is_driver,
-      report_id,
-      daily_reports!inner (
-        id,
-        report_date,
-        site_name,
-        shift_type
-      )
-    `)
-    .eq("organization_id", currentOrganizationId)
-    .eq("employee_name", employee.name)
-    .gte("daily_reports.report_date", monthStart)
-    .lte("daily_reports.report_date", todayString);
+    const monthlyResult = await runTimedQuery(
+      (signal) =>
+        supabase
+          .from("report_members")
+          .select(`
+            overtime,
+            is_driver,
+            report_id,
+            daily_reports!inner (
+              id,
+              report_date,
+              site_name,
+              shift_type
+            )
+          `)
+          .eq("organization_id", currentOrganizationId)
+          .eq("employee_name", employee.name)
+          .gte("daily_reports.report_date", monthStart)
+          .lte("daily_reports.report_date", todayString)
+          .abortSignal(signal),
+      "個人集計の取得に時間がかかっています。"
+    );
+
+    if (!active) return;
   
   if (monthlyResult.error) {
     throw monthlyResult.error;
@@ -475,15 +567,11 @@ void (async () => {
         reportMap.set(report.id, report);
       });
 
-      const currentMonthMembers = (memberRows as MemberRow[]).filter((row) => {
+      const currentMonthMembers = memberRows.filter((row) => {
         const report = reportMap.get(row.report_id);
-        if (!report?.report_date) return false;
-
-        const reportDate = new Date(report.report_date);
-
+      
         return (
-          reportDate.getFullYear() === today.getFullYear() &&
-          reportDate.getMonth() === today.getMonth()
+          report?.report_date?.slice(0, 7) === todayString.slice(0, 7)
         );
       });
 
@@ -522,17 +610,36 @@ const driverReportIds = new Set(
 
 setTotalVehicleCount(driverReportIds.size);
 
-    } catch (error) {
-      console.error("個人集計取得失敗:", error);
-      setWorkSummaryError(true);
-    } finally {
-      setWorkSummaryLoading(false);
-    }
+} catch (error) {
+  if (active) {
+    console.error("個人集計取得失敗:", error);
+    setWorkSummaryError(true);
+  }
+} finally {
+  if (active) setWorkSummaryLoading(false);
+}
   })();
     };
 
-    fetchHomeData();
-  }, []);
+    void fetchHomeData().catch((error) => {
+      controller.abort();
+
+      if (!active) return;
+  
+      console.error("ホーム情報取得失敗:", error);
+      setAdminSummaryError(true);
+      setLicenseLoadError(true);
+      setWorkSummaryError(true);
+      setAdminSummaryLoading(false);
+      setLicenseLoading(false);
+      setWorkSummaryLoading(false);
+    });
+  
+    return () => {
+  active = false;
+  controller.abort();
+};
+}, [refreshVersion, homeRetryCount]);
 
   const totalDays = dayCount + nightCount;
 const totalOvertimeSum = dayOvertime + nightOvertime;
@@ -547,6 +654,34 @@ const totalOvertimeSum = dayOvertime + nightOvertime;
         minHeight: "100vh",
       }}
     >
+
+{(adminSummaryError || licenseLoadError || workSummaryError) && (
+  <div
+    role="alert"
+    style={{
+      marginBottom: 16,
+      padding: 12,
+      backgroundColor: "#fff3cd",
+      borderRadius: 8,
+    }}
+  >
+    <p style={{ margin: "0 0 8px" }}>
+      一部の情報を更新できませんでした。通信状態を確認して再試行してください。
+    </p>
+
+    <button
+      type="button"
+      onClick={() => {
+        setAdminSummaryError(false);
+        setLicenseLoadError(false);
+        setWorkSummaryError(false);
+        setHomeRetryCount((count) => count + 1);
+      }}
+    >
+      再試行
+    </button>
+  </div>
+)}
 
       <div style={{ marginBottom: 20 }}>
         <p style={{ margin: "6px 0 0 0", color: "#555" }}>

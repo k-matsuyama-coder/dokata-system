@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useAppResume } from "@/app/hooks/useAppResume";
+import { AppRefreshContext } from "@/app/hooks/useAppRefresh";
 import { usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { withTimeout } from "@/lib/withTimeout";
@@ -25,6 +27,11 @@ export default function SystemLayout({
   const [accessInfo, setAccessInfo] = useState<AccessInfo | null>(null);
   const [authError, setAuthError] = useState("");
   const [retryCount, setRetryCount] = useState(0);
+  const [refreshVersion, setRefreshVersion] = useState(0);
+const [isChecking, setIsChecking] = useState(false);
+
+const checkingRef = useRef(false);
+const checkedOnceRef = useRef(false);
 
   useEffect(() => {
     let active = true;
@@ -90,6 +97,8 @@ export default function SystemLayout({
     };
 
     const run = async () => {
+      checkingRef.current = true;
+      setIsChecking(true);
       setAuthError("");
 
       try {
@@ -112,6 +121,14 @@ export default function SystemLayout({
         }
 
         setAccessInfo(result.accessInfo);
+
+        // 初回はページ自身が取得するため、復帰・再試行時だけ通知する
+if (checkedOnceRef.current) {
+  setRefreshVersion((version) => version + 1);
+}
+
+checkedOnceRef.current = true;
+
       } catch (error) {
         if (!active) return;
 
@@ -125,6 +142,11 @@ export default function SystemLayout({
         setAuthError(message);
       } finally {
         controller.abort();
+      
+        if (active) {
+          checkingRef.current = false;
+          setIsChecking(false);
+        }
       }
     };
 
@@ -136,20 +158,13 @@ export default function SystemLayout({
     };
   }, [retryCount]);
 
-  // オフラインから復帰した場合、失敗中の認証を再試行
-  useEffect(() => {
-    if (!authError) return;
-
-    const handleOnline = () => {
-      setRetryCount((count) => count + 1);
-    };
-
-    window.addEventListener("online", handleOnline);
-
-    return () => {
-      window.removeEventListener("online", handleOnline);
-    };
-  }, [authError]);
+  useAppResume(async () => {
+    // 確認中の重複リクエストを防ぐ
+    if (checkingRef.current) return;
+  
+    checkingRef.current = true;
+    setRetryCount((count) => count + 1);
+  });
 
   const mustChangePassword =
     accessInfo?.mustChangePassword === true &&
@@ -176,7 +191,7 @@ export default function SystemLayout({
     }
   }, [mustChangePassword, adminAccessDenied]);
 
-  if (authError) {
+  if (authError && !accessInfo) {
     return (
       <div style={{ padding: 24 }} role="alert">
         <p>認証情報を確認できませんでした。</p>
@@ -203,5 +218,42 @@ export default function SystemLayout({
     );
   }
 
-  return <>{children}</>;
+  return (
+    <AppRefreshContext.Provider value={refreshVersion}>
+      {authError && (
+        <div
+          role="alert"
+          style={{
+            padding: 12,
+            backgroundColor: "#fff3cd",
+            color: "#664d03",
+            borderBottom: "1px solid #ffecb5",
+          }}
+        >
+          <p style={{ margin: "0 0 8px" }}>
+            接続を確認できませんでした。入力中の内容はそのままです。
+          </p>
+  
+          <p style={{ margin: "0 0 8px", fontSize: 13 }}>
+            {authError}
+          </p>
+  
+          <button
+            type="button"
+            disabled={isChecking}
+            onClick={() => {
+              if (checkingRef.current) return;
+  
+              checkingRef.current = true;
+              setRetryCount((count) => count + 1);
+            }}
+          >
+            再試行
+          </button>
+        </div>
+      )}
+  
+      {children}
+    </AppRefreshContext.Provider>
+  );
 }

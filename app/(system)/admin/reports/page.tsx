@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
 import { hasRole } from "@/app/types/auth";
+import { useAppRefresh } from "@/app/hooks/useAppRefresh";
+import { withTimeout } from "@/lib/withTimeout";
 
 type Report = {
   id: string;
@@ -20,6 +22,13 @@ export default function ReportsAdminPage() {
   const [deleteError, setDeleteError] = useState("");
   const deleteDialogRef = useRef<HTMLDialogElement>(null);
   const deletingRef = useRef(false);
+  const refreshVersion = useAppRefresh();
+const [retryCount, setRetryCount] = useState(0);
+const [loading, setLoading] = useState(true);
+const [loadError, setLoadError] = useState("");
+
+const listControllerRef = useRef<AbortController | null>(null);
+const loadedOrganizationRef = useRef("");
   const getCurrentOrganization = async () => {
     const { data: sessionData } = await supabase.auth.getSession();
     const token = sessionData.session?.access_token;
@@ -40,49 +49,164 @@ export default function ReportsAdminPage() {
   };
 
   useEffect(() => {
+    // 削除処理が終わると、isDeleting の変更で再取得する
+    if (isDeleting) {
+      setLoading(false);
+      return;
+    }
+  
+    let active = true;
+    const controller = new AbortController();
+    listControllerRef.current = controller;
+  
+    setLoading(true);
+    setLoadError("");
+  
     const fetchReports = async () => {
-      const { data: userData } = await supabase.auth.getUser();
-      const currentOrganizationId = await getCurrentOrganization();
-
-if (!currentOrganizationId) {
-  alert("会社情報が取得できません");
-  return;
-}
+      const { data: sessionData, error: sessionError } =
+        await supabase.auth.getSession();
   
-      if (!userData.user) {
-        window.location.href = "/login";
-        return;
+      if (sessionError) throw sessionError;
+      if (controller.signal.aborted) {
+        throw new Error("取得を中断しました。");
       }
   
-      const { data: employee } = await supabase
-        .from("employees")
-        .select("role")
-        .eq("auth_user_id", userData.user.id)
-        .single();
+      const session = sessionData.session;
   
-      if (!employee || !hasRole(employee.role, "admin")) {
-        window.location.href = "/home";
-        return;
+      if (!session) {
+        throw new Error(
+          "ログイン情報を確認できません。ログインし直してください。"
+        );
       }
   
-      const { data } = await supabase
+      const [organizationResponse, employeeResult] = await Promise.all([
+        fetch("/api/current-organization", {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          signal: controller.signal,
+        }),
+  
+        supabase
+          .from("employees")
+          .select("role")
+          .eq("auth_user_id", session.user.id)
+          .abortSignal(controller.signal)
+          .single(),
+      ]);
+  
+      if (!organizationResponse.ok) {
+        throw new Error("会社情報を取得できませんでした。");
+      }
+  
+      const organization = await organizationResponse.json();
+  
+      if (employeeResult.error) {
+        throw employeeResult.error;
+      }
+  
+      if (
+        !employeeResult.data ||
+        !hasRole(employeeResult.data.role, "admin")
+      ) {
+        throw new Error("日報管理を利用する権限を確認できませんでした。");
+      }
+  
+      const currentOrganizationId =
+        organization.organizationId as string | null;
+  
+      if (!currentOrganizationId) {
+        throw new Error("会社情報を確認できませんでした。");
+      }
+  
+      // 別会社の一覧に切り替わった状態で、古いモーダルから削除しない
+      if (
+        loadedOrganizationRef.current &&
+        loadedOrganizationRef.current !== currentOrganizationId
+      ) {
+        throw new Error(
+          "会社情報が変わりました。確認モーダルを閉じて画面を開き直してください。"
+        );
+      }
+  
+      if (controller.signal.aborted) {
+        throw new Error("取得を中断しました。");
+      }
+  
+      const { data, error } = await supabase
         .from("daily_reports")
         .select("id, report_date, worker_name, site_name")
         .eq("organization_id", currentOrganizationId)
-        .order("report_date", { ascending: false });
-
-      setOrganizationId(currentOrganizationId);
-      setReports(data ?? []);
+        .order("report_date", { ascending: false })
+        .abortSignal(controller.signal);
+  
+      if (error) throw error;
+  
+      return {
+        organizationId: currentOrganizationId,
+        reports: data ?? [],
+      };
     };
-
-    fetchReports();
-  }, []);
+  
+    const run = async () => {
+      try {
+        const result = await withTimeout(
+          fetchReports(),
+          20000,
+          "日報一覧の取得に時間がかかっています。再試行してください。"
+        );
+  
+        if (
+          !active ||
+          controller.signal.aborted ||
+          deletingRef.current
+        ) {
+          return;
+        }
+  
+        loadedOrganizationRef.current = result.organizationId;
+        setOrganizationId(result.organizationId);
+        setReports(result.reports);
+      } catch (error) {
+        if (!active || controller.signal.aborted) return;
+  
+        console.error("日報管理の一覧取得失敗:", error);
+        setLoadError(
+          error instanceof Error
+            ? error.message
+            : "日報一覧を取得できませんでした。再試行してください。"
+        );
+      } finally {
+        controller.abort();
+  
+        if (listControllerRef.current === controller) {
+          listControllerRef.current = null;
+        }
+  
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+  
+    void run();
+  
+    return () => {
+      active = false;
+      controller.abort();
+  
+      if (listControllerRef.current === controller) {
+        listControllerRef.current = null;
+      }
+    };
+  }, [refreshVersion, retryCount, isDeleting]);
 
   const handleDelete = async () => {
     if (!deleteTarget || deletingRef.current) return;
 
     deletingRef.current = true;
-    setIsDeleting(true);
+listControllerRef.current?.abort();
+setIsDeleting(true);
     setDeleteError("");
 
     try {
@@ -351,7 +475,7 @@ if (!currentOrganizationId) {
             }
 
             alert("CSV登録完了");
-            window.location.reload();
+setRetryCount((count) => count + 1);
           }}
         />
       </div>
@@ -360,9 +484,41 @@ if (!currentOrganizationId) {
       <div>
         <h2>日報一覧</h2>
 
-        {reports.length === 0 ? (
-          <p>データなし</p>
-        ) : (
+        {loadError && (
+  <div
+    role="alert"
+    style={{
+      padding: 12,
+      marginBottom: 16,
+      backgroundColor: "#fff3cd",
+      borderRadius: 8,
+    }}
+  >
+    <p style={{ margin: "0 0 8px" }}>{loadError}</p>
+
+    <button
+      type="button"
+      disabled={loading || isDeleting}
+      onClick={() => {
+        setLoading(true);
+        setLoadError("");
+        setRetryCount((count) => count + 1);
+      }}
+    >
+      再試行
+    </button>
+  </div>
+)}
+
+{loading && (
+  <p role="status">
+    {reports.length > 0 ? "一覧を更新しています…" : "取得中…"}
+  </p>
+)}
+
+{reports.length === 0 ? (
+  !loading && !loadError ? <p>データなし</p> : null
+) : (
           <div style={{ display: "grid", gap: 10 }}>
             {reports.map((r) => (
               <div
