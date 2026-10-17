@@ -151,6 +151,17 @@ if (!currentOrganizationId) {
     fetchData();
   }, [month]);
 
+  const companyHeadcounts = useMemo(() => {
+    const counts = new Map<string, number>();
+
+    employees.forEach((employee) => {
+      const company = employee.company_name || "未設定";
+      counts.set(company, (counts.get(company) ?? 0) + 1);
+    });
+
+    return counts;
+  }, [employees]);
+
   const rows = useMemo(() => {
     const employeeCompanyMap = new Map<string, string>();
 
@@ -253,6 +264,9 @@ if (!currentOrganizationId) {
 
       <div style={cardStyle}>
         <h2 style={{ marginTop: 0 }}>所属会社ごとの内訳</h2>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 0 }}>
+  進捗率＝合計人工 ÷（所属人数 × 23）× 100
+</p>
 
         {loading ? (
           <p>読み込み中...</p>
@@ -273,6 +287,7 @@ if (!currentOrganizationId) {
                   <th style={th}>昼</th>
                   <th style={th}>夜</th>
                   <th style={th}>合計人工</th>
+                  <th style={th}>進捗率</th>
                   <th style={th}>昼%</th>
                   <th style={th}>夜%</th>
                   <th style={th}>残業</th>
@@ -283,7 +298,7 @@ if (!currentOrganizationId) {
               <tbody>
                 {rows.length === 0 ? (
                   <tr>
-                    <td style={td} colSpan={9}>
+                    <td style={td} colSpan={10}>
                       データがありません
                     </td>
                   </tr>
@@ -301,7 +316,18 @@ if (!currentOrganizationId) {
                         {row.night}
                       </td>
                       <td style={{ ...td, fontWeight: 900 }}>{row.total}</td>
-                      <td style={td}>{row.dayRate}%</td>
+<td
+  style={{ ...td, fontWeight: 800 }}
+  title={`所属人数 ${companyHeadcounts.get(row.name) ?? 0}人 × 23人工`}
+>
+  {(companyHeadcounts.get(row.name) ?? 0) > 0
+    ? `${(
+        (row.total / (companyHeadcounts.get(row.name)! * 23)) *
+        100
+      ).toFixed(1)}%`
+    : "—"}
+</td>
+<td style={td}>{row.dayRate}%</td>
                       <td style={td}>{row.nightRate}%</td>
                       <td style={td}>{row.overtime}h</td>
                       <td style={td}>{row.vehicles}</td>
