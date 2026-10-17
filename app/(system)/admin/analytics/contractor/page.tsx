@@ -140,7 +140,9 @@ if (!currentOrganizationId) {
       setMembers(
         (memberData ?? []).map((member) => ({
           ...member,
-          daily_reports: member.daily_reports?.[0] ?? null,
+          daily_reports: Array.isArray(member.daily_reports)
+            ? member.daily_reports[0] ?? null
+            : member.daily_reports ?? null,
         }))
       );
       setLoading(false);
