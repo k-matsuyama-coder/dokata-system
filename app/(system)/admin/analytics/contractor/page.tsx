@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import AnnualCompanyChart from "./AnnualCompanyChart";
 import BackButton from "@/app/components/BackButton";
 import { hasRole } from "@/app/types/auth";
 
@@ -47,6 +48,7 @@ export default function CompanyAnalyticsPage() {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
   });
 
+  const [chartOrganizationId, setChartOrganizationId] = useState<string | null>(null);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [members, setMembers] = useState<ReportMemberRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -136,6 +138,7 @@ if (!currentOrganizationId) {
         return;
       }
 
+      setChartOrganizationId(currentOrganizationId);
       setEmployees(employeeData ?? []);
       setMembers(
         (memberData ?? []).map((member) => ({
@@ -339,6 +342,13 @@ if (!currentOrganizationId) {
           </div>
         )}
       </div>
+      {chartOrganizationId && (
+        <AnnualCompanyChart
+          key={chartOrganizationId}
+          organizationId={chartOrganizationId}
+          employees={employees}
+        />
+      )}
     </div>
   );
 }
