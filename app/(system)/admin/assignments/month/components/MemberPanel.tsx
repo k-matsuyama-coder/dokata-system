@@ -236,29 +236,48 @@ export default function MemberPanel({
                     }}
                   >
                     <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        flexWrap: "wrap",
-gap: 8,
-                      }}
-                    >
-                      <span>{employee.name}</span>
-                      <span
-                        style={{
-                          fontSize: 11,
-                          fontWeight: 800,
-                          color: "#666",
-                          flexShrink: 0,
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        稼働 {getAssignmentCount(employee.name)}
-{"　"}
-通し {getConsecutiveCount(employee.name)}
-                      </span>
-                    </div>
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    minWidth: 0,
+  }}
+>
+  <span
+    title={employee.name}
+    style={{
+      flex: 1,
+      minWidth: 0,
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      whiteSpace: "nowrap",
+    }}
+  >
+    {employee.name}
+  </span>
+
+  <span
+    title="当月の稼働数 / 通し数"
+    aria-label={`稼働 ${getAssignmentCount(employee.name)}、通し ${getConsecutiveCount(employee.name)}`}
+    style={{
+      display: "grid",
+      gridTemplateColumns: "3ch 1ch 2ch",
+      alignItems: "center",
+      columnGap: 2,
+      flexShrink: 0,
+      fontSize: 11,
+      fontWeight: 700,
+      fontVariantNumeric: "tabular-nums",
+      textAlign: "right",
+      whiteSpace: "nowrap",
+      color: "#64748b",
+    }}
+  >
+    <span>{getAssignmentCount(employee.name)}</span>
+    <span style={{ color: "#cbd5e1", textAlign: "center" }}>/</span>
+    <span>{getConsecutiveCount(employee.name)}</span>
+  </span>
+</div>
                   </div>
                 );
               })}
