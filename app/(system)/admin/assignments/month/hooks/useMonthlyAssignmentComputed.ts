@@ -211,6 +211,48 @@ export function useMonthlyAssignmentComputed({
     });
   };
 
+  const assignedVehiclesMap = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+
+    dailyInfos.forEach((info) => {
+      const assignment = assignmentMap.get(info.assignment_id);
+      if (!assignment) return;
+
+      const shift = assignment.shift_type ?? "day";
+      const key = `${info.work_date}_${shift}`;
+
+      let names = map.get(key);
+      if (!names) {
+        names = new Set<string>();
+        map.set(key, names);
+      }
+
+      (info.vehicle_names ?? []).forEach((name) => {
+        names.add(name);
+      });
+    });
+
+    return map;
+  }, [dailyInfos, assignmentMap]);
+
+  const isVehicleAssigned = (
+    vehicleName: string,
+    workDate: string,
+    shiftType: string | null
+  ) =>
+    assignedVehiclesMap
+      .get(`${workDate}_${shiftType ?? "day"}`)
+      ?.has(vehicleName) ?? false;
+
+  const isVehicleAssignedDifferentShift = (
+    vehicleName: string,
+    workDate: string,
+    shiftType: string | null
+  ) => {
+    const otherShift = shiftType === "night" ? "day" : "night";
+    return isVehicleAssigned(vehicleName, workDate, otherShift);
+  };
+
   return {
     assignmentMap,
     getCellMembers,
@@ -219,5 +261,7 @@ export function useMonthlyAssignmentComputed({
     getConsecutiveCount,
     getUnassignedEmployeesByDate,
     isAssignedSameDateDifferentShift,
+    isVehicleAssigned,
+    isVehicleAssignedDifferentShift,
   };
 }

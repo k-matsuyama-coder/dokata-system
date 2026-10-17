@@ -272,6 +272,8 @@ const {
     getConsecutiveCount,
     getUnassignedEmployeesByDate,
     isAssignedSameDateDifferentShift,
+    isVehicleAssigned,
+    isVehicleAssignedDifferentShift,
   } = useMonthlyAssignmentComputed({
     month,
     days,
@@ -867,7 +869,19 @@ boxSizing: "border-box",
             selectedDate={selectedDate}
             selectedShiftType={selectedShiftType}
             employees={employees}
-            vehicles={vehicles}
+            vehicles={
+              selectedDate
+                ? vehicles.filter(
+                    (vehicle) =>
+                      !isVehicleAssigned(
+                        vehicle.vehicle_name,
+                        selectedDate,
+                        selectedShiftType
+                      )
+                  )
+                : vehicles
+            }
+            isVehicleAssignedDifferentShift={isVehicleAssignedDifferentShift}
             getAssignmentCount={getAssignmentCount}
             getConsecutiveCount={getConsecutiveCount}
             selectedEmployeeName={selectedEmployeeName}
@@ -889,7 +903,19 @@ boxSizing: "border-box",
           copiedEmployeeNames={copiedEmployeeNames}
           copiedVehicleNames={copiedVehicleNames}
           employees={employees}
-          vehicles={vehicles}
+          vehicles={
+            selectedDate
+              ? vehicles.filter(
+                  (vehicle) =>
+                    !isVehicleAssigned(
+                      vehicle.vehicle_name,
+                      selectedDate,
+                      selectedShiftType
+                    )
+                )
+              : vehicles
+          }
+          isVehicleAssignedDifferentShift={isVehicleAssignedDifferentShift}
           getUnassignedEmployeesByDate={getUnassignedEmployeesByDate}
           isAssignedSameDateDifferentShift={isAssignedSameDateDifferentShift}
           getAssignmentCount={getAssignmentCount}

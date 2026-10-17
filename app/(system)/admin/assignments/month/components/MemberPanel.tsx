@@ -9,6 +9,11 @@ type Props = {
   copiedVehicleNames: string[];
   employees: Employee[];
   vehicles: Vehicle[];
+  isVehicleAssignedDifferentShift: (
+    vehicleName: string,
+    workDate: string,
+    shiftType: string | null
+  ) => boolean;
   getUnassignedEmployeesByDate: (
     workDate: string,
     shiftType: string | null
@@ -38,6 +43,7 @@ export default function MemberPanel({
   copiedVehicleNames,
   employees,
   vehicles,
+  isVehicleAssignedDifferentShift,
   getUnassignedEmployeesByDate,
   isAssignedSameDateDifferentShift,
   getAssignmentCount,
@@ -55,6 +61,14 @@ export default function MemberPanel({
   const displayEmployees = selectedDate
     ? getUnassignedEmployeesByDate(selectedDate, selectedShiftType)
     : employees;
+
+    const isVehicleOnOtherShift = (vehicleName: string) =>
+    selectedDate !== null &&
+    isVehicleAssignedDifferentShift(
+      vehicleName,
+      selectedDate,
+      selectedShiftType
+    );
 
   const groupedEmployees = displayEmployees.reduce(
     (acc, employee) => {
@@ -319,13 +333,19 @@ export default function MemberPanel({
                 style={{
                   padding: "8px 10px",
                   borderRadius: 999,
-                  backgroundColor: copiedVehicleNames.includes(vehicle.vehicle_name)
+                  backgroundColor: isVehicleOnOtherShift(vehicle.vehicle_name)
+                  ? "#fee2e2"
+                  : copiedVehicleNames.includes(vehicle.vehicle_name)
                     ? "#fef3c7"
                     : "#e0f2fe",
-                  border: copiedVehicleNames.includes(vehicle.vehicle_name)
+                border: isVehicleOnOtherShift(vehicle.vehicle_name)
+                  ? "2px solid #ef4444"
+                  : copiedVehicleNames.includes(vehicle.vehicle_name)
                     ? "2px solid #f59e0b"
                     : "1px solid #bae6fd",
-                  color: "#0369a1",
+                color: isVehicleOnOtherShift(vehicle.vehicle_name)
+                  ? "#b91c1c"
+                  : "#0369a1",
                   cursor: "grab",
                   fontWeight: 800,
                   fontSize: 13,
