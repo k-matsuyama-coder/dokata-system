@@ -58,8 +58,14 @@ export function useMonthlyAssignmentData({
 
     // 表示中の日付に加えて、集計対象の月全体を取得する
     const memberStartDate = useMemo(() => {
-      const monthStart = `${month}-01`;
-      return startDate && startDate < monthStart ? startDate : monthStart;
+      const [year, monthNumber] = month.split("-").map(Number);
+      const previousMonthEnd = new Date(Date.UTC(year, monthNumber - 1, 0))
+        .toISOString()
+        .slice(0, 10);
+  
+      return startDate && startDate < previousMonthEnd
+        ? startDate
+        : previousMonthEnd;
     }, [startDate, month]);
   
     const memberEndDate = useMemo(() => {

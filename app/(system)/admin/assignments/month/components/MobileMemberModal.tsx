@@ -21,6 +21,7 @@ type Props = {
   setCopiedEmployeeNames: React.Dispatch<React.SetStateAction<string[]>>;
   setCopiedVehicleNames: React.Dispatch<React.SetStateAction<string[]>>;
   getAssignmentCount: (employeeName: string) => number;
+  getConsecutiveCount: (employeeName: string) => number;
 };
 
 export default function MobileMemberModal({
@@ -38,6 +39,7 @@ export default function MobileMemberModal({
   setCopiedEmployeeNames,
   setCopiedVehicleNames,
   getAssignmentCount,
+  getConsecutiveCount,
 }: Props) {
   if (!show) return null;
 
@@ -146,6 +148,7 @@ export default function MobileMemberModal({
                   justifyContent: "space-between",
                   alignItems: "center",
                   gap: 8,
+                  flexWrap: "wrap",
                 }}
               >
                 <span>{employee.name}</span>
@@ -155,9 +158,13 @@ export default function MobileMemberModal({
                     fontSize: 11,
                     fontWeight: 800,
                     color: "#666",
+                    flexShrink: 0,
+                    whiteSpace: "nowrap",
                   }}
                 >
-                  {getAssignmentCount(employee.name)}
+                  稼働 {getAssignmentCount(employee.name)}
+{"　"}
+通し {getConsecutiveCount(employee.name)}
                 </span>
               </div>
             </button>

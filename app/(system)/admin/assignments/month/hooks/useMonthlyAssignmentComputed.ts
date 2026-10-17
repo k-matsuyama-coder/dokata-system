@@ -90,6 +90,65 @@ export function useMonthlyAssignmentComputed({
   const getAssignmentCount = (employeeName: string) =>
     assignmentCountMap.get(employeeName) ?? 0;
 
+    const consecutiveCountMap = useMemo(() => {
+      const slotsByEmployee = new Map<string, Set<number>>();
+      const dayMilliseconds = 24 * 60 * 60 * 1000;
+  
+      const toDayNumber = (date: string) => {
+        const [year, monthNumber, day] = date.split("-").map(Number);
+        return Date.UTC(year, monthNumber - 1, day) / dayMilliseconds;
+      };
+  
+      siteMembers.forEach((member) => {
+        const assignment = assignmentMap.get(member.assignment_id);
+        if (!assignment) return;
+  
+        const shift = assignment.shift_type ?? "day";
+        if (shift !== "day" && shift !== "night") return;
+  
+        const slot =
+          toDayNumber(member.work_date) * 2 + (shift === "night" ? 1 : 0);
+  
+        let slots = slotsByEmployee.get(member.employee_name);
+        if (!slots) {
+          slots = new Set<number>();
+          slotsByEmployee.set(member.employee_name, slots);
+        }
+  
+        // 同じ日の同じ勤務帯は、複数現場にいても１勤務として扱う
+        slots.add(slot);
+      });
+  
+      const [year, monthNumber] = month.split("-").map(Number);
+      const monthStartSlot =
+        (Date.UTC(year, monthNumber - 1, 1) / dayMilliseconds) * 2;
+      const nextMonthStartSlot =
+        (Date.UTC(year, monthNumber, 1) / dayMilliseconds) * 2;
+  
+      const counts = new Map<string, number>();
+  
+      slotsByEmployee.forEach((slots, employeeName) => {
+        let count = 0;
+  
+        slots.forEach((slot) => {
+          if (
+            slot >= monthStartSlot &&
+            slot < nextMonthStartSlot &&
+            slots.has(slot - 1)
+          ) {
+            count += 1;
+          }
+        });
+  
+        counts.set(employeeName, count);
+      });
+  
+      return counts;
+    }, [siteMembers, assignmentMap, month]);
+  
+    const getConsecutiveCount = (employeeName: string) =>
+      consecutiveCountMap.get(employeeName) ?? 0;
+
   const unassignedEmployeesMap = useMemo(() => {
     const map = new Map<string, Employee[]>();
 
@@ -157,6 +216,7 @@ export function useMonthlyAssignmentComputed({
     getCellMembers,
     dailySummaryMap,
     getAssignmentCount,
+    getConsecutiveCount,
     getUnassignedEmployeesByDate,
     isAssignedSameDateDifferentShift,
   };

@@ -19,6 +19,7 @@ type Props = {
     currentShiftType: string | null
   ) => boolean;
   getAssignmentCount: (employeeName: string) => number;
+  getConsecutiveCount: (employeeName: string) => number;
   setSelectedDate: React.Dispatch<React.SetStateAction<string | null>>;
   setSelectedEmployeeName: React.Dispatch<React.SetStateAction<string | null>>;
   setSelectedSiteMemberId: React.Dispatch<React.SetStateAction<string | null>>;
@@ -40,6 +41,7 @@ export default function MemberPanel({
   getUnassignedEmployeesByDate,
   isAssignedSameDateDifferentShift,
   getAssignmentCount,
+  getConsecutiveCount,
   setSelectedDate,
   setSelectedEmployeeName,
   setSelectedSiteMemberId,
@@ -238,6 +240,8 @@ export default function MemberPanel({
                         display: "flex",
                         justifyContent: "space-between",
                         alignItems: "center",
+                        flexWrap: "wrap",
+gap: 8,
                       }}
                     >
                       <span>{employee.name}</span>
@@ -246,9 +250,13 @@ export default function MemberPanel({
                           fontSize: 11,
                           fontWeight: 800,
                           color: "#666",
+                          flexShrink: 0,
+                          whiteSpace: "nowrap",
                         }}
                       >
-                        {getAssignmentCount(employee.name)}
+                        稼働 {getAssignmentCount(employee.name)}
+{"　"}
+通し {getConsecutiveCount(employee.name)}
                       </span>
                     </div>
                   </div>

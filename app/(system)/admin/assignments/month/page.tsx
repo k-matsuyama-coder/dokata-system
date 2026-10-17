@@ -269,6 +269,7 @@ const {
     getCellMembers,
     dailySummaryMap,
     getAssignmentCount,
+    getConsecutiveCount,
     getUnassignedEmployeesByDate,
     isAssignedSameDateDifferentShift,
   } = useMonthlyAssignmentComputed({
@@ -868,6 +869,7 @@ boxSizing: "border-box",
             employees={employees}
             vehicles={vehicles}
             getAssignmentCount={getAssignmentCount}
+            getConsecutiveCount={getConsecutiveCount}
             selectedEmployeeName={selectedEmployeeName}
             copiedVehicleNames={copiedVehicleNames}
             getUnassignedEmployeesByDate={getUnassignedEmployeesByDate}
@@ -891,6 +893,7 @@ boxSizing: "border-box",
           getUnassignedEmployeesByDate={getUnassignedEmployeesByDate}
           isAssignedSameDateDifferentShift={isAssignedSameDateDifferentShift}
           getAssignmentCount={getAssignmentCount}
+          getConsecutiveCount={getConsecutiveCount}
           setSelectedDate={setSelectedDate}
           setSelectedEmployeeName={setSelectedEmployeeName}
           setSelectedSiteMemberId={setSelectedSiteMemberId}
