@@ -6,6 +6,7 @@ import { fetchAllRows } from "@/lib/fetchAllRows";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import AnnualPersonalChart from "./AnnualPersonalChart";
 import BackButton from "@/app/components/BackButton";
 
 type ReportMemberRow = {
@@ -231,11 +232,6 @@ if (!currentOrganizationId) {
       .sort((a, b) => b.labor - a.labor);
   }, [dailyRows]);
 
-  const maxDailyLabor = Math.max(
-    ...dailyRows.map((row) => row.labor),
-    1
-  );
-
   return (
     <div style={{ padding: 16, maxWidth: 1200, margin: "0 auto" }}>
       <BackButton />
@@ -277,6 +273,12 @@ if (!currentOrganizationId) {
         </div>
       </div>
 
+      <AnnualPersonalChart
+        employeeName={employeeName}
+        month={month}
+        onSelectMonth={setMonth}
+      />
+
       {!employeeName ? (
         <p>社員を選択してください。</p>
       ) : loading ? (
@@ -299,57 +301,6 @@ if (!currentOrganizationId) {
             <KpiCard label="運転回数" value={`${summary.driveCount}回`} />
           </div>
 
-          <div style={{ ...cardStyle, marginBottom: 20 }}>
-            <h2 style={{ marginTop: 0 }}>日別人工推移</h2>
-
-            {dailyRows.length === 0 ? (
-              <p>データがありません。</p>
-            ) : (
-              <div style={{ display: "grid", gap: 10 }}>
-                {dailyRows.map((row) => (
-                  <div
-                    key={`${row.date}_${row.site}_${row.shift}`}
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "90px 1fr 60px",
-                      gap: 8,
-                      alignItems: "center",
-                    }}
-                  >
-                    <div style={{ fontSize: 13 }}>{row.date.slice(5)}</div>
-
-                    <div
-                      style={{
-                        height: 18,
-                        backgroundColor: "#eee",
-                        borderRadius: 999,
-                        overflow: "hidden",
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: `${(row.labor / maxDailyLabor) * 100}%`,
-                          height: "100%",
-                          backgroundColor:
-                            row.shift === "夜" ? "#374151" : "#111",
-                        }}
-                      />
-                    </div>
-
-                    <div
-                      style={{
-                        fontSize: 13,
-                        fontWeight: 800,
-                        textAlign: "right",
-                      }}
-                    >
-                      {row.labor}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
 
           <div
             style={{
