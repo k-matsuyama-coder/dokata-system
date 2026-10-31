@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { fetchPayrollPages } from "./payroll-fetch-pages";
 import { hasRole } from "@/app/types/auth";
 import { supabase } from "@/lib/supabase";
 
@@ -84,16 +85,19 @@ const [savingBreakdownKey, setSavingBreakdownKey] =
               error: assignmentError,
             },
           ] = await Promise.all([
-            supabase
+            fetchPayrollPages((from, to) => supabase
               .from("employees")
               .select("name, company_name")
               .eq(
                 "organization_id",
                 currentOrganizationId
               )
-              .order("name", { ascending: true }),
+              .order("name", { ascending: true })
+              .order("id", { ascending: true })
+              .range(from, to)
+            ),
           
-            supabase
+            fetchPayrollPages((from, to) => supabase
               .from("daily_reports")
               .select(`
                 id,
@@ -110,9 +114,12 @@ const [savingBreakdownKey, setSavingBreakdownKey] =
               )
               .gte("report_date", startDate)
               .lte("report_date", endDate)
-              .order("report_date", { ascending: true }),
+              .order("report_date", { ascending: true })
+              .order("id", { ascending: true })
+              .range(from, to)
+            ),
           
-            supabase
+            fetchPayrollPages((from, to) => supabase
               .from("assignments")
               .select(`
                 contractor_name,
@@ -123,7 +130,10 @@ const [savingBreakdownKey, setSavingBreakdownKey] =
               .eq(
                 "organization_id",
                 currentOrganizationId
-              ),
+              )
+              .order("id", { ascending: true })
+              .range(from, to)
+            ),
           ]);
           
           if (employeeError) {
@@ -170,20 +180,25 @@ const [savingBreakdownKey, setSavingBreakdownKey] =
     
           let safeReportMembers: ReportMember[] = [];
     
-          if (reportIds.length > 0) {
-            const { data: memberData, error: memberError } = await supabase
-              .from("report_members")
-              .select("report_id, employee_name, labor, overtime, is_driver")
-              .eq("organization_id", currentOrganizationId)
-              .in("report_id", reportIds);
-    
+          // Bound URL size as well as response size. Each batch is fully paginated.
+          for (let index = 0; index < reportIds.length; index += 100) {
+            const batchIds = reportIds.slice(index, index + 100);
+            const { data: memberData, error: memberError } = await fetchPayrollPages(
+              (from, to) => supabase
+                .from("report_members")
+                .select("report_id, employee_name, labor, overtime, is_driver")
+                .eq("organization_id", currentOrganizationId)
+                .in("report_id", batchIds)
+                .order("id", { ascending: true })
+                .range(from, to)
+            );
+
             if (memberError) {
               throw new Error(`日報メンバー取得失敗: ${memberError.message}`);
             }
-    
-            safeReportMembers = (memberData ?? []) as ReportMember[];
+            safeReportMembers.push(...((memberData ?? []) as ReportMember[]));
           }
-    
+
           let payrollSettings: PayrollSetting[] = [];
 let monthlyAdjustments: PayrollMonthlyAdjustment[] = [];
 let dailyOverrides: PayrollDailyOverride[] = [];
@@ -191,7 +206,7 @@ let dailyOverrides: PayrollDailyOverride[] = [];
     try {
         const [settingsResult, monthlyResult, overridesResult] =
         await Promise.all([
-        supabase
+        fetchPayrollPages((from, to) => supabase
           .from("payroll_settings")
           .select(`
             id,
@@ -214,9 +229,12 @@ let dailyOverrides: PayrollDailyOverride[] = [];
             employment_insurance_rate,
             reserve_fund
           `)
-          .eq("organization_id", currentOrganizationId),
+          .eq("organization_id", currentOrganizationId)
+              .order("id", { ascending: true })
+              .range(from, to)
+            ),
     
-        supabase
+        fetchPayrollPages((from, to) => supabase
           .from("payroll_monthly_adjustments")
           .select(`
             id,
@@ -236,9 +254,12 @@ let dailyOverrides: PayrollDailyOverride[] = [];
             note
           `)
           .eq("organization_id", currentOrganizationId)
-.eq("payroll_month", `${month}-01`),
+.eq("payroll_month", `${month}-01`)
+              .order("id", { ascending: true })
+              .range(from, to)
+            ),
 
-supabase
+fetchPayrollPages((from, to) => supabase
   .from("payroll_daily_overrides")
   .select(`
     id,
@@ -249,7 +270,10 @@ supabase
   `)
   .eq("organization_id", currentOrganizationId)
   .gte("work_date", startDate)
-  .lte("work_date", endDate),
+  .lte("work_date", endDate)
+              .order("id", { ascending: true })
+              .range(from, to)
+            ),
 ]);
     
       if (settingsResult.error) {
