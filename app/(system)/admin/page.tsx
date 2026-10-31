@@ -196,7 +196,7 @@ export default function AdminPage() {
 
 <ExpenseMenuLink admin />
 
-          <Link href="/admin/analysis" className="standalone-link">
+<Link href="/admin/analytics" className="standalone-link">
             <span>分析</span>
             <span aria-hidden="true">↗</span>
           </Link>
