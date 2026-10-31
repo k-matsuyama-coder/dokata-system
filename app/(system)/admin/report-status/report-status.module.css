@@ -1,0 +1,53 @@
+.page {
+  padding: 16px;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  background: #f5f6f8;
+  min-height: 100vh;
+}
+.calendar {
+  padding: 16px;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.day {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  min-height: 60px;
+  padding: 8px 0;
+  font-variant-numeric: tabular-nums;
+}
+.count {
+  font-size: 12px;
+  margin-top: 4px;
+  white-space: nowrap;
+  letter-spacing: -0.3px;
+}
+.dateControls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.dateControls button { white-space: nowrap; }
+.dateControls input { min-width: 0; box-sizing: border-box; }
+@media (max-width: 480px) {
+  .page { padding: 8px; }
+  .calendar { padding: 10px; }
+  .day { padding: 6px 0; font-size: 14px; }
+  .count { font-size: 10px; }
+  .dateControls {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .dateControls input {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    width: 100%;
+    max-width: 100%;
+  }
+  .dateControls button { min-width: 0; }
+}

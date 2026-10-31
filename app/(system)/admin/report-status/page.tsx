@@ -5,6 +5,7 @@ import { fetchAllRows } from "@/lib/fetchAllRows";
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import styles from "./report-status.module.css";
 import BackButton from "@/app/components/BackButton";
 import { hasRole } from "@/app/types/auth";
 import { sendPushNotification } from "@/lib/sendPushNotification";
@@ -411,15 +412,15 @@ export default function ReportStatusPage() {
   };
 
   return (
-    <div style={{ padding: 16, backgroundColor: "#f5f6f8", minHeight: "100vh" }}>
+    <div className={styles.page}>
       <BackButton />
 
       <h1>日報送付確認</h1>
 
       <div
+        className={styles.calendar}
         style={{
           background: "#fff",
-          padding: 16,
           borderRadius: 12,
           marginBottom: 16,
           border: "1px solid #ddd",
@@ -470,8 +471,8 @@ export default function ReportStatusPage() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(7, 1fr)",
-            gap: 8,
+            gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
+            gap: "clamp(3px, 1vw, 8px)",
             marginBottom: 8,
             fontWeight: 700,
             textAlign: "center",
@@ -489,8 +490,8 @@ export default function ReportStatusPage() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(7, 1fr)",
-            gap: 8,
+            gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
+            gap: "clamp(3px, 1vw, 8px)",
           }}
         >
           {Array.from({ length: startOffset }).map((_, index) => (
@@ -500,6 +501,8 @@ export default function ReportStatusPage() {
           {monthDays.map((day) => (
             <button
               key={day.dateString}
+              className={styles.day}
+              aria-pressed={day.dateString === date}
               onClick={() => {
                 setDate(day.dateString);
 
@@ -512,7 +515,6 @@ export default function ReportStatusPage() {
               }}
               style={{
                 borderRadius: 8,
-                padding: 8,
                 background:
                   day.status === "green"
                     ? "#dcfce7"
@@ -531,10 +533,7 @@ export default function ReportStatusPage() {
               <div style={{ fontWeight: 800 }}>{day.day}</div>
 
               <div
-                style={{
-                  fontSize: 12,
-                  marginTop: 4,
-                }}
+                className={styles.count}
               >
                 {day.submittedSites}/{day.totalSites}
               </div>
@@ -546,6 +545,7 @@ export default function ReportStatusPage() {
           style={{
             marginTop: 12,
             display: "flex",
+            flexWrap: "wrap",
             gap: 12,
             fontSize: 13,
           }}
@@ -556,14 +556,7 @@ export default function ReportStatusPage() {
         </div>
       </div>
 
-      <div
-        style={{
-          display: "flex",
-          gap: 8,
-          alignItems: "center",
-          marginBottom: 16,
-        }}
-      >
+      <div className={styles.dateControls}>
         <button
           onClick={() => {
             const d = new Date(date);
