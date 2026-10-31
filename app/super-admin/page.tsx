@@ -1,5 +1,8 @@
 "use client";
 
+import { fetchAllRows } from "@/lib/fetchAllRows";
+
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
@@ -18,9 +21,10 @@ export default function SuperAdminPage() {
   const fetchOrganizations = async () => {
     setLoading(true);
 
-    const { data, error } = await supabase
+    const { data, error } = await fetchAllRows((pageFrom, pageTo) => supabase
       .from("organizations")
-      .select("id, name, plan, status");
+      .select("id, name, plan, status")
+.order("id", { ascending: true }).range(pageFrom, pageTo));
 
     if (error) {
       alert("会社情報の取得に失敗しました: " + error.message);

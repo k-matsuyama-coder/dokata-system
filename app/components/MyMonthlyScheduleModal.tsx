@@ -1,5 +1,8 @@
 "use client";
 
+import { fetchAllRows } from "@/lib/fetchAllRows";
+
+
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { createSignedUrlMap } from "@/lib/storageSignedUrls";
@@ -123,9 +126,10 @@ const [selectedEmployee, setSelectedEmployee] = useState("");
     setEmployeeError("");
     const loadEmployees = async () => {
       try {
-        const { data, error } = await supabase.from("employees")
+        const { data, error } = await fetchAllRows((pageFrom, pageTo) => supabase.from("employees")
           .select("id, name, company_name")
-          .eq("organization_id", organizationId).order("name");
+          .eq("organization_id", organizationId).order("name")
+.order("id", { ascending: true }).range(pageFrom, pageTo));
         if (error) throw error;
         if (!cancelled) setEmployees(data ?? []);
       } catch (error) {
@@ -147,19 +151,21 @@ const [selectedEmployee, setSelectedEmployee] = useState("");
     setScheduleLoading(true);
     const loadSchedule = async () => {
       try {
-        const { data, error } = await supabase.from("assignment_site_members")
+        const { data, error } = await fetchAllRows((pageFrom, pageTo) => supabase.from("assignment_site_members")
           .select("id, assignment_id, work_date, employee_name")
           .eq("organization_id", organizationId)
           .eq("employee_name", isAdmin ? selectedEmployee || employeeName : employeeName)
-          .gte("work_date", days[0]).lte("work_date", days[days.length - 1]);
+          .gte("work_date", days[0]).lte("work_date", days[days.length - 1])
+.order("id", { ascending: true }).range(pageFrom, pageTo));
         if (error) throw error;
         if (cancelled) return;
         const ownMembers = data ?? [];
         const ids = Array.from(new Set(ownMembers.map((member) => member.assignment_id)));
         if (ids.length === 0) return;
-        const result = await supabase.from("assignments")
+        const result = await fetchAllRows((pageFrom, pageTo) => supabase.from("assignments")
           .select("id, site_name, contractor_name, shift_type, manager_name, contact_phone, address, meeting_time, construction_type, start_date, end_date")
-          .eq("organization_id", organizationId).in("id", ids);
+          .eq("organization_id", organizationId).in("id", ids)
+.order("id", { ascending: true }).range(pageFrom, pageTo));
         if (result.error) throw result.error;
         if (cancelled) return;
         setMembers(ownMembers);
@@ -187,17 +193,20 @@ const [selectedEmployee, setSelectedEmployee] = useState("");
     const loadDetails = async () => {
       try {
         const [dailyResult, memberResult, fileResult] = await Promise.all([
-          supabase.from("assignment_site_daily_infos")
+          fetchAllRows((pageFrom, pageTo) => supabase.from("assignment_site_daily_infos")
             .select("id, assignment_id, work_date, detail")
             .eq("organization_id", organizationId)
-            .eq("assignment_id", assignment.id).eq("work_date", workDate),
-          supabase.from("assignment_site_members")
+            .eq("assignment_id", assignment.id).eq("work_date", workDate)
+.order("id", { ascending: true }).range(pageFrom, pageTo)),
+          fetchAllRows((pageFrom, pageTo) => supabase.from("assignment_site_members")
             .select("id, assignment_id, work_date, employee_name")
             .eq("organization_id", organizationId)
-            .eq("assignment_id", assignment.id).eq("work_date", workDate),
-          supabase.from("assignment_files")
+            .eq("assignment_id", assignment.id).eq("work_date", workDate)
+.order("id", { ascending: true }).range(pageFrom, pageTo)),
+          fetchAllRows((pageFrom, pageTo) => supabase.from("assignment_files")
             .select("id, assignment_id, file_name, file_path")
-            .eq("organization_id", organizationId).eq("assignment_id", assignment.id),
+            .eq("organization_id", organizationId).eq("assignment_id", assignment.id)
+.order("id", { ascending: true }).range(pageFrom, pageTo)),
         ]);
         if (cancelled) return;
         const errors = [dailyResult.error, memberResult.error, fileResult.error]

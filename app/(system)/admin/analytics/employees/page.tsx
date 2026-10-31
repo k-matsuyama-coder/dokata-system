@@ -1,5 +1,8 @@
 "use client";
 
+import { fetchAllRows } from "@/lib/fetchAllRows";
+
+
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
@@ -98,7 +101,7 @@ if (!currentOrganizationId) {
       const start = `${yearMonth}-01`;
       const end = getNextMonth(yearMonth);
 
-      const { data, error } = await supabase
+      const { data, error } = await fetchAllRows((pageFrom, pageTo) => supabase
         .from("report_members")
         .select(`
           employee_name,
@@ -113,7 +116,8 @@ if (!currentOrganizationId) {
         `)
         .eq("organization_id", currentOrganizationId)
         .gte("daily_reports.report_date", start)
-        .lt("daily_reports.report_date", end);
+        .lt("daily_reports.report_date", end)
+.order("id", { ascending: true }).range(pageFrom, pageTo));
 
       if (error) {
         alert("社員別集計取得失敗: " + error.message);

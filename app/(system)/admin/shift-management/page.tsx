@@ -1,5 +1,8 @@
 "use client";
 
+import { fetchAllRows } from "@/lib/fetchAllRows";
+
+
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
@@ -101,12 +104,13 @@ console.log("shift employeeError:", employeeError);
 
     setLoginEmployee(employeeData);
 
-    const { data: allEmployees } = await supabase
+    const { data: allEmployees } = await fetchAllRows((pageFrom, pageTo) => supabase
     .from("employees")
     .select("name, role, company_name")
     .eq("organization_id", currentOrganizationId)
       .order("company_name", { ascending: true })
-      .order("name", { ascending: true });
+      .order("name", { ascending: true })
+.order("id", { ascending: true }).range(pageFrom, pageTo));
 
       if (hasRole(employeeData.role ?? "", "admin")) {
         setEmployees(allEmployees ?? []);
@@ -129,7 +133,8 @@ console.log("shift employeeError:", employeeError);
         query = query.eq("employee_name", employeeData.name);
       }
 
-    const { data: requestData, error: requestError } = await query;
+    query = query.order("id", { ascending: true });
+    const { data: requestData, error: requestError } = await fetchAllRows((from, to) => query.range(from, to));
 
     console.log("shift requestData:", requestData);
 console.log("shift requestError:", requestError);

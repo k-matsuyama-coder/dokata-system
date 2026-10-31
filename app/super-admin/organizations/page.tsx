@@ -1,5 +1,8 @@
 "use client";
 
+import { fetchAllRows } from "@/lib/fetchAllRows";
+
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import Page from "@/app/components/ui/Page";
@@ -25,10 +28,11 @@ export default function OrganizationsPage() {
   const [loading, setLoading] = useState(false);
 
   const fetchOrganizations = async () => {
-    const { data, error } = await supabase
+    const { data, error } = await fetchAllRows((pageFrom, pageTo) => supabase
       .from("organizations")
       .select("id, name, plan, status, contract_start_date, contract_end_date")
-      .order("name");
+      .order("name")
+.order("id", { ascending: true }).range(pageFrom, pageTo));
 
     if (error) {
       alert("会社取得失敗: " + error.message);

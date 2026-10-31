@@ -1,5 +1,8 @@
 "use client";
 
+import { fetchAllRows } from "@/lib/fetchAllRows";
+
+
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
@@ -181,11 +184,12 @@ const restoreDraft = (draft: ReportDraft) => {
       const {
         data: employeeList,
         error: employeeListError,
-      } = await supabase
+      } = await fetchAllRows((pageFrom, pageTo) => supabase
   .from("employees")
   .select("id, name")
   .eq("organization_id", currentOrganizationId)
-  .order("name", { ascending: true });
+  .order("name", { ascending: true })
+.order("id", { ascending: true }).range(pageFrom, pageTo));
 
   if (!active) return;
 
@@ -239,12 +243,13 @@ if (assignmentIdParam && dateParam) {
       .eq("organization_id", currentOrganizationId)
       .single(),
 
-    supabase
+    fetchAllRows((pageFrom, pageTo) => supabase
       .from("assignment_site_members")
       .select("employee_name, is_driver, is_operator, heavy_equipment")
       .eq("organization_id", currentOrganizationId)
       .eq("assignment_id", assignmentIdParam)
-      .eq("work_date", dateParam),
+      .eq("work_date", dateParam)
+.order("id", { ascending: true }).range(pageFrom, pageTo)),
   ]);
 
   if (!active) return;

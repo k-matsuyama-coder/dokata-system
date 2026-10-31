@@ -1,3 +1,4 @@
+import { fetchAllRows } from "@/lib/fetchAllRows";
 // app/api/public/assignments/[token]/route.ts
 
 import { NextResponse } from "next/server";
@@ -305,7 +306,7 @@ export async function GET(
       { data: dailyInfos, error: dailyInfosError },
       { data: files, error: filesError },
     ] = await Promise.all([
-      supabase
+      fetchAllRows((pageFrom, pageTo) => supabase
         .from("assignments")
         .select(
           "id, contractor_name, site_name, shift_type, manager_name, contact_phone, address, meeting_time, sort_order, created_at"
@@ -313,27 +314,31 @@ export async function GET(
         .eq("organization_id", publicLink.organization_id)
         .order("sort_order", { ascending: true })
         .order("created_at", { ascending: true })
-        .returns<AssignmentRow[]>(),
+        .returns<AssignmentRow[]>()
+.order("id", { ascending: true }).range(pageFrom, pageTo)),
     
-      supabase
+      fetchAllRows((pageFrom, pageTo) => supabase
         .from("assignment_site_members")
         .select("assignment_id, employee_name, is_foreman, work_date")
         .eq("organization_id", publicLink.organization_id)
         .in("work_date", targetDates)
-        .returns<AssignmentSiteMemberRow[]>(),
+        .returns<AssignmentSiteMemberRow[]>()
+.order("id", { ascending: true }).range(pageFrom, pageTo)),
     
-        supabase
+        fetchAllRows((pageFrom, pageTo) => supabase
         .from("assignment_site_daily_infos")
         .select("assignment_id, work_date, detail, vehicle_names")
         .eq("organization_id", publicLink.organization_id)
         .in("work_date", targetDates)
-        .returns<AssignmentDailyInfoRow[]>(),
+        .returns<AssignmentDailyInfoRow[]>()
+.order("id", { ascending: true }).range(pageFrom, pageTo)),
 
-        supabase
+        fetchAllRows((pageFrom, pageTo) => supabase
         .from("assignment_files")
 .select("id, assignment_id, file_name, file_path")
         .eq("organization_id", publicLink.organization_id)
-        .returns<AssignmentFileRow[]>(),
+        .returns<AssignmentFileRow[]>()
+.order("id", { ascending: true }).range(pageFrom, pageTo)),
     ]);
 
     if (assignmentsError || membersError || dailyInfosError || filesError) {

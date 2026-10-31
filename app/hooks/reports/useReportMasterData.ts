@@ -1,3 +1,4 @@
+import { fetchAllRows } from "@/lib/fetchAllRows";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type { Contractor, Site } from "../../types/report";
@@ -67,12 +68,13 @@ export function useReportMasterData({
 
     const loadContractors = async () => {
       try {
-        const { data, error } = await supabase
+        const { data, error } = await fetchAllRows((pageFrom, pageTo) => supabase
           .from("contractors")
           .select("name")
           .eq("organization_id", organizationId)
           .order("name", { ascending: true })
-          .abortSignal(controller.signal);
+          .abortSignal(controller.signal)
+.order("id", { ascending: true }).range(pageFrom, pageTo));
 
         if (error) throw error;
         if (active) setContractors(data ?? []);
@@ -83,13 +85,14 @@ export function useReportMasterData({
 
     const loadSites = async () => {
       try {
-        const { data, error } = await supabase
+        const { data, error } = await fetchAllRows((pageFrom, pageTo) => supabase
           .from("assignments")
           .select("id, site_name, contractor_name, manager_name")
           .eq("organization_id", organizationId)
           .not("site_name", "is", null)
           .order("site_name", { ascending: true })
-          .abortSignal(controller.signal);
+          .abortSignal(controller.signal)
+.order("id", { ascending: true }).range(pageFrom, pageTo));
 
         if (error) throw error;
         if (active) setRawSites(data ?? []);
@@ -121,13 +124,14 @@ export function useReportMasterData({
 
     const load = async () => {
       try {
-        const { data, error } = await supabase
+        const { data, error } = await fetchAllRows((pageFrom, pageTo) => supabase
           .from("assignment_site_members")
           .select("assignment_id")
           .eq("organization_id", organizationId)
           .eq("employee_name", employeeName)
           .eq("work_date", reportDate)
-          .abortSignal(controller.signal);
+          .abortSignal(controller.signal)
+.order("id", { ascending: true }).range(pageFrom, pageTo));
 
         if (error) throw error;
 

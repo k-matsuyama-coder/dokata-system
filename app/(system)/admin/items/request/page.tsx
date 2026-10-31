@@ -1,5 +1,8 @@
 "use client";
 
+import { fetchAllRows } from "@/lib/fetchAllRows";
+
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
@@ -46,11 +49,12 @@ export default function ItemRequestPage() {
       return;
     }
   
-    const { data } = await supabase
+    const { data } = await fetchAllRows((pageFrom, pageTo) => supabase
       .from("items")
       .select("*")
       .eq("organization_id", currentOrganizationId)
-      .order("item_name");
+      .order("item_name")
+.order("id", { ascending: true }).range(pageFrom, pageTo));
   
     setItems(data ?? []);
   };
@@ -193,11 +197,12 @@ export default function ItemRequestPage() {
       return;
     }
   
-    const { data: admins, error: adminsError } = await supabase
+    const { data: admins, error: adminsError } = await fetchAllRows((pageFrom, pageTo) => supabase
       .from("employees")
       .select("name")
       .eq("organization_id", currentOrganizationId)
-      .eq("role", "admin");
+      .eq("role", "admin")
+.order("id", { ascending: true }).range(pageFrom, pageTo));
   
     if (!adminsError && admins && admins.length > 0) {
       const { error: notificationError } = await supabase

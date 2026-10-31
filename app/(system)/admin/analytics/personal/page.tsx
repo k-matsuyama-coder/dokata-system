@@ -1,5 +1,8 @@
 "use client";
 
+import { fetchAllRows } from "@/lib/fetchAllRows";
+
+
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -74,11 +77,12 @@ if (!currentOrganizationId) {
   alert("会社情報が取得できません");
   return;
 }
-const { data } = await supabase
+const { data } = await fetchAllRows((pageFrom, pageTo) => supabase
 .from("employees")
 .select("name")
 .eq("organization_id", currentOrganizationId)
-.order("name", { ascending: true });
+.order("name", { ascending: true })
+.order("id", { ascending: true }).range(pageFrom, pageTo));
   
       setEmployees((data ?? []).map((item) => item.name));
   
@@ -122,7 +126,7 @@ if (!currentOrganizationId) {
       const start = `${month}-01`;
       const end = getNextMonth(month);
 
-      const { data, error } = await supabase
+      const { data, error } = await fetchAllRows((pageFrom, pageTo) => supabase
   .from("report_members")
   .select(`
     employee_name,
@@ -142,7 +146,8 @@ if (!currentOrganizationId) {
   .eq("employee_name", employeeName)
   .gte("daily_reports.report_date", start)
   .lt("daily_reports.report_date", end)
-  .order("report_id", { ascending: false });
+  .order("report_id", { ascending: false })
+.order("id", { ascending: true }).range(pageFrom, pageTo));
 
       if (error) {
         alert("個人集計取得失敗: " + error.message);

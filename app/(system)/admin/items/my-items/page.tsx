@@ -1,5 +1,8 @@
 "use client";
 
+import { fetchAllRows } from "@/lib/fetchAllRows";
+
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { createSignedUrlMap } from "@/lib/storageSignedUrls";
@@ -75,7 +78,7 @@ const { data: employee } = await supabase
 
     setEmployeeName(employee.name);
 
-    const { data, error } = await supabase
+    const { data, error } = await fetchAllRows((pageFrom, pageTo) => supabase
       .from("item_requests")
       .select(`
         id,
@@ -96,7 +99,8 @@ const { data: employee } = await supabase
       .eq("organization_id", currentOrganizationId)
       .eq("user_name", employee.name)
       .in("status", ["approved", "return_requested"])
-      .order("start_date", { ascending: false });
+      .order("start_date", { ascending: false })
+.order("id", { ascending: true }).range(pageFrom, pageTo));
 
     if (error) {
       alert("貸出状況取得失敗: " + error.message);
@@ -191,11 +195,12 @@ if (!currentOrganizationId) {
     photo_url: filePath,
   });
 
-const { data: admins } = await supabase
+const { data: admins } = await fetchAllRows((pageFrom, pageTo) => supabase
   .from("employees")
   .select("name")
   .eq("organization_id", currentOrganizationId)
-  .eq("role", "admin");
+  .eq("role", "admin")
+.order("id", { ascending: true }).range(pageFrom, pageTo));
 
 if (admins && admins.length > 0) {
   await supabase.from("notifications").insert(

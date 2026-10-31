@@ -1,3 +1,4 @@
+import { fetchAllRows } from "@/lib/fetchAllRows";
 import { supabase } from "@/lib/supabase";
 import { hasRole } from "@/app/types/auth";
 import type {
@@ -70,18 +71,20 @@ export async function loadEmployeeRoster(): Promise<
 
   const [employeesResult, profilesResult] =
     await Promise.all([
-      supabase
+      fetchAllRows((pageFrom, pageTo) => supabase
         .from("employees")
         .select(
           "id, organization_id, name, company_name, role"
         )
         .eq("organization_id", organizationId)
-        .order("name", { ascending: true }),
+        .order("name", { ascending: true })
+.order("id", { ascending: true }).range(pageFrom, pageTo)),
 
-      supabase
+      fetchAllRows((pageFrom, pageTo) => supabase
       .from("employee_private_profiles")
       .select("employee_id, updated_at")
-      .eq("organization_id", organizationId),
+      .eq("organization_id", organizationId)
+.order("employee_id", { ascending: true }).range(pageFrom, pageTo)),
     ]);
 
   if (employeesResult.error) {

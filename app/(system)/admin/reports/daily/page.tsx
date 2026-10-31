@@ -1,5 +1,8 @@
 "use client";
 
+import { fetchAllRows } from "@/lib/fetchAllRows";
+
+
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
@@ -117,7 +120,7 @@ export default function DailyReportAdminPage() {
       new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 0)
     );
   
-    const { data, error } = await supabase
+    const { data, error } = await fetchAllRows((pageFrom, pageTo) => supabase
       .from("daily_reports")
       .select(
         `
@@ -155,17 +158,19 @@ export default function DailyReportAdminPage() {
       .gte("report_date", firstDay)
       .lte("report_date", lastDay)
       .order("report_date", { ascending: true })
-      .order("created_at", { ascending: true });
+      .order("created_at", { ascending: true })
+.order("id", { ascending: true }).range(pageFrom, pageTo));
   
     if (error) {
       alert("日報取得失敗: " + error.message);
       return;
     }
   
-    const { data: assignments, error: assignmentError } = await supabase
+    const { data: assignments, error: assignmentError } = await fetchAllRows((pageFrom, pageTo) => supabase
     .from("assignments")
     .select("site_name, contractor_name, shift_type, manager_name")
-    .eq("organization_id", currentOrganizationId);
+    .eq("organization_id", currentOrganizationId)
+.order("id", { ascending: true }).range(pageFrom, pageTo));
 
   if (assignmentError) {
     alert("現場担当者の取得失敗: " + assignmentError.message);
@@ -206,10 +211,10 @@ export default function DailyReportAdminPage() {
   
     const assignmentMemberRows: AssignmentMember[] = [];
 const pageSize = 1000;
-let page = 0;
+let offset = 0;
 
 while (true) {
-  const from = page * pageSize;
+  const from = offset;
   const to = from + pageSize - 1;
 
   const { data: pageData, error: assignmentMemberError } = await supabase
@@ -220,6 +225,7 @@ while (true) {
     .lte("work_date", lastDay)
     .order("work_date", { ascending: true })
     .order("assignment_id", { ascending: true })
+    .order("id", { ascending: true })
     .range(from, to);
 
   if (assignmentMemberError) {
@@ -230,11 +236,11 @@ while (true) {
   const rows = (pageData ?? []) as AssignmentMember[];
   assignmentMemberRows.push(...rows);
 
-  if (rows.length < pageSize) {
+  if (rows.length === 0) {
     break;
   }
 
-  page += 1;
+  offset += rows.length;
 }
 
 setAssignmentMembers(assignmentMemberRows);

@@ -1,5 +1,8 @@
 "use client";
 
+import { fetchAllRows } from "@/lib/fetchAllRows";
+
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
@@ -68,11 +71,12 @@ if (!currentOrganizationId) {
           return;
         }
 
-      const { data, error } = await supabase
+      const { data, error } = await fetchAllRows((pageFrom, pageTo) => supabase
         .from("employees")
         .select("id, auth_user_id, name, role, company_name, must_change_password")
         .eq("organization_id", currentOrganizationId)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+.order("id", { ascending: true }).range(pageFrom, pageTo));
 
       if (error) {
         alert("社員取得失敗: " + error.message);

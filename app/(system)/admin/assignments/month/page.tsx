@@ -1,5 +1,8 @@
 "use client";
 
+import { fetchAllRows } from "@/lib/fetchAllRows";
+
+
 import { supabase } from "@/lib/supabase";
 import { useEffect, useMemo, useRef, useState } from "react";
 import BackButton from "@/app/components/BackButton";
@@ -208,10 +211,11 @@ const {
     if (!currentOrganizationId) return;
   
     const fetchDateMemos = async () => {
-      const { data, error } = await supabase
+      const { data, error } = await fetchAllRows((pageFrom, pageTo) => supabase
         .from("assignment_date_memos")
         .select("*")
-        .eq("organization_id", currentOrganizationId);
+        .eq("organization_id", currentOrganizationId)
+.order("id", { ascending: true }).range(pageFrom, pageTo));
   
       if (error) {
         console.error("日付メモの取得に失敗しました:", error);

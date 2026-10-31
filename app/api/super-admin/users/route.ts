@@ -1,3 +1,4 @@
+import { fetchAllRows } from "@/lib/fetchAllRows";
 import { requireSuperAdmin } from "@/app/api/_lib/auth";
 import {
   forbidden,
@@ -18,7 +19,7 @@ export async function GET(req: Request) {
       return forbidden();
     }
 
-    const { data, error: dbError } = await supabaseAdmin
+    const { data, error: dbError } = await fetchAllRows((pageFrom, pageTo) => supabaseAdmin
       .from("super_admin_users")
       .select(`
         id,
@@ -26,7 +27,8 @@ export async function GET(req: Request) {
         email,
         created_at
       `)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+.order("id", { ascending: true }).range(pageFrom, pageTo));
 
     if (dbError) {
       return serverError(dbError);

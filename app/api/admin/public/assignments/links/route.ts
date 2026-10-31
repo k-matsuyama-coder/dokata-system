@@ -1,3 +1,4 @@
+import { fetchAllRows } from "@/lib/fetchAllRows";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
@@ -93,11 +94,12 @@ export async function GET(req: Request) {
       );
     }
 
-    const { data: links, error: linksError } = await supabaseAdmin
+    const { data: links, error: linksError } = await fetchAllRows((pageFrom, pageTo) => supabaseAdmin
       .from("public_assignment_links")
       .select("id, token, expires_at, is_active, created_at")
       .eq("organization_id", organizationId)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+.order("id", { ascending: true }).range(pageFrom, pageTo));
 
     if (linksError) {
       return NextResponse.json(

@@ -1,3 +1,4 @@
+import { fetchAllRows } from "@/lib/fetchAllRows";
 import { supabase } from "@/lib/supabase";
 import { createSignedUrlMap } from "@/lib/storageSignedUrls";
 
@@ -10,7 +11,7 @@ async function fetchAllPages<T>(
   const pageSize = 1000;
   const results: T[] = [];
 
-  for (let from = 0; ; from += pageSize) {
+  for (let from = 0; ;) {
     const { data, error } = await query(from, from + pageSize - 1);
 
     if (error) {
@@ -19,9 +20,10 @@ async function fetchAllPages<T>(
 
     results.push(...(data ?? []));
 
-    if (!data || data.length < pageSize) {
+    if (!data || data.length === 0) {
       break;
     }
+    from += data.length;
   }
 
   return results;
@@ -51,12 +53,13 @@ export async function getCurrentOrganization() {
 }
 
 export async function getEmployees(organizationId: string) {
-  const { data, error } = await supabase
+  const { data, error } = await fetchAllRows((pageFrom, pageTo) => supabase
     .from("employees")
     .select("name, company_name")
     .eq("organization_id", organizationId)
     .order("company_name", { ascending: true })
-    .order("name", { ascending: true });
+    .order("name", { ascending: true })
+.order("id", { ascending: true }).range(pageFrom, pageTo));
 
   if (error) throw error;
 
@@ -64,11 +67,12 @@ export async function getEmployees(organizationId: string) {
 }
 
 export async function getVehicles(organizationId: string) {
-  const { data, error } = await supabase
+  const { data, error } = await fetchAllRows((pageFrom, pageTo) => supabase
     .from("vehicles")
     .select("id, vehicle_name, vehicle_type")
     .eq("organization_id", organizationId)
-    .order("vehicle_name", { ascending: true });
+    .order("vehicle_name", { ascending: true })
+.order("id", { ascending: true }).range(pageFrom, pageTo));
 
   if (error) throw error;
 
@@ -76,11 +80,12 @@ export async function getVehicles(organizationId: string) {
 }
 
 export async function getContractors(organizationId: string) {
-  const { data, error } = await supabase
+  const { data, error } = await fetchAllRows((pageFrom, pageTo) => supabase
     .from("contractors")
     .select("id, name")
     .eq("organization_id", organizationId)
-    .order("name", { ascending: true });
+    .order("name", { ascending: true })
+.order("id", { ascending: true }).range(pageFrom, pageTo));
 
   if (error) throw error;
 
@@ -88,10 +93,11 @@ export async function getContractors(organizationId: string) {
 }
 
 export async function getContractorContacts(organizationId: string) {
-  const { data, error } = await supabase
+  const { data, error } = await fetchAllRows((pageFrom, pageTo) => supabase
     .from("contractor_contacts")
     .select("id, contractor_id, manager_name, contact_phone")
-    .eq("organization_id", organizationId);
+    .eq("organization_id", organizationId)
+.order("id", { ascending: true }).range(pageFrom, pageTo));
 
   if (error) throw error;
 

@@ -1,5 +1,8 @@
 "use client";
 
+import { fetchAllRows } from "@/lib/fetchAllRows";
+
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
@@ -19,10 +22,11 @@ export default function ContractsPage() {
   const [searchText, setSearchText] = useState("");
 
   const fetchOrganizations = async () => {
-    const { data, error } = await supabase
+    const { data, error } = await fetchAllRows((pageFrom, pageTo) => supabase
       .from("organizations")
       .select("id, name, plan, status, contract_start_date, contract_end_date")
-      .order("contract_end_date", { ascending: true });
+      .order("contract_end_date", { ascending: true })
+.order("id", { ascending: true }).range(pageFrom, pageTo));
 
     if (error) {
       alert("契約情報の取得に失敗しました: " + error.message);

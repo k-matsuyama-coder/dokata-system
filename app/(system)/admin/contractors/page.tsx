@@ -1,5 +1,8 @@
 "use client";
 
+import { fetchAllRows } from "@/lib/fetchAllRows";
+
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
@@ -60,11 +63,12 @@ if (!currentOrganizationId) {
       return;
     }
   
-    const { data, error } = await supabase
+    const { data, error } = await fetchAllRows((pageFrom, pageTo) => supabase
     .from("contractors")
     .select("id, name")
     .eq("organization_id", currentOrganizationId)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+.order("id", { ascending: true }).range(pageFrom, pageTo));
 
     if (error) {
       alert("元請取得失敗: " + error.message);

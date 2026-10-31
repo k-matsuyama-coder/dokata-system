@@ -1,5 +1,8 @@
 "use client";
 
+import { fetchAllRows } from "@/lib/fetchAllRows";
+
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { createSignedUrlMap } from "@/lib/storageSignedUrls";
@@ -71,7 +74,7 @@ if (!currentOrganizationId) {
       return;
     }
   
-    const { data, error } = await supabase
+    const { data, error } = await fetchAllRows((pageFrom, pageTo) => supabase
       .from("item_requests")
       .select(`
         id,
@@ -91,7 +94,8 @@ if (!currentOrganizationId) {
       `)
       .eq("organization_id", currentOrganizationId)
       .in("status", ["pending", "return_requested"])
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+.order("id", { ascending: true }).range(pageFrom, pageTo));
 
     if (error) {
       alert("申請取得失敗: " + error.message);

@@ -1,5 +1,8 @@
 "use client";
 
+import { fetchAllRows } from "@/lib/fetchAllRows";
+
+
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -58,11 +61,12 @@ export default function OrganizationDetailPage() {
     setContractStartDate(orgData.contract_start_date ?? "");
     setContractEndDate(orgData.contract_end_date ?? "");
 
-    const { data: employeeData, error: employeeError } = await supabase
+    const { data: employeeData, error: employeeError } = await fetchAllRows((pageFrom, pageTo) => supabase
       .from("employees")
       .select("id, name, email, role")
       .eq("organization_id", id)
-      .order("role");
+      .order("role")
+.order("id", { ascending: true }).range(pageFrom, pageTo));
 
     if (employeeError) {
       alert("社員情報の取得に失敗しました: " + employeeError.message);

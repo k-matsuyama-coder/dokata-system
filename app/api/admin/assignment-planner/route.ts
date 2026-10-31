@@ -28,7 +28,7 @@ type PageQuery = {
 async function all<T>(makeQuery: () => PageQuery): Promise<T[]> {
   const rows: T[] = [];
 
-  for (let start = 0; ; start += 1000) {
+  for (let start = 0; ;) {
     const { data, error } = await makeQuery().range(
       start,
       start + 999
@@ -40,9 +40,10 @@ async function all<T>(makeQuery: () => PageQuery): Promise<T[]> {
 
     rows.push(...((data ?? []) as T[]));
 
-    if (!data || data.length < 1000) {
+    if (!data || data.length === 0) {
       return rows;
     }
+    start += data.length;
   }
 }
 

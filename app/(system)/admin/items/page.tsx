@@ -1,5 +1,8 @@
 "use client";
 
+import { fetchAllRows } from "@/lib/fetchAllRows";
+
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { createSignedUrlMap } from "@/lib/storageSignedUrls";
@@ -119,20 +122,22 @@ if (!currentOrganizationId) {
     return;
   }
 
-  const { data } = await supabase
+  const { data } = await fetchAllRows((pageFrom, pageTo) => supabase
       .from("items")
       .select("*")
       .eq("organization_id", currentOrganizationId)
-      .order("item_name");
+      .order("item_name")
+.order("id", { ascending: true }).range(pageFrom, pageTo));
   
     setItems(data ?? []);
   
-    const { data: requestData } = await supabase
+    const { data: requestData } = await fetchAllRows((pageFrom, pageTo) => supabase
       .from("item_requests")
       .select("*")
       .eq("organization_id", currentOrganizationId)
       .in("status", ["pending", "return_requested"])
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+.order("id", { ascending: true }).range(pageFrom, pageTo));
   
       const requests = requestData ?? [];
 

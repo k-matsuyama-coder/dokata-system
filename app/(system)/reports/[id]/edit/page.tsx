@@ -1,5 +1,8 @@
 "use client";
 
+import { fetchAllRows } from "@/lib/fetchAllRows";
+
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -151,11 +154,12 @@ if (!currentOrganizationId) {
       setHeavyEquipment(report.heavy_equipment ?? "");
 setOperatorName(report.operator_name ?? "");
 
-      const { data: reportMembers } = await supabase
+      const { data: reportMembers } = await fetchAllRows((pageFrom, pageTo) => supabase
   .from("report_members")
   .select("employee_name, labor, overtime, is_driver")
   .eq("organization_id", currentOrganizationId)
-  .eq("report_id", id);
+  .eq("report_id", id)
+.order("id", { ascending: true }).range(pageFrom, pageTo));
 
 if (reportMembers && reportMembers.length > 0) {
   const uniqueReportMembers = Array.from(
@@ -215,21 +219,23 @@ if (reportMembers && reportMembers.length > 0) {
   );
 }
 
-      const { data: employeeList } = await supabase
+      const { data: employeeList } = await fetchAllRows((pageFrom, pageTo) => supabase
   .from("employees")
   .select("id, name")
   .eq("organization_id", currentOrganizationId)
-  .order("name", { ascending: true });
+  .order("name", { ascending: true })
+.order("id", { ascending: true }).range(pageFrom, pageTo));
 
       if (employeeList) {
         setEmployees(employeeList);
       }
 
-      const { data: sites } = await supabase
+      const { data: sites } = await fetchAllRows((pageFrom, pageTo) => supabase
   .from("daily_reports")
   .select("site_name")
   .eq("organization_id", currentOrganizationId)
-  .order("created_at", { ascending: false });
+  .order("created_at", { ascending: false })
+.order("id", { ascending: true }).range(pageFrom, pageTo));
 
       if (sites) {
         const uniqueSites = Array.from(

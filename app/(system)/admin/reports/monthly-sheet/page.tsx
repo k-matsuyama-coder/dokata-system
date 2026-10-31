@@ -1,5 +1,8 @@
 "use client";
 
+import { fetchAllRows } from "@/lib/fetchAllRows";
+
+
 import { useEffect, useMemo, useState } from "react";
 import BackButton from "@/app/components/BackButton";
 import { hasRole } from "@/app/types/auth";
@@ -183,7 +186,7 @@ const [savingCostKey, setSavingCostKey] = useState<string | null>(null);
         if (companyName) {
           const pageSize = 1000;
 
-          for (let from = 0; ; from += pageSize) {
+          for (let from = 0; ;) {
             const { data: companyEmployees, error: companyError } =
               await supabase
                 .from("employees")
@@ -203,9 +206,10 @@ const [savingCostKey, setSavingCostKey] = useState<string | null>(null);
               ...employeesPage.map((item) => item.id)
             );
 
-            if (employeesPage.length < pageSize) {
+            if (employeesPage.length === 0) {
               break;
             }
+            from += employeesPage.length;
           }
         }
 
@@ -216,7 +220,7 @@ const [savingCostKey, setSavingCostKey] = useState<string | null>(null);
         if (companyName) {
           const pageSize = 1000;
 
-          for (let from = 0; ; from += pageSize) {
+          for (let from = 0; ;) {
             const { data: costData, error: costError } = await supabase
               .from("monthly_invoice_company_costs")
               .select(
@@ -236,14 +240,15 @@ const [savingCostKey, setSavingCostKey] = useState<string | null>(null);
             const costPage = (costData ?? []) as CompanyCost[];
             loadedCompanyCosts.push(...costPage);
 
-            if (costPage.length < pageSize) {
+            if (costPage.length === 0) {
               break;
             }
+            from += costPage.length;
           }
         }
 
         const [reportResult, assignmentResult] = await Promise.all([
-          supabase
+          fetchAllRows((pageFrom, pageTo) => supabase
             .from("daily_reports")
             .select(`
               id,
@@ -269,9 +274,10 @@ const [savingCostKey, setSavingCostKey] = useState<string | null>(null);
             .eq("organization_id", organizationId)
             .gte("report_date", firstDate)
             .lte("report_date", lastDate)
-            .order("report_date", { ascending: true }),
+            .order("report_date", { ascending: true })
+.order("id", { ascending: true }).range(pageFrom, pageTo)),
 
-          supabase
+          fetchAllRows((pageFrom, pageTo) => supabase
             .from("assignments")
             .select(`
               site_name,
@@ -279,7 +285,8 @@ const [savingCostKey, setSavingCostKey] = useState<string | null>(null);
               manager_name,
               shift_type
             `)
-            .eq("organization_id", organizationId),
+            .eq("organization_id", organizationId)
+.order("id", { ascending: true }).range(pageFrom, pageTo)),
         ]);
 
         if (reportResult.error) {

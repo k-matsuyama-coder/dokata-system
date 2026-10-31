@@ -1,5 +1,8 @@
 "use client";
 
+import { fetchAllRows } from "@/lib/fetchAllRows";
+
+
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -26,7 +29,7 @@ export default function SuperAdminUsersPage() {
   const fetchEmployees = async () => {
     setLoading(true);
 
-    const { data, error } = await supabase
+    const { data, error } = await fetchAllRows((pageFrom, pageTo) => supabase
       .from("employees")
       .select(`
         id,
@@ -40,7 +43,8 @@ export default function SuperAdminUsersPage() {
         )
       `)
       .order("organization_id", { ascending: true })
-      .order("name", { ascending: true });
+      .order("name", { ascending: true })
+.order("id", { ascending: true }).range(pageFrom, pageTo));
 
     if (error) {
       alert("ユーザー取得失敗: " + error.message);

@@ -1,5 +1,8 @@
 "use client";
 
+import { fetchAllRows } from "@/lib/fetchAllRows";
+
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { createSignedUrlMap } from "@/lib/storageSignedUrls";
@@ -105,7 +108,8 @@ if (!currentOrganizationId) {
       query = query.eq("status", statusFilter);
     }
 
-    const { data, error } = await query;
+    query = query.order("id", { ascending: true });
+    const { data, error } = await fetchAllRows((from, to) => query.range(from, to));
 
     if (error) {
       alert("履歴取得失敗: " + error.message);

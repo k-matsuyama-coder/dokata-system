@@ -1,5 +1,8 @@
 "use client";
 
+import { fetchAllRows } from "@/lib/fetchAllRows";
+
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
@@ -49,10 +52,11 @@ if (!employee || !hasRole(employee.role, "admin")) {
   return;
 }
 
-      const { data, error } = await supabase
+      const { data, error } = await fetchAllRows((pageFrom, pageTo) => supabase
         .from("report_members")
         .select("employee_name, labor, overtime, is_driver, report_id")
-        .order("employee_name", { ascending: true });
+        .order("employee_name", { ascending: true })
+.order("id", { ascending: true }).range(pageFrom, pageTo));
 
       if (error) {
         alert("集計取得失敗: " + error.message);

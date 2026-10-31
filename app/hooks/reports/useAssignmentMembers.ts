@@ -1,3 +1,4 @@
+import { fetchAllRows } from "@/lib/fetchAllRows";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
@@ -19,11 +20,12 @@ export function useAssignmentMembers({
     }
 
     const fetchMembers = async () => {
-      const { data, error } = await supabase
+      const { data, error } = await fetchAllRows((pageFrom, pageTo) => supabase
         .from("assignment_site_members")
         .select("employee_name")
         .eq("assignment_id", assignmentId)
-        .eq("work_date", reportDate);
+        .eq("work_date", reportDate)
+.order("id", { ascending: true }).range(pageFrom, pageTo));
 
       if (error) {
         console.error(error);

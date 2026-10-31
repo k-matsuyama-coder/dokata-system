@@ -1,5 +1,8 @@
 "use client";
 
+import { fetchAllRows } from "@/lib/fetchAllRows";
+
+
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
@@ -121,12 +124,13 @@ export default function ReportStatusPage() {
       return;
     }
 
-    const { data: assignmentData, error: assignmentError } = await supabase
+    const { data: assignmentData, error: assignmentError } = await fetchAllRows((pageFrom, pageTo) => supabase
       .from("assignments")
       .select("id, site_name, contractor_name, shift_type")
       .eq("organization_id", currentOrganizationId)
       .order("sort_order", { ascending: true })
-      .order("created_at", { ascending: true });
+      .order("created_at", { ascending: true })
+.order("id", { ascending: true }).range(pageFrom, pageTo));
 
     if (assignmentError) {
       alert("現場取得失敗: " + assignmentError.message);

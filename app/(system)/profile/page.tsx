@@ -1,5 +1,8 @@
 "use client";
 
+import { fetchAllRows } from "@/lib/fetchAllRows";
+
+
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
@@ -122,11 +125,12 @@ setCheckingImpersonation(false);
         setName(employee.name ?? "");
         setRole(employee.role ?? "");
 
-        const { data: certs } = await supabase
+        const { data: certs } = await fetchAllRows((pageFrom, pageTo) => supabase
           .from("certifications")
           .select("id, qualification_name, issue_date, card_front_url, card_back_url")
           .eq("employee_id", employee.id)
-          .order("issue_date", { ascending: false });
+          .order("issue_date", { ascending: false })
+.order("id", { ascending: true }).range(pageFrom, pageTo));
 
           if (certs) {
             setCertifications(certs);

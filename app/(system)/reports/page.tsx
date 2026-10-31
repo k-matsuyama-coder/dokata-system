@@ -1,5 +1,8 @@
 "use client";
 
+import { fetchAllRows } from "@/lib/fetchAllRows";
+
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
@@ -100,7 +103,7 @@ useEffect(() => {
       throw new Error("取得を中断しました。");
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await fetchAllRows((pageFrom, pageTo) => supabase
       .from("daily_reports")
       .select(
         "id, report_date, worker_name, site_name, shift_type, start_time, end_time, worker_count, vehicle_count, driver_name, note, expressway_main, expressway_secondary, expressway_subcontract, parking_main, parking_secondary, parking_subcontract, fuel_gasoline, fuel_diesel, work_description, members"
@@ -108,7 +111,8 @@ useEffect(() => {
       .eq("organization_id", organizationId)
       .eq("worker_name", employee.name)
       .order("created_at", { ascending: false })
-      .abortSignal(controller.signal);
+      .abortSignal(controller.signal)
+.order("id", { ascending: true }).range(pageFrom, pageTo));
 
     if (error) throw error;
 

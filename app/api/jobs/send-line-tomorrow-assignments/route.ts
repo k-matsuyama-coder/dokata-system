@@ -1,3 +1,4 @@
+import { fetchAllRows } from "@/lib/fetchAllRows";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
@@ -114,10 +115,11 @@ async function runJob() {
 
   const targetDate = getTomorrowJstDateString();
 
-  const { data: employees, error: employeeError } = await supabase
+  const { data: employees, error: employeeError } = await fetchAllRows((pageFrom, pageTo) => supabase
     .from("employees")
     .select("id, organization_id, name, line_user_id")
-    .not("line_user_id", "is", null);
+    .not("line_user_id", "is", null)
+.order("id", { ascending: true }).range(pageFrom, pageTo));
 
   if (employeeError) throw employeeError;
 
@@ -135,11 +137,12 @@ async function runJob() {
 
   const organizationIds = [...new Set(linkedEmployees.map((row) => row.organization_id))];
 
-  const { data: siteMembers, error: siteMemberError } = await supabase
+  const { data: siteMembers, error: siteMemberError } = await fetchAllRows((pageFrom, pageTo) => supabase
     .from("assignment_site_members")
     .select("organization_id, assignment_id, employee_name, work_date")
     .in("organization_id", organizationIds)
-    .eq("work_date", targetDate);
+    .eq("work_date", targetDate)
+.order("id", { ascending: true }).range(pageFrom, pageTo));
 
   if (siteMemberError) throw siteMemberError;
 
@@ -149,12 +152,13 @@ async function runJob() {
   let assignmentMap = new Map<string, AssignmentRow>();
 
   if (assignmentIds.length > 0) {
-    const { data: assignments, error: assignmentError } = await supabase
+    const { data: assignments, error: assignmentError } = await fetchAllRows((pageFrom, pageTo) => supabase
       .from("assignments")
       .select(
         "id, organization_id, site_name, contractor_name, manager_name, address, meeting_time, shift_type"
       )
-      .in("id", assignmentIds);
+      .in("id", assignmentIds)
+.order("id", { ascending: true }).range(pageFrom, pageTo));
 
     if (assignmentError) throw assignmentError;
 

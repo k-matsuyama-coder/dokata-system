@@ -1,3 +1,4 @@
+import { fetchAllRows } from "@/lib/fetchAllRows";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchTwoMonthData } from "../api";
 import { supabase } from "@/lib/supabase";
@@ -156,12 +157,13 @@ export function useTwoMonthPage() {
         organizationId: nextOrganizationId,
       });
 
-      const { data: memoRows, error: memoError } = await supabase
+      const { data: memoRows, error: memoError } = await fetchAllRows((pageFrom, pageTo) => supabase
   .from("assignment_date_memos")
   .select("work_date, memo")
   .eq("organization_id", nextOrganizationId)
   .gte("work_date", days[0])
-  .lte("work_date", days[days.length - 1]);
+  .lte("work_date", days[days.length - 1])
+.order("id", { ascending: true }).range(pageFrom, pageTo));
 
 if (memoError) {
   throw memoError;

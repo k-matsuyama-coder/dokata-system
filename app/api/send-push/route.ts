@@ -1,3 +1,4 @@
+import { fetchAllRows } from "@/lib/fetchAllRows";
 import { NextResponse } from "next/server";
 import webpush from "web-push";
 import { supabaseAdmin } from "@/app/api/_lib/supabaseAdmin";
@@ -169,11 +170,12 @@ export async function POST(req: Request) {
     const url = new URL(requestedUrl, req.url).href;
 
     const { data: subscriptions, error } =
-      await supabaseAdmin
+      await fetchAllRows((pageFrom, pageTo) => supabaseAdmin
         .from("push_subscriptions")
         .select("endpoint, p256dh, auth")
         .eq("organization_id", organizationId)
-        .eq("employee_name", employeeName);
+        .eq("employee_name", employeeName)
+.order("endpoint", { ascending: true }).range(pageFrom, pageTo));
 
     if (error) {
       return NextResponse.json(

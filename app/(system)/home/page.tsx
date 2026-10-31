@@ -1,5 +1,8 @@
 "use client";
 
+import { fetchAllRows } from "@/lib/fetchAllRows";
+
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
@@ -302,14 +305,15 @@ return;
               ] = await runTimedQuery(
                 (signal) =>
                   Promise.all([
-                    supabase
+                    fetchAllRows((pageFrom, pageTo) => supabase
                       .from("daily_reports")
                       .select("site_name")
                       .eq("organization_id", currentOrganizationId)
                       .eq("report_date", todayString)
-                      .abortSignal(signal),
+                      .abortSignal(signal)
+.order("id", { ascending: true }).range(pageFrom, pageTo)),
               
-                    supabase
+                    fetchAllRows((pageFrom, pageTo) => supabase
                       .from("assignment_site_members")
                       .select(`
                         assignment_id,
@@ -319,7 +323,8 @@ return;
                       `)
                       .eq("organization_id", currentOrganizationId)
                       .eq("work_date", todayString)
-                      .abortSignal(signal),
+                      .abortSignal(signal)
+.order("id", { ascending: true }).range(pageFrom, pageTo)),
               
                     supabase
                       .rpc("sum_planned_labor", {
@@ -506,7 +511,7 @@ void (async () => {
 
     const monthlyResult = await runTimedQuery(
       (signal) =>
-        supabase
+        fetchAllRows((pageFrom, pageTo) => supabase
           .from("report_members")
           .select(`
             overtime,
@@ -523,7 +528,8 @@ void (async () => {
           .eq("employee_name", employee.name)
           .gte("daily_reports.report_date", monthStart)
           .lte("daily_reports.report_date", todayString)
-          .abortSignal(signal),
+          .abortSignal(signal)
+.order("id", { ascending: true }).range(pageFrom, pageTo)),
       "個人集計の取得に時間がかかっています。"
     );
 

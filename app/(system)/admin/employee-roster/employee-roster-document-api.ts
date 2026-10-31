@@ -1,3 +1,4 @@
+import { fetchAllRows } from "@/lib/fetchAllRows";
 import { supabase } from "@/lib/supabase";
 import { hasRole } from "@/app/types/auth";
 import type {
@@ -74,11 +75,12 @@ export async function loadSavedEmployeeRosters(): Promise<
 > {
   const { organizationId } = await getAdminContext();
 
-  const { data, error } = await supabase
+  const { data, error } = await fetchAllRows((pageFrom, pageTo) => supabase
     .from("employee_rosters")
     .select("*")
     .eq("organization_id", organizationId)
-    .order("updated_at", { ascending: false });
+    .order("updated_at", { ascending: false })
+.order("id", { ascending: true }).range(pageFrom, pageTo));
 
   if (error) {
     throw new Error(
@@ -160,25 +162,28 @@ export async function loadEmployeeRosterEditor(
         .eq("id", rosterId)
         .single(),
   
-      supabase
+      fetchAllRows((pageFrom, pageTo) => supabase
         .from("employee_roster_members")
         .select("*")
         .eq("organization_id", organizationId)
         .eq("roster_id", rosterId)
-        .order("display_order", { ascending: true }),
+        .order("display_order", { ascending: true })
+.order("id", { ascending: true }).range(pageFrom, pageTo)),
   
-      supabase
+      fetchAllRows((pageFrom, pageTo) => supabase
         .from("employees")
         .select(
           "id, organization_id, name, company_name, role"
         )
         .eq("organization_id", organizationId)
-        .order("name", { ascending: true }),
+        .order("name", { ascending: true })
+.order("id", { ascending: true }).range(pageFrom, pageTo)),
   
-      supabase
+      fetchAllRows((pageFrom, pageTo) => supabase
       .from("employee_private_profiles")
       .select("employee_id, updated_at")
-      .eq("organization_id", organizationId),
+      .eq("organization_id", organizationId)
+.order("employee_id", { ascending: true }).range(pageFrom, pageTo)),
     ]);
   
     if (rosterResult.error || !rosterResult.data) {

@@ -1,5 +1,8 @@
 "use client";
 
+import { fetchAllRows } from "@/lib/fetchAllRows";
+
+
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -116,11 +119,12 @@ const res = await fetch("/api/admin/get-user-auth", {
         }
       }
 
-      const { data: companyData, error: companyError } = await supabase
+      const { data: companyData, error: companyError } = await fetchAllRows((pageFrom, pageTo) => supabase
         .from("companies")
         .select("id, name")
         .eq("organization_id", currentOrganizationId)
-        .order("name", { ascending: true });
+        .order("name", { ascending: true })
+.order("id", { ascending: true }).range(pageFrom, pageTo));
 
       if (companyError) {
         alert("会社取得失敗: " + companyError.message);

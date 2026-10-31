@@ -1,5 +1,8 @@
 "use client";
 
+import { fetchAllRows } from "@/lib/fetchAllRows";
+
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type {
@@ -15,13 +18,14 @@ export function useAssignmentGroups({ organizationId }: Props) {
   const [groupSettings, setGroupSettings] = useState<AssignmentGroupSetting[]>([]);
 
   const fetchGroups = useCallback(async (targetOrganizationId: string) => {
-    const { data, error } = await supabase
+    const { data, error } = await fetchAllRows((pageFrom, pageTo) => supabase
       .from("assignment_groups")
       .select(
         "id, organization_id, group_key, display_name, is_enabled, sort_order, header_color, daily_capacity"
       )
       .eq("organization_id", targetOrganizationId)
-      .order("sort_order", { ascending: true });
+      .order("sort_order", { ascending: true })
+.order("id", { ascending: true }).range(pageFrom, pageTo));
   
     if (error) {
       throw error;

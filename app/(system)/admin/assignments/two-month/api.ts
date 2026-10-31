@@ -1,5 +1,8 @@
 "use client";
 
+import { fetchAllRows } from "@/lib/fetchAllRows";
+
+
 import { supabase } from "@/lib/supabase";
 import { createSignedUrlMap } from "@/lib/storageSignedUrls";
 import type { Assignment, AssignmentGroupKey } from "./types";
@@ -53,24 +56,27 @@ export async function fetchTwoMonthData({
     contactResult,
     assignmentResult,
   ] = await Promise.all([
-    supabase
+    fetchAllRows((pageFrom, pageTo) => supabase
       .from("employees")
       .select("name, company_name")
       .eq("organization_id", safeOrganizationId)
-      .order("name", { ascending: true }),
+      .order("name", { ascending: true })
+.order("id", { ascending: true }).range(pageFrom, pageTo)),
 
-    supabase
+    fetchAllRows((pageFrom, pageTo) => supabase
       .from("contractors")
       .select("id, name")
       .eq("organization_id", safeOrganizationId)
-      .order("name", { ascending: true }),
+      .order("name", { ascending: true })
+.order("id", { ascending: true }).range(pageFrom, pageTo)),
 
-    supabase
+    fetchAllRows((pageFrom, pageTo) => supabase
       .from("contractor_contacts")
       .select("id, contractor_id, manager_name, contact_phone")
-      .eq("organization_id", safeOrganizationId),
+      .eq("organization_id", safeOrganizationId)
+.order("id", { ascending: true }).range(pageFrom, pageTo)),
 
-    supabase
+    fetchAllRows((pageFrom, pageTo) => supabase
       .from("assignments")
       .select(`
         id,
@@ -92,7 +98,8 @@ export async function fetchTwoMonthData({
       `)
       .eq("organization_id", safeOrganizationId)
       .order("sort_order", { ascending: true })
-      .order("created_at", { ascending: true }),
+      .order("created_at", { ascending: true })
+.order("id", { ascending: true }).range(pageFrom, pageTo)),
   ]);
 
   if (employeeResult.error) {
@@ -127,7 +134,7 @@ export async function fetchTwoMonthData({
   }
 
   const [dailyInfoResult, memberResult, fileResult] = await Promise.all([
-    supabase
+    fetchAllRows((pageFrom, pageTo) => supabase
       .from("assignment_site_daily_infos")
       .select(
         "id, assignment_id, work_date, planned_count, detail, memo, vehicle_names"
@@ -135,9 +142,10 @@ export async function fetchTwoMonthData({
       .eq("organization_id", safeOrganizationId)
       .in("assignment_id", assignmentIds)
       .gte("work_date", startDate)
-      .lte("work_date", endDate),
+      .lte("work_date", endDate)
+.order("id", { ascending: true }).range(pageFrom, pageTo)),
 
-    supabase
+    fetchAllRows((pageFrom, pageTo) => supabase
       .from("assignment_site_members")
       .select(
         "id, assignment_id, work_date, employee_name, is_driver, is_operator, is_foreman, heavy_equipment"
@@ -145,13 +153,15 @@ export async function fetchTwoMonthData({
       .eq("organization_id", safeOrganizationId)
       .in("assignment_id", assignmentIds)
       .gte("work_date", startDate)
-      .lte("work_date", endDate),
+      .lte("work_date", endDate)
+.order("id", { ascending: true }).range(pageFrom, pageTo)),
 
-    supabase
+    fetchAllRows((pageFrom, pageTo) => supabase
       .from("assignment_files")
       .select("id, assignment_id, file_name, file_url, file_path")
       .eq("organization_id", safeOrganizationId)
-      .in("assignment_id", assignmentIds),
+      .in("assignment_id", assignmentIds)
+.order("id", { ascending: true }).range(pageFrom, pageTo)),
   ]);
 
   if (dailyInfoResult.error) {
@@ -234,11 +244,12 @@ export async function uploadAssignmentFiles(
 export async function deleteAssignmentApi(id: string, organizationId: string) {
   const safeOrganizationId = ensureOrganizationId(organizationId);
 
-  const { data: files, error: filesError } = await supabase
+  const { data: files, error: filesError } = await fetchAllRows((pageFrom, pageTo) => supabase
     .from("assignment_files")
     .select("file_path")
     .eq("organization_id", safeOrganizationId)
-    .eq("assignment_id", id);
+    .eq("assignment_id", id)
+.order("id", { ascending: true }).range(pageFrom, pageTo));
 
   if (filesError) {
     throw new Error("ファイル一覧取得失敗: " + filesError.message);

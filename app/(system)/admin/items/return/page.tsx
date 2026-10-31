@@ -1,5 +1,8 @@
 "use client";
 
+import { fetchAllRows } from "@/lib/fetchAllRows";
+
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
@@ -72,7 +75,7 @@ const { data: employee } = await supabase
 
     setEmployeeName(employee.name);
 
-    const { data, error } = await supabase
+    const { data, error } = await fetchAllRows((pageFrom, pageTo) => supabase
       .from("item_requests")
       .select(`
         id,
@@ -92,7 +95,8 @@ const { data: employee } = await supabase
       .eq("organization_id", currentOrganizationId)
       .eq("user_name", employee.name)
       .eq("status", "approved")
-      .order("start_date", { ascending: false });
+      .order("start_date", { ascending: false })
+.order("id", { ascending: true }).range(pageFrom, pageTo));
 
     if (error) {
       alert("貸出中物品の取得失敗: " + error.message);
@@ -184,11 +188,12 @@ const historyResult = await supabase
 
 console.log("履歴保存結果", historyResult);
 
-const { data: admins, error: adminError } = await supabase
+const { data: admins, error: adminError } = await fetchAllRows((pageFrom, pageTo) => supabase
   .from("employees")
   .select("name")
   .eq("organization_id", currentOrganizationId)
-  .eq("role", "admin");
+  .eq("role", "admin")
+.order("id", { ascending: true }).range(pageFrom, pageTo));
 
 console.log("admins", admins);
 console.log("adminError", adminError);

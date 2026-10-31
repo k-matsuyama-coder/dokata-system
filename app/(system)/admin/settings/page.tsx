@@ -1,5 +1,8 @@
 "use client";
 
+import { fetchAllRows } from "@/lib/fetchAllRows";
+
+
 import { useEffect, useState } from "react";
 import BackButton from "@/app/components/BackButton";
 import { supabase } from "@/lib/supabase";
@@ -91,13 +94,14 @@ export default function AdminSettingsPage() {
 
       const organizationId = await getCurrentOrganization();
 
-      const { data, error: groupError } = await supabase
+      const { data, error: groupError } = await fetchAllRows((pageFrom, pageTo) => supabase
         .from("assignment_groups")
         .select(
           "id, organization_id, group_key, display_name, is_enabled, sort_order, header_color, daily_capacity"
         )
         .eq("organization_id", organizationId)
-        .order("sort_order", { ascending: true });
+        .order("sort_order", { ascending: true })
+.order("id", { ascending: true }).range(pageFrom, pageTo));
 
       if (groupError) {
         throw new Error(groupError.message);

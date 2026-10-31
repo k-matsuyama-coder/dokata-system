@@ -1,5 +1,8 @@
 "use client";
 
+import { fetchAllRows } from "@/lib/fetchAllRows";
+
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -134,13 +137,14 @@ export default function NavBar() {
     if (!employeeName || !organizationId) return;
 
     const fetchNotifications = async () => {
-      const { data, error } = await supabase
+      const { data, error } = await fetchAllRows((pageFrom, pageTo) => supabase
         .from("notifications")
         .select("id, employee_name, title, message, link_url, is_read")
         .eq("organization_id", organizationId)
         .eq("employee_name", employeeName)
         .eq("is_read", false)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+.order("id", { ascending: true }).range(pageFrom, pageTo));
 
       if (error) return;
       setNotifications(data ?? []);

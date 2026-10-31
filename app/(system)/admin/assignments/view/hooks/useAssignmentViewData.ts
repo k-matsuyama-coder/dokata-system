@@ -1,5 +1,8 @@
 "use client";
 
+import { fetchAllRows } from "@/lib/fetchAllRows";
+
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { createSignedUrlMap } from "@/lib/storageSignedUrls";
@@ -157,13 +160,14 @@ export function useAssignmentViewData({
     const endDate = displayDates[displayDates.length - 1];
 
     const [groupResult, assignmentResult] = await Promise.all([
-      supabase
+      fetchAllRows((pageFrom, pageTo) => supabase
         .from("assignment_groups")
         .select("id, group_key, display_name, is_enabled, sort_order, header_color")
         .eq("organization_id", organizationId)
-        .order("sort_order", { ascending: true }),
+        .order("sort_order", { ascending: true })
+.order("id", { ascending: true }).range(pageFrom, pageTo)),
 
-      supabase
+      fetchAllRows((pageFrom, pageTo) => supabase
         .from("assignments")
         .select(`
           id,
@@ -178,7 +182,8 @@ export function useAssignmentViewData({
         `)
         .eq("organization_id", organizationId)
         .order("sort_order", { ascending: true })
-        .order("created_at", { ascending: true }),
+        .order("created_at", { ascending: true })
+.order("id", { ascending: true }).range(pageFrom, pageTo)),
     ]);
 
     if (!groupResult.error && groupResult.data?.length) {
@@ -201,7 +206,7 @@ export function useAssignmentViewData({
     }
 
     const [memberResult, dailyInfoResult, fileResult] = await Promise.all([
-      supabase
+      fetchAllRows((pageFrom, pageTo) => supabase
         .from("assignment_site_members")
         .select(`
           id,
@@ -216,9 +221,10 @@ export function useAssignmentViewData({
         .eq("organization_id", organizationId)
         .in("assignment_id", assignmentIds)
         .gte("work_date", startDate)
-        .lte("work_date", endDate),
+        .lte("work_date", endDate)
+.order("id", { ascending: true }).range(pageFrom, pageTo)),
 
-      supabase
+      fetchAllRows((pageFrom, pageTo) => supabase
         .from("assignment_site_daily_infos")
         .select(`
           id,
@@ -231,13 +237,15 @@ export function useAssignmentViewData({
         .eq("organization_id", organizationId)
         .in("assignment_id", assignmentIds)
         .gte("work_date", startDate)
-        .lte("work_date", endDate),
+        .lte("work_date", endDate)
+.order("id", { ascending: true }).range(pageFrom, pageTo)),
 
-      supabase
+      fetchAllRows((pageFrom, pageTo) => supabase
         .from("assignment_files")
         .select("id, assignment_id, file_name, file_path")
         .eq("organization_id", organizationId)
-        .in("assignment_id", assignmentIds),
+        .in("assignment_id", assignmentIds)
+.order("id", { ascending: true }).range(pageFrom, pageTo)),
     ]);
 
     if (memberResult.error || dailyInfoResult.error || fileResult.error) {

@@ -1,5 +1,8 @@
 "use client";
 
+import { fetchAllRows } from "@/lib/fetchAllRows";
+
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
@@ -108,14 +111,15 @@ if (viewMode === "monthly") {
   end = `${year}-12-31`;
 }
 
-const { data, error } = await supabase
+const { data, error } = await fetchAllRows((pageFrom, pageTo) => supabase
 .from("daily_reports")
 .select(
   "report_date, contractor_name, site_name, shift_type, worker_count, vehicle_count, overtime_minutes"
 )
 .eq("organization_id", currentOrganizationId)
 .gte("report_date", start)
-.lte("report_date", end);
+.lte("report_date", end)
+.order("id", { ascending: true }).range(pageFrom, pageTo));
 
       if (error) {
         alert("取得失敗: " + error.message);

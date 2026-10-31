@@ -1,5 +1,8 @@
 "use client";
 
+import { fetchAllRows } from "@/lib/fetchAllRows";
+
+
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
@@ -133,12 +136,13 @@ const loadedOrganizationRef = useRef("");
         throw new Error("取得を中断しました。");
       }
   
-      const { data, error } = await supabase
+      const { data, error } = await fetchAllRows((pageFrom, pageTo) => supabase
         .from("daily_reports")
         .select("id, report_date, worker_name, site_name")
         .eq("organization_id", currentOrganizationId)
         .order("report_date", { ascending: false })
-        .abortSignal(controller.signal);
+        .abortSignal(controller.signal)
+.order("id", { ascending: true }).range(pageFrom, pageTo));
   
       if (error) throw error;
   

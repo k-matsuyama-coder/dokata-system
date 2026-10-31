@@ -1,5 +1,8 @@
 "use client";
 
+import { fetchAllRows } from "@/lib/fetchAllRows";
+
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
@@ -36,11 +39,12 @@ export default function CompaniesPage() {
 
     setLoginOrganizationId(employee.organization_id ?? null);
 
-    const { data } = await supabase
+    const { data } = await fetchAllRows((pageFrom, pageTo) => supabase
   .from("companies")
   .select("id, name")
   .eq("organization_id", employee.organization_id)
-  .order("created_at", { ascending: false });
+  .order("created_at", { ascending: false })
+.order("id", { ascending: true }).range(pageFrom, pageTo));
 
     setCompanies(data ?? []);
   };
