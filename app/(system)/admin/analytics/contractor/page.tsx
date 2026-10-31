@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import AnnualCompanyChart from "./AnnualCompanyChart";
 import BackButton from "@/app/components/BackButton";
+import { useAppRefresh } from "@/app/hooks/useAppRefresh";
+import { fetchCompanyPages } from "./fetchCompanyPages";
 import { hasRole } from "@/app/types/auth";
 
 type Employee = {
@@ -51,108 +53,78 @@ export default function CompanyAnalyticsPage() {
   const [chartOrganizationId, setChartOrganizationId] = useState<string | null>(null);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [members, setMembers] = useState<ReportMemberRow[]>([]);
-  const [loading, setLoading] = useState(false);
-  const getCurrentOrganization = async () => {
-    const { data: sessionData } = await supabase.auth.getSession();
-    const token = sessionData.session?.access_token;
-  
-    if (!token) return null;
-  
-    const res = await fetch("/api/current-organization", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-  
-    const result = await res.json();
-  
-    if (!res.ok) return null;
-  
-    return result.organizationId as string | null;
-  };
-
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [retryCount, setRetryCount] = useState(0);
+  const [chartRefresh, setChartRefresh] = useState(0);
+  const refreshVersion = useAppRefresh();
   useEffect(() => {
+    let active = true;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 60000);
+    setLoading(true);
+    setErrorMessage("");
     const fetchData = async () => {
-      setLoading(true);
-  
-      const { data: userData } = await supabase.auth.getUser();
-      const currentOrganizationId = await getCurrentOrganization();
-
-if (!currentOrganizationId) {
-  alert("会社情報が取得できません");
-  setLoading(false);
-  return;
-}
-  
-      if (!userData.user) {
-        window.location.href = "/login";
-        return;
-      }
-  
-      const { data: employee } = await supabase
-  .from("employees")
-  .select("role")
-  .eq("organization_id", currentOrganizationId)
-  .eq("auth_user_id", userData.user.id)
-  .single();
-  
-      if (!employee || !hasRole(employee.role, "admin")) {
-        window.location.href = "/home";
-        return;
-      }
-  
-      const start = `${month}-01`;
-      const end = getNextMonth(month);
-
-      const { data: employeeData, error: employeeError } = await supabase
-  .from("employees")
-  .select("name, company_name")
-  .eq("organization_id", currentOrganizationId);
-
-      if (employeeError) {
-        alert("社員取得失敗: " + employeeError.message);
-        setLoading(false);
-        return;
-      }
-
-      const { data: memberData, error: memberError } = await supabase
-        .from("report_members")
-        .select(`
-          employee_name,
-          labor,
-          overtime,
-          is_driver,
-          report_id,
-          daily_reports!inner (
-            report_date,
-            shift_type
-          )
-        `)
-        .eq("organization_id", currentOrganizationId)
-        .gte("daily_reports.report_date", start)
-        .lt("daily_reports.report_date", end);
-
-      if (memberError) {
-        alert("会社別集計取得失敗: " + memberError.message);
-        setLoading(false);
-        return;
-      }
-
-      setChartOrganizationId(currentOrganizationId);
-      setEmployees(employeeData ?? []);
-      setMembers(
-        (memberData ?? []).map((member) => ({
+      try {
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        if (!active || controller.signal.aborted) return;
+        if (sessionError) throw sessionError;
+        const session = sessionData.session;
+        if (!session) { window.location.href = "/login"; return; }
+        const response = await fetch("/api/current-organization", {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+          signal: controller.signal,
+        });
+        const context = await response.json();
+        if (!response.ok || !context.organizationId) throw new Error("会社情報が取得できません。");
+        const organizationId = context.organizationId as string;
+        const { data: employee, error: roleError } = await supabase
+          .from("employees").select("role")
+          .eq("organization_id", organizationId)
+          .eq("auth_user_id", session.user.id).abortSignal(controller.signal).single();
+        if (roleError) throw roleError;
+        if (!active || controller.signal.aborted) return;
+        if (!employee || !hasRole(employee.role, "admin")) {
+          window.location.href = "/home"; return;
+        }
+        const [employeeResult, memberResult] = await Promise.all([
+          fetchCompanyPages((from, to) => supabase.from("employees")
+            .select("name, company_name").eq("organization_id", organizationId)
+            .order("id", { ascending: true }).range(from, to).abortSignal(controller.signal)),
+          fetchCompanyPages((from, to) => supabase.from("report_members")
+            .select("employee_name, labor, overtime, is_driver, report_id, daily_reports!inner(report_date, shift_type)")
+            .eq("organization_id", organizationId)
+            .gte("daily_reports.report_date", `${month}-01`)
+            .lt("daily_reports.report_date", getNextMonth(month))
+            .order("id", { ascending: true }).range(from, to).abortSignal(controller.signal)),
+        ]);
+        if (employeeResult.error) throw new Error(`社員取得失敗: ${employeeResult.error.message}`);
+        if (memberResult.error) throw new Error(`集計取得失敗: ${memberResult.error.message}`);
+        if (!active || controller.signal.aborted) return;
+        setChartOrganizationId(organizationId);
+        setEmployees(employeeResult.data ?? []);
+        setMembers((memberResult.data ?? []).map(member => ({
           ...member,
           daily_reports: Array.isArray(member.daily_reports)
-            ? member.daily_reports[0] ?? null
-            : member.daily_reports ?? null,
-        }))
-      );
-      setLoading(false);
+            ? member.daily_reports[0] ?? null : member.daily_reports ?? null,
+        })));
+        setChartRefresh(value => value + 1);
+      } catch (error) {
+        if (active) setErrorMessage(controller.signal.aborted
+          ? "取得に時間がかかっています。再取得してください。"
+          : error instanceof Error ? error.message : "データを取得できませんでした。");
+      } finally {
+        clearTimeout(timer);
+        if (active) {
+          if (controller.signal.aborted) setErrorMessage("取得に時間がかかっています。再取得してください。");
+          setLoading(false);
+        }
+        controller.abort();
+      }
     };
-
-    fetchData();
-  }, [month]);
+    void fetchData();
+    return () => { active = false; clearTimeout(timer); controller.abort(); };
+  }, [month, retryCount, refreshVersion]);
 
   const companyHeadcounts = useMemo(() => {
     const counts = new Map<string, number>();
@@ -245,11 +217,17 @@ if (!currentOrganizationId) {
         <input
           type="month"
           value={month}
-          onChange={(e) => setMonth(e.target.value)}
+          onChange={(e) => { if (e.target.value) setMonth(e.target.value); }}
           style={inputStyle}
         />
+        <button type="button" disabled={loading} onClick={() => setRetryCount(value => value + 1)}
+          style={{ marginLeft: 12, padding: "10px 16px", borderRadius: 8, border: "1px solid #ccc", background: "#fff", cursor: "pointer" }}>
+          {loading ? "取得中…" : "再取得"}
+        </button>
+        {errorMessage && <p role="alert" style={{ color: "#b91c1c" }}>{errorMessage}</p>}
       </div>
 
+      {!loading && !errorMessage && <>
       <div
         style={{
           display: "grid",
@@ -342,11 +320,14 @@ if (!currentOrganizationId) {
           </div>
         )}
       </div>
+      </>}
+      {loading && <p role="status">対象月のデータを取得しています…</p>}
       {chartOrganizationId && (
         <AnnualCompanyChart
           key={chartOrganizationId}
           organizationId={chartOrganizationId}
           employees={employees}
+          refreshToken={chartRefresh}
         />
       )}
     </div>

@@ -14,8 +14,9 @@ type RawEntry = {
 const colors = ["#2563eb", "#db2777", "#059669", "#d97706", "#7c3aed", "#0891b2", "#dc2626", "#475569"];
 const number = (value: number) => value.toLocaleString("ja-JP", { maximumFractionDigits: 2 });
 
-export default function AnnualCompanyChart({ organizationId, employees }: {
+export default function AnnualCompanyChart({ organizationId, employees, refreshToken = 0 }: {
   organizationId: string;
+  refreshToken?: number;
   employees: Employee[];
 }) {
   const today = new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Tokyo" }).format(new Date());
@@ -78,7 +79,7 @@ export default function AnnualCompanyChart({ organizationId, employees }: {
     };
     void load();
     return () => { active = false; clearTimeout(timeout); controller.abort(); };
-  }, [opened, year, organizationId, retry]);
+  }, [opened, year, organizationId, retry, refreshToken]);
 
   const series = useMemo(() => {
     const companies = new Map<string, { name: string; headcount: number; labor: number[] }>();
