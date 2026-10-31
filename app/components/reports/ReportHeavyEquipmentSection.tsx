@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 
 type Employee = {
   name: string;
@@ -31,6 +31,7 @@ export default function ReportHeavyEquipmentSection({
   setOperatorName,
   employees,
 }: Props) {
+  const [showCandidates, setShowCandidates] = useState(false);
   return (
     <div style={sectionStyle}>
       <div
@@ -64,12 +65,8 @@ export default function ReportHeavyEquipmentSection({
 
       <div
         style={{
-          maxHeight: showHeavyEquipment ? "300px" : "0",
-          opacity: showHeavyEquipment ? 1 : 0,
-          overflow: "hidden",
-          transition:
-            "max-height 0.35s ease, opacity 0.25s ease, margin-top 0.25s ease",
-          marginTop: showHeavyEquipment ? 12 : 0,
+          display: showHeavyEquipment ? "block" : "none",
+          marginTop: 12,
         }}
       >
         <div style={{ display: "grid", gap: 12 }}>
@@ -91,12 +88,16 @@ export default function ReportHeavyEquipmentSection({
             <p>OP</p>
             <input
               value={operatorName}
-              onChange={(e) => setOperatorName(e.target.value)}
+              onChange={(e) => {
+                setOperatorName(e.target.value);
+                setShowCandidates(true);
+              }}
+              onFocus={() => setShowCandidates(true)}
               placeholder="OP名を入力"
               style={inputStyle}
             />
 
-            {operatorName && (
+{showCandidates && operatorName && (
               <div
                 style={{
                   border: "1px solid #ccc",
@@ -110,20 +111,28 @@ export default function ReportHeavyEquipmentSection({
                   .filter((employee) => employee.name.includes(operatorName))
                   .slice(0, 5)
                   .map((employee) => (
-                    <div
-                      key={employee.name}
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        setOperatorName(employee.name);
-                      }}
-                      onTouchStart={(e) => {
-                        e.preventDefault();
-                        setOperatorName(employee.name);
-                      }}
-                      style={{ padding: 8, cursor: "pointer" }}
-                    >
-                      {employee.name}
-                    </div>
+                    <button
+  type="button"
+  key={employee.name}
+  onClick={() => {
+    setOperatorName(employee.name);
+    setShowCandidates(false);
+  }}
+  style={{
+    display: "block",
+    width: "100%",
+    minHeight: 44,
+    padding: 8,
+    border: "none",
+    background: "#fff",
+    color: "inherit",
+    font: "inherit",
+    textAlign: "left",
+    cursor: "pointer",
+  }}
+>
+  {employee.name}
+</button>
                   ))}
               </div>
             )}
