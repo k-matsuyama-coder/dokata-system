@@ -95,8 +95,35 @@ export default function CompanyComparison({ organizationId, employees, month, on
       <h3>{month} の比較・工事別内訳</h3>
       <p style={{fontSize:13}}>{month===thisMonth?`今月・前月・前年同月とも各月1〜${cutoff}日で比較（月の日数が少ない場合は月末まで）。目標は月全体です。`:"前月・前年同月とも月全体で比較します。"}</p>
       {month>thisMonth?<p>将来月の比較は表示しません。</p>:<>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:12,marginBottom:16}}>
-          {[['実績／月目標',`${number(chosen.labor)} ／ ${number(target)}人工`],['目標達成率',rate(chosen.labor,chosen.target)],['前月比',diffText(chosen.labor,previous.labor)],['前年同月比',diffText(chosen.labor,lastYear.labor)]].map(([label,value])=><div key={label} style={{padding:14,background:"#f8fafc",borderRadius:8}}><div style={{fontSize:12,color:"#64748b"}}>{label}</div><strong>{value}</strong></div>)}
+      <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))",
+            gap: 12,
+            marginBottom: 16,
+          }}
+        >
+          {[
+            ["目標対象人数", `${chosen.people}人`],
+            ["実績／月目標", `${number(chosen.labor)} ／ ${number(target)}人工`],
+            ["目標達成率", rate(chosen.labor, chosen.target)],
+            ["前月比", diffText(chosen.labor, previous.labor)],
+            ["前年同月比", diffText(chosen.labor, lastYear.labor)],
+          ].map(([label, value]) => (
+            <div
+              key={label}
+              style={{
+                padding: 14,
+                background: "#f8fafc",
+                borderRadius: 8,
+              }}
+            >
+              <div style={{ fontSize: 12, color: "#64748b" }}>
+                {label}
+              </div>
+              <strong>{value}</strong>
+            </div>
+          ))}
         </div>
         <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse"}}><thead><tr>{['工事区分','人工','稼働割合','前月人工','前年同月人工'].map(t=><th key={t} style={cell}>{t}</th>)}</tr></thead><tbody>{groups.map(g=><tr key={g}><th style={{...cell,textAlign:"left"}}><span style={{color:colors[g]}}>■</span> {labels[g]}</th><td style={cell}>{number(chosen.groups[g])}</td><td style={cell}>{chosen.labor?`${number(chosen.groups[g]/chosen.labor*100)}%`:"—"}</td><td style={cell}>{number(previous.groups[g])}</td><td style={cell}>{number(lastYear.groups[g])}</td></tr>)}<tr><th style={cell}>合計</th><td style={cell}>{number(chosen.labor)}</td><td style={cell}>{chosen.labor?"100%":"—"}</td><td style={cell}>{number(previous.labor)}</td><td style={cell}>{number(lastYear.labor)}</td></tr></tbody></table></div>
       </>}
