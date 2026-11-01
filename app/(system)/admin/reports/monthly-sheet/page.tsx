@@ -497,6 +497,22 @@ const [savingCostKey, setSavingCostKey] = useState<string | null>(null);
     );
   }, [sheets, selectedOffice]);
 
+  const summaryTotals = useMemo(() => {
+    const empty = () => ({ workerCount: 0, overtimeHours: 0, vehicleCount: 0, parking: 0, gasoline: 0, diesel: 0 });
+    const totals = { day: empty(), night: empty(), all: empty() };
+    const fields = ["workerCount", "overtimeHours", "vehicleCount", "parking", "gasoline", "diesel"] as const;
+    for (const sheet of filteredSheets) {
+      const shift = sheet.shiftType === "night" ? "night" : "day";
+      for (const row of sheet.rows) {
+        for (const field of fields) {
+          totals[shift][field] += row[field];
+          totals.all[field] += row[field];
+        }
+      }
+    }
+    return totals;
+  }, [filteredSheets]);
+
   const getCostKey = (sheet: Sheet, date: string) =>
   JSON.stringify([
     ownCompanyName,
@@ -735,6 +751,27 @@ const saveCompanyCost = async (sheet: Sheet, row: DailyRow) => {
           <h2>{year}年{monthNumber}月・現場合計（{filteredSheets.length}件）</h2>
           <p>人工・車両は月内の延べ合計です。{aggregationScope === "own" ? "車両は自社の運転手人数、駐車場・燃料は保存済みの入力値です。" : ""}</p>
           {Object.keys(costDrafts).length > 0 && <p className="summary-warning">未保存の入力があります。「日別の表」に戻って保存してください。</p>}
+          <div className="summary-totals" aria-label="昼夜別の月合計">
+            {([ ["day", "昼の合計"], ["night", "夜の合計"], ["all", "昼夜合計"] ] as const).map(([key, title]) => {
+              const total = summaryTotals[key];
+              const format = (value: number) => value.toLocaleString("ja-JP", { maximumFractionDigits: 2 });
+              return (
+                <section className={`summary-total-card total-${key}`} key={key}>
+                  <h3>{title}</h3>
+                  <dl className="summary-numbers total-numbers">
+                    {[
+                      ["人工", `${format(total.workerCount)}人工`],
+                      ["残業", `${format(total.overtimeHours)}h`],
+                      ["車両", `${format(total.vehicleCount)}${aggregationScope === "own" ? "人" : "台"}`],
+                      ["駐車場", `¥${format(total.parking)}`],
+                      ["ガソリン", `${format(total.gasoline)}L`],
+                      ["軽油", `${format(total.diesel)}L`],
+                    ].map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}
+                  </dl>
+                </section>
+              );
+            })}
+          </div>
           <ul className="summary-list">
             {filteredSheets.map((sheet) => {
               const total = sheet.rows.reduce((sum, row) => ({
@@ -997,6 +1034,14 @@ const saveCompanyCost = async (sheet: Sheet, row: DailyRow) => {
       )}
 
       <style jsx>{`
+        .summary-totals { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr)); gap: 12px; margin-bottom: 20px; }
+        .summary-total-card { padding: 16px; border: 1px solid #e2e8f0; border-top: 4px solid #f59e0b; border-radius: 10px; background: #fff; break-inside: avoid; min-width: 0; }
+        .summary-total-card.total-night { border-top-color: #6366f1; }
+        .summary-total-card.total-all { border-top-color: #2563eb; background: #eff6ff; }
+        .summary-total-card h3 { margin: 0 0 12px; font-size: 15px; font-weight: 700; }
+        .summary-total-card .total-numbers { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+        .summary-total-card dd { overflow-wrap: anywhere; }
+
         .view-hidden { display: none !important; }
         .view-switch { display: flex; gap: 8px; margin-bottom: 16px; }
         .view-switch button { padding: 9px 16px; border: 1px solid #cbd5e1; border-radius: 8px; background: white; cursor: pointer; }
