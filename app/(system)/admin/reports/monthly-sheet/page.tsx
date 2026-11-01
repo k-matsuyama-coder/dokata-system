@@ -116,6 +116,7 @@ function getCurrentOrganizationId(token: string) {
 
 export default function MonthlyInvoiceSheetPage() {
   const [month, setMonth] = useState(getCurrentMonth);
+  const [viewMode, setViewMode] = useState<"daily" | "summary">("daily");
   const [reports, setReports] = useState<Report[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -724,6 +725,52 @@ const saveCompanyCost = async (sheet: Sheet, row: DailyRow) => {
         </div>
       </div>
 
+      <div className="view-switch" role="group" aria-label="表示切替">
+        <button type="button" aria-pressed={viewMode === "daily"} onClick={() => setViewMode("daily")}>日別の表</button>
+        <button type="button" aria-pressed={viewMode === "summary"} onClick={() => setViewMode("summary")}>現場合計一覧</button>
+      </div>
+
+      {!loading && !loadError && viewMode === "summary" && filteredSheets.length > 0 && (
+        <section className="site-summary" aria-label="現場ごとの月合計">
+          <h2>{year}年{monthNumber}月・現場合計（{filteredSheets.length}件）</h2>
+          <p>人工・車両は月内の延べ合計です。{aggregationScope === "own" ? "車両は自社の運転手人数、駐車場・燃料は保存済みの入力値です。" : ""}</p>
+          {Object.keys(costDrafts).length > 0 && <p className="summary-warning">未保存の入力があります。「日別の表」に戻って保存してください。</p>}
+          <ul className="summary-list">
+            {filteredSheets.map((sheet) => {
+              const total = sheet.rows.reduce((sum, row) => ({
+                labor: sum.labor + row.workerCount,
+                overtime: sum.overtime + row.overtimeHours,
+                vehicles: sum.vehicles + row.vehicleCount,
+                parking: sum.parking + row.parking,
+                gasoline: sum.gasoline + row.gasoline,
+                diesel: sum.diesel + row.diesel,
+              }), { labor: 0, overtime: 0, vehicles: 0, parking: 0, gasoline: 0, diesel: 0 });
+              const format = (value: number) => value.toLocaleString("ja-JP", { maximumFractionDigits: 2 });
+              return (
+                <li className="summary-item" key={sheet.key}>
+                  <div className="summary-identity">
+                    <strong>{sheet.siteName}</strong>
+                    <span className={sheet.shiftType === "night" ? "shift-night" : "shift-day"}>{sheet.shiftType === "night" ? "夜" : "昼"}</span>
+                    <span>{sheet.contractorName}</span>
+                    <span>担当：{sheet.managerName}</span>
+                  </div>
+                  <dl className="summary-numbers">
+                    {[
+                      ["人工", `${format(total.labor)}人工`],
+                      ["残業", `${format(total.overtime)}h`],
+                      ["車両", `${format(total.vehicles)}${aggregationScope === "own" ? "人" : "台"}`],
+                      ["駐車場", `¥${format(total.parking)}`],
+                      ["ガソリン", `${format(total.gasoline)}L`],
+                      ["軽油", `${format(total.diesel)}L`],
+                    ].map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}
+                  </dl>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
       {loading && <p className="message">読み込み中...</p>}
 
       {!loading && loadError && (
@@ -737,7 +784,7 @@ const saveCompanyCost = async (sheet: Sheet, row: DailyRow) => {
 )}
 
 {!loading && !loadError && filteredSheets.length > 0 && (
-        <div className="sheet-scroll">
+        <div className={`sheet-scroll ${viewMode === "summary" ? "view-hidden" : ""}`}>
           <div className="sheet-list">
           {filteredSheets.map((sheet, sheetIndex) => {
               const totals = sheet.rows.reduce(
@@ -950,6 +997,30 @@ const saveCompanyCost = async (sheet: Sheet, row: DailyRow) => {
       )}
 
       <style jsx>{`
+        .view-hidden { display: none !important; }
+        .view-switch { display: flex; gap: 8px; margin-bottom: 16px; }
+        .view-switch button { padding: 9px 16px; border: 1px solid #cbd5e1; border-radius: 8px; background: white; cursor: pointer; }
+        .view-switch button[aria-pressed="true"] { background: #111827; color: white; border-color: #111827; }
+        .site-summary h2 { font-size: 18px; font-weight: 700; }
+        .site-summary > p { font-size: 13px; color: #64748b; margin: 8px 0 16px; }
+        .site-summary .summary-warning { color: #b45309; }
+        .summary-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+        .summary-item { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 16px; background: white; border: 1px solid #e2e8f0; border-radius: 10px; break-inside: avoid; }
+        .summary-identity { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; flex: 1 1 380px; min-width: 0; overflow-wrap: anywhere; }
+        .summary-identity strong { font-size: 16px; }
+        .summary-identity > span { font-size: 14px; }
+        .shift-day, .shift-night { padding: 2px 9px; border-radius: 6px; }
+        .shift-day { background: #fef3c7; color: #92400e; }
+        .shift-night { background: #e0e7ff; color: #3730a3; }
+        .summary-numbers { display: grid; grid-template-columns: repeat(6, minmax(70px, 1fr)); gap: 16px; margin: 0; }
+        .summary-numbers dt { font-size: 12px; color: #64748b; }
+        .summary-numbers dd { margin: 3px 0 0; font-weight: 700; font-variant-numeric: tabular-nums; }
+        @media (max-width: 768px) {
+          .summary-numbers { width: 100%; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+          .toolbar-actions { flex-wrap: wrap; }
+        }
+        @media print { .view-switch { display: none; } }
+
               .cost-print-value {
                 display: none;
               }
