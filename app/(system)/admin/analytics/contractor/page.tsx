@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import CompanyComparison from "./CompanyComparison";
+import { createPersonKey } from "./companyComparisonMath";
 import BackButton from "@/app/components/BackButton";
 import { useAppRefresh } from "@/app/hooks/useAppRefresh";
 import { fetchCompanyPages } from "./fetchCompanyPages";
@@ -15,6 +16,7 @@ type Employee = {
 };
 
 type ReportMemberRow = {
+  employee_id: string | null;
   employee_name: string;
   labor: number | null;
   overtime: number | null;
@@ -93,7 +95,7 @@ export default function CompanyAnalyticsPage() {
             .select("id, name, company_name").eq("organization_id", organizationId)
             .order("id", { ascending: true }).range(from, to).abortSignal(controller.signal)),
           fetchCompanyPages((from, to) => supabase.from("report_members")
-            .select("employee_name, labor, overtime, is_driver, report_id, daily_reports!inner(report_date, shift_type)")
+            .select("employee_id, employee_name, labor, overtime, is_driver, report_id, daily_reports!inner(report_date, shift_type)")
             .eq("organization_id", organizationId)
             .gte("daily_reports.report_date", `${month}-01`)
             .lt("daily_reports.report_date", getNextMonth(month))
@@ -127,16 +129,7 @@ export default function CompanyAnalyticsPage() {
     return () => { active = false; clearTimeout(timer); controller.abort(); };
   }, [month, retryCount, refreshVersion]);
 
-  const companyHeadcounts = useMemo(() => {
-    const counts = new Map<string, number>();
-
-    employees.forEach((employee) => {
-      const company = employee.company_name || "未設定";
-      counts.set(company, (counts.get(company) ?? 0) + 1);
-    });
-
-    return counts;
-  }, [employees]);
+  const personKey = useMemo(() => createPersonKey(employees, members), [employees, members]);
 
   const rows = useMemo(() => {
     const employeeCompanyMap = new Map<string, string>();
@@ -148,11 +141,12 @@ export default function CompanyAnalyticsPage() {
       );
     });
 
+    const employeeCompanyById = new Map(employees.map(e => [e.id, e.company_name || "未設定"]));
     const map = new Map<string, CompanyRow>();
 
     members.forEach((member) => {
       const company =
-        employeeCompanyMap.get(member.employee_name) || "未設定";
+        (member.employee_id ? employeeCompanyById.get(member.employee_id) : undefined) ?? employeeCompanyMap.get(member.employee_name) ?? "未設定";
 
       const current =
         map.get(company) ??
@@ -185,7 +179,7 @@ export default function CompanyAnalyticsPage() {
         current.vehicles += 1;
       }
 
-      current.people.add(member.employee_name);
+      if (labor > 0) current.people.add(personKey(member));
 
       map.set(company, current);
     });
@@ -197,14 +191,14 @@ export default function CompanyAnalyticsPage() {
         nightRate: row.total ? Math.round((row.night / row.total) * 100) : 0,
       }))
       .sort((a, b) => b.total - a.total);
-  }, [employees, members]);
+  }, [employees, members, personKey]);
 
   const totalLabor = rows.reduce((sum, row) => sum + row.total, 0);
   const totalOvertime = rows.reduce((sum, row) => sum + row.overtime, 0);
   const totalVehicles = rows.reduce((sum, row) => sum + row.vehicles, 0);
   const totalCompanies = rows.length;
   const totalPeople = new Set(
-    members.map((member) => member.employee_name)
+    members.filter(member => Number(member.labor ?? 0) > 0).map(personKey)
   ).size;
 
   return (
@@ -247,7 +241,7 @@ export default function CompanyAnalyticsPage() {
       <div style={cardStyle}>
         <h2 style={{ marginTop: 0 }}>所属会社ごとの内訳</h2>
         <p style={{ fontSize: 12, color: "#666", marginTop: 0 }}>
-  進捗率＝合計人工 ÷（所属人数 × 23）× 100
+  進捗率＝合計人工 ÷（その月の実稼働人数 × 23）× 100。人工0のみの人は含めません。
 </p>
 
         {loading ? (
@@ -300,11 +294,11 @@ export default function CompanyAnalyticsPage() {
                       <td style={{ ...td, fontWeight: 900 }}>{row.total}</td>
 <td
   style={{ ...td, fontWeight: 800 }}
-  title={`所属人数 ${companyHeadcounts.get(row.name) ?? 0}人 × 23人工`}
+  title={`実稼働人数 ${row.people.size}人 × 23人工`}
 >
-  {(companyHeadcounts.get(row.name) ?? 0) > 0
+  {row.people.size > 0
     ? `${(
-        (row.total / (companyHeadcounts.get(row.name)! * 23)) *
+        (row.total / (row.people.size * 23)) *
         100
       ).toFixed(1)}%`
     : "—"}
