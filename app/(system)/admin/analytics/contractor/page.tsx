@@ -2,13 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import AnnualCompanyChart from "./AnnualCompanyChart";
+import CompanyComparison from "./CompanyComparison";
 import BackButton from "@/app/components/BackButton";
 import { useAppRefresh } from "@/app/hooks/useAppRefresh";
 import { fetchCompanyPages } from "./fetchCompanyPages";
 import { hasRole } from "@/app/types/auth";
 
 type Employee = {
+  id: string;
   name: string;
   company_name: string | null;
 };
@@ -56,7 +57,7 @@ export default function CompanyAnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [retryCount, setRetryCount] = useState(0);
-  const [chartRefresh, setChartRefresh] = useState(0);
+  
   const refreshVersion = useAppRefresh();
   useEffect(() => {
     let active = true;
@@ -89,7 +90,7 @@ export default function CompanyAnalyticsPage() {
         }
         const [employeeResult, memberResult] = await Promise.all([
           fetchCompanyPages((from, to) => supabase.from("employees")
-            .select("name, company_name").eq("organization_id", organizationId)
+            .select("id, name, company_name").eq("organization_id", organizationId)
             .order("id", { ascending: true }).range(from, to).abortSignal(controller.signal)),
           fetchCompanyPages((from, to) => supabase.from("report_members")
             .select("employee_name, labor, overtime, is_driver, report_id, daily_reports!inner(report_date, shift_type)")
@@ -108,7 +109,7 @@ export default function CompanyAnalyticsPage() {
           daily_reports: Array.isArray(member.daily_reports)
             ? member.daily_reports[0] ?? null : member.daily_reports ?? null,
         })));
-        setChartRefresh(value => value + 1);
+
       } catch (error) {
         if (active) setErrorMessage(controller.signal.aborted
           ? "取得に時間がかかっています。再取得してください。"
@@ -323,11 +324,13 @@ export default function CompanyAnalyticsPage() {
       </>}
       {loading && <p role="status">対象月のデータを取得しています…</p>}
       {chartOrganizationId && (
-        <AnnualCompanyChart
+        <CompanyComparison
           key={chartOrganizationId}
           organizationId={chartOrganizationId}
           employees={employees}
-          refreshToken={chartRefresh}
+          month={month}
+          onMonthChange={setMonth}
+          refreshToken={retryCount + refreshVersion}
         />
       )}
     </div>
