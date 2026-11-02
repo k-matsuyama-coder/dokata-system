@@ -214,7 +214,7 @@ export default function AssignmentViewTable({
   集合：{assignment.meeting_time || "-"}
 </div>
 
-                        {isMobile ? (
+{!isExportingImage ? (
                           <button
                             type="button"
                             onClick={() =>
@@ -232,7 +232,7 @@ export default function AssignmentViewTable({
                             }
                             style={mobileSiteDetailButtonStyle}
                           >
-                            詳細を見る
+                            詳細・添付資料
                           </button>
                         ) : null}
                       </div>
