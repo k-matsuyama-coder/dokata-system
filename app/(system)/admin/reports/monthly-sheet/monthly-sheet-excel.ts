@@ -370,7 +370,7 @@ export async function exportMonthlySheetsToExcel(params: {
             paperSize: 9,
             orientation: "landscape",
             fitToPage: true,
-            fitToWidth: 1,
+            fitToWidth: 0,
             fitToHeight: 0,
             margins: {
               left: 0.2,
@@ -386,20 +386,33 @@ export async function exportMonthlySheetsToExcel(params: {
 
       worksheet.pageSetup.horizontalCentered = true;
 
-      let startRow = 1;
-
       officeSheets.forEach((sheet, index) => {
+        // 先に配置した現場の行の高さを保持
+        const rowHeights = new Map<number, number>();
+
+        worksheet.eachRow((row, rowNumber) => {
+          rowHeights.set(rowNumber, row.height ?? 24);
+        });
+
+        // 1現場9列＋空白1列で右方向に並べる
+        const startColumn = index * 10 + 1;
+
         writeSheetBlock({
           worksheet,
           sheet,
           month,
           number: index + 1,
-          startRow,
-          startColumn: 1,
+          startRow: 1,
+          startColumn,
         });
 
-        // 見出し5行＋日別明細＋合計1行の後に、空白を2行入れる。
-        startRow += sheet.rows.length + 8;
+        // 長い現場名や備考がある場合も文字が隠れないようにする
+        rowHeights.forEach((height, rowNumber) => {
+          const row = worksheet.getRow(rowNumber);
+          row.height = Math.max(row.height ?? 24, height);
+        });
+
+        worksheet.getColumn(startColumn + 9).width = 3;
       });
     }
   );
