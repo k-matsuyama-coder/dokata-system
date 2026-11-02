@@ -526,6 +526,7 @@ void (async () => {
           `)
           .eq("organization_id", currentOrganizationId)
           .eq("employee_name", employee.name)
+          .eq("daily_reports.is_checked", true)
           .gte("daily_reports.report_date", monthStart)
           .lte("daily_reports.report_date", todayString)
           .abortSignal(signal)

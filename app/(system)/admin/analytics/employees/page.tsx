@@ -115,6 +115,7 @@ if (!currentOrganizationId) {
           )
         `)
         .eq("organization_id", currentOrganizationId)
+        .eq("daily_reports.is_checked", true)
         .gte("daily_reports.report_date", start)
         .lt("daily_reports.report_date", end)
 .order("id", { ascending: true }).range(pageFrom, pageTo));

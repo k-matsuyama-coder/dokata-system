@@ -54,7 +54,8 @@ if (!employee || !hasRole(employee.role, "admin")) {
 
       const { data, error } = await fetchAllRows((pageFrom, pageTo) => supabase
         .from("report_members")
-        .select("employee_name, labor, overtime, is_driver, report_id")
+        .select("employee_name, labor, overtime, is_driver, report_id, daily_reports!inner(is_checked)")
+        .eq("daily_reports.is_checked", true)
         .order("employee_name", { ascending: true })
 .order("id", { ascending: true }).range(pageFrom, pageTo));
 

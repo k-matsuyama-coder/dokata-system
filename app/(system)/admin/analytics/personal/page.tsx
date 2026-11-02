@@ -145,6 +145,7 @@ if (!currentOrganizationId) {
   `)
   .eq("organization_id", currentOrganizationId)
   .eq("employee_name", employeeName)
+  .eq("daily_reports.is_checked", true)
   .gte("daily_reports.report_date", start)
   .lt("daily_reports.report_date", end)
   .order("report_id", { ascending: false })

@@ -56,6 +56,7 @@ export default function AnnualPersonalChart({ employeeName, month, onSelectMonth
           .select("labor, daily_reports!inner(report_date, shift_type)")
           .eq("organization_id", organization.organizationId)
           .eq("employee_name", employeeName)
+          .eq("daily_reports.is_checked", true)
           .gte("daily_reports.report_date", `${year}-01-01`)
           .lt("daily_reports.report_date", `${year + 1}-01-01`)
           .order("id", { ascending: true })

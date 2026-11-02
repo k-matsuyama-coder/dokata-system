@@ -112,6 +112,7 @@ const [savingBreakdownKey, setSavingBreakdownKey] =
                 "organization_id",
                 currentOrganizationId
               )
+              .eq("is_checked", true)
               .gte("report_date", startDate)
               .lte("report_date", endDate)
               .order("report_date", { ascending: true })
