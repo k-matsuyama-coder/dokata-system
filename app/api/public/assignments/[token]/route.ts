@@ -26,6 +26,7 @@ type OrganizationRow = {
 type AssignmentRow = {
   id: string;
   contractor_name: string | null;
+  group_key: string | null;
   site_name: string | null;
   shift_type: string | null;
   manager_name: string | null;
@@ -71,6 +72,7 @@ type PublicAssignmentFile = {
 type PublicAssignmentRow = {
   assignment_id: string;
   contractor_name: string | null;
+  group_key: string | null;
   site_name: string | null;
   shift_type: string | null;
   manager_name: string | null;
@@ -209,6 +211,7 @@ function buildAssignmentsForDate(
     return {
       assignment_id: assignment.id,
       contractor_name: assignment.contractor_name,
+      group_key: assignment.group_key,
       site_name: assignment.site_name,
       shift_type: assignment.shift_type,
       manager_name: assignment.manager_name,
@@ -309,7 +312,7 @@ export async function GET(
       fetchAllRows((pageFrom, pageTo) => supabase
         .from("assignments")
         .select(
-          "id, contractor_name, site_name, shift_type, manager_name, contact_phone, address, meeting_time, sort_order, created_at"
+          "id, contractor_name, site_name, shift_type, manager_name, contact_phone, address, meeting_time, group_key, sort_order, created_at"
         )
         .eq("organization_id", publicLink.organization_id)
         .order("sort_order", { ascending: true })

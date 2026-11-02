@@ -23,6 +23,7 @@ type PublicAssignmentFile = {
 type PublicAssignmentRow = {
   assignment_id: string;
   contractor_name: string | null;
+  group_key?: string | null;
   site_name: string | null;
   shift_type: string | null;
   manager_name: string | null;
@@ -61,6 +62,7 @@ type AggregatedRow = {
   rowKey: string;
   assignment_id: string;
   contractor_name: string | null;
+  group_key?: string | null;
   site_name: string | null;
   shift_type: string | null;
   manager_name: string | null;
@@ -389,6 +391,7 @@ export default function PublicAssignmentsPage() {
             rowKey: key,
             assignment_id: assignment.assignment_id,
             contractor_name: assignment.contractor_name,
+            group_key: assignment.group_key,
             site_name: assignment.site_name,
             shift_type: assignment.shift_type,
             manager_name: assignment.manager_name,
@@ -429,7 +432,21 @@ current.members_by_date[day.date] = members;
   }, [data]);
 
   const sortedRows = useMemo(() => {
+    const groupOrder: Record<string, number> = {
+      group1: 1,
+      group2: 2,
+      group3: 3,
+      group4: 4,
+      group5: 5,
+    };
+
     const sorter = (a: AggregatedRow, b: AggregatedRow) => {
+      const groupCompare =
+        (groupOrder[a.group_key ?? ""] ?? 99) -
+        (groupOrder[b.group_key ?? ""] ?? 99);
+
+      if (groupCompare !== 0) return groupCompare;
+
       const contractorCompare = (a.contractor_name ?? "").localeCompare(
         b.contractor_name ?? "",
         "ja"
