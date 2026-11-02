@@ -30,6 +30,8 @@ type Report = {
   expressway_main: number | null;
   parking_main: number | null;
   is_checked: boolean | null;
+  has_update: boolean;
+  content_revision: number;
   worker_count: number | null;
 overtime_minutes: number | null;
 organization_id: string;
@@ -108,8 +110,9 @@ export default function DailyReportAdminPage() {
   ).size;
   
   const canPrint =
-    scheduledSiteCount > 0 &&
-    checkedSiteCount === scheduledSiteCount;
+  scheduledSiteCount > 0 &&
+  checkedSiteCount === scheduledSiteCount &&
+  !reports.some((report) => report.has_update);
 
   async function fetchReports(currentOrganizationId: string) {
     const firstDay = formatLocalDate(
@@ -148,6 +151,8 @@ export default function DailyReportAdminPage() {
           heavy_equipment,
           operator_name,
           is_checked,
+          has_update,
+          content_revision,
           organization_id,
           report_members (
             overtime
@@ -601,8 +606,27 @@ width: "100%",
             marginTop: 4,
           }}
         >
-          {day.checkedSites}/{day.totalSites}
+                    {day.checkedSites}/{day.totalSites}
         </div>
+
+        {monthReports.some(
+          (report) =>
+            report.report_date === day.dateString &&
+            report.has_update
+        ) && (
+          <div
+            style={{
+              marginTop: 4,
+              fontSize: 11,
+              fontWeight: 700,
+              color: "#b45309",
+              background: "#fef3c7",
+              borderRadius: 4,
+            }}
+          >
+            更新あり
+          </div>
+        )}
       </button>
     ))}
   </div>
@@ -733,33 +757,45 @@ width: "100%",
       onChange={async (e) => {
         const checked = e.target.checked;
 
-        const { error } = await supabase
+        const { data: saved, error } = await supabase
           .from("daily_reports")
           .update({
             is_checked: checked,
           })
           .eq("organization_id", report.organization_id)
-          .eq("id", report.id);
+          .eq("id", report.id)
+          .eq("content_revision", report.content_revision)
+          .select("id, is_checked, has_update, content_revision")
+          .maybeSingle();
 
         if (error) {
-          alert("更新失敗: " + error.message);
+          alert("確認状態の保存に失敗しました: " + error.message);
+          return;
+        }
+
+        if (!saved) {
+          alert(
+            "この日報は変更されたか、確認状態を保存できませんでした。最新の内容を取得します。内容を確認してから、もう一度チェックしてください。"
+          );
+          await fetchReports(report.organization_id);
           return;
         }
 
         setReports((prev) =>
-          prev.map((r) =>
-            r.id === report.id
-              ? { ...r, is_checked: checked }
-              : r
+          prev.map((item) =>
+            item.id === saved.id
+              ? { ...item, ...saved }
+              : item
           )
         );
+
         setMonthReports((prev) =>
-  prev.map((item) =>
-    item.id === report.id
-      ? { ...item, is_checked: checked }
-      : item
-  )
-);
+          prev.map((item) =>
+            item.id === saved.id
+              ? { ...item, ...saved }
+              : item
+          )
+        );
       }}
     />
   </td>
@@ -780,6 +816,23 @@ width: "100%",
 
   <td style={tdStyle}>
     {report.site_name || "-"}
+
+    {report.has_update && (
+      <div
+        style={{
+          marginTop: 4,
+          padding: "2px 6px",
+          display: "inline-block",
+          borderRadius: 4,
+          background: "#fef3c7",
+          color: "#b45309",
+          fontSize: 11,
+          fontWeight: 700,
+        }}
+      >
+        更新あり
+      </div>
+    )}
   </td>
 
   <td style={{ ...tdStyle, textAlign: "center" }}>
