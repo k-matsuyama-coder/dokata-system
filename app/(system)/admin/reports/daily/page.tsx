@@ -361,29 +361,114 @@ return;
     boxSizing: "border-box",
   }}
 >
-      <style>
+<style>
         {`
+          .daily-members-print {
+            display: none;
+          }
+
           @media print {
+            @page {
+              size: A4 landscape;
+              margin: 8mm;
+            }
+
             body {
               background: #fff;
             }
 
-            .no-print {
+            .no-print,
+            .app-navbar,
+            .daily-members-screen {
               display: none !important;
             }
 
+            .daily-members-print {
+              display: block !important;
+            }
+
+            .daily-members-print > div {
+              margin-bottom: 2px;
+            }
+
             .print-area {
+              width: 100% !important;
               margin: 0;
               padding: 0;
             }
 
-            table {
+            .print-area > div {
+              overflow: visible !important;
+            }
+
+            .print-area table {
+              width: 100% !important;
+              min-width: 0 !important;
+              table-layout: fixed;
+              border-collapse: collapse;
               page-break-inside: auto;
             }
 
-            tr {
+            .print-area th,
+            .print-area td {
+              width: auto;
+              min-width: 0 !important;
+              padding: 3px 2px !important;
+              font-size: 8pt !important;
+              line-height: 1.4;
+              white-space: normal !important;
+              overflow-wrap: anywhere;
+              vertical-align: top;
+            }
+
+            .print-area th {
+              width: 3%;
+            }
+
+            .print-area th:nth-child(2) {
+              width: 5%;
+            }
+
+            .print-area th:nth-child(3) {
+              width: 6%;
+            }
+
+            .print-area th:nth-child(4) {
+              width: 4%;
+            }
+
+            .print-area th:nth-child(6) {
+              width: 8%;
+            }
+
+            .print-area th:nth-child(8) {
+              width: 5%;
+            }
+
+            .print-area th:nth-child(11) {
+              width: 7%;
+            }
+
+            .print-area th:nth-child(12) {
+              width: 9%;
+            }
+
+            .print-area th:nth-child(14),
+            .print-area th:nth-child(16) {
+              width: 4%;
+            }
+
+            .print-area th:nth-child(23) {
+              width: 9%;
+            }
+
+            .print-area thead {
+              display: table-header-group;
+            }
+
+            .print-area tr {
+              break-inside: avoid;
               page-break-inside: avoid;
-              page-break-after: auto;
             }
           }
         `}
@@ -725,7 +810,21 @@ width: "100%",
   </td>
 
   <td style={tdStyle}>
-    {report.members || "-"}
+    <span className="daily-members-screen">
+      {report.members || "-"}
+    </span>
+
+    <div className="daily-members-print">
+      {report.members?.trim()
+        ? report.members
+            .split(/[,、，\r\n]+/)
+            .map((name) => name.trim())
+            .filter(Boolean)
+            .map((name, index) => (
+              <div key={`${name}-${index}`}>{name}</div>
+            ))
+        : "-"}
+    </div>
   </td>
 
   <td style={{ ...tdStyle, textAlign: "center" }}>
