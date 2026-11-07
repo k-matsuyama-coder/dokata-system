@@ -123,7 +123,7 @@ export default function DailyReportAdminPage() {
       new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 0)
     );
   
-    const { data, error } = await fetchAllRows((pageFrom, pageTo) => supabase
+    const reportsPromise = fetchAllRows((pageFrom, pageTo) => supabase
       .from("daily_reports")
       .select(
         `
@@ -166,21 +166,65 @@ export default function DailyReportAdminPage() {
       .order("created_at", { ascending: true })
 .order("id", { ascending: true }).range(pageFrom, pageTo));
   
-    if (error) {
-      alert("日報取得失敗: " + error.message);
-      return;
-    }
-  
-    const { data: assignments, error: assignmentError } = await fetchAllRows((pageFrom, pageTo) => supabase
+const assignmentsPromise = fetchAllRows((pageFrom, pageTo) => supabase
     .from("assignments")
     .select("site_name, contractor_name, shift_type, manager_name")
     .eq("organization_id", currentOrganizationId)
 .order("id", { ascending: true }).range(pageFrom, pageTo));
 
-  if (assignmentError) {
-    alert("現場担当者の取得失敗: " + assignmentError.message);
-    return;
-  }
+const [reportResult, assignmentResult, memberResult] =
+await Promise.all([
+  reportsPromise,
+  assignmentsPromise,
+  (async () => {
+    const collected: AssignmentMember[] = [];
+    const pageSize = 1000;
+    let offset = 0;
+
+    while (true) {
+      const { data, error } = await supabase
+        .from("assignment_site_members")
+        .select("assignment_id, work_date")
+        .eq("organization_id", currentOrganizationId)
+        .gte("work_date", firstDay)
+        .lte("work_date", lastDay)
+        .order("work_date", { ascending: true })
+        .order("assignment_id", { ascending: true })
+        .order("id", { ascending: true })
+        .range(offset, offset + pageSize - 1);
+
+      if (error) {
+        return { data: null, error };
+      }
+
+      const pageRows = (data ?? []) as AssignmentMember[];
+      collected.push(...pageRows);
+
+      if (pageRows.length === 0) break;
+      offset += pageRows.length;
+    }
+
+    return { data: collected, error: null };
+  })(),
+]);
+
+if (reportResult.error) {
+alert("日報取得失敗: " + reportResult.error.message);
+return;
+}
+
+if (assignmentResult.error) {
+alert("現場担当者の取得失敗: " + assignmentResult.error.message);
+return;
+}
+
+if (memberResult.error) {
+alert("予定現場取得失敗: " + memberResult.error.message);
+return;
+}
+
+const data = reportResult.data;
+const assignments = assignmentResult.data;
 
   const normalize = (value: string | null | undefined) =>
     (value ?? "").trim();
@@ -214,41 +258,7 @@ export default function DailyReportAdminPage() {
       allReports.filter((report) => report.report_date === date)
     );
   
-    const assignmentMemberRows: AssignmentMember[] = [];
-const pageSize = 1000;
-let offset = 0;
-
-while (true) {
-  const from = offset;
-  const to = from + pageSize - 1;
-
-  const { data: pageData, error: assignmentMemberError } = await supabase
-    .from("assignment_site_members")
-    .select("assignment_id, work_date")
-    .eq("organization_id", currentOrganizationId)
-    .gte("work_date", firstDay)
-    .lte("work_date", lastDay)
-    .order("work_date", { ascending: true })
-    .order("assignment_id", { ascending: true })
-    .order("id", { ascending: true })
-    .range(from, to);
-
-  if (assignmentMemberError) {
-    alert("予定現場取得失敗: " + assignmentMemberError.message);
-    return;
-  }
-
-  const rows = (pageData ?? []) as AssignmentMember[];
-  assignmentMemberRows.push(...rows);
-
-  if (rows.length === 0) {
-    break;
-  }
-
-  offset += rows.length;
-}
-
-setAssignmentMembers(assignmentMemberRows);
+    setAssignmentMembers(memberResult.data ?? []);
 }
 
 useEffect(() => {
