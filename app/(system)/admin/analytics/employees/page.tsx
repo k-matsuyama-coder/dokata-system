@@ -1,24 +1,9 @@
 "use client";
 
-import { fetchAllRows } from "@/lib/fetchAllRows";
-
-
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import BackButton from "@/app/components/BackButton";
 import { hasRole } from "@/app/types/auth";
-
-type ReportMemberRow = {
-  employee_name: string;
-  labor: number | null;
-  overtime: number | null;
-  is_driver: boolean | null;
-  report_id: string;
-  daily_reports: {
-    report_date: string;
-    shift_type: string | null;
-  } | null;
-};
 
 type SummaryRow = {
   name: string;
@@ -32,11 +17,6 @@ type SummaryRow = {
   driveCount: number;
 };
 
-const getNextMonth = (ym: string) => {
-  const [y, m] = ym.split("-").map(Number);
-  return new Date(Date.UTC(y, m, 1)).toISOString().slice(0, 10);
-};
-
 const formatHours = (value: number): string => {
   return `${Number(value.toFixed(2))}h`;
 };
@@ -47,145 +27,126 @@ export default function EmployeesAnalyticsPage() {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
   });
 
-  const [rows, setRows] = useState<ReportMemberRow[]>([]);
+  const [rows, setRows] = useState<SummaryRow[]>([]);
   const [loading, setLoading] = useState(false);
-  const getCurrentOrganization = async () => {
-    const { data: sessionData } = await supabase.auth.getSession();
-    const token = sessionData.session?.access_token;
-  
-    if (!token) return null;
-  
-    const res = await fetch("/api/current-organization", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-  
-    const result = await res.json();
-  
-    if (!res.ok) return null;
-  
-    return result.organizationId as string | null;
-  };
-
   useEffect(() => {
+    let active = true;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 60000);
+
+    setLoading(true);
+    setRows([]);
+
     const fetchRows = async () => {
-      setLoading(true);
-  
-      const { data: userData } = await supabase.auth.getUser();
-      const currentOrganizationId = await getCurrentOrganization();
+      try {
+        const { data: sessionData, error: sessionError } =
+          await supabase.auth.getSession();
 
-if (!currentOrganizationId) {
-  alert("会社情報が取得できません");
-  setLoading(false);
-  return;
-}
-  
-      if (!userData.user) {
-        window.location.href = "/login";
-        return;
+        if (sessionError) throw sessionError;
+        if (!active || controller.signal.aborted) return;
+
+        const session = sessionData.session;
+
+        if (!session) {
+          window.location.href = "/login";
+          return;
+        }
+
+        const response = await fetch("/api/current-organization", {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          signal: controller.signal,
+        });
+
+        const context = await response.json();
+
+        if (!response.ok || !context.organizationId) {
+          throw new Error("会社情報が取得できません。");
+        }
+
+        if (!active || controller.signal.aborted) return;
+
+        if (!hasRole(context.role, "admin")) {
+          window.location.href = "/home";
+          return;
+        }
+
+        const { data, error } = await supabase
+        .rpc("employee_monthly_summary_v1", {
+          p_organization_id: context.organizationId,
+          p_month: `${yearMonth}-01`,
+        })
+        .abortSignal(controller.signal);
+
+      if (error) throw error;
+      if (!active || controller.signal.aborted) return;
+
+      const result = data as {
+        month: string;
+        rows: SummaryRow[];
+      } | null;
+
+      if (
+        !result ||
+        result.month !== yearMonth ||
+        !Array.isArray(result.rows)
+      ) {
+        throw new Error("社員別集計の取得結果を確認できませんでした。");
       }
-  
-      const { data: employee } = await supabase
-  .from("employees")
-  .select("role")
-  .eq("organization_id", currentOrganizationId)
-  .eq("auth_user_id", userData.user.id)
-  .single();
-  
-      if (!employee || !hasRole(employee.role, "admin")) {
-        window.location.href = "/home";
-        return;
-      }
-  
-      const start = `${yearMonth}-01`;
-      const end = getNextMonth(yearMonth);
 
-      const { data, error } = await fetchAllRows((pageFrom, pageTo) => supabase
-        .from("report_members")
-        .select(`
-          employee_name,
-          labor,
-          overtime,
-          is_driver,
-          report_id,
-          daily_reports!inner (
-            report_date,
-            shift_type
-          )
-        `)
-        .eq("organization_id", currentOrganizationId)
-        .eq("daily_reports.is_checked", true)
-        .gte("daily_reports.report_date", start)
-        .lt("daily_reports.report_date", end)
-.order("id", { ascending: true }).range(pageFrom, pageTo));
-
-      if (error) {
-        alert("社員別集計取得失敗: " + error.message);
-        setLoading(false);
-        return;
+      for (const row of result.rows) {
+        if (
+          !row ||
+          typeof row.name !== "string" ||
+          ![
+            row.dayCount,
+            row.nightCount,
+            row.totalDays,
+            row.driveCount,
+          ].every(
+            (value) => Number.isSafeInteger(value) && value >= 0
+          ) ||
+          ![
+            row.labor,
+            row.dayOvertime,
+            row.nightOvertime,
+            row.totalOvertime,
+          ].every(Number.isFinite)
+        ) {
+          throw new Error("社員別集計に不正な値が含まれています。");
+        }
       }
 
-      setRows(
-        (data ?? []).map((row) => ({
-          ...row,
-          daily_reports: Array.isArray(row.daily_reports)
-            ? row.daily_reports[0] ?? null
-            : row.daily_reports ?? null,
-        }))
-      );
-      setLoading(false);
+      setRows(result.rows);
+      } catch (error) {
+        if (active) {
+          alert(
+            controller.signal.aborted
+              ? "取得に時間がかかっています。再読み込みしてください。"
+              : `社員別集計取得失敗: ${
+                  error instanceof Error
+                    ? error.message
+                    : "データを取得できませんでした。"
+                }`
+          );
+        }
+      } finally {
+        clearTimeout(timer);
+        if (active) setLoading(false);
+      }
     };
 
-    fetchRows();
+    void fetchRows();
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+      controller.abort();
+    };
   }, [yearMonth]);
 
-  const summaryRows = useMemo(() => {
-    const map = new Map<string, SummaryRow>();
-
-    rows.forEach((row) => {
-      const name = row.employee_name || "未設定";
-      const shift = row.daily_reports?.shift_type ?? "day";
-
-      const current =
-        map.get(name) ??
-        {
-          name,
-          dayCount: 0,
-          nightCount: 0,
-          totalDays: 0,
-          labor: 0,
-          dayOvertime: 0,
-          nightOvertime: 0,
-          totalOvertime: 0,
-          driveCount: 0,
-        };
-
-        const overtime = Number(row.overtime ?? 0);
-
-        if (shift === "night") {
-          current.nightCount += 1;
-          current.nightOvertime += overtime;
-        } else {
-          current.dayCount += 1;
-          current.dayOvertime += overtime;
-        }
-        
-        current.totalDays += 1;
-        current.labor += Number(row.labor ?? 0);
-        current.totalOvertime += overtime;
-
-      if (row.is_driver) {
-        current.driveCount += 1;
-      }
-
-      map.set(name, current);
-    });
-
-    return Array.from(map.values()).sort(
-      (a, b) => b.totalDays - a.totalDays
-    );
-  }, [rows]);
+  const summaryRows = rows;
 
   const totalWorkers = summaryRows.length;
   const totalDays = summaryRows.reduce((sum, row) => sum + row.totalDays, 0);
