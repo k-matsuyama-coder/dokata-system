@@ -1,19 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import CompanyComparison from "./CompanyComparison";
-import { createPersonKey } from "./companyComparisonMath";
 import BackButton from "@/app/components/BackButton";
 import { useAppRefresh } from "@/app/hooks/useAppRefresh";
-import { fetchCompanyPages } from "./fetchCompanyPages";
 import { hasRole } from "@/app/types/auth";
-
-type Employee = {
-  id: string;
-  name: string;
-  company_name: string | null;
-};
 
 type ReportMemberRow = {
   employee_id: string | null;
@@ -35,7 +27,7 @@ type CompanyRow = {
   total: number;
   overtime: number;
   vehicles: number;
-  people: Set<string>;
+  people: number;
   dayRate: number;
   nightRate: number;
 };
@@ -54,8 +46,8 @@ export default function CompanyAnalyticsPage() {
   });
 
   const [chartOrganizationId, setChartOrganizationId] = useState<string | null>(null);
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [members, setMembers] = useState<ReportMemberRow[]>([]);
+  const [rows, setRows] = useState<CompanyRow[]>([]);
+  const [totalPeople, setTotalPeople] = useState(0);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [retryCount, setRetryCount] = useState(0);
@@ -81,36 +73,73 @@ export default function CompanyAnalyticsPage() {
         const context = await response.json();
         if (!response.ok || !context.organizationId) throw new Error("会社情報が取得できません。");
         const organizationId = context.organizationId as string;
-        const { data: employee, error: roleError } = await supabase
-          .from("employees").select("role")
-          .eq("organization_id", organizationId)
-          .eq("auth_user_id", session.user.id).abortSignal(controller.signal).single();
-        if (roleError) throw roleError;
         if (!active || controller.signal.aborted) return;
-        if (!employee || !hasRole(employee.role, "admin")) {
-          window.location.href = "/home"; return;
+
+        if (!hasRole(context.role, "admin")) {
+          window.location.href = "/home";
+          return;
         }
-        const [employeeResult, memberResult] = await Promise.all([
-          fetchCompanyPages((from, to) => supabase.from("employees")
-            .select("id, name, company_name").eq("organization_id", organizationId)
-            .order("id", { ascending: true }).range(from, to).abortSignal(controller.signal)),
-          fetchCompanyPages((from, to) => supabase.from("report_members")
-            .select("employee_id, employee_name, labor, overtime, is_driver, report_id, daily_reports!inner(report_date, shift_type)")
-            .eq("organization_id", organizationId)
-            .gte("daily_reports.report_date", `${month}-01`)
-            .lt("daily_reports.report_date", getNextMonth(month))
-            .order("id", { ascending: true }).range(from, to).abortSignal(controller.signal)),
-        ]);
-        if (employeeResult.error) throw new Error(`社員取得失敗: ${employeeResult.error.message}`);
-        if (memberResult.error) throw new Error(`集計取得失敗: ${memberResult.error.message}`);
+
+        const memberResult = await supabase
+          .rpc("company_monthly_summary_v1", {
+            p_organization_id: organizationId,
+            p_month: `${month}-01`,
+          })
+          .abortSignal(controller.signal);
+
+        if (memberResult.error) {
+          throw new Error(
+            `集計取得失敗: ${memberResult.error.message}`
+          );
+        }
+
         if (!active || controller.signal.aborted) return;
+
         setChartOrganizationId(organizationId);
-        setEmployees(employeeResult.data ?? []);
-        setMembers((memberResult.data ?? []).map(member => ({
-          ...member,
-          daily_reports: Array.isArray(member.daily_reports)
-            ? member.daily_reports[0] ?? null : member.daily_reports ?? null,
-        })));
+        const summary = memberResult.data as {
+          month: string;
+          rows: Omit<CompanyRow, "dayRate" | "nightRate">[];
+          totalPeople: number;
+        } | null;
+
+        if (
+          !summary ||
+          summary.month !== month ||
+          !Array.isArray(summary.rows) ||
+          !Number.isFinite(summary.totalPeople)
+        ) {
+          throw new Error("月次集計の取得結果を確認できませんでした。");
+        }
+
+        for (const row of summary.rows) {
+          if (
+            typeof row.name !== "string" ||
+            ![
+              row.day,
+              row.night,
+              row.total,
+              row.overtime,
+              row.vehicles,
+              row.people,
+            ].every(Number.isFinite)
+          ) {
+            throw new Error("月次集計に不正な値が含まれています。");
+          }
+        }
+
+        setRows(
+          summary.rows.map((row) => ({
+            ...row,
+            dayRate: row.total
+              ? Math.round((row.day / row.total) * 100)
+              : 0,
+            nightRate: row.total
+              ? Math.round((row.night / row.total) * 100)
+              : 0,
+          }))
+        );
+
+        setTotalPeople(summary.totalPeople);
 
       } catch (error) {
         if (active) setErrorMessage(controller.signal.aborted
@@ -127,79 +156,12 @@ export default function CompanyAnalyticsPage() {
     };
     void fetchData();
     return () => { active = false; clearTimeout(timer); controller.abort(); };
-  }, [month, retryCount, refreshVersion]);
-
-  const personKey = useMemo(() => createPersonKey(employees, members), [employees, members]);
-
-  const rows = useMemo(() => {
-    const employeeCompanyMap = new Map<string, string>();
-
-    employees.forEach((employee) => {
-      employeeCompanyMap.set(
-        employee.name,
-        employee.company_name || "未設定"
-      );
-    });
-
-    const employeeCompanyById = new Map(employees.map(e => [e.id, e.company_name || "未設定"]));
-    const map = new Map<string, CompanyRow>();
-
-    members.forEach((member) => {
-      const company =
-        (member.employee_id ? employeeCompanyById.get(member.employee_id) : undefined) ?? employeeCompanyMap.get(member.employee_name) ?? "未設定";
-
-      const current =
-        map.get(company) ??
-        {
-          name: company,
-          day: 0,
-          night: 0,
-          total: 0,
-          overtime: 0,
-          vehicles: 0,
-          people: new Set<string>(),
-          dayRate: 0,
-          nightRate: 0,
-        };
-
-      const labor = Number(member.labor ?? 0);
-      const overtime = Number(member.overtime ?? 0);
-      const shift = member.daily_reports?.shift_type ?? "day";
-
-      if (shift === "night") {
-        current.night += labor;
-      } else {
-        current.day += labor;
-      }
-
-      current.total += labor;
-      current.overtime += overtime;
-
-      if (member.is_driver) {
-        current.vehicles += 1;
-      }
-
-      if (labor > 0) current.people.add(personKey(member));
-
-      map.set(company, current);
-    });
-
-    return Array.from(map.values())
-      .map((row) => ({
-        ...row,
-        dayRate: row.total ? Math.round((row.day / row.total) * 100) : 0,
-        nightRate: row.total ? Math.round((row.night / row.total) * 100) : 0,
-      }))
-      .sort((a, b) => b.total - a.total);
-  }, [employees, members, personKey]);
+  }, [month, retryCount, refreshVersion]);  
 
   const totalLabor = rows.reduce((sum, row) => sum + row.total, 0);
   const totalOvertime = rows.reduce((sum, row) => sum + row.overtime, 0);
   const totalVehicles = rows.reduce((sum, row) => sum + row.vehicles, 0);
   const totalCompanies = rows.length;
-  const totalPeople = new Set(
-    members.filter(member => Number(member.labor ?? 0) > 0).map(personKey)
-  ).size;
 
   return (
     <div style={{ maxWidth: 1100, margin: "0 auto", padding: 16 }}>
@@ -284,7 +246,7 @@ export default function CompanyAnalyticsPage() {
                       <td style={{ ...td, textAlign: "left", fontWeight: 800 }}>
                         {row.name}
                       </td>
-                      <td style={td}>{row.people.size}</td>
+                      <td style={td}>{row.people}</td>
                       <td style={{ ...td, backgroundColor: "#fff7d6" }}>
                         {row.day}
                       </td>
@@ -294,11 +256,11 @@ export default function CompanyAnalyticsPage() {
                       <td style={{ ...td, fontWeight: 900 }}>{row.total}</td>
 <td
   style={{ ...td, fontWeight: 800 }}
-  title={`実稼働人数 ${row.people.size}人 × 23人工`}
+  title={`実稼働人数 ${row.people}人 × 23人工`}
 >
-  {row.people.size > 0
+  {row.people > 0
     ? `${(
-        (row.total / (row.people.size * 23)) *
+        (row.total / (row.people * 23)) *
         100
       ).toFixed(1)}%`
     : "—"}
@@ -321,7 +283,6 @@ export default function CompanyAnalyticsPage() {
         <CompanyComparison
           key={chartOrganizationId}
           organizationId={chartOrganizationId}
-          employees={employees}
           month={month}
           onMonthChange={setMonth}
           refreshToken={retryCount + refreshVersion}

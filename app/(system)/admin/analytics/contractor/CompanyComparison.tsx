@@ -1,76 +1,243 @@
 "use client";
+
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { fetchAllRows } from "@/lib/fetchAllRows";
-import { prepare, summarize, shiftMonth, difference, groups, labels, colors, number, type Employee, type Entry, type Assignment } from "./companyComparisonMath";
+import {
+  shiftMonth,
+  difference,
+  groups,
+  labels,
+  colors,
+  number,
+  type Group,
+} from "./companyComparisonMath";
 
-type Report = { report_date: string; site_name: string | null; contractor_name: string | null; shift_type: string | null };
-type Raw = { employee_id: string | null; employee_name: string; labor: number | null; daily_reports: Report | Report[] | null };
-const cell = { padding: 10, borderBottom: "1px solid #e2e8f0", whiteSpace: "nowrap" as const, textAlign: "right" as const };
-const button = { padding: "8px 12px", border: "1px solid #cbd5e1", borderRadius: 8, background: "#fff", cursor: "pointer" };
-const signed = (n: number) => `${n>0?"+":""}${number(n)}`;
+type Summary = {
+  month: string;
+  company: string | null;
+  partial: boolean;
+  labor: number;
+  people: number;
+  groups: Record<Group, number>;
+};
 
-export default function CompanyComparison({ organizationId, employees, month, onMonthChange, refreshToken }: {
-  organizationId: string; employees: Employee[]; month: string; onMonthChange: (value: string) => void; refreshToken: number;
+type AnnualData = {
+  year: number;
+  cutoff: number;
+  invalidLabor: boolean;
+  companies: string[];
+  summaries: Summary[];
+};
+
+const cell = {
+  padding: 10,
+  borderBottom: "1px solid #e2e8f0",
+  whiteSpace: "nowrap" as const,
+  textAlign: "right" as const,
+};
+
+const button = {
+  padding: "8px 12px",
+  border: "1px solid #cbd5e1",
+  borderRadius: 8,
+  background: "#fff",
+  cursor: "pointer",
+};
+
+const signed = (n: number) => `${n > 0 ? "+" : ""}${number(n)}`;
+
+export default function CompanyComparison({
+  organizationId,
+  month,
+  onMonthChange,
+  refreshToken,
+}: {
+  organizationId: string;
+  month: string;
+  onMonthChange: (value: string) => void;
+  refreshToken: number;
 }) {
-  const year=Number(month.slice(0,4));
-  const [company,setCompany]=useState("");
-  const [retry,setRetry]=useState(0);
-  const [data,setData]=useState<{key:string;entries:Entry[];assignments:Assignment[]}|null>(null);
-  const [error,setError]=useState<{key:string;message:string}|null>(null);
-  const key=`${organizationId}:${year}:${refreshToken}:${retry}`;
-  useEffect(()=>{
-    let active=true;
-    const controller=new AbortController();
-    const timer=setTimeout(()=>controller.abort(),60000);
-    setData(null);setError(null);
-    void (async()=>{
-      try{
-        const [members,sites]=await Promise.all([
-          fetchAllRows((from,to)=>supabase.from("report_members")
-            .select("employee_id, employee_name, labor, daily_reports!inner(report_date, site_name, contractor_name, shift_type)")
-            .eq("organization_id",organizationId)
-            .gte("daily_reports.report_date",`${year-1}-01-01`).lt("daily_reports.report_date",`${year+1}-01-01`)
-            .order("id",{ascending:true}).range(from,to).abortSignal(controller.signal)),
-          fetchAllRows((from,to)=>supabase.from("assignments")
-            .select("site_name, contractor_name, shift_type, group_key, start_date, end_date")
-            .eq("organization_id",organizationId).order("id",{ascending:true}).range(from,to).abortSignal(controller.signal)),
-        ]);
-        if(members.error)throw new Error(members.error.message);
-        if(sites.error)throw new Error(sites.error.message);
-        if(controller.signal.aborted)throw new Error("取得がタイムアウトしました。");
-        const entries=((members.data??[]) as unknown as Raw[]).map(r=>{
-          const report=Array.isArray(r.daily_reports)?r.daily_reports[0]:r.daily_reports;
-          if(!report || !/^\d{4}-\d{2}-\d{2}$/.test(report.report_date))throw new Error("日報の日付を取得できませんでした。");
-          const labor=Number(r.labor??0);
-          if(!Number.isFinite(labor)||labor<0)throw new Error("日報の人工を確認してください。");
-          return {employee_id:r.employee_id,employee_name:r.employee_name,labor,date:report.report_date,site:report.site_name,contractor:report.contractor_name,shift:report.shift_type};
-        });
-        if(active)setData({key,entries,assignments:sites.data??[]});
-      }catch(cause){if(active)setError({key,message:controller.signal.aborted?"取得に時間がかかっています。再取得してください。":cause instanceof Error?cause.message:"取得に失敗しました。"});}
-      finally{clearTimeout(timer);}
+  const year = Number(month.slice(0, 4));
+  const [company, setCompany] = useState("");
+  const [retry, setRetry] = useState(0);
+
+  const today = new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "Asia/Tokyo",
+  }).format(new Date());
+
+  const thisMonth = today.slice(0, 7);
+  const comparisonDay = Number(today.slice(8, 10));
+
+  const [data, setData] = useState<{
+    key: string;
+    result: AnnualData;
+  } | null>(null);
+
+  const [error, setError] = useState<{
+    key: string;
+    message: string;
+  } | null>(null);
+
+  const key =
+    `${organizationId}:${year}:${comparisonDay}:${refreshToken}:${retry}`;
+
+  useEffect(() => {
+    let active = true;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 60000);
+
+    setData(null);
+    setError(null);
+
+    void (async () => {
+      try {
+        const { data: result, error: queryError } = await supabase
+          .rpc("company_annual_summary_v1", {
+            p_organization_id: organizationId,
+            p_year: year,
+            p_cutoff: comparisonDay,
+          })
+          .abortSignal(controller.signal);
+
+        if (queryError) throw new Error(queryError.message);
+
+        if (controller.signal.aborted) {
+          throw new Error("取得がタイムアウトしました。");
+        }
+
+        const value = result as AnnualData | null;
+
+        if (
+          !value ||
+          value.year !== year ||
+          value.cutoff !== comparisonDay ||
+          value.invalidLabor !== false ||
+          !Array.isArray(value.companies) ||
+          !value.companies.every((c) => typeof c === "string") ||
+          !Array.isArray(value.summaries)
+        ) {
+          throw new Error("年間集計の取得結果を確認できませんでした。");
+        }
+
+        for (const row of value.summaries) {
+          if (
+            !row ||
+            typeof row.month !== "string" ||
+            !/^\d{4}-\d{2}$/.test(row.month) ||
+            !(row.company === null || typeof row.company === "string") ||
+            typeof row.partial !== "boolean" ||
+            !Number.isFinite(row.labor) ||
+            row.labor < 0 ||
+            !Number.isInteger(row.people) ||
+            row.people < 0 ||
+            !row.groups ||
+            !groups.every(
+              (g) =>
+                Number.isFinite(row.groups[g]) &&
+                row.groups[g] >= 0
+            )
+          ) {
+            throw new Error("年間集計に不正な値が含まれています。");
+          }
+        }
+
+        if (active) setData({ key, result: value });
+      } catch (cause) {
+        if (active) {
+          setError({
+            key,
+            message: controller.signal.aborted
+              ? "取得に時間がかかっています。再取得してください。"
+              : cause instanceof Error
+                ? cause.message
+                : "取得に失敗しました。",
+          });
+        }
+      } finally {
+        clearTimeout(timer);
+      }
     })();
-    return ()=>{active=false;clearTimeout(timer);controller.abort();};
-  },[organizationId,year,key]);
-  const current=data?.key===key?data:null;
-  const prepared=useMemo(()=>prepare(current?.entries??[],employees,current?.assignments??[]),[current,employees]);
-  const selectedCompany=prepared.companies.includes(company)?company:"";
-  const filtered=useMemo(()=>selectedCompany?prepared.rows.filter(r=>r.company===selectedCompany):prepared.rows,[prepared,selectedCompany]);
-  const today=new Intl.DateTimeFormat("sv-SE",{timeZone:"Asia/Tokyo"}).format(new Date());
-  const thisMonth=today.slice(0,7);
-  const cutoff=month===thisMonth?Number(today.slice(8,10)):31;
-  const chosen=summarize(filtered,month,cutoff);
-  const target=chosen.target;
-  const previous=summarize(filtered,shiftMonth(month,-1),cutoff);
-  const lastYear=summarize(filtered,shiftMonth(month,-12),cutoff);
-  const annual=Array.from({length:12},(_,i)=>{const ym=`${year}-${String(i+1).padStart(2,"0")}`;return {ym,...summarize(filtered,ym),previous:summarize(filtered,shiftMonth(ym,-12)),future:ym>thisMonth};});
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [organizationId, year, key, comparisonDay]);
+
+  const current = data?.key === key ? data : null;
+
+  const companies = useMemo(
+    () =>
+      (current?.result.companies ?? [])
+        .slice()
+        .sort((a, b) => a.localeCompare(b, "ja")),
+    [current]
+  );
+
+  const selectedCompany = companies.includes(company) ? company : "";
+
+  const lookup = useMemo(
+    () =>
+      new Map(
+        (current?.result.summaries ?? []).map((row) => [
+          JSON.stringify([row.month, row.company, row.partial]),
+          row,
+        ])
+      ),
+    [current]
+  );
+
+  const getSummary = (ym: string, partial = false) => {
+    const row = lookup.get(
+      JSON.stringify([ym, selectedCompany || null, partial])
+    );
+
+    return {
+      labor: row?.labor ?? 0,
+      people: row?.people ?? 0,
+      target: (row?.people ?? 0) * 23,
+      groups: row?.groups ?? {
+        group1: 0,
+        group2: 0,
+        group3: 0,
+        other: 0,
+        unknown: 0,
+      },
+    };
+  };
+
+  const cutoff = month === thisMonth ? comparisonDay : 31;
+  const chosen = getSummary(month, month === thisMonth);
+  const target = chosen.target;
+
+  const previous = getSummary(
+    shiftMonth(month, -1),
+    month === thisMonth
+  );
+
+  const lastYear = getSummary(
+    shiftMonth(month, -12),
+    month === thisMonth
+  );
+
+  const annual = Array.from({ length: 12 }, (_, i) => {
+    const ym = `${year}-${String(i + 1).padStart(2, "0")}`;
+
+    return {
+      ym,
+      ...getSummary(ym),
+      previous: getSummary(shiftMonth(ym, -12)),
+      future: ym > thisMonth,
+    };
+  });
   const ceiling=Math.max(100,Math.ceil(Math.max(...annual.filter(r=>!r.future).map(r=>r.target?r.labor/r.target*100:0),100)/50)*50);
   const rate=(labor:number, monthlyTarget:number)=>monthlyTarget?`${number(labor/monthlyTarget*100)}%`:"—";
   const diffText=(now:number,before:number)=>{const d=difference(now,before);return `${signed(d.amount)}人工（${d.percent===null?"比較元0人工":`${signed(d.percent)}%`}）`;};
   return <section style={{border:"1px solid #ddd",borderRadius:12,padding:16,background:"#fff",marginTop:20,minWidth:0}}>
     <h2 style={{marginTop:0}}>年間目標達成率・工事別稼働割合</h2>
     <div style={{display:"flex",flexWrap:"wrap",gap:10,alignItems:"center"}}>
-      <label>所属会社 <select value={selectedCompany} onChange={e=>setCompany(e.target.value)} style={{...button,maxWidth:"100%"}}><option value="">全所属会社</option>{prepared.companies.map(c=><option key={c} value={c}>{c}</option>)}</select></label>
+      <label>所属会社 <select value={selectedCompany} onChange={e=>setCompany(e.target.value)} style={{...button,maxWidth:"100%"}}><option value="">全所属会社</option>{companies.map(c=><option key={c} value={c}>{c}</option>)}</select></label>
       <button type="button" style={button} onClick={()=>onMonthChange(`${year-1}-${month.slice(5)}`)}>◀ 前年</button><strong>{year}年</strong><button type="button" style={button} onClick={()=>onMonthChange(`${year+1}-${month.slice(5)}`)}>翌年 ▶</button>
       <button type="button" style={button} onClick={()=>setRetry(v=>v+1)}>再取得</button>
     </div>

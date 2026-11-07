@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
 
     const { data: employee, error: employeeError } = await supabaseAdmin
       .from("employees")
-      .select("organization_id")
+      .select("organization_id, role")
       .eq("auth_user_id", user.id)
       .single();
 
@@ -63,6 +63,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       organizationId: employee.organization_id,
+      role: employee.role,
       impersonating: false,
     });
   } catch (error) {
