@@ -78,24 +78,6 @@ export default function DailyReportAdminPage() {
   });
   
   const [assignmentMembers, setAssignmentMembers] = useState<AssignmentMember[]>([]);
-  const getCurrentOrganization = async () => {
-    const { data: sessionData } = await supabase.auth.getSession();
-    const token = sessionData.session?.access_token;
-  
-    if (!token) return null;
-  
-    const res = await fetch("/api/current-organization", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-  
-    const result = await res.json();
-  
-    if (!res.ok) return null;
-  
-    return result.organizationId as string | null;
-  };
 
   const scheduledSiteCount = new Set(
     assignmentMembers
@@ -262,37 +244,62 @@ const assignments = assignmentResult.data;
 }
 
 useEffect(() => {
+  let active = true;
+  const controller = new AbortController();
+
   const checkAdminAndFetch = async () => {
-    const { data: userData } = await supabase.auth.getUser();
-    const currentOrganizationId = await getCurrentOrganization();
+    try {
+      const { data, error } = await supabase.auth.getSession();
 
-if (!currentOrganizationId) {
-alert("会社情報が取得できません");
-return;
-}
-    const user = userData.user;
+      if (error) throw error;
+      if (!active) return;
 
-    if (!user) {
-      window.location.href = "/login";
-      return;
+      const session = data.session;
+
+      if (!session) {
+        window.location.href = "/login";
+        return;
+      }
+
+      const response = await fetch("/api/current-organization", {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        signal: controller.signal,
+      });
+
+      const context = await response.json();
+
+      if (!active) return;
+
+      if (!response.ok || !context.organizationId) {
+        throw new Error("会社情報が取得できません。");
+      }
+
+      if (!hasRole(context.role, "admin")) {
+        alert("管理者のみ閲覧できます");
+        window.location.href = "/home";
+        return;
+      }
+
+      await fetchReports(context.organizationId);
+    } catch (error) {
+      if (active && !controller.signal.aborted) {
+        alert(
+          error instanceof Error
+            ? error.message
+            : "日報情報を取得できませんでした。"
+        );
+      }
     }
-
-    const { data: employee } = await supabase
-      .from("employees")
-      .select("role")
-      .eq("auth_user_id", user.id)
-      .single();
-
-    if (!employee || !hasRole(employee.role, "admin")) {
-      alert("管理者のみ閲覧できます");
-      window.location.href = "/home";
-      return;
-    }
-
-    fetchReports(currentOrganizationId);
   };
 
-  checkAdminAndFetch();
+  void checkAdminAndFetch();
+
+  return () => {
+    active = false;
+    controller.abort();
+  };
 }, [date, calendarMonth]);
 
   const thStyle = {
