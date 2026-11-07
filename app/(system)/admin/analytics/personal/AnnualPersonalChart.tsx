@@ -23,18 +23,19 @@ export function aggregateYear(entries: Entry[], year: number): MonthTotal[] {
   return totals;
 }
 
-export default function AnnualPersonalChart({ employeeName, month, onSelectMonth }: {
-  employeeName: string;
+export default function AnnualPersonalChart({ organizationId, employeeName, month, onSelectMonth }: {
+    organizationId: string | null;
+    employeeName: string;
   month: string;
   onSelectMonth: (month: string) => void;
 }) {
   const year = Number(month.slice(0, 4));
-  const key = `${employeeName}:${year}`;
+  const key = `${organizationId}:${employeeName}:${year}`;
   const [result, setResult] = useState<{ key: string; totals: MonthTotal[] } | null>(null);
   const [error, setError] = useState<{ key: string; message: string } | null>(null);
   const [retry, setRetry] = useState(0);
   useEffect(() => {
-    if (!employeeName || !Number.isInteger(year)) return;
+    if (!organizationId || !employeeName || !Number.isInteger(year)) return;
     let active = true;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 60000);
@@ -42,19 +43,10 @@ export default function AnnualPersonalChart({ employeeName, month, onSelectMonth
     setError(null);
     void (async () => {
       try {
-        const { data, error: sessionError } = await supabase.auth.getSession();
-        if (sessionError) throw sessionError;
-        const token = data.session?.access_token;
-        if (!token) throw new Error("ログイン情報を確認してください。");
-        const response = await fetch("/api/current-organization", {
-          headers: { Authorization: `Bearer ${token}` }, signal: controller.signal,
-        });
-        const organization = await response.json();
-        if (!response.ok || !organization.organizationId) throw new Error("会社情報を取得できませんでした。");
         const { data: rows, error: queryError } = await fetchAllRows((from, to) => supabase
           .from("report_members")
           .select("labor, daily_reports!inner(report_date, shift_type)")
-          .eq("organization_id", organization.organizationId)
+          .eq("organization_id", organizationId)
           .eq("employee_name", employeeName)
           .eq("daily_reports.is_checked", true)
           .gte("daily_reports.report_date", `${year}-01-01`)
@@ -70,7 +62,7 @@ export default function AnnualPersonalChart({ employeeName, month, onSelectMonth
       } finally { clearTimeout(timer); }
     })();
     return () => { active = false; clearTimeout(timer); controller.abort(); };
-  }, [employeeName, year, key, retry]);
+}, [organizationId, employeeName, year, key, retry]);
 
   if (!employeeName) return null;
   const totals = result?.key === key ? result.totals : null;

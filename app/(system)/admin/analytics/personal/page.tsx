@@ -48,6 +48,7 @@ function PersonalAnalyticsContent() {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
   });
 
+  const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [employees, setEmployees] = useState<string[]>([]);
   const [rows, setRows] = useState<ReportMemberRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -71,42 +72,89 @@ function PersonalAnalyticsContent() {
   };
 
   useEffect(() => {
-    const fetchEmployees = async () => {
-      const currentOrganizationId = await getCurrentOrganization();
+    let active = true;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 60000);
 
-if (!currentOrganizationId) {
-  alert("会社情報が取得できません");
-  return;
-}
-const { data } = await fetchAllRows((pageFrom, pageTo) => supabase
-.from("employees")
-.select("name")
-.eq("organization_id", currentOrganizationId)
-.order("name", { ascending: true })
-.order("id", { ascending: true }).range(pageFrom, pageTo));
-  
-      setEmployees((data ?? []).map((item) => item.name));
-  
-      if (!queryName) {
-        const { data: userData } = await supabase.auth.getUser();
-        const user = userData.user;
-  
-        if (!user) return;
-  
-        const { data: employee } = await supabase
-  .from("employees")
-  .select("name")
-  .eq("organization_id", currentOrganizationId)
-  .eq("auth_user_id", user.id)
-  .single();
-  
-        if (employee) {
-          setEmployeeName(employee.name);
+    const fetchEmployees = async () => {
+      try {
+        const { data: sessionData, error: sessionError } =
+          await supabase.auth.getSession();
+
+        if (sessionError) throw sessionError;
+
+        const session = sessionData.session;
+        if (!session) {
+          throw new Error("ログイン情報を確認してください。");
         }
+
+        if (!active || controller.signal.aborted) return;
+
+        const response = await fetch("/api/current-organization", {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          signal: controller.signal,
+        });
+
+        const context = await response.json();
+
+        if (!response.ok || !context.organizationId) {
+          throw new Error("会社情報が取得できません。");
+        }
+
+        if (!active || controller.signal.aborted) return;
+        setOrganizationId(context.organizationId);
+
+        const { data, error } = await fetchAllRows(
+          (pageFrom, pageTo) =>
+            supabase
+              .from("employees")
+              .select("name, auth_user_id")
+              .eq("organization_id", context.organizationId)
+              .order("name", { ascending: true })
+              .order("id", { ascending: true })
+              .range(pageFrom, pageTo)
+              .abortSignal(controller.signal)
+        );
+
+        if (error) throw error;
+        if (!active || controller.signal.aborted) return;
+
+        const list = data ?? [];
+        setEmployees(list.map((item) => item.name));
+
+        if (!queryName) {
+          const employee = list.find(
+            (item) => item.auth_user_id === session.user.id
+          );
+
+          if (employee) {
+            setEmployeeName(employee.name);
+          }
+        }
+      } catch (error) {
+        if (active) {
+          alert(
+            controller.signal.aborted
+              ? "社員情報の取得に時間がかかっています。再読み込みしてください。"
+              : error instanceof Error
+                ? error.message
+                : "社員情報の取得に失敗しました。"
+          );
+        }
+      } finally {
+        clearTimeout(timer);
       }
     };
-  
-    fetchEmployees();
+
+    void fetchEmployees();
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+      controller.abort();
+    };
   }, [queryName]);
 
   useEffect(() => {
@@ -275,6 +323,7 @@ if (!currentOrganizationId) {
       </div>
 
       <AnnualPersonalChart
+        organizationId={organizationId}
         employeeName={employeeName}
         month={month}
         onSelectMonth={setMonth}
