@@ -110,10 +110,48 @@ function getCurrentOrganizationId(token: string) {
       throw new Error(result.error ?? "会社情報の取得に失敗しました");
     }
 
-    return result.organizationId as string | null;
+    return result as {
+      organizationId: string | null;
+      role: string | null;
+      companyName: string | null;
+    };
   });
 }
 
+async function fetchAllRowsWithExactCount<T, E>(
+  fetchPage: (
+    from: number,
+    to: number
+  ) => PromiseLike<{
+    data: T[] | null;
+    error: E | null;
+    count: number | null;
+  }>
+): Promise<{ data: T[] | null; error: E | null }> {
+  const rows: T[] = [];
+  let offset = 0;
+
+  while (true) {
+    const page = await fetchPage(offset, offset + 499);
+
+    if (page.error) {
+      return { data: null, error: page.error };
+    }
+
+    const currentRows = page.data ?? [];
+
+    if (currentRows.length === 0) {
+      return { data: rows, error: null };
+    }
+
+    rows.push(...currentRows);
+    offset += currentRows.length;
+
+    if (page.count !== null && offset >= page.count) {
+      return { data: rows, error: null };
+    }
+  }
+}
 export default function MonthlyInvoiceSheetPage() {
   const [month, setMonth] = useState(getCurrentMonth);
   const [viewMode, setViewMode] = useState<"daily" | "summary">("daily");
@@ -143,13 +181,55 @@ const [savingCostKey, setSavingCostKey] = useState<string | null>(null);
     let active = true;
 
     const fetchData = async () => {
+      const started = performance.now();
+      const timings: {
+        処理: string;
+        開始秒: number;
+        所要秒: number;
+        結果: string;
+      }[] = [];
+
+      const seconds = (ms: number) => Math.round(ms) / 1000;
+
+      const measure = async <T,>(
+        label: string,
+        request: PromiseLike<T>
+      ): Promise<T> => {
+        const start = performance.now();
+        let status = "完了";
+
+        try {
+          const result = await request;
+
+          if (
+            result &&
+            typeof result === "object" &&
+            "error" in result &&
+            result.error
+          ) {
+            status = "エラー応答";
+          }
+
+          return result;
+        } catch (error) {
+          status = "例外";
+          throw error;
+        } finally {
+          timings.push({
+            処理: label,
+            開始秒: seconds(start - started),
+            所要秒: seconds(performance.now() - start),
+            結果: status,
+          });
+        }
+      };
       try {
         setLoading(true);
         setLoadError("");
 
         const {
           data: { session },
-        } = await supabase.auth.getSession();
+        } = await measure("セッション確認", supabase.auth.getSession());
 
         const user = session?.user;
         const token = session?.access_token;
@@ -159,63 +239,54 @@ const [savingCostKey, setSavingCostKey] = useState<string | null>(null);
           return;
         }
 
-        const organizationId = await getCurrentOrganizationId(token);
+        const context = await measure(
+          "会社情報・管理権限確認",
+          getCurrentOrganizationId(token)
+        );
+
+        if (!active) return;
+
+        const organizationId = context.organizationId;
 
         if (!organizationId) {
           throw new Error("会社情報が取得できません");
         }
 
-        const { data: employee, error: employeeError } = await supabase
-          .from("employees")
-          .select("role, company_name")
-          .eq("organization_id", organizationId)
-          .eq("auth_user_id", user.id)
-          .maybeSingle();
-
-        if (
-          employeeError ||
-          !employee ||
-          !hasRole(employee.role, "admin")
-        ) {
+        if (!hasRole(context.role, "admin")) {
           window.location.href = "/home";
           return;
         }
 
+        const employee = {
+          company_name: context.companyName,
+        };
+
         const companyName = normalize(employee.company_name);
-        const companyEmployeeIds: string[] = [];
+        const { firstDate, lastDate } = getMonthRange(month);
 
-        if (companyName) {
-          const pageSize = 1000;
+        const loadCompanyEmployees = async (): Promise<string[]> => {
+          if (!companyName) return [];
 
-          for (let from = 0; ;) {
-            const { data: companyEmployees, error: companyError } =
-              await supabase
+          const result = await fetchAllRowsWithExactCount(
+            (from, to) =>
+              supabase
                 .from("employees")
-                .select("id")
+                .select("id", { count: "exact" })
                 .eq("organization_id", organizationId)
                 .eq("company_name", employee.company_name)
                 .order("id", { ascending: true })
-                .range(from, from + pageSize - 1);
+                .range(from, to)
+          );
 
-            if (companyError) {
-              throw companyError;
-            }
-
-            const employeesPage = companyEmployees ?? [];
-
-            companyEmployeeIds.push(
-              ...employeesPage.map((item) => item.id)
-            );
-
-            if (employeesPage.length === 0) {
-              break;
-            }
-            from += employeesPage.length;
+          if (result.error) {
+            throw result.error;
           }
-        }
 
-        const { firstDate, lastDate } = getMonthRange(month);
+          return (result.data ?? []).map((item) => item.id);
+        };
 
+
+      const loadCompanyCosts = async () => {
         const loadedCompanyCosts: CompanyCost[] = [];
 
         if (companyName) {
@@ -248,8 +319,19 @@ const [savingCostKey, setSavingCostKey] = useState<string | null>(null);
           }
         }
 
-        const [reportResult, assignmentResult] = await Promise.all([
-          fetchAllRows((pageFrom, pageTo) => supabase
+        return loadedCompanyCosts;
+      };
+
+      const [
+        reportResult,
+        assignmentResult,
+        companyEmployeeIds,
+        loadedCompanyCosts,
+      ] = await Promise.all([
+        measure("月の日報・メンバー", fetchAllRowsWithExactCount(async (pageFrom, pageTo) => {
+          const pageStarted = performance.now();
+
+          const result = await supabase
             .from("daily_reports")
             .select(`
               id,
@@ -270,15 +352,30 @@ const [savingCostKey, setSavingCostKey] = useState<string | null>(null);
                 labor,
                 overtime,
                 is_driver
-              )
-            `)
-            .eq("organization_id", organizationId)
+                )
+              `, { count: "exact" })
+              .eq("organization_id", organizationId)
             .gte("report_date", firstDate)
             .lte("report_date", lastDate)
             .order("report_date", { ascending: true })
-.order("id", { ascending: true }).range(pageFrom, pageTo)),
+            .order("id", { ascending: true })
+            .range(pageFrom, pageTo);
 
-          fetchAllRows((pageFrom, pageTo) => supabase
+            if (process.env.NODE_ENV === "development") {
+              console.log("[月次日報・ページ取得]", {
+                開始位置: pageFrom,
+                取得件数: result.data?.length ?? 0,
+                所要秒: Number(
+                  ((performance.now() - pageStarted) / 1000).toFixed(3)
+                ),
+                エラーあり: Boolean(result.error),
+              });
+            }
+
+          return result;
+        })),
+
+            measure("番割", fetchAllRows((pageFrom, pageTo) => supabase
             .from("assignments")
             .select(`
               site_name,
@@ -287,8 +384,10 @@ const [savingCostKey, setSavingCostKey] = useState<string | null>(null);
               shift_type
             `)
             .eq("organization_id", organizationId)
-.order("id", { ascending: true }).range(pageFrom, pageTo)),
-        ]);
+            .order("id", { ascending: true }).range(pageFrom, pageTo))),
+measure("自社社員", loadCompanyEmployees()),
+            measure("自社経費", loadCompanyCosts()),
+                    ]);
 
         if (reportResult.error) {
           throw reportResult.error;
@@ -316,6 +415,16 @@ const [savingCostKey, setSavingCostKey] = useState<string | null>(null);
             : "データの取得に失敗しました"
         );
       } finally {
+        if (process.env.NODE_ENV === "development" && active) {
+          console.group(
+            `月次日報データ準備：${seconds(performance.now() - started)}秒`
+          );
+          console.table(
+            timings.sort((a, b) => a.開始秒 - b.開始秒)
+          );
+          console.groupEnd();
+        }
+
         if (active) {
           setLoading(false);
         }

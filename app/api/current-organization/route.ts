@@ -36,10 +36,14 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    const authStarted = performance.now();
+
     const {
       data: { user },
       error: userError,
     } = await supabaseAdmin.auth.getUser(token);
+
+    const authMs = performance.now() - authStarted;
 
     if (userError || !user) {
       return NextResponse.json(
@@ -48,11 +52,15 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    const employeeStarted = performance.now();
+
     const { data: employee, error: employeeError } = await supabaseAdmin
       .from("employees")
-      .select("organization_id, role")
+      .select("organization_id, role, company_name")
       .eq("auth_user_id", user.id)
       .single();
+
+    const employeeMs = performance.now() - employeeStarted;
 
     if (employeeError || !employee?.organization_id) {
       return NextResponse.json(
@@ -61,9 +69,17 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    if (process.env.NODE_ENV === "development") {
+      console.log("[会社情報APIの内訳]", {
+        認証秒: Number((authMs / 1000).toFixed(3)),
+        社員情報取得秒: Number((employeeMs / 1000).toFixed(3)),
+      });
+    }
+
     return NextResponse.json({
       organizationId: employee.organization_id,
       role: employee.role,
+      companyName: employee.company_name,
       impersonating: false,
     });
   } catch (error) {
