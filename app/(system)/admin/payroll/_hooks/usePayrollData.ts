@@ -54,13 +54,16 @@ const [savingBreakdownKey, setSavingBreakdownKey] =
 
     const fetchAll = async (options?: {
       companyName?: string | null;
+      organizationId?: string;
     }) => {
+        
         setLoading(true);
         setErrorMessage("");
         setSettingsWarning("");
     
         try {
-          const currentOrganizationId = await getCurrentOrganization();
+          const currentOrganizationId = options?.organizationId ??
+          await getCurrentOrganization();
     
           if (!currentOrganizationId) {
             setErrorMessage("会社情報が取得できません");
@@ -70,136 +73,9 @@ const [savingBreakdownKey, setSavingBreakdownKey] =
           setOrganizationId(currentOrganizationId);
     
           const { startDate, endDate } = getMonthRange(month);
-    
-          const [
-            {
-              data: employeeData,
-              error: employeeError,
-            },
-            {
-              data: reportData,
-              error: reportError,
-            },
-            {
-              data: assignmentData,
-              error: assignmentError,
-            },
-          ] = await Promise.all([
-            fetchPayrollPages((from, to) => supabase
-              .from("employees")
-              .select("name, company_name")
-              .eq(
-                "organization_id",
-                currentOrganizationId
-              )
-              .order("name", { ascending: true })
-              .order("id", { ascending: true })
-              .range(from, to)
-            ),
-          
-            fetchPayrollPages((from, to) => supabase
-              .from("daily_reports")
-              .select(`
-                id,
-                report_date,
-                shift_type,
-                operator_name,
-                contractor_name,
-                site_name,
-                note
-              `)
-              .eq(
-                "organization_id",
-                currentOrganizationId
-              )
-              .eq("is_checked", true)
-              .gte("report_date", startDate)
-              .lte("report_date", endDate)
-              .order("report_date", { ascending: true })
-              .order("id", { ascending: true })
-              .range(from, to)
-            ),
-          
-            fetchPayrollPages((from, to) => supabase
-              .from("assignments")
-              .select(`
-                contractor_name,
-                site_name,
-                shift_type,
-                manager_name
-              `)
-              .eq(
-                "organization_id",
-                currentOrganizationId
-              )
-              .order("id", { ascending: true })
-              .range(from, to)
-            ),
-          ]);
-          
-          if (employeeError) {
-            throw new Error(
-              `社員取得失敗: ${employeeError.message}`
-            );
-          }
-          
-          if (reportError) {
-            throw new Error(
-              `日報取得失敗: ${reportError.message}`
-            );
-          }
-          
-          if (assignmentError) {
-            throw new Error(
-              `工程取得失敗: ${assignmentError.message}`
-            );
-          }
-          
-          const safeEmployees =
-            (employeeData ?? []) as Employee[];
-          
-          const safeReports =
-            (reportData ?? []) as DailyReport[];
-          
-          const safeAssignments =
-            (assignmentData ?? []) as AssignmentForPayroll[];
-          
-          const reportIds = safeReports.map(
-            (report) => report.id
-          );
-    
-          const companyNameForFilter =
-          options?.companyName ?? viewerCompanyName;
-        
-        const visibleEmployees = safeEmployees.filter(
-          (employee) => employee.company_name === companyNameForFilter
-        );
-    
-    const visibleEmployeeNames = new Set(
-      visibleEmployees.map((employee) => employee.name)
-    );
-    
-          let safeReportMembers: ReportMember[] = [];
-    
-          // Bound URL size as well as response size. Each batch is fully paginated.
-          for (let index = 0; index < reportIds.length; index += 100) {
-            const batchIds = reportIds.slice(index, index + 100);
-            const { data: memberData, error: memberError } = await fetchPayrollPages(
-              (from, to) => supabase
-                .from("report_members")
-                .select("report_id, employee_name, labor, overtime, is_driver")
-                .eq("organization_id", currentOrganizationId)
-                .in("report_id", batchIds)
-                .order("id", { ascending: true })
-                .range(from, to)
-            );
 
-            if (memberError) {
-              throw new Error(`日報メンバー取得失敗: ${memberError.message}`);
-            }
-            safeReportMembers.push(...((memberData ?? []) as ReportMember[]));
-          }
-
+          // 日報取得と独立して給与設定の取得を開始する。
+          const settingsPromise = (async () => {
           let payrollSettings: PayrollSetting[] = [];
 let monthlyAdjustments: PayrollMonthlyAdjustment[] = [];
 let dailyOverrides: PayrollDailyOverride[] = [];
@@ -310,6 +186,178 @@ fetchPayrollPages((from, to) => supabase
           : "給与設定を読み込めませんでした"
       );
     }
+
+            return { payrollSettings, monthlyAdjustments, dailyOverrides };
+          })();
+
+    
+          const reportsPromise = fetchPayrollPages((from, to) => supabase
+              .from("daily_reports")
+              .select(`
+                id,
+                report_date,
+                shift_type,
+                operator_name,
+                contractor_name,
+                site_name,
+                note
+              `)
+              .eq(
+                "organization_id",
+                currentOrganizationId
+              )
+              .eq("is_checked", true)
+              .gte("report_date", startDate)
+              .lte("report_date", endDate)
+              .order("report_date", { ascending: true })
+              .order("id", { ascending: true })
+              .range(from, to)
+            );
+          const membersPromise = reportsPromise.then(async (result) => {
+            if (result.error) {
+              throw new Error(`日報取得失敗: ${result.error.message}`);
+            }
+            const reportIds = (result.data ?? []).map((report) => report.id);
+    const safeReportMembers: ReportMember[] = [];
+
+    // 日報100件ずつ、最大3組を同時に取得する。
+    for (let index = 0; index < reportIds.length; index += 300) {
+      const batches: string[][] = [];
+
+      for (
+        let offset = index;
+        offset < Math.min(index + 300, reportIds.length);
+        offset += 100
+      ) {
+        batches.push(reportIds.slice(offset, offset + 100));
+      }
+
+      const results = await Promise.all(
+        batches.map((batchIds) =>
+          fetchPayrollPages((from, to) =>
+            supabase
+              .from("report_members")
+              .select(
+                "report_id, employee_name, labor, overtime, is_driver"
+              )
+              .eq("organization_id", currentOrganizationId)
+              .in("report_id", batchIds)
+              .order("id", { ascending: true })
+              .range(from, to)
+          )
+        )
+      );
+
+      for (const result of results) {
+        if (result.error) {
+          throw new Error(
+            `日報メンバー取得失敗: ${result.error.message}`
+          );
+        }
+
+        safeReportMembers.push(
+          ...((result.data ?? []) as ReportMember[])
+        );
+      }
+    }
+
+
+            return safeReportMembers;
+          });
+
+          const [
+            {
+              data: employeeData,
+              error: employeeError,
+            },
+            {
+              data: reportData,
+              error: reportError,
+            },
+            {
+              data: assignmentData,
+              error: assignmentError,
+            },
+            safeReportMembers,
+          ] = await Promise.all([
+            fetchPayrollPages((from, to) => supabase
+              .from("employees")
+              .select("name, company_name")
+              .eq(
+                "organization_id",
+                currentOrganizationId
+              )
+              .order("name", { ascending: true })
+              .order("id", { ascending: true })
+              .range(from, to)
+            ),
+          
+            reportsPromise,
+          
+            fetchPayrollPages((from, to) => supabase
+              .from("assignments")
+              .select(`
+                contractor_name,
+                site_name,
+                shift_type,
+                manager_name
+              `)
+              .eq(
+                "organization_id",
+                currentOrganizationId
+              )
+              .order("id", { ascending: true })
+              .range(from, to)
+            ),
+            membersPromise,
+          ]);
+          
+          if (employeeError) {
+            throw new Error(
+              `社員取得失敗: ${employeeError.message}`
+            );
+          }
+          
+          if (reportError) {
+            throw new Error(
+              `日報取得失敗: ${reportError.message}`
+            );
+          }
+          
+          if (assignmentError) {
+            throw new Error(
+              `工程取得失敗: ${assignmentError.message}`
+            );
+          }
+          
+          const safeEmployees =
+            (employeeData ?? []) as Employee[];
+          
+          const safeReports =
+            (reportData ?? []) as DailyReport[];
+          
+          const safeAssignments =
+            (assignmentData ?? []) as AssignmentForPayroll[];
+          
+
+    
+          const companyNameForFilter =
+          options?.companyName ?? viewerCompanyName;
+        
+        const visibleEmployees = safeEmployees.filter(
+          (employee) => employee.company_name === companyNameForFilter
+        );
+    
+    const visibleEmployeeNames = new Set(
+      visibleEmployees.map((employee) => employee.name)
+    );
+    
+          const {
+            payrollSettings,
+            monthlyAdjustments,
+            dailyOverrides,
+          } = await settingsPromise;
+
           const visibleReportMembers = safeReportMembers.filter((member) =>
           visibleEmployeeNames.has(member.employee_name)
           );
@@ -360,18 +408,20 @@ dailyOverrides
     setMonthlyAdjustmentsMap(nextMonthlyAdjustmentsMap);
     setDailyOverridesMap(nextDailyOverridesMap);
     
-    console.log("visibleEmployees", visibleEmployees);
-    console.log("visibleReportMembers", visibleReportMembers);
-    console.log("safeReports", safeReports);
+
+
+
     
         } catch (error) {
           setErrorMessage(error instanceof Error ? error.message : "取得に失敗しました");
         } finally {
+          
           setLoading(false);
         }
       };
 
       const checkAdminAndLoad = async () => {
+        
         setAuthChecking(true);
         setErrorMessage("");
       
@@ -386,11 +436,11 @@ dailyOverrides
       
           const { data: employee, error } = await supabase
             .from("employees")
-            .select("role, company_name")
+            .select("role, company_name, organization_id")
             .eq("auth_user_id", user.id)
             .single();
       
-          if (error || !employee) {
+            if (error || !employee?.organization_id) {
             window.location.href = "/home";
             return;
           }
@@ -406,8 +456,10 @@ if (!isAdmin) {
       
           await fetchAll({
             companyName: employee.company_name ?? null,
+            organizationId: employee.organization_id,
           });
         } finally {
+          
           setAuthChecking(false);
         }
       };
