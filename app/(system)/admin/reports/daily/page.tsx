@@ -1,7 +1,7 @@
 "use client";
 
 import { fetchAllRows } from "@/lib/fetchAllRows";
-
+import DailyReportPrintButton from "./DailyReportPrintButton";
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -94,7 +94,8 @@ export default function DailyReportAdminPage() {
   const canPrint =
   scheduledSiteCount > 0 &&
   checkedSiteCount === scheduledSiteCount &&
-  !reports.some((report) => report.has_update);
+  reports.length > 0 &&
+  reports.every((report) => report.is_checked === true);
 
   async function fetchReports(currentOrganizationId: string) {
     const firstDay = formatLocalDate(
@@ -675,30 +676,29 @@ width: "100%",
             }}
           />
 
-<button
-  disabled={!canPrint}
-  onClick={() => {
-    if (!canPrint) {
-      alert(
-        `予定現場数と確認済み現場数が一致していません。\n\n予定現場：${scheduledSiteCount}件\n確認済み：${checkedSiteCount}件`
-      );
-      return;
-    }
+<DailyReportPrintButton
+  canPrint={canPrint}
+  reports={reports}
+  onCleared={(cleared) => {
+    const revisions = new Map(
+      cleared.map((item) => [
+        `${item.organization_id}:${item.id}`,
+        item.content_revision,
+      ])
+    );
 
-    window.print();
+    const applyCleared = (items: Report[]) =>
+      items.map((item) =>
+        revisions.get(`${item.organization_id}:${item.id}`) ===
+        item.content_revision
+          ? { ...item, has_update: false }
+          : item
+      );
+
+    setReports(applyCleared);
+    setMonthReports(applyCleared);
   }}
-  style={{
-    padding: "10px 14px",
-    backgroundColor: canPrint ? "#111" : "#aaa",
-    color: "#fff",
-    border: "none",
-    borderRadius: 8,
-    cursor: canPrint ? "pointer" : "not-allowed",
-    fontWeight: 600,
-  }}
->
-  印刷
-</button>
+/>
         </div>
       </div>
 
