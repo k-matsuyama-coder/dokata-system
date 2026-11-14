@@ -279,6 +279,61 @@ export default function PublicAssignmentsPage() {
   const params = useParams<{ token: string }>();
   const token = typeof params?.token === "string" ? params.token : "";
 
+  const openPublicFile = async (fileId: string) => {
+    const tab = window.open("about:blank", "_blank");
+
+    if (!tab) {
+      window.alert("ポップアップを許可して、もう一度開いてください。");
+      return;
+    }
+
+    tab.opener = null;
+    tab.document.title = "添付資料を読み込み中";
+    tab.document.body.textContent = "添付資料を読み込んでいます…";
+
+    try {
+      const response = await fetch(
+        `/api/public/assignments/${encodeURIComponent(token)}`,
+        { cache: "no-store" }
+      );
+
+      const result = (await response.json()) as
+        | PublicAssignmentsResponse
+        | PublicAssignmentsErrorResponse;
+
+      if (!response.ok || !result.ok) {
+        throw new Error(
+          !result.ok
+            ? result.error
+            : "添付資料を取得できませんでした。"
+        );
+      }
+
+      const file = result.days
+        .flatMap((day) => day.assignments)
+        .flatMap((assignment) => assignment.files ?? [])
+        .find((item) => item.id === fileId);
+
+      if (!file?.file_url) {
+        throw new Error(
+          "この資料は削除されたか、公開対象から外れています。"
+        );
+      }
+
+      if (!tab.closed) {
+        tab.location.replace(file.file_url);
+      }
+    } catch (error) {
+      if (!tab.closed) tab.close();
+
+      window.alert(
+        error instanceof Error
+          ? error.message
+          : "添付資料を開けませんでした。もう一度お試しください。"
+      );
+    }
+  };
+
   const [data, setData] = useState<PublicAssignmentsResponse | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -761,7 +816,11 @@ current.members_by_date[day.date] = members;
       {detailModalRow.files.map((file) => (
         <a
           key={file.id}
-          href={file.file_url}
+          href="#"
+          onClick={(event) => {
+            event.preventDefault();
+            void openPublicFile(file.id);
+          }}
           target="_blank"
           rel="noreferrer"
           style={detailFileLinkStyle}

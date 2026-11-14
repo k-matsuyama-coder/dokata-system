@@ -32,6 +32,7 @@ export type AssignmentFile = {
   assignment_id: string;
   file_name: string;
   file_url: string;
+  file_path: string;
 };
 
 export type Assignment = {

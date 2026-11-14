@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { openAssignmentFile } from "@/lib/storageSignedUrls";
 import type {
   Assignment,
   AssignmentFile,
@@ -281,7 +282,9 @@ useEffect(() => {
                     <img
                       src={file.file_url}
                       alt={file.file_name}
-                      onClick={() => setPreviewImage(file.file_url)}
+                      onClick={() => {
+                        void openAssignmentFile(file.file_path, setPreviewImage);
+                      }}
                       style={{
                         width: 56,
                         height: 56,
@@ -309,12 +312,16 @@ useEffect(() => {
                   )}
 
                   <a
-                    href={isImageFile(file.file_name) ? "#" : file.file_url}
+                    href="#"
                     onClick={(e) => {
-                      if (isImageFile(file.file_name)) {
-                        e.preventDefault();
-                        setPreviewImage(file.file_url);
-                      }
+                      e.preventDefault();
+
+                      void openAssignmentFile(
+                        file.file_path,
+                        isImageFile(file.file_name)
+                          ? setPreviewImage
+                          : undefined
+                      );
                     }}
                     target={isImageFile(file.file_name) ? undefined : "_blank"}
                     rel="noreferrer"

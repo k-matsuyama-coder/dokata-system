@@ -3,6 +3,7 @@
 
 import React from "react";
 import type { AssignmentFile } from "../hooks/useAssignmentViewData";
+import { openAssignmentFile } from "@/lib/storageSignedUrls";
 
 type DetailModalAssignment = {
   site_name: string | null;
@@ -129,15 +130,21 @@ export default function AssignmentViewModals({
                 {detailModalAssignment.files.length > 0 ? (
                   <div style={detailFileListStyle}>
                     {detailModalAssignment.files.map((file) => (
-                      <a
-                        key={file.id}
-                        href={file.file_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        style={detailFileLinkStyle}
-                      >
-                        {file.file_name}
-                      </a>
+                      <button
+                      key={file.id}
+                      type="button"
+                      onClick={() => {
+                        void openAssignmentFile(file.file_path);
+                      }}
+                      style={{
+                        ...detailFileLinkStyle,
+                        width: "100%",
+                        textAlign: "left",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {file.file_name}
+                    </button>
                     ))}
                   </div>
                 ) : (

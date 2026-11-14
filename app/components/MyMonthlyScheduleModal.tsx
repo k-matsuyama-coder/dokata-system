@@ -5,7 +5,10 @@ import { fetchAllRows } from "@/lib/fetchAllRows";
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { createSignedUrlMap } from "@/lib/storageSignedUrls";
+import {
+  createSignedUrlMap,
+  openAssignmentFile,
+} from "@/lib/storageSignedUrls";
 import { getJapanDate, getJapanMonth } from "@/lib/japanDate";
 
 type CalendarEmployee = {
@@ -655,7 +658,11 @@ opacity: isCurrentMonth ? 1 : 0.7,
       {selectedFiles.map((file) => (
         <a
           key={file.id}
-          href={file.file_url}
+          href="#"
+          onClick={(event) => {
+            event.preventDefault();
+            void openAssignmentFile(file.file_path);
+          }}
           target="_blank"
           rel="noreferrer"
           style={{
