@@ -1,5 +1,7 @@
 "use client";
 
+import AssignmentEvents from "@/app/components/AssignmentEvents";
+
 import { fetchAllRows } from "@/lib/fetchAllRows";
 
 
@@ -809,6 +811,7 @@ stopEditing,
   onSaveDateMemo={onSaveDateMemo}
 >
   <tbody>
+    <AssignmentEvents days={days} leadingColumns={isMobile ? 2 : 4} />
     <AssignmentGroups groupedAssignments={groupedAssignments} />
   </tbody>
 </MonthlyAssignmentsTable>

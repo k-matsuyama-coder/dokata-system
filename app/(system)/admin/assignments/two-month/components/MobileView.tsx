@@ -4,6 +4,7 @@
 import { useCallback, useMemo, useRef } from "react";
 import type { Assignment } from "../types";
 import { getJapanDate } from "@/lib/japanDate";
+import AssignmentEvents from "@/app/components/AssignmentEvents";
 
 type GroupedAssignment = {
   label: string;
@@ -345,6 +346,8 @@ const today = getJapanDate();
     </div>
   </div>
 </section>
+
+<AssignmentEvents days={days} layout="cards" />
 
       <div style={scrollHintStyle}>左右にスクロールして2か月分を確認できます</div>
 

@@ -4,6 +4,7 @@
 import React, { useCallback, useMemo, useRef } from "react";
 import TwoMonthTableHeader from "./TableHeader";
 import TwoMonthAssignmentRow from "./AssignmentRow";
+import AssignmentEvents from "@/app/components/AssignmentEvents";
 import type {
   Assignment,
   AssignmentGroupKey,
@@ -181,7 +182,8 @@ getPlannedCount,
   nextMonthTotal={nextMonthTotal}
 />
 
-        <tbody>
+<tbody>
+          <AssignmentEvents days={days} leadingColumns={3} />
           {groupedAssignments.map((group) => (
             <React.Fragment key={group.label}>
               <tr>
