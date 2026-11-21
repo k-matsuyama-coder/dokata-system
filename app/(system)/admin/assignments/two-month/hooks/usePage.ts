@@ -157,6 +157,14 @@ export function useTwoMonthPage() {
         organizationId: nextOrganizationId,
       });
 
+      setEmployees(resultData.employees ?? []);
+      setContractors(resultData.contractors ?? []);
+      setContractorContacts(resultData.contractorContacts ?? []);
+      setAssignments(resultData.assignments ?? []);
+      setDailyInfos(resultData.dailyInfos ?? []);
+      setSiteMembers(resultData.siteMembers ?? []);
+      setAssignmentFiles(resultData.assignmentFiles ?? []);
+
       const { data: memoRows, error: memoError } = await fetchAllRows((pageFrom, pageTo) => supabase
   .from("assignment_date_memos")
   .select("work_date, memo")
@@ -177,14 +185,6 @@ setDateMemos(
     ])
   )
 );
-
-      setEmployees(resultData.employees ?? []);
-      setContractors(resultData.contractors ?? []);
-      setContractorContacts(resultData.contractorContacts ?? []);
-      setAssignments(resultData.assignments ?? []);
-      setDailyInfos(resultData.dailyInfos ?? []);
-      setSiteMembers(resultData.siteMembers ?? []);
-      setAssignmentFiles(resultData.assignmentFiles ?? []);
     } catch (error) {
       alert(
         error instanceof Error

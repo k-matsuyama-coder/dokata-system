@@ -136,11 +136,4 @@ export function useRealtime(
     };
   }, [organizationId, setDailyInfos]);
 
-  // 月が変わったときはデータだけ再取得。
-  // Realtimeチャンネルは作り直さない。
-  useEffect(() => {
-    if (!organizationId) return;
-
-    void fetchDataRef.current();
-  }, [baseMonth, organizationId]);
 }

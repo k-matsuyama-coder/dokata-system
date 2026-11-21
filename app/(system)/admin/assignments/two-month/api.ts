@@ -133,7 +133,7 @@ export async function fetchTwoMonthData({
     };
   }
 
-  const [dailyInfoResult, memberResult, fileResult] = await Promise.all([
+  const [dailyInfoResult, fileResult] = await Promise.all([
     fetchAllRows((pageFrom, pageTo) => supabase
       .from("assignment_site_daily_infos")
       .select(
@@ -144,18 +144,6 @@ export async function fetchTwoMonthData({
       .gte("work_date", startDate)
       .lte("work_date", endDate)
 .order("id", { ascending: true }).range(pageFrom, pageTo)),
-
-    fetchAllRows((pageFrom, pageTo) => supabase
-      .from("assignment_site_members")
-      .select(
-        "id, assignment_id, work_date, employee_name, is_driver, is_operator, is_foreman, heavy_equipment"
-      )
-      .eq("organization_id", safeOrganizationId)
-      .in("assignment_id", assignmentIds)
-      .gte("work_date", startDate)
-      .lte("work_date", endDate)
-.order("id", { ascending: true }).range(pageFrom, pageTo)),
-
     fetchAllRows((pageFrom, pageTo) => supabase
       .from("assignment_files")
       .select("id, assignment_id, file_name, file_url, file_path")
@@ -166,10 +154,6 @@ export async function fetchTwoMonthData({
 
   if (dailyInfoResult.error) {
     throw new Error("工程表取得失敗: " + dailyInfoResult.error.message);
-  }
-
-  if (memberResult.error) {
-    throw new Error("メンバー取得失敗: " + memberResult.error.message);
   }
 
   if (fileResult.error) {
@@ -194,7 +178,7 @@ export async function fetchTwoMonthData({
     contractorContacts: contactResult.data ?? [],
     assignments: assignmentData,
     dailyInfos: dailyInfoResult.data ?? [],
-    siteMembers: memberResult.data ?? [],
+    siteMembers: [],
     assignmentFiles: assignmentFilesWithSignedUrls,
   };
 }
