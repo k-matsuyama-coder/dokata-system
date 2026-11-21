@@ -159,6 +159,8 @@ export default function CompanyAnalyticsPage() {
   }, [month, retryCount, refreshVersion]);  
 
   const totalLabor = rows.reduce((sum, row) => sum + row.total, 0);
+  const totalDayLabor = rows.reduce((sum, row) => sum + row.day, 0);
+const totalNightLabor = rows.reduce((sum, row) => sum + row.night, 0);
   const totalOvertime = rows.reduce((sum, row) => sum + row.overtime, 0);
   const totalVehicles = rows.reduce((sum, row) => sum + row.vehicles, 0);
   const totalCompanies = rows.length;
@@ -193,7 +195,16 @@ export default function CompanyAnalyticsPage() {
           marginBottom: 20,
         }}
       >
-        <KpiCard label="合計人工" value={`${totalLabor}`} />
+        <div style={cardStyle}>
+  <div style={{ color: "#666", fontSize: 13 }}>合計人工</div>
+  <div style={{ fontWeight: 900, fontSize: 22, marginTop: 6 }}>
+    {totalLabor}
+  </div>
+  <div style={{ display: "flex", gap: 16, marginTop: 8, fontSize: 14 }}>
+    <span>昼：{totalDayLabor}</span>
+    <span>夜：{totalNightLabor}</span>
+  </div>
+</div>
         <KpiCard label="残業合計" value={`${totalOvertime}h`} />
         <KpiCard label="運転回数" value={`${totalVehicles}回`} />
         <KpiCard label="所属会社数" value={`${totalCompanies}社`} />
