@@ -75,6 +75,9 @@ export default function MyMonthlyScheduleModal({
 }: Props) {
   const [month, setMonth] = useState(() => getJapanMonth());
   const isAdmin = role === "admin";
+  const [eventsByDate, setEventsByDate] = useState<Record<string, string>>({});
+const [eventsLoading, setEventsLoading] = useState(false);
+const [eventsError, setEventsError] = useState("");
 const [employees, setEmployees] = useState<
   CalendarEmployee[]
 >([]);
@@ -121,6 +124,60 @@ const [selectedEmployee, setSelectedEmployee] = useState("");
   const [employeeError, setEmployeeError] = useState("");
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState("");
+
+  useEffect(() => {
+    setEventsByDate({});
+    setEventsError("");
+    setEventsLoading(false);
+  
+    if (!open || !isAdmin || !organizationId || days.length === 0) return;
+  
+    let cancelled = false;
+    const controller = new AbortController();
+  
+    setEventsLoading(true);
+  
+    const loadEvents = async () => {
+      try {
+        const { data, error } = await fetchAllRows((from, to) =>
+          supabase
+            .from("assignment_date_memos")
+            .select("work_date, event_text")
+            .eq("organization_id", organizationId)
+            .gte("work_date", days[0])
+            .lte("work_date", days[days.length - 1])
+            .order("work_date", { ascending: true })
+            .range(from, to)
+            .abortSignal(controller.signal)
+        );
+  
+        if (error) throw error;
+        if (cancelled) return;
+  
+        setEventsByDate(
+          Object.fromEntries(
+            (data ?? []).map((row) => [
+              row.work_date,
+              row.event_text ?? "",
+            ])
+          )
+        );
+      } catch (error) {
+        if (!cancelled) {
+          setEventsError(`行事取得失敗: ${getErrorMessage(error)}`);
+        }
+      } finally {
+        if (!cancelled) setEventsLoading(false);
+      }
+    };
+  
+    void loadEvents();
+  
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [open, isAdmin, organizationId, days]);
 
   // 社員一覧は月・選択した名前に依存させない。
   useEffect(() => {
@@ -403,6 +460,14 @@ const [selectedEmployee, setSelectedEmployee] = useState("");
         {scheduleLoading && <p role="status">予定を読み込み中…</p>}
         {scheduleError && <p role="alert">{scheduleError}</p>}
         {employeeError && <p role="alert">{employeeError}</p>}
+        {isAdmin && eventsLoading && (
+  <p role="status">行事を読み込み中…</p>
+)}
+{isAdmin && eventsError && (
+  <p role="alert" style={{ color: "#b91c1c" }}>
+    {eventsError}
+  </p>
+)}
         <div
           style={{
             display: "grid",
@@ -471,7 +536,27 @@ opacity: isCurrentMonth ? 1 : 0.7,
                 </div>
 
                 <div style={{ display: "grid", gap: 4 }}>
-                  {schedules.map((assignment) => (
+  {isAdmin && eventsByDate[date]?.trim() && (
+    <div
+      style={{
+        padding: "5px 4px",
+        borderRadius: 6,
+        backgroundColor: "#fef3c7",
+        border: "1px solid #fcd34d",
+        color: "#713f12",
+        fontSize: 11,
+        fontWeight: 700,
+        lineHeight: 1.4,
+        whiteSpace: "pre-wrap",
+        overflowWrap: "anywhere",
+      }}
+    >
+      <div style={{ fontSize: 9, marginBottom: 2 }}>行事</div>
+      {eventsByDate[date]}
+    </div>
+  )}
+
+  {schedules.map((assignment) => (
                     <div
                       key={`${date}-${assignment.id}`}
                       onClick={() =>
