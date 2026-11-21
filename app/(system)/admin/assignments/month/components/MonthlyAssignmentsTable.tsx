@@ -2,6 +2,7 @@
 
 import React from "react";
 import AssignmentDateHeader from "./AssignmentDateHeader";
+import { getJapanDate } from "@/lib/japanDate";
 
 import type {
   Assignment,
@@ -56,13 +57,102 @@ const MonthlyAssignmentsTable = React.forwardRef<HTMLDivElement, Props>(
     },
     ref
   ) {
+    const containerRef = React.useRef<HTMLDivElement | null>(null);
+    const periodKey =
+  `${viewMode}:${days[0] ?? ""}:${days[days.length - 1] ?? ""}`;
+
+const previousPeriodRef = React.useRef(periodKey);
+const startFromTodayRef = React.useRef(true);
+
+React.useLayoutEffect(() => {
+  const container = containerRef.current;
+  if (!container) return;
+
+  // 月・週を切り替えた後は先頭から表示する。
+  if (previousPeriodRef.current !== periodKey) {
+    previousPeriodRef.current = periodKey;
+    startFromTodayRef.current = false;
+  }
+
+  if (!startFromTodayRef.current) {
+    container.scrollLeft = 0;
+    return;
+  }
+
+  const todayIndex = days.indexOf(getJapanDate());
+
+      // 表示期間に今日がない場合は、期間の先頭から表示する。
+      if (todayIndex < 0) {
+        container.scrollLeft = 0;
+        return;
+      }
+
+      const headerRow = container.querySelector("thead tr");
+      if (!headerRow) return;
+
+      const fixedColumns = isMobile ? 2 : 4;
+      const firstDateHeader = headerRow.children[fixedColumns];
+      const todayHeader =
+        headerRow.children[fixedColumns + todayIndex];
+
+      if (!firstDateHeader || !todayHeader) return;
+
+      let userOperated = false;
+
+      const alignToday = () => {
+        if (userOperated) return;
+
+        const left =
+          todayHeader.getBoundingClientRect().left -
+          firstDateHeader.getBoundingClientRect().left;
+
+        container.scrollLeft = Math.max(0, left);
+      };
+
+      // データ取得後に列幅が変わった場合も位置を合わせる。
+      const observer = new ResizeObserver(alignToday);
+      observer.observe(headerRow);
+      Array.from(headerRow.children).forEach((cell) => {
+        observer.observe(cell);
+      });
+
+      const stopAutoScroll = () => {
+        userOperated = true;
+        observer.disconnect();
+      };
+
+      const events = ["pointerdown", "touchstart", "wheel", "keydown"];
+
+      events.forEach((event) => {
+        container.addEventListener(event, stopAutoScroll, {
+          passive: true,
+        });
+      });
+
+      alignToday();
+
+      return () => {
+        observer.disconnect();
+        events.forEach((event) => {
+          container.removeEventListener(event, stopAutoScroll);
+        });
+      };
+    }, [days, isMobile, viewMode, periodKey]);
 
     const mobileDateWidth = viewMode === "week" ? 150 : 120;
 const mobileTableWidth = 128 + days.length * mobileDateWidth;
 
     return (
       <div
-        ref={ref}
+      ref={(element) => {
+        containerRef.current = element;
+
+        if (typeof ref === "function") {
+          ref(element);
+        } else if (ref) {
+          ref.current = element;
+        }
+      }}
         style={{
           overflowX: "auto",
           overflowY: "auto",
