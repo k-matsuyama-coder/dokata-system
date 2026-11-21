@@ -26,6 +26,8 @@ type CompanyRow = {
   night: number;
   total: number;
   overtime: number;
+  overtime_day: number;
+  overtime_night: number;
   vehicles: number;
   people: number;
   dayRate: number;
@@ -119,6 +121,8 @@ export default function CompanyAnalyticsPage() {
               row.night,
               row.total,
               row.overtime,
+              row.overtime_day,
+              row.overtime_night,
               row.vehicles,
               row.people,
             ].every(Number.isFinite)
@@ -162,6 +166,14 @@ export default function CompanyAnalyticsPage() {
   const totalDayLabor = rows.reduce((sum, row) => sum + row.day, 0);
 const totalNightLabor = rows.reduce((sum, row) => sum + row.night, 0);
   const totalOvertime = rows.reduce((sum, row) => sum + row.overtime, 0);
+  const totalDayOvertime = rows.reduce(
+    (sum, row) => sum + row.overtime_day,
+    0
+  );
+  const totalNightOvertime = rows.reduce(
+    (sum, row) => sum + row.overtime_night,
+    0
+  );
   const totalVehicles = rows.reduce((sum, row) => sum + row.vehicles, 0);
   const totalCompanies = rows.length;
 
@@ -205,7 +217,16 @@ const totalNightLabor = rows.reduce((sum, row) => sum + row.night, 0);
     <span>夜：{totalNightLabor}</span>
   </div>
 </div>
-        <KpiCard label="残業合計" value={`${totalOvertime}h`} />
+<div style={cardStyle}>
+  <div style={{ color: "#666", fontSize: 13 }}>残業合計</div>
+  <div style={{ fontWeight: 900, fontSize: 22, marginTop: 6 }}>
+    {totalOvertime}h
+  </div>
+  <div style={{ display: "flex", gap: 16, marginTop: 8, fontSize: 14 }}>
+    <span>昼：{totalDayOvertime}h</span>
+    <span>夜：{totalNightOvertime}h</span>
+  </div>
+</div>
         <KpiCard label="運転回数" value={`${totalVehicles}回`} />
         <KpiCard label="所属会社数" value={`${totalCompanies}社`} />
         <KpiCard label="稼働人数" value={`${totalPeople}人`} />
