@@ -22,14 +22,6 @@ type HistoryItem = {
   after: string;
 };
 
-type CurrentOrganizationResponse = {
-  organizationId: string | null;
-  impersonating?: boolean;
-  isSuperAdmin?: boolean;
-  message?: string;
-  error?: string;
-};
-
 export function useTwoMonthPage() {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [assignmentFiles, setAssignmentFiles] = useState<AssignmentFile[]>([]);
@@ -114,50 +106,30 @@ export function useTwoMonthPage() {
         return;
       }
 
-      const res = await fetch("/api/current-organization", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const orgResult = (await res.json()) as CurrentOrganizationResponse;
-
-      if (!isCurrent()) return;
-
-      if (!res.ok) {
-        alert(orgResult.error ?? orgResult.message ?? "会社情報の取得に失敗しました");
-        return;
-      }
-
-      if (!orgResult.organizationId) {
-        if (orgResult.isSuperAdmin && !orgResult.impersonating) {
-          alert("対象会社が未選択です。会社を選択してから開いてください。");
-          return;
-        }
-
-        alert("会社情報が取得できません");
-        return;
-      }
-
-      const nextOrganizationId = orgResult.organizationId;
-      setOrganizationId(nextOrganizationId);
-
       const { data: employee, error: employeeError } = await supabase
-        .from("employees")
-        .select("role")
-        .eq("organization_id", nextOrganizationId)
-        .eq("auth_user_id", user.id)
-        .maybeSingle();
+      .from("employees")
+      .select("organization_id, role")
+      .eq("auth_user_id", user.id)
+      .maybeSingle();
 
-      if (employeeError) {
-        throw employeeError;
-      }
+    if (!isCurrent()) return;
 
-      if (!employee || !hasRole(employee.role, "admin")) {
-        alert("管理者のみ閲覧できます");
-        window.location.href = "/home";
-        return;
-      }
+    if (employeeError) {
+      throw new Error(employeeError.message);
+    }
+
+    if (!employee?.organization_id) {
+      throw new Error("会社情報が取得できません");
+    }
+
+    if (!hasRole(employee.role, "admin")) {
+      alert("管理者のみ閲覧できます");
+      window.location.href = "/home";
+      return;
+    }
+
+    const nextOrganizationId = employee.organization_id;
+    setOrganizationId(nextOrganizationId);
 
       const resultData = await fetchTwoMonthData({
         days,
