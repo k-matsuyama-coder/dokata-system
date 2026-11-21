@@ -17,8 +17,6 @@ import { useAssignmentGroups } from "../month/hooks/useAssignmentGroups";
 
 import {
   getBandColor,
-  getDailyTotal,
-  getMonthlyTotal,
   getSortedAssignments,
   getGroupedAssignments,
 } from "./utils/tableUtils";
@@ -139,53 +137,76 @@ onSaveDateMemo,
     monthlyTotalMap,
     previousMonthTotal,
     nextMonthTotal,
+    dailyTotalMap,
   } = useMemo(() => {
-    const totalsMap = new Map<string, [number, number]>();
-  
-    let previousTotal = 0;
-    let nextTotal = 0;
-  
-    assignments.forEach((assignment) => {
-      const firstMonthTotal = getMonthlyTotal(
-        dailyInfos,
-        baseMonth,
-        assignment.id,
-        0,
-        assignment
-      );
-  
-      const secondMonthTotal = getMonthlyTotal(
-        dailyInfos,
-        baseMonth,
-        assignment.id,
-        1,
-        assignment
-      );
-  
-      totalsMap.set(assignment.id, [
-        firstMonthTotal,
-        secondMonthTotal,
-      ]);
-  
-      previousTotal += firstMonthTotal;
-      nextTotal += secondMonthTotal;
-    });
-  
-    return {
-      monthlyTotalMap: totalsMap,
-      previousMonthTotal: previousTotal,
-      nextMonthTotal: nextTotal,
-    };
-  }, [assignments, dailyInfos, baseMonth]);
+    const assignmentMap = new Map(
+      assignments.map((item) => [item.id, item])
+    );
 
-  const dailyTotalMap = useMemo(() => {
-    return new Map(
+    const monthlyTotalMap = new Map<string, [number, number]>(
+      assignments.map((item) => [item.id, [0, 0]])
+    );
+
+    const dailyTotalMap = new Map(
       days.map((date) => [
         date,
-        getDailyTotal(assignments, dailyInfos, date),
+        { total: 0, first: 0, second: 0, third: 0 },
       ])
     );
-  }, [assignments, dailyInfos, days]);
+
+    const [year, month] = baseMonth.split("-").map(Number);
+    const next = new Date(year, month, 1);
+    const nextMonth =
+      `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}`;
+
+    let previousMonthTotal = 0;
+    let nextMonthTotal = 0;
+
+    for (const info of dailyInfos) {
+      const assignment = assignmentMap.get(info.assignment_id);
+      if (!assignment) continue;
+
+      if (
+        assignment.start_date &&
+        info.work_date < assignment.start_date
+      ) continue;
+
+      if (
+        assignment.end_date &&
+        info.work_date > assignment.end_date
+      ) continue;
+
+      const count = info.planned_count ?? 0;
+      const monthKey = info.work_date.slice(0, 7);
+      const totals = monthlyTotalMap.get(assignment.id)!;
+
+      if (monthKey === baseMonth) {
+        totals[0] += count;
+        previousMonthTotal += count;
+      } else if (monthKey === nextMonth) {
+        totals[1] += count;
+        nextMonthTotal += count;
+      }
+
+      const daily = dailyTotalMap.get(info.work_date);
+
+      if (daily) {
+        daily.total += count;
+
+        const group = assignment.group_key ?? "group1";
+        if (group === "group1") daily.first += count;
+        if (group === "group2") daily.second += count;
+        if (group === "group3") daily.third += count;
+      }
+    }
+
+    return {
+      monthlyTotalMap,
+      previousMonthTotal,
+      nextMonthTotal,
+      dailyTotalMap,
+    };
+  }, [assignments, dailyInfos, baseMonth, days]);
 
   const {
     uploadFiles,

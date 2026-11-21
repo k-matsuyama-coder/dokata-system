@@ -5,11 +5,22 @@ import { fetchAllRows } from "@/lib/fetchAllRows";
 
 import { supabase } from "@/lib/supabase";
 import { createSignedUrlMap } from "@/lib/storageSignedUrls";
-import type { Assignment, AssignmentGroupKey } from "./types";
+import type {
+  Assignment,
+  AssignmentGroupKey,
+  Employee,
+  DailyInfo,
+  SiteMember,
+} from "./types";
 
 type TwoMonthDataParams = {
   days: string[];
   organizationId: string;
+  onCoreData?: (data: {
+    employees: Employee[];
+    assignments: Assignment[];
+    dailyInfos: DailyInfo[];
+  }) => void;
 };
 
 function ensureOrganizationId(organizationId: string | null | undefined) {
@@ -40,9 +51,9 @@ function createSafeStorageFilePath(
 export async function fetchTwoMonthData({
   days,
   organizationId,
+  onCoreData,
 }: TwoMonthDataParams) {
   const safeOrganizationId = ensureOrganizationId(organizationId);
-
   const startDate = days[0];
   const endDate = days[days.length - 1];
 
@@ -50,136 +61,132 @@ export async function fetchTwoMonthData({
     throw new Error("表示期間が取得できません");
   }
 
-  const [
-    employeeResult,
-    contractorResult,
-    contactResult,
-    assignmentResult,
-  ] = await Promise.all([
-    fetchAllRows((pageFrom, pageTo) => supabase
-      .from("employees")
-      .select("name, company_name")
-      .eq("organization_id", safeOrganizationId)
-      .order("name", { ascending: true })
-.order("id", { ascending: true }).range(pageFrom, pageTo)),
+  // 現場・予定人数・社員を並行して取得する。
+  const [employeeResult, assignmentResult, dailyInfoResult] =
+    await Promise.all([
+      fetchAllRows((from, to) =>
+        supabase
+          .from("employees")
+          .select("name, company_name")
+          .eq("organization_id", safeOrganizationId)
+          .order("name", { ascending: true })
+          .order("id", { ascending: true })
+          .range(from, to)
+      ),
 
-    fetchAllRows((pageFrom, pageTo) => supabase
-      .from("contractors")
-      .select("id, name")
-      .eq("organization_id", safeOrganizationId)
-      .order("name", { ascending: true })
-.order("id", { ascending: true }).range(pageFrom, pageTo)),
+      fetchAllRows((from, to) =>
+        supabase
+          .from("assignments")
+          .select(`
+            id, assignment_date, site_name, contractor_name, memo,
+            construction_type, group_key, manager_name, contact_phone,
+            address, meeting_time, shift_type, start_time, end_time,
+            start_date, end_date
+          `)
+          .eq("organization_id", safeOrganizationId)
+          .order("sort_order", { ascending: true })
+          .order("created_at", { ascending: true })
+          .order("id", { ascending: true })
+          .range(from, to)
+      ),
 
-    fetchAllRows((pageFrom, pageTo) => supabase
-      .from("contractor_contacts")
-      .select("id, contractor_id, manager_name, contact_phone")
-      .eq("organization_id", safeOrganizationId)
-.order("id", { ascending: true }).range(pageFrom, pageTo)),
-
-    fetchAllRows((pageFrom, pageTo) => supabase
-      .from("assignments")
-      .select(`
-        id,
-        assignment_date,
-        site_name,
-        contractor_name,
-        memo,
-        construction_type,
-        group_key,
-        manager_name,
-        contact_phone,
-        address,
-        meeting_time,
-        shift_type,
-        start_time,
-        end_time,
-        start_date,
-        end_date
-      `)
-      .eq("organization_id", safeOrganizationId)
-      .order("sort_order", { ascending: true })
-      .order("created_at", { ascending: true })
-.order("id", { ascending: true }).range(pageFrom, pageTo)),
-  ]);
+      fetchAllRows((from, to) =>
+        supabase
+          .from("assignment_site_daily_infos")
+          .select(
+            "id, assignment_id, work_date, planned_count, detail, memo, vehicle_names"
+          )
+          .eq("organization_id", safeOrganizationId)
+          .gte("work_date", startDate)
+          .lte("work_date", endDate)
+          .order("id", { ascending: true })
+          .range(from, to)
+      ),
+    ]);
 
   if (employeeResult.error) {
     throw new Error("社員取得失敗: " + employeeResult.error.message);
   }
-
-  if (contractorResult.error) {
-    throw new Error("元請取得失敗: " + contractorResult.error.message);
-  }
-
-  if (contactResult.error) {
-    throw new Error("担当者取得失敗: " + contactResult.error.message);
-  }
-
   if (assignmentResult.error) {
     throw new Error("現場取得失敗: " + assignmentResult.error.message);
   }
-
-  const assignmentData = assignmentResult.data ?? [];
-  const assignmentIds = assignmentData.map((assignment) => assignment.id);
-
-  if (assignmentIds.length === 0) {
-    return {
-      employees: employeeResult.data ?? [],
-      contractors: contractorResult.data ?? [],
-      contractorContacts: contactResult.data ?? [],
-      assignments: [],
-      dailyInfos: [],
-      siteMembers: [],
-      assignmentFiles: [],
-    };
-  }
-
-  const [dailyInfoResult, fileResult] = await Promise.all([
-    fetchAllRows((pageFrom, pageTo) => supabase
-      .from("assignment_site_daily_infos")
-      .select(
-        "id, assignment_id, work_date, planned_count, detail, memo, vehicle_names"
-      )
-      .eq("organization_id", safeOrganizationId)
-      .in("assignment_id", assignmentIds)
-      .gte("work_date", startDate)
-      .lte("work_date", endDate)
-.order("id", { ascending: true }).range(pageFrom, pageTo)),
-    fetchAllRows((pageFrom, pageTo) => supabase
-      .from("assignment_files")
-      .select("id, assignment_id, file_name, file_url, file_path")
-      .eq("organization_id", safeOrganizationId)
-      .in("assignment_id", assignmentIds)
-.order("id", { ascending: true }).range(pageFrom, pageTo)),
-  ]);
-
   if (dailyInfoResult.error) {
     throw new Error("工程表取得失敗: " + dailyInfoResult.error.message);
   }
 
+  const assignments = assignmentResult.data ?? [];
+  const assignmentIds = assignments.map((item) => item.id);
+  const idSet = new Set(assignmentIds);
+  const employees = employeeResult.data ?? [];
+  const dailyInfos = (dailyInfoResult.data ?? []).filter(
+    (info) => idSet.has(info.assignment_id)
+  );
+
+  // この時点で現場・予定人数を画面に表示する。
+  onCoreData?.({ employees, assignments, dailyInfos });
+
+  // 元請・担当者・添付資料は後から取得する。
+  const [contractorResult, contactResult, fileResult] =
+    await Promise.all([
+      fetchAllRows((from, to) =>
+        supabase
+          .from("contractors")
+          .select("id, name")
+          .eq("organization_id", safeOrganizationId)
+          .order("name", { ascending: true })
+          .order("id", { ascending: true })
+          .range(from, to)
+      ),
+
+      fetchAllRows((from, to) =>
+        supabase
+          .from("contractor_contacts")
+          .select("id, contractor_id, manager_name, contact_phone")
+          .eq("organization_id", safeOrganizationId)
+          .order("id", { ascending: true })
+          .range(from, to)
+      ),
+
+      assignmentIds.length > 0
+        ? fetchAllRows((from, to) =>
+            supabase
+              .from("assignment_files")
+              .select("id, assignment_id, file_name, file_url, file_path")
+              .eq("organization_id", safeOrganizationId)
+              .in("assignment_id", assignmentIds)
+              .order("id", { ascending: true })
+              .range(from, to)
+          )
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+
+  if (contractorResult.error) {
+    throw new Error("元請取得失敗: " + contractorResult.error.message);
+  }
+  if (contactResult.error) {
+    throw new Error("担当者取得失敗: " + contactResult.error.message);
+  }
   if (fileResult.error) {
     throw new Error("ファイル取得失敗: " + fileResult.error.message);
   }
-  
-  const assignmentFiles = fileResult.data ?? [];
-  
-  const signedUrlMap = await createSignedUrlMap(
+
+  const files = fileResult.data ?? [];
+  const signedUrls = await createSignedUrlMap(
     "assignment-files",
-    assignmentFiles.map((file) => file.file_path)
+    files.map((file) => file.file_path)
   );
-  
-  const assignmentFilesWithSignedUrls = assignmentFiles.map((file) => ({
-    ...file,
-    file_url: signedUrlMap[file.file_path] ?? "",
-  }));
-  
+
   return {
-    employees: employeeResult.data ?? [],
+    employees,
+    assignments,
+    dailyInfos,
     contractors: contractorResult.data ?? [],
     contractorContacts: contactResult.data ?? [],
-    assignments: assignmentData,
-    dailyInfos: dailyInfoResult.data ?? [],
-    siteMembers: [],
-    assignmentFiles: assignmentFilesWithSignedUrls,
+    siteMembers: [] as SiteMember[],
+    assignmentFiles: files.map((file) => ({
+      ...file,
+      file_url: signedUrls[file.file_path] ?? "",
+    })),
   };
 }
 

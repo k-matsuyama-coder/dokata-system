@@ -1,5 +1,5 @@
 import { fetchAllRows } from "@/lib/fetchAllRows";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fetchTwoMonthData } from "../api";
 import { supabase } from "@/lib/supabase";
 import { hasRole } from "@/app/types/auth";
@@ -94,7 +94,12 @@ export function useTwoMonthPage() {
     });
   }, [baseMonth]);
 
+  const requestIdRef = useRef(0);
+
   const fetchData = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
+    const isCurrent = () => requestIdRef.current === requestId;
+
     try {
       const {
         data: { session },
@@ -116,6 +121,8 @@ export function useTwoMonthPage() {
       });
 
       const orgResult = (await res.json()) as CurrentOrganizationResponse;
+
+      if (!isCurrent()) return;
 
       if (!res.ok) {
         alert(orgResult.error ?? orgResult.message ?? "会社情報の取得に失敗しました");
@@ -155,15 +162,21 @@ export function useTwoMonthPage() {
       const resultData = await fetchTwoMonthData({
         days,
         organizationId: nextOrganizationId,
+        onCoreData: (core) => {
+          if (!isCurrent()) return;
+
+          setEmployees(core.employees);
+          setAssignments(core.assignments);
+          setDailyInfos(core.dailyInfos);
+        },
       });
 
-      setEmployees(resultData.employees ?? []);
-      setContractors(resultData.contractors ?? []);
-      setContractorContacts(resultData.contractorContacts ?? []);
-      setAssignments(resultData.assignments ?? []);
-      setDailyInfos(resultData.dailyInfos ?? []);
-      setSiteMembers(resultData.siteMembers ?? []);
-      setAssignmentFiles(resultData.assignmentFiles ?? []);
+      if (!isCurrent()) return;
+
+      setContractors(resultData.contractors);
+      setContractorContacts(resultData.contractorContacts);
+      setSiteMembers(resultData.siteMembers);
+      setAssignmentFiles(resultData.assignmentFiles);
 
       const { data: memoRows, error: memoError } = await fetchAllRows((pageFrom, pageTo) => supabase
   .from("assignment_date_memos")
@@ -172,6 +185,8 @@ export function useTwoMonthPage() {
   .gte("work_date", days[0])
   .lte("work_date", days[days.length - 1])
 .order("id", { ascending: true }).range(pageFrom, pageTo));
+
+if (!isCurrent()) return;
 
 if (memoError) {
   throw memoError;
@@ -185,14 +200,16 @@ setDateMemos(
     ])
   )
 );
-    } catch (error) {
-      alert(
-        error instanceof Error
-          ? error.message
-          : "データ取得に失敗しました"
-      );
-    }
-  }, [days]);
+} catch (error) {
+  if (!isCurrent()) return;
+
+  alert(
+    error instanceof Error
+      ? error.message
+      : "データ取得に失敗しました"
+  );
+}
+}, [days]);
 
   const onSaveDateMemo = async (date: string, memo: string) => {
     if (!organizationId) {
@@ -245,7 +262,11 @@ setDateMemos(
 
   useEffect(() => {
     void fetchData();
-  }, [baseMonth]);
+
+    return () => {
+      requestIdRef.current += 1;
+    };
+  }, [fetchData]);
 
   return {
     assignments,
