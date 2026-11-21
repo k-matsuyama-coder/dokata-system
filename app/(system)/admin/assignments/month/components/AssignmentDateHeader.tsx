@@ -212,7 +212,6 @@ const plannedAll = infosWithinAssignmentPeriod.reduce(
               autoFocus
               value={memoDraft}
               onChange={(event) => setMemoDraft(event.target.value)}
-              onBlur={() => setIsMemoEditing(false)}
               rows={5}
               placeholder="日付メモを入力"
               style={{
