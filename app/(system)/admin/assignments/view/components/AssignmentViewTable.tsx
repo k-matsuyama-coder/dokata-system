@@ -91,13 +91,56 @@ export default function AssignmentViewTable({
   setDetailModalAssignment,
   setDetailTextModal,
 }: Props) {
+  const scrollContainerRef = React.useRef<HTMLDivElement | null>(null);
+  const [tableMaxHeight, setTableMaxHeight] = React.useState(400);
+
+  React.useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const updateHeight = () => {
+      const viewportHeight =
+        window.visualViewport?.height ?? window.innerHeight;
+
+      const top = container.getBoundingClientRect().top;
+
+      setTableMaxHeight(
+        Math.max(160, Math.floor(viewportHeight - top - 12))
+      );
+    };
+
+    updateHeight();
+
+    window.addEventListener("resize", updateHeight);
+    window.addEventListener("scroll", updateHeight, { passive: true });
+    window.visualViewport?.addEventListener("resize", updateHeight);
+
+    const observer = new ResizeObserver(updateHeight);
+    if (container.parentElement) {
+      observer.observe(container.parentElement);
+    }
+
+    return () => {
+      window.removeEventListener("resize", updateHeight);
+      window.removeEventListener("scroll", updateHeight);
+      window.visualViewport?.removeEventListener("resize", updateHeight);
+      observer.disconnect();
+    };
+  }, []);
+
   return (
     <div
-      ref={(element) => {
-        pdfRef.current = element;
-        tableScrollRef.current = element;
-      }}
-      style={tableOuterStyle}
+    ref={(element) => {
+      scrollContainerRef.current = element;
+      pdfRef.current = element;
+      tableScrollRef.current = element;
+    }}
+    style={{
+      ...tableOuterStyle,
+      maxHeight: isExportingImage ? "none" : tableMaxHeight,
+      overflowX: isExportingImage ? "visible" : "auto",
+      overflowY: isExportingImage ? "visible" : "auto",
+    }}
     >
       <table style={tableStyle}>
         <thead>

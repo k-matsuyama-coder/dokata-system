@@ -122,14 +122,6 @@ export function useAssignmentMemberSearch({
       ),
       behavior: "smooth",
     });
-  
-    requestAnimationFrame(() => {
-      element.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-        inline: "nearest",
-      });
-    });
   }, [activeMatchIndex, memberSearchMatches, matchElementMapRef, tableScrollRef]);
 
   const highlightMemberName = (text: string) => {
