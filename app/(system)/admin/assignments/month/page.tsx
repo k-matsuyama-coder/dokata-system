@@ -1,5 +1,7 @@
 "use client";
 
+import AssignmentPageLinks from "@/app/components/AssignmentPageLinks";
+
 import AssignmentEvents from "@/app/components/AssignmentEvents";
 
 import { fetchAllRows } from "@/lib/fetchAllRows";
@@ -720,6 +722,7 @@ stopEditing,
       }}
     >
       <BackButton />
+      <AssignmentPageLinks />
 
       <div
   style={{

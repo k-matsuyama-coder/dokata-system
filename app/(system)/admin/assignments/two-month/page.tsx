@@ -13,6 +13,7 @@ import { useAssignmentActions } from "./hooks/useAssignmentActions";
 import { useDetailTags } from "./hooks/useDetailTags";
 import { useDetailHistory } from "./hooks/useDetailHistory";
 import MobileView from "./components/MobileView";
+import AssignmentPageLinks from "@/app/components/AssignmentPageLinks";
 
 import {
   getBandColor,
@@ -295,6 +296,7 @@ onSaveDateMemo,
   return (
     <div style={{ padding: 16 }}>
       <h1>2ヶ月工程表</h1>
+      <AssignmentPageLinks />
 
       <datalist id="detail-history">
         {detailHistory.map((detail) => (
