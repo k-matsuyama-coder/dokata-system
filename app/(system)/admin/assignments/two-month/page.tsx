@@ -13,7 +13,6 @@ import { useAssignmentActions } from "./hooks/useAssignmentActions";
 import { useDetailTags } from "./hooks/useDetailTags";
 import { useDetailHistory } from "./hooks/useDetailHistory";
 import MobileView from "./components/MobileView";
-import { useAssignmentGroups } from "../month/hooks/useAssignmentGroups";
 
 import {
   getBandColor,
@@ -42,6 +41,7 @@ export default function TwoMonthPage() {
   }, []);
 
   const {
+    groupSettings,
     assignments,
     setAssignments,
     dateMemos,
@@ -100,9 +100,21 @@ onSaveDateMemo,
     setIsUndoRedo,
   } = useTwoMonthPage();
 
-  const { enabledGroups, groupSettings, groupNameMap } = useAssignmentGroups({
-    organizationId,
-  });
+  const enabledGroups = useMemo(
+    () => groupSettings.filter((group) => group.is_enabled),
+    [groupSettings]
+  );
+
+  const groupNameMap = useMemo(
+    () =>
+      new Map(
+        groupSettings.map((group) => [
+          group.group_key,
+          group.display_name,
+        ])
+      ),
+    [groupSettings]
+  );
 
   useRealtime(
     fetchData,

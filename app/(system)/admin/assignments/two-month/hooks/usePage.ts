@@ -1,13 +1,13 @@
 import { fetchAllRows } from "@/lib/fetchAllRows";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { fetchTwoMonthData } from "../api";
+import { fetchTwoMonthData, fetchTwoMonthCore } from "../api";
 import { supabase } from "@/lib/supabase";
-import { hasRole } from "@/app/types/auth";
 
 import type {
   Assignment,
   AssignmentFile,
   AssignmentGroupKey,
+  AssignmentGroupSetting,
   Contractor,
   ContractorContact,
   DailyInfo,
@@ -23,6 +23,8 @@ type HistoryItem = {
 };
 
 export function useTwoMonthPage() {
+  const [groupSettings, setGroupSettings] =
+  useState<AssignmentGroupSetting[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [assignmentFiles, setAssignmentFiles] = useState<AssignmentFile[]>([]);
   const [dailyInfos, setDailyInfos] = useState<DailyInfo[]>([]);
@@ -93,53 +95,24 @@ export function useTwoMonthPage() {
     const isCurrent = () => requestIdRef.current === requestId;
 
     try {
-      const {
-        data: { session },
-        error: sessionError,
-      } = await supabase.auth.getSession();
-      
-      const user = session?.user;
-      const token = session?.access_token;
-      
-      if (sessionError || !user || !token) {
-        window.location.href = "/login";
-        return;
-      }
+      const core = await fetchTwoMonthCore(days);
+      if (!isCurrent()) return;
 
-      const { data: employee, error: employeeError } = await supabase
-      .from("employees")
-      .select("organization_id, role")
-      .eq("auth_user_id", user.id)
-      .maybeSingle();
+      const nextOrganizationId = core.organizationId;
 
-    if (!isCurrent()) return;
-
-    if (employeeError) {
-      throw new Error(employeeError.message);
-    }
-
-    if (!employee?.organization_id) {
-      throw new Error("会社情報が取得できません");
-    }
-
-    if (!hasRole(employee.role, "admin")) {
-      alert("管理者のみ閲覧できます");
-      window.location.href = "/home";
-      return;
-    }
-
-    const nextOrganizationId = employee.organization_id;
-    setOrganizationId(nextOrganizationId);
+      setOrganizationId(nextOrganizationId);
+      setGroupSettings(core.groupSettings);
 
       const resultData = await fetchTwoMonthData({
         days,
         organizationId: nextOrganizationId,
-        onCoreData: (core) => {
+        coreData: core,
+        onCoreData: (data) => {
           if (!isCurrent()) return;
 
-          setEmployees(core.employees);
-          setAssignments(core.assignments);
-          setDailyInfos(core.dailyInfos);
+          setEmployees(data.employees);
+          setAssignments(data.assignments);
+          setDailyInfos(data.dailyInfos);
         },
       });
 
@@ -150,38 +123,42 @@ export function useTwoMonthPage() {
       setSiteMembers(resultData.siteMembers);
       setAssignmentFiles(resultData.assignmentFiles);
 
-      const { data: memoRows, error: memoError } = await fetchAllRows((pageFrom, pageTo) => supabase
-  .from("assignment_date_memos")
-  .select("work_date, memo")
-  .eq("organization_id", nextOrganizationId)
-  .gte("work_date", days[0])
-  .lte("work_date", days[days.length - 1])
-.order("id", { ascending: true }).range(pageFrom, pageTo));
+      const { data: memoRows, error: memoError } =
+        await fetchAllRows((from, to) =>
+          supabase
+            .from("assignment_date_memos")
+            .select("work_date, memo")
+            .eq("organization_id", nextOrganizationId)
+            .gte("work_date", days[0])
+            .lte("work_date", days[days.length - 1])
+            .order("id", { ascending: true })
+            .range(from, to)
+        );
 
-if (!isCurrent()) return;
+      if (!isCurrent()) return;
 
-if (memoError) {
-  throw memoError;
-}
+      if (memoError) {
+        throw new Error(memoError.message);
+      }
 
-setDateMemos(
-  new Map(
-    (memoRows ?? []).map((row) => [
-      row.work_date as string,
-      (row.memo as string | null) ?? "",
-    ])
-  )
-);
-} catch (error) {
-  if (!isCurrent()) return;
+      setDateMemos(
+        new Map(
+          (memoRows ?? []).map((row) => [
+            row.work_date as string,
+            (row.memo as string | null) ?? "",
+          ])
+        )
+      );
+    } catch (error) {
+      if (!isCurrent()) return;
 
-  alert(
-    error instanceof Error
-      ? error.message
-      : "データ取得に失敗しました"
-  );
-}
-}, [days]);
+      alert(
+        error instanceof Error
+          ? error.message
+          : "データ取得に失敗しました"
+      );
+    }
+  }, [days]);
 
   const onSaveDateMemo = async (date: string, memo: string) => {
     if (!organizationId) {
@@ -241,6 +218,7 @@ setDateMemos(
   }, [fetchData]);
 
   return {
+    groupSettings,
     assignments,
     setAssignments,
     dateMemos,
