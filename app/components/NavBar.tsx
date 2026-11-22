@@ -690,12 +690,14 @@ export default function NavBar() {
               style={{
                 color:
                   pathname.startsWith("/admin") &&
-                  !pathname.startsWith("/admin/analytics")
+                  !pathname.startsWith("/admin/analytics") &&
+                  !pathname.startsWith("/admin/assignments")
                     ? "#0070f3"
                     : "#333",
                 fontWeight:
                   pathname.startsWith("/admin") &&
-                  !pathname.startsWith("/admin/analytics")
+                  !pathname.startsWith("/admin/analytics") &&
+                  !pathname.startsWith("/admin/assignments")
                     ? 700
                     : 500,
               }}
