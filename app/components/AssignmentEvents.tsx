@@ -10,12 +10,14 @@ type Props = {
   days: string[];
   leadingColumns?: number;
   layout?: "table" | "cards";
+  compact?: boolean;
 };
 
 export default function AssignmentEvents({
   days,
   leadingColumns = 1,
   layout = "table",
+  compact = false,
 }: Props) {
   const [organizationId, setOrganizationId] = useState<string | null>(null);
   const refreshVersion = useAppRefresh();
@@ -128,18 +130,44 @@ export default function AssignmentEvents({
       type="button"
       disabled={loading || Boolean(loadError) || saving}
       aria-label={`${date}の行事を編集`}
+      title={events[date] || "行事を追加"}
       onClick={() => {
         setSaveError("");
         setEditor({ date, text: events[date] ?? "" });
       }}
       style={{
-        width: "100%", minHeight: 44, padding: "6px 3px",
-        border: 0, background: "transparent", color: "#713f12",
-        font: "inherit", cursor: "pointer", whiteSpace: "pre-wrap",
-        overflowWrap: "anywhere", textAlign: "center",
+        width: "100%",
+        minHeight: 44,
+        height: compact ? 44 : undefined,
+        boxSizing: "border-box",
+        padding: "6px 3px",
+        border: 0,
+        background: "transparent",
+        color: "#713f12",
+        font: "inherit",
+        cursor: "pointer",
+        whiteSpace: "pre-wrap",
+        overflowWrap: "anywhere",
+        textAlign: "center",
+        overflow: compact ? "hidden" : undefined,
       }}
     >
-      {loading ? "…" : loadError ? "—" : events[date] || "＋"}
+      <span
+        style={
+          compact
+            ? {
+                display: "-webkit-box",
+                WebkitBoxOrient: "vertical",
+                WebkitLineClamp: 2,
+                overflow: "hidden",
+                lineHeight: "16px",
+                maxHeight: 32,
+              }
+            : undefined
+        }
+      >
+        {loading ? "…" : loadError ? "—" : events[date] || "＋"}
+      </span>
     </button>
   );
 

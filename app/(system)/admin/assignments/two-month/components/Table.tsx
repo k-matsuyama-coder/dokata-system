@@ -183,7 +183,7 @@ getPlannedCount,
 />
 
 <tbody>
-          <AssignmentEvents days={days} leadingColumns={3} />
+<AssignmentEvents days={days} leadingColumns={3} compact />
           {groupedAssignments.map((group) => (
             <React.Fragment key={group.label}>
               <tr>
