@@ -301,22 +301,27 @@ onSaveDateMemo,
         minHeight: "100dvh",
       }}
     >
-      <AssignmentPageLinks />
+      
+      <div className="assignment-page-topbar">
+        <AssignmentPageLinks />
+
+        <div className="assignment-page-topbar-actions">
+          <TwoMonthToolbar
+            baseMonth={baseMonth}
+            setBaseMonth={setBaseMonth}
+            sortMode={sortMode}
+            setSortMode={setSortMode}
+            setShowAddModal={setShowAddModal}
+            smallButton={smallButton}
+          />
+        </div>
+      </div>
 
       <datalist id="detail-history">
         {detailHistory.map((detail) => (
           <option key={detail} value={detail} />
         ))}
       </datalist>
-
-      <TwoMonthToolbar
-        baseMonth={baseMonth}
-        setBaseMonth={setBaseMonth}
-        sortMode={sortMode}
-        setSortMode={setSortMode}
-        setShowAddModal={setShowAddModal}
-        smallButton={smallButton}
-      />
 
       <AddTwoMonthAssignmentModal
         showAddModal={showAddModal}

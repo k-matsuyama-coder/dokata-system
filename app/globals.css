@@ -53,3 +53,44 @@ input[type="number"] {
 .detail-textarea::placeholder {
   color: #c5cbd3;
 }
+
+.assignment-page-topbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  column-gap: 24px;
+  row-gap: 0;
+}
+
+.assignment-page-topbar > header {
+  flex: 0 1 360px;
+  min-width: 0;
+}
+
+.assignment-page-topbar-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex: 1 1 720px;
+  min-width: 0;
+}
+
+.assignment-page-topbar-actions > div {
+  width: fit-content !important;
+  max-width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  .assignment-page-topbar > header,
+  .assignment-page-topbar-actions {
+    flex-basis: 100%;
+  }
+
+  .assignment-page-topbar-actions {
+    justify-content: flex-start;
+  }
+
+  .assignment-page-topbar-actions > div {
+    width: 100% !important;
+  }
+}

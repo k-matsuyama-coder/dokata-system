@@ -720,7 +720,6 @@ stopEditing,
         overflowX: "hidden",
       }}
     >
-      <AssignmentPageLinks />
 
       <div
   style={{
@@ -734,6 +733,9 @@ stopEditing,
       : 0,
   }}
 >
+<div className="assignment-page-topbar">
+  <AssignmentPageLinks />
+  <div className="assignment-page-topbar-actions">
         <AssignmentToolbar
   month={month}
   setMonth={setMonth}
@@ -748,6 +750,8 @@ stopEditing,
   setShowAddModal={setShowAddModal}
   onExportExcel={handleExportMonthlyMatrix}
 />
+  </div>
+</div>
 
 <AssignmentAIChat key={currentOrganizationId} />
 
