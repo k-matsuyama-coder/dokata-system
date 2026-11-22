@@ -294,8 +294,13 @@ onSaveDateMemo,
   });
 
   return (
-    <div style={{ padding: 16 }}>
-      <h1>2ヶ月工程表</h1>
+    <div
+      style={{
+        padding: isMobile ? 8 : 16,
+        backgroundColor: "#f5f6f8",
+        minHeight: "100dvh",
+      }}
+    >
       <AssignmentPageLinks />
 
       <datalist id="detail-history">

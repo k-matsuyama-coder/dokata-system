@@ -9,7 +9,6 @@ import { fetchAllRows } from "@/lib/fetchAllRows";
 
 import { supabase } from "@/lib/supabase";
 import { useEffect, useMemo, useRef, useState } from "react";
-import BackButton from "@/app/components/BackButton";
 import AssignmentEditModal from "./components/AssignmentEditModal";
 import AddAssignmentModal from "./components/AddAssignmentModal";
 import MemberPanel from "./components/MemberPanel";
@@ -721,7 +720,6 @@ stopEditing,
         overflowX: "hidden",
       }}
     >
-      <BackButton />
       <AssignmentPageLinks />
 
       <div
